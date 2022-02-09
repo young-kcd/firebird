@@ -42,8 +42,8 @@
 #include "../../jrd/evl_proto.h"
 #include "../../jrd/intl_proto.h"
 #include "../../jrd/mov_proto.h"
-#include "../../jrd/opt_proto.h"
 #include "../../jrd/pag_proto.h"
+#include "../../jrd/optimizer/Optimizer.h"
 #include "../../common/os/path_utils.h"
 #include "../../dsql/dsql_proto.h"
 
@@ -212,7 +212,7 @@ void TraceSQLStatementImpl::fillPlan(bool explained)
 	{
 		m_planExplained = explained;
 		if (m_stmt->getJrdStatement())
-			m_plan = OPT_get_plan(JRD_get_thread_data(), m_stmt->getJrdStatement(), m_planExplained);
+			m_plan = Optimizer::getPlan(JRD_get_thread_data(), m_stmt->getJrdStatement(), m_planExplained);
 	}
 }
 

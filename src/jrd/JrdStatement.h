@@ -63,6 +63,8 @@ public:
 	void verifyAccess(thread_db* tdbb);
 	void release(thread_db* tdbb);
 
+	Firebird::string getPlan(thread_db* tdbb, bool detailed) const;
+
 private:
 	static void verifyTriggerAccess(thread_db* tdbb, jrd_rel* ownerRelation, TrigVector* triggers,
 		MetaName userName);

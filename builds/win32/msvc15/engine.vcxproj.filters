@@ -318,12 +318,6 @@
     <ClCompile Include="..\..\..\src\jrd\ods.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\opt.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\Optimizer.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\jrd\pag.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
@@ -485,6 +479,15 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\jrd\SystemPackages.cpp">
       <Filter>JRD files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\jrd\optimizer\Optimizer.cpp">
+      <Filter>Optimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\jrd\optimizer\Retrieval.cpp">
+      <Filter>Optimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\jrd\optimizer\InnerJoin.cpp">
+      <Filter>Optimizer</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\jrd\replication\Applier.cpp">
       <Filter>Replication</Filter>
@@ -890,10 +893,7 @@
     <ClInclude Include="..\..\..\src\jrd\ods_proto.h">
       <Filter>Header files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\jrd\opt_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\jrd\Optimizer.h">
+    <ClInclude Include="..\..\..\src\jrd\optimizer\Optimizer.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\pag.h">
@@ -942,9 +942,6 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\rpb_chain.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\jrd\rse.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\RuntimeStatistics.h">

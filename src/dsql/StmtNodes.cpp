@@ -34,7 +34,7 @@
 #include "../jrd/tra.h"
 #include "../jrd/Coercion.h"
 #include "../jrd/Function.h"
-#include "../jrd/Optimizer.h"
+#include "../jrd/optimizer/Optimizer.h"
 #include "../jrd/RecordSourceNodes.h"
 #include "../jrd/VirtualTable.h"
 #include "../jrd/extds/ExtDS.h"

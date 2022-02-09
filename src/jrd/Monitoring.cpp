@@ -39,7 +39,6 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
-#include "../jrd/opt_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/cvt_proto.h"
 #include "../jrd/CryptoManager.h"
@@ -47,6 +46,7 @@
 #include "../jrd/RecordBuffer.h"
 #include "../jrd/Monitoring.h"
 #include "../jrd/Function.h"
+#include "../jrd/optimizer/Optimizer.h"
 
 #ifdef WIN_NT
 #include <process.h>
@@ -1493,7 +1493,7 @@ void Monitoring::dumpAttachment(thread_db* tdbb, Attachment* attachment)
 		{
 			if (!(statement->flags & (JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)))
 			{
-				const string plan = OPT_get_plan(tdbb, statement, true);
+				const string plan = Optimizer::getPlan(tdbb, statement, true);
 				putStatement(record, statement, plan);
 			}
 		}
@@ -1507,7 +1507,7 @@ void Monitoring::dumpAttachment(thread_db* tdbb, Attachment* attachment)
 
 		if (!(statement->flags & (JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)))
 		{
-			const string plan = OPT_get_plan(tdbb, statement, true);
+			const string plan = Optimizer::getPlan(tdbb, statement, true);
 			putRequest(record, request, plan);
 		}
 	}

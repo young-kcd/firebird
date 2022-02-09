@@ -67,7 +67,6 @@
 #include "iberror.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"
-#include "../jrd/rse.h"
 #include "../jrd/lck.h"
 #include "../jrd/intl.h"
 #include "../jrd/sbm.h"
@@ -92,7 +91,6 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
-#include "../jrd/opt_proto.h"
 #include "../jrd/par_proto.h"
 #include "../jrd/rlck_proto.h"
 

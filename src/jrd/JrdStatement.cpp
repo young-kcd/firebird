@@ -664,6 +664,20 @@ void JrdStatement::release(thread_db* tdbb)
 		attachment->deletePool(pool);
 }
 
+// Returns a formatted textual plan for all RseNode's in the specified request
+string JrdStatement::getPlan(thread_db* tdbb, bool detailed) const
+{
+	string plan;
+
+	for (const auto rsb : fors)
+	{
+		plan += detailed ? "\nSelect Expression" : "\nPLAN ";
+		rsb->print(tdbb, plan, detailed, 0);
+	}
+
+	return plan;
+}
+
 // Check that we have enough rights to access all resources this list of triggers touches.
 void JrdStatement::verifyTriggerAccess(thread_db* tdbb, jrd_rel* ownerRelation,
 	TrigVector* triggers, MetaName userName)

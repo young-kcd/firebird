@@ -62,8 +62,8 @@
 #include "../jrd/ini_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/jrd_proto.h"
-#include "../jrd/opt_proto.h"
 #include "../jrd/tra_proto.h"
+#include "../jrd/optimizer/Optimizer.h"
 #include "../jrd/recsrc/RecordSource.h"
 #include "../jrd/replication/Publisher.h"
 #include "../jrd/trace/TraceManager.h"
@@ -889,7 +889,7 @@ static void sql_info(thread_db* tdbb,
 			{
 				const bool detailed = (item == isc_info_sql_explain_plan);
 				string plan = tdbb->getAttachment()->stringToUserCharSet(tdbb,
-					OPT_get_plan(tdbb, request->getJrdStatement(), detailed));
+					Optimizer::getPlan(tdbb, request->getJrdStatement(), detailed));
 
 				if (plan.hasData())
 				{

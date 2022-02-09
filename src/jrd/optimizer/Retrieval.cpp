@@ -1,8 +1,4 @@
 /*
- *	PROGRAM:	Client/Server Common Code
- *	MODULE:		Optimizer.cpp
- *	DESCRIPTION:	Optimizer
- *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
  *  you may not use this file except in compliance with the
@@ -23,6 +19,7 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *  Adriano dos Santos Fernandes
+ *  Dmitry Yemanov
  *
  */
 
@@ -33,15 +30,12 @@
 #include "../jrd/btr.h"
 #include "../jrd/intl.h"
 #include "../jrd/Collation.h"
-#include "../jrd/rse.h"
 #include "../jrd/ods.h"
-#include "../jrd/Optimizer.h"
 #include "../jrd/RecordSourceNodes.h"
 #include "../jrd/recsrc/RecordSource.h"
 #include "../dsql/BoolNodes.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"
-
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"
@@ -53,8 +47,11 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/par_proto.h"
 
+#include "../jrd/optimizer/Optimizer.h"
+
 using namespace Firebird;
 using namespace Jrd;
+
 
 namespace
 {
@@ -71,8 +68,8 @@ namespace
 			// so try to recover it (see CORE-4118).
 			while (!idx->idx_expression->sameAs(node, true))
 			{
-				DerivedExprNode* const derivedExpr = nodeAs<DerivedExprNode>(node);
-				CastNode* const cast = nodeAs<CastNode>(node);
+				const auto derivedExpr = nodeAs<DerivedExprNode>(node);
+				const auto cast = nodeAs<CastNode>(node);
 
 				if (derivedExpr)
 					node = derivedExpr->arg;
@@ -147,294 +144,85 @@ namespace
 
 } // namespace
 
-namespace Jrd
+
+IndexScratch::IndexScratch(MemoryPool& p, index_desc* idx, double card)
+	: index(idx), cardinality(card), segments(p)
 {
-	string OPT_make_alias(const CompilerScratch* csb, StreamType stream)
-	{
-		// Make an alias string suitable for printing as part of the plan.
-		// For views, this means multiple aliases to distinguish the base table.
-
-		string alias;
-
-		const CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[stream];
-
-		if (csb_tail->csb_view || csb_tail->csb_alias)
-		{
-			ObjectsArray<string> alias_list;
-
-			while (csb_tail)
-			{
-				if (csb_tail->csb_alias)
-					alias_list.push(*csb_tail->csb_alias);
-				else if (csb_tail->csb_relation)
-					alias_list.push(csb_tail->csb_relation->rel_name.c_str());
-
-				if (!csb_tail->csb_view)
-					break;
-
-				csb_tail = &csb->csb_rpt[csb_tail->csb_view_stream];
-			}
-
-			while (alias_list.hasData())
-			{
-				alias += alias_list.pop();
-
-				if (alias_list.hasData())
-					alias += ' ';
-			}
-		}
-		else if (csb_tail->csb_relation)
-			alias = csb_tail->csb_relation->rel_name.c_str();
-		else if (csb_tail->csb_procedure)
-			alias = csb_tail->csb_procedure->getName().toString();
-		//// TODO: LocalTableSourceNode
-		else
-			fb_assert(false);
-
-		return alias;
-	}
+	segments.resize(index->idx_count);
 }
 
-IndexScratchSegment::IndexScratchSegment(MemoryPool& p) :
-	matches(p)
+IndexScratch::IndexScratch(MemoryPool& p, const IndexScratch& other)
+	: index(other.index),
+	  cardinality(other.cardinality),
+	  selectivity(other.selectivity),
+	  candidate(other.candidate),
+	  scopeCandidate(other.scopeCandidate),
+	  lowerCount(other.lowerCount),
+	  upperCount(other.upperCount),
+	  nonFullMatchedSegments(other.nonFullMatchedSegments),
+	  fuzzy(other.fuzzy),
+	  segments(p, other.segments)
+{}
+
+
+Retrieval::Retrieval(thread_db* aTdbb, Optimizer* opt, StreamType streamNumber,
+					 bool outer, bool inner, SortNode* sortNode, bool costOnly)
+	: PermanentStorage(*aTdbb->getDefaultPool()),
+	  tdbb(aTdbb),
+	  optimizer(opt),
+	  csb(opt->getCompilerScratch()),
+	  stream(streamNumber),
+	  innerFlag(inner),
+	  outerFlag(outer),
+	  sort(sortNode),
+	  createIndexScanNodes(!costOnly),
+	  setConjunctionsMatched(!costOnly),
+	  alias(getPool()),
+	  indexScratches(getPool()),
+	  inversionCandidates(getPool())
 {
-/**************************************
- *
- *	I n d e x S c r a t c h S e g m e n t
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	lowerValue = NULL;
-	upperValue = NULL;
-	excludeLower = false;
-	excludeUpper = false;
-	scope = 0;
-	scanType = segmentScanNone;
-}
-
-IndexScratchSegment::IndexScratchSegment(MemoryPool& p, IndexScratchSegment* segment) :
-	matches(p)
-{
-/**************************************
- *
- *	I n d e x S c r a t c h S e g m e n t
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	lowerValue = segment->lowerValue;
-	upperValue = segment->upperValue;
-	excludeLower = segment->excludeLower;
-	excludeUpper = segment->excludeUpper;
-	scope = segment->scope;
-	scanType = segment->scanType;
-
-	for (FB_SIZE_T i = 0; i < segment->matches.getCount(); i++) {
-		matches.add(segment->matches[i]);
-	}
-}
-
-IndexScratch::IndexScratch(MemoryPool& p, thread_db* tdbb, index_desc* ix,
-	CompilerScratch::csb_repeat* csb_tail) :
-	idx(ix), segments(p)
-{
-/**************************************
- *
- *	I n d e x S c r a t c h
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	// Allocate needed segments
-	selectivity = MAXIMUM_SELECTIVITY;
-	candidate = false;
-	scopeCandidate = false;
-	lowerCount = 0;
-	upperCount = 0;
-	nonFullMatchedSegments = 0;
-	fuzzy = false;
-
-	segments.grow(idx->idx_count);
-
-	IndexScratchSegment** segment = segments.begin();
-	for (FB_SIZE_T i = 0; i < segments.getCount(); i++) {
-		segment[i] = FB_NEW_POOL(p) IndexScratchSegment(p);
-	}
-
-	const int length = ROUNDUP(BTR_key_length(tdbb, csb_tail->csb_relation, idx), sizeof(SLONG));
-
-	// AB: Calculate the cardinality which should reflect the total number
-	// of index pages for this index.
-	// We assume that the average index-key can be compressed by a factor 0.5
-	// In the future the average key-length should be stored and retrieved
-	// from a system table (RDB$INDICES for example).
-	// Multiplying the selectivity with this cardinality gives the estimated
-	// number of index pages that are read for the index retrieval.
-	double factor = 0.5;
-	if (segments.getCount() > 1)
-	{
-		// Compound indexes are generally less compressed.
-		factor = 0.7;
-	}
-
 	const Database* const dbb = tdbb->getDatabase();
-	cardinality = (csb_tail->csb_cardinality * (2 + (length * factor))) / (dbb->dbb_page_size - BTR_SIZE);
-	cardinality = MAX(cardinality, MINIMUM_CARDINALITY);
-}
 
-IndexScratch::IndexScratch(MemoryPool& p, const IndexScratch& scratch) :
-	segments(p)
-{
-/**************************************
- *
- *	I n d e x S c r a t c h
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	selectivity = scratch.selectivity;
-	cardinality = scratch.cardinality;
-	candidate = scratch.candidate;
-	scopeCandidate = scratch.scopeCandidate;
-	lowerCount = scratch.lowerCount;
-	upperCount = scratch.upperCount;
-	nonFullMatchedSegments = scratch.nonFullMatchedSegments;
-	fuzzy = scratch.fuzzy;
-	idx = scratch.idx;
+	const auto tail = &csb->csb_rpt[stream];
 
-	// Allocate needed segments
-	segments.grow(scratch.segments.getCount());
+	relation = tail->csb_relation;
+	fb_assert(relation);
 
-	IndexScratchSegment* const* scratchSegment = scratch.segments.begin();
-	IndexScratchSegment** segment = segments.begin();
-	for (FB_SIZE_T i = 0; i < segments.getCount(); i++) {
-		segment[i] = FB_NEW_POOL(p) IndexScratchSegment(p, scratchSegment[i]);
+	if (!tail->csb_idx)
+		return;
+
+	for (auto& index : *tail->csb_idx)
+	{
+		const auto length = ROUNDUP(BTR_key_length(tdbb, relation, &index), sizeof(SLONG));
+
+		// AB: Calculate the cardinality which should reflect the total number
+		// of index pages for this index.
+		// We assume that the average index-key can be compressed by a factor 0.5
+		// In the future the average key-length should be stored and retrieved
+		// from a system table (RDB$INDICES for example).
+		// Multiplying the selectivity with this cardinality gives the estimated
+		// number of index pages that are read for the index retrieval.
+		// Compound indexes are generally less compressed.
+		const double factor = (index.idx_count == 1) ? 0.5 : 0.7;
+
+		double cardinality = tail->csb_cardinality;
+		cardinality *= (2 + length * factor);
+		cardinality /= (dbb->dbb_page_size - BTR_SIZE);
+		cardinality = MAX(cardinality, MINIMUM_CARDINALITY);
+
+		indexScratches.add(IndexScratch(getPool(), &index, cardinality));
 	}
 }
 
-IndexScratch::~IndexScratch()
+
+//
+// Melt two inversions together by the type given in node_type
+//
+
+InversionNode* Retrieval::composeInversion(InversionNode* node1,
+										   InversionNode* node2,
+										   InversionNode::Type node_type) const
 {
-/**************************************
- *
- *	~I n d e x S c r a t c h
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	IndexScratchSegment** segment = segments.begin();
-	for (FB_SIZE_T i = 0; i < segments.getCount(); i++) {
-		delete segment[i];
-	}
-}
-
-InversionCandidate::InversionCandidate(MemoryPool& p) :
-	matches(p), dbkeyRanges(p), dependentFromStreams(p)
-{
-/**************************************
- *
- *	I n v e r s i o n C a n d i d a t e
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	selectivity = MAXIMUM_SELECTIVITY;
-	cost = 0;
-	indexes = 0;
-	dependencies = 0;
-	nonFullMatchedSegments = MAX_INDEX_SEGMENTS + 1;
-	matchedSegments = 0;
-	boolean = NULL;
-	condition = NULL;
-	inversion = NULL;
-	scratch = NULL;
-	used = false;
-	unique = false;
-	navigated = false;
-}
-
-OptimizerRetrieval::OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt,
-									   StreamType streamNumber, bool outer,
-									   bool inner, SortNode* sortNode)
-	: pool(p), alias(p), indexScratches(p), inversionCandidates(p)
-{
-/**************************************
- *
- *	O p t i m i z e r R e t r i e v a l
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	createIndexScanNodes = false;
-	setConjunctionsMatched = false;
-
-	tdbb = NULL;
-	SET_TDBB(tdbb);
-
-	this->database = tdbb->getDatabase();
-	this->stream = streamNumber;
-	this->optimizer = opt;
-	this->csb = this->optimizer->opt_csb;
-	this->innerFlag = inner;
-	this->outerFlag = outer;
-	this->sort = sortNode;
-	this->navigationCandidate = NULL;
-	CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[this->stream];
-	relation = csb_tail->csb_relation;
-
-	// Allocate needed indexScratches
-
-	index_desc* idx = csb_tail->csb_idx->items;
-	for (int i = 0; i < csb_tail->csb_indices; ++i, ++idx)
-		indexScratches.add(IndexScratch(p, tdbb, idx, csb_tail));
-}
-
-OptimizerRetrieval::~OptimizerRetrieval()
-{
-/**************************************
- *
- *	~O p t i m i z e r R e t r i e v a l
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	if (navigationCandidate)
-		delete navigationCandidate;
-	for (FB_SIZE_T i = 0; i < inversionCandidates.getCount(); ++i)
-		delete inversionCandidates[i];
-}
-
-InversionNode* OptimizerRetrieval::composeInversion(InversionNode* node1, InversionNode* node2,
-	InversionNode::Type node_type) const
-{
-/**************************************
- *
- *	c o m p o s e I n v e r s i o n
- *
- **************************************
- *
- * Functional description
- *	Melt two inversions together by the
- *  type given in node_type.
- *
- **************************************/
-
 	if (!node2)
 		return node1;
 
@@ -457,82 +245,60 @@ InversionNode* OptimizerRetrieval::composeInversion(InversionNode* node1, Invers
 		}
 	}
 
-	return FB_NEW_POOL(pool) InversionNode(node_type, node1, node2);
+	return FB_NEW_POOL(getPool()) InversionNode(node_type, node1, node2);
 }
 
-const string& OptimizerRetrieval::getAlias()
+const string& Retrieval::getAlias()
 {
-/**************************************
- *
- *	g e t A l i a s
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
 	if (alias.isEmpty())
-		alias = OPT_make_alias(csb, this->stream);
+		alias = optimizer->makeAlias(this->stream);
 
 	return alias;
 }
 
-InversionCandidate* OptimizerRetrieval::generateInversion()
+InversionCandidate* Retrieval::getInversion()
 {
-/**************************************
- *
- *	g e n e r a t e I n v e r s i o n
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	OptimizerBlk::opt_conjunct* const opt_begin =
-		optimizer->opt_conjuncts.begin() + (outerFlag ? optimizer->opt_base_parent_conjuncts : 0);
+	if (finalCandidate)
+		return finalCandidate;
 
-	const OptimizerBlk::opt_conjunct* const opt_end =
-		innerFlag ? optimizer->opt_conjuncts.begin() + optimizer->opt_base_missing_conjuncts :
-					optimizer->opt_conjuncts.end();
+	auto iter = optimizer->getConjuncts(innerFlag, outerFlag);
 
-	InversionCandidate* invCandidate = NULL;
+	InversionCandidate* invCandidate = nullptr;
 
 	if (relation && !relation->rel_file && !relation->isVirtual())
 	{
 		InversionCandidateList inversions;
 
 		// First, handle "AND" comparisons (all nodes except OR)
-		for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
+		for (iter.rewind(); iter.hasData(); ++iter)
 		{
-			BoolExprNode* const node = tail->opt_conjunct_node;
-			BinaryBoolNode* booleanNode = nodeAs<BinaryBoolNode>(node);
+			const auto booleanNode = nodeAs<BinaryBoolNode>(*iter);
 
-			if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node &&
+			if (!(iter & Optimizer::CONJUNCT_USED) &&
 				(!booleanNode || booleanNode->blrOp != blr_or))
 			{
-				invCandidate = matchOnIndexes(&indexScratches, node, 1);
+				invCandidate = matchOnIndexes(indexScratches, iter, 1);
 
 				if (invCandidate)
 					inversions.add(invCandidate);
 			}
 		}
 
-		getInversionCandidates(&inversions, &indexScratches, 1);
+		getInversionCandidates(inversions, indexScratches, 1);
 
 		// Second, handle "OR" comparisons
-		for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
+		for (iter.rewind(); iter.hasData(); ++iter)
 		{
-			BoolExprNode* const node = tail->opt_conjunct_node;
-			BinaryBoolNode* booleanNode = nodeAs<BinaryBoolNode>(node);
+			const auto booleanNode = nodeAs<BinaryBoolNode>(*iter);
 
-			if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node &&
+			if (!(iter & Optimizer::CONJUNCT_USED) &&
 				(booleanNode && booleanNode->blrOp == blr_or))
 			{
-				invCandidate = matchOnIndexes(&indexScratches, node, 1);
+				invCandidate = matchOnIndexes(indexScratches, iter, 1);
 
 				if (invCandidate)
 				{
-					invCandidate->boolean = node;
+					invCandidate->boolean = iter;
 					inversions.add(invCandidate);
 				}
 			}
@@ -543,16 +309,17 @@ InversionCandidate* OptimizerRetrieval::generateInversion()
 
 #ifdef OPT_DEBUG_RETRIEVAL
 		// Debug
-		printCandidates(&inversions);
+		printCandidates(inversions);
 #endif
 
-		invCandidate = makeInversion(&inversions);
+		invCandidate = makeInversion(inversions);
 
-		// Clean up inversion list
-		InversionCandidate** inversion = inversions.begin();
-		for (FB_SIZE_T i = 0; i < inversions.getCount(); i++)
-			if (inversion[i] != navigationCandidate)
-				delete inversion[i];
+		// Clean up intermediate inversion candidates
+		for (const auto candidate : inversions)
+		{
+			if (candidate != navigationCandidate)
+				delete candidate;
+		}
 	}
 
 	if (!invCandidate)
@@ -560,7 +327,7 @@ InversionCandidate* OptimizerRetrieval::generateInversion()
 		// No index will be used, thus create a dummy inversion candidate
 		// representing the natural table access. All the necessary properties
 		// (selectivity: 1.0, cost: 0, unique: false) are set up by the constructor.
-		invCandidate = FB_NEW_POOL(pool) InversionCandidate(pool);
+		invCandidate = FB_NEW_POOL(getPool()) InversionCandidate(getPool());
 	}
 
 	if (invCandidate->unique)
@@ -575,46 +342,32 @@ InversionCandidate* OptimizerRetrieval::generateInversion()
 		invCandidate->cost += csb->csb_rpt[stream].csb_cardinality * invCandidate->selectivity;
 	}
 
-	// Adjust the effective selectivity by treating computable conjunctions as filters
-	for (const OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
-		tail < optimizer->opt_conjuncts.end(); tail++)
+	for (iter.rewind(); iter.hasData(); ++iter)
 	{
-		BoolExprNode* const node = tail->opt_conjunct_node;
-
-		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-			node->computable(csb, stream, true) &&
-			!invCandidate->matches.exist(node))
+		if (!(iter & Optimizer::CONJUNCT_USED))
 		{
-			const ComparativeBoolNode* const cmpNode = nodeAs<ComparativeBoolNode>(node);
+			const auto matched = invCandidate->matches.exist(iter);
 
-			const double factor = (cmpNode && cmpNode->blrOp == blr_eql) ?
-				REDUCE_SELECTIVITY_FACTOR_EQUALITY : REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
-			invCandidate->selectivity *= factor;
+			// Adjust the effective selectivity by treating computable conjunctions as filters
+			if (iter->computable(csb, stream, true) && !matched)
+			{
+				const auto cmpNode = nodeAs<ComparativeBoolNode>(*iter);
+
+				const double factor = (cmpNode && cmpNode->blrOp == blr_eql) ?
+					REDUCE_SELECTIVITY_FACTOR_EQUALITY : REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
+				invCandidate->selectivity *= factor;
+			}
+
+			if (setConjunctionsMatched && matched)
+				iter |= Optimizer::CONJUNCT_MATCHED;
 		}
 	}
 
-	// Add the streams where this stream is depending on.
-	for (FB_SIZE_T i = 0; i < invCandidate->matches.getCount(); i++)
-		invCandidate->matches[i]->findDependentFromStreams(this, &invCandidate->dependentFromStreams);
-
-	if (setConjunctionsMatched)
+	// Add the streams where this stream is depending on
+	for (auto match : invCandidate->matches)
 	{
-		SortedArray<BoolExprNode*> matches;
-
-		// AB: Putting a unsorted array in a sorted array directly by join isn't
-		// very safe at the moment, but in our case Array holds a sorted list.
-		// However SortedArray class should be updated to handle join right!
-
-		matches.join(invCandidate->matches);
-
-		for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
-		{
-			if (!(tail->opt_conjunct_flags & opt_conjunct_used))
-			{
-				if (matches.exist(tail->opt_conjunct_node))
-					tail->opt_conjunct_flags |= opt_conjunct_matched;
-			}
-		}
+		match->findDependentFromStreams(csb, stream,
+			&invCandidate->dependentFromStreams);
 	}
 
 #ifdef OPT_DEBUG_RETRIEVAL
@@ -622,56 +375,42 @@ InversionCandidate* OptimizerRetrieval::generateInversion()
 	printFinalCandidate(invCandidate);
 #endif
 
+	finalCandidate = invCandidate;
+
 	return invCandidate;
 }
 
-IndexTableScan* OptimizerRetrieval::getNavigation()
+IndexTableScan* Retrieval::getNavigation()
 {
-/**************************************
- *
- *	g e t N a v i g a t i o n
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
 	if (!navigationCandidate)
-		return NULL;
+		return nullptr;
 
 	IndexScratch* const scratch = navigationCandidate->scratch;
 
 	// Looks like we can do a navigational walk.  Flag that
 	// we have used this index for navigation, and allocate
 	// a navigational rsb for it.
-	scratch->idx->idx_runtime_flags |= idx_navigate;
+	scratch->index->idx_runtime_flags |= idx_navigate;
 
 	const USHORT key_length =
-		ROUNDUP(BTR_key_length(tdbb, relation, scratch->idx), sizeof(SLONG));
+		ROUNDUP(BTR_key_length(tdbb, relation, scratch->index), sizeof(SLONG));
 
 	InversionNode* const index_node = makeIndexScanNode(scratch);
 
-	return FB_NEW_POOL(*tdbb->getDefaultPool())
+	return FB_NEW_POOL(getPool())
 		IndexTableScan(csb, getAlias(), stream, relation, index_node, key_length);
 }
 
-void OptimizerRetrieval::analyzeNavigation(const InversionCandidateList& inversions)
+void Retrieval::analyzeNavigation(const InversionCandidateList& inversions)
 {
-/**************************************
- *
- *	a n a l y z e N a v i g a t i o n
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
 	fb_assert(sort);
 
-	for (FB_SIZE_T i = 0; i < indexScratches.getCount(); ++i)
+	HalfStaticArray<InversionCandidate*, OPT_STATIC_ITEMS> tempCandidates;
+	InversionCandidate* bestCandidate = nullptr;
+
+	for (auto& indexScratch : indexScratches)
 	{
-		IndexScratch* const indexScratch = &indexScratches[i];
-		const index_desc* const idx = indexScratch->idx;
+		auto idx = indexScratch.index;
 
 		// if the number of fields in the sort is greater than the number of
 		// fields in the index, the index will not be used to optimize the
@@ -700,16 +439,14 @@ void OptimizerRetrieval::analyzeNavigation(const InversionCandidateList& inversi
 		// check to see if the fields in the sort match the fields in the index
 		// in the exact same order
 
-		const IndexScratchSegment* const* segment = indexScratch->segments.begin();
-		const IndexScratchSegment* const* const end_segment =
-			segment + MIN(indexScratch->lowerCount, indexScratch->upperCount);
-		int equalSegments = 0;
-
-		for (; segment < end_segment; segment++)
+		unsigned equalSegments = 0;
+		for (unsigned i = 0; i < MIN(indexScratch.lowerCount, indexScratch.upperCount); i++)
 		{
-			if ((*segment)->scanType == segmentScanEqual ||
-				(*segment)->scanType == segmentScanEquivalent ||
-				(*segment)->scanType == segmentScanMissing)
+			const auto& segment = indexScratch.segments[i];
+
+			if (segment.scanType == segmentScanEqual ||
+				segment.scanType == segmentScanEquivalent ||
+				segment.scanType == segmentScanMissing)
 			{
 				equalSegments++;
 			}
@@ -735,13 +472,9 @@ void OptimizerRetrieval::analyzeNavigation(const InversionCandidateList& inversi
 			HalfStaticArray<ValueExprNode*, OPT_STATIC_ITEMS> nodes;
 			nodes.add(orgNode);
 
-			for (const OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
-				 tail < optimizer->opt_conjuncts.end(); tail++)
+			for (auto iter = optimizer->getConjuncts(); iter.hasData(); ++iter)
 			{
-				BoolExprNode* const boolean = tail->opt_conjunct_node;
-				fb_assert(boolean);
-
-				ComparativeBoolNode* const cmpNode = nodeAs<ComparativeBoolNode>(boolean);
+				const auto cmpNode = nodeAs<ComparativeBoolNode>(*iter);
 
 				if (cmpNode && (cmpNode->blrOp == blr_eql || cmpNode->blrOp == blr_equiv))
 				{
@@ -758,10 +491,8 @@ void OptimizerRetrieval::analyzeNavigation(const InversionCandidateList& inversi
 
 			// Check whether any of the equivalent nodes is suitable for index navigation
 
-			for (ValueExprNode** iter = nodes.begin(); iter != nodes.end(); ++iter)
+			for (const auto node : nodes)
 			{
-				ValueExprNode* const node = *iter;
-
 				if (idx->idx_flags & idx_expressn)
 				{
 					if (!checkExpressionIndex(csb, idx, node, stream))
@@ -775,7 +506,7 @@ void OptimizerRetrieval::analyzeNavigation(const InversionCandidateList& inversi
 				{
 					for (; idx_tail < idx_end && fieldNode->fieldId != idx_tail->idx_field; idx_tail++)
 					{
-						const int segmentNumber = idx_tail - idx->idx_rpt;
+						const unsigned segmentNumber = idx_tail - idx->idx_rpt;
 
 						if (segmentNumber >= equalSegments)
 							break;
@@ -834,14 +565,13 @@ void OptimizerRetrieval::analyzeNavigation(const InversionCandidateList& inversi
 
 		// Lookup the inversion candidate matching our navigational index
 
-		InversionCandidate* candidate = NULL;
+		InversionCandidate* candidate = nullptr;
 
-		for (InversionCandidate* const* iter = inversions.begin();
-			iter != inversions.end(); ++iter)
+		for (const auto inversion : inversions)
 		{
-			if ((*iter)->scratch == indexScratch)
+			if (inversion->scratch == &indexScratch)
 			{
-				candidate = *iter;
+				candidate = inversion;
 				break;
 			}
 		}
@@ -852,20 +582,16 @@ void OptimizerRetrieval::analyzeNavigation(const InversionCandidateList& inversi
 		// then don't consider any (possibly better) alternatives.
 		// Another exception is when the FIRST ROWS optimization strategy is applied.
 
-		if (candidate && !optimizer->favorFirstRows &&
-			!(indexScratch->idx->idx_runtime_flags & idx_plan_navigate))
+		if (candidate && !optimizer->favorFirstRows() &&
+			!(idx->idx_runtime_flags & idx_plan_navigate))
 		{
-			for (const InversionCandidate* const* iter = inversions.begin();
-				iter != inversions.end(); ++iter)
+			for (const auto otherCandidate : inversions)
 			{
-				const InversionCandidate* const otherCandidate = *iter;
-
 				if (otherCandidate != candidate)
 				{
-					for (BoolExprNode* const* iter2 = otherCandidate->matches.begin();
-						iter2 != otherCandidate->matches.end(); ++iter2)
+					for (const auto otherMatch : otherCandidate->matches)
 					{
-						if (candidate->matches.exist(*iter2) &&
+						if (candidate->matches.exist(otherMatch) &&
 							betterInversion(otherCandidate, candidate, true))
 						{
 							usableIndex = false;
@@ -889,24 +615,34 @@ void OptimizerRetrieval::analyzeNavigation(const InversionCandidateList& inversi
 		{
 			// If no inversion candidate is found, create a fake one representing full index scan
 
-			candidate = FB_NEW_POOL(pool) InversionCandidate(pool);
-			candidate->cost = indexScratch->cardinality;
+			candidate = FB_NEW_POOL(getPool()) InversionCandidate(getPool());
+			candidate->cost = indexScratch.cardinality;
 			candidate->indexes = 1;
-			candidate->scratch = indexScratch;
-			candidate->nonFullMatchedSegments = (int) indexScratch->segments.getCount();
+			candidate->scratch = &indexScratch;
+			candidate->nonFullMatchedSegments = indexScratch.segments.getCount();
+			tempCandidates.add(candidate);
 		}
 
-		if (!navigationCandidate ||
-			betterInversion(candidate, navigationCandidate, false))
+		if (!bestCandidate ||
+			betterInversion(candidate, bestCandidate, false))
 		{
-			navigationCandidate = candidate;
+			bestCandidate = candidate;
 		}
 	}
+
+	// Clean up intermediate inversion candidates
+	for (const auto candidate : tempCandidates)
+	{
+		if (candidate != bestCandidate)
+			delete candidate;
+	}
+
+	navigationCandidate = bestCandidate;
 }
 
-bool OptimizerRetrieval::betterInversion(const InversionCandidate* inv1,
-										 const InversionCandidate* inv2,
-										 bool ignoreUnmatched) const
+bool Retrieval::betterInversion(const InversionCandidate* inv1,
+								const InversionCandidate* inv2,
+								bool ignoreUnmatched) const
 {
 	// Return true if inversion1 is *better* than inversion2.
 	// It's mostly about the retrieval cost, but other aspects are also taken into account.
@@ -987,27 +723,17 @@ bool OptimizerRetrieval::betterInversion(const InversionCandidate* inv1,
 	return false;
 }
 
-void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversions,
-		IndexScratchList* fromIndexScratches, USHORT scope) const
+void Retrieval::getInversionCandidates(InversionCandidateList& inversions,
+									   IndexScratchList& fromIndexScratches,
+									   unsigned scope) const
 {
-/**************************************
- *
- *	g e t I n v e r s i o n C a n d i d a t e s
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
 	const double cardinality = csb->csb_rpt[stream].csb_cardinality;
 
 	// Walk through indexes to calculate selectivity / candidate
-	Array<BoolExprNode*> matches;
-	FB_SIZE_T i = 0;
+	MatchedBooleanList matches;
 
-	for (i = 0; i < fromIndexScratches->getCount(); i++)
+	for (auto& scratch : fromIndexScratches)
 	{
-		IndexScratch& scratch = (*fromIndexScratches)[i];
 		scratch.scopeCandidate = false;
 		scratch.lowerCount = 0;
 		scratch.upperCount = 0;
@@ -1020,17 +746,18 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 			scratch.selectivity = MAXIMUM_SELECTIVITY;
 
 			bool unique = false;
+			const auto idx = scratch.index;
 
-			for (int j = 0; j < scratch.idx->idx_count; j++)
+			for (unsigned j = 0; j < scratch.segments.getCount(); j++)
 			{
-				const IndexScratchSegment* const segment = scratch.segments[j];
+				const auto& segment = scratch.segments[j];
 
-				if (segment->scope == scope)
+				if (segment.scope == scope)
 					scratch.scopeCandidate = true;
 
-				if (segment->scanType != segmentScanMissing && !(scratch.idx->idx_flags & idx_unique))
+				if (segment.scanType != segmentScanMissing && !(idx->idx_flags & idx_unique))
 				{
-					const USHORT iType = scratch.idx->idx_rpt[j].idx_itype;
+					const auto iType = idx->idx_rpt[j].idx_itype;
 
 					if (iType >= idx_first_intl_string)
 					{
@@ -1048,32 +775,32 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 
 				// Check if this is the last usable segment
 				if (!scratch.fuzzy &&
-					(segment->scanType == segmentScanEqual ||
-					 segment->scanType == segmentScanEquivalent ||
-					 segment->scanType == segmentScanMissing))
+					(segment.scanType == segmentScanEqual ||
+					 segment.scanType == segmentScanEquivalent ||
+					 segment.scanType == segmentScanMissing))
 				{
 					// This is a perfect usable segment thus update root selectivity
 					scratch.lowerCount++;
 					scratch.upperCount++;
-					scratch.selectivity = scratch.idx->idx_rpt[j].idx_selectivity;
-					scratch.nonFullMatchedSegments = scratch.idx->idx_count - (j + 1);
+					scratch.selectivity = idx->idx_rpt[j].idx_selectivity;
+					scratch.nonFullMatchedSegments = idx->idx_count - (j + 1);
 					// Add matches for this segment to the main matches list
-					matches.join(segment->matches);
+					matches.join(segment.matches);
 
 					// An equality scan for any unique index cannot retrieve more
 					// than one row. The same is true for an equivalence scan for
 					// any primary index.
 					const bool single_match =
-						(segment->scanType == segmentScanEqual &&
-							(scratch.idx->idx_flags & idx_unique)) ||
-						(segment->scanType == segmentScanEquivalent &&
-							(scratch.idx->idx_flags & idx_primary));
+						(segment.scanType == segmentScanEqual &&
+							(idx->idx_flags & idx_unique)) ||
+						(segment.scanType == segmentScanEquivalent &&
+							(idx->idx_flags & idx_primary));
 
 					// dimitr: IS NULL scan against primary key is guaranteed
 					//		   to return zero rows. Do we need yet another
 					//		   special case here?
 
-					if (single_match && ((j + 1) == scratch.idx->idx_count))
+					if (single_match && ((j + 1) == idx->idx_count))
 					{
 						// We have found a full equal matching index and it's unique,
 						// so we can stop looking further, because this is the best
@@ -1095,24 +822,24 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 					double selectivity = scratch.selectivity;
 					double factor = 1;
 
-					switch (segment->scanType)
+					switch (segment.scanType)
 					{
 						case segmentScanBetween:
 							scratch.lowerCount++;
 							scratch.upperCount++;
-							selectivity = scratch.idx->idx_rpt[j].idx_selectivity;
+							selectivity = idx->idx_rpt[j].idx_selectivity;
 							factor = REDUCE_SELECTIVITY_FACTOR_BETWEEN;
 							break;
 
 						case segmentScanLess:
 							scratch.upperCount++;
-							selectivity = scratch.idx->idx_rpt[j].idx_selectivity;
+							selectivity = idx->idx_rpt[j].idx_selectivity;
 							factor = REDUCE_SELECTIVITY_FACTOR_LESS;
 							break;
 
 						case segmentScanGreater:
 							scratch.lowerCount++;
-							selectivity = scratch.idx->idx_rpt[j].idx_selectivity;
+							selectivity = idx->idx_rpt[j].idx_selectivity;
 							factor = REDUCE_SELECTIVITY_FACTOR_GREATER;
 							break;
 
@@ -1121,12 +848,12 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 						case segmentScanEquivalent:
 							scratch.lowerCount++;
 							scratch.upperCount++;
-							selectivity = scratch.idx->idx_rpt[j].idx_selectivity;
+							selectivity = idx->idx_rpt[j].idx_selectivity;
 							factor = REDUCE_SELECTIVITY_FACTOR_STARTING;
 							break;
 
 						default:
-							fb_assert(segment->scanType == segmentScanNone);
+							fb_assert(segment.scanType == segmentScanNone);
 							break;
 					}
 
@@ -1138,10 +865,10 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 					fb_assert(selectivity <= scratch.selectivity);
 					scratch.selectivity = selectivity;
 
-					if (segment->scanType != segmentScanNone)
+					if (segment.scanType != segmentScanNone)
 					{
-						matches.join(segment->matches);
-						scratch.nonFullMatchedSegments = scratch.idx->idx_count - j;
+						matches.join(segment.matches);
+						scratch.nonFullMatchedSegments = idx->idx_count - j;
 					}
 					break;
 				}
@@ -1164,7 +891,7 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 						selectivity = DEFAULT_SELECTIVITY;
 				}
 
-				InversionCandidate* invCandidate = FB_NEW_POOL(pool) InversionCandidate(pool);
+				const auto invCandidate = FB_NEW_POOL(getPool()) InversionCandidate(getPool());
 				invCandidate->unique = unique;
 				invCandidate->selectivity = selectivity;
 				// Calculate the cost (only index pages) for this index.
@@ -1175,34 +902,27 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 				invCandidate->scratch = &scratch;
 				invCandidate->matches.join(matches);
 
-				for (FB_SIZE_T k = 0; k < invCandidate->matches.getCount(); k++)
+				for (auto match : invCandidate->matches)
 				{
-					invCandidate->matches[k]->findDependentFromStreams(this,
+					match->findDependentFromStreams(csb, stream,
 						&invCandidate->dependentFromStreams);
 				}
 
-				invCandidate->dependencies = (int) invCandidate->dependentFromStreams.getCount();
-				inversions->add(invCandidate);
+				invCandidate->dependencies = invCandidate->dependentFromStreams.getCount();
+				inversions.add(invCandidate);
 			}
 		}
 	}
 }
 
-ValueExprNode* OptimizerRetrieval::findDbKey(ValueExprNode* dbkey, SLONG* position) const
-{
-/**************************************
- *
- *	f i n d D b K e y
- *
- **************************************
- *
- * Functional description
- *	Search a dbkey (possibly a concatenated one) for
- *	a dbkey for specified stream.
- *
- **************************************/
 
-	const RecordKeyNode* keyNode = nodeAs<RecordKeyNode>(dbkey);
+//
+// Search a dbkey (possibly a concatenated one) for a dbkey for specified stream
+//
+
+ValueExprNode* Retrieval::findDbKey(ValueExprNode* dbkey, SLONG* position) const
+{
+	const auto keyNode = nodeAs<RecordKeyNode>(dbkey);
 
 	if (keyNode && keyNode->blrOp == blr_dbkey)
 	{
@@ -1210,10 +930,10 @@ ValueExprNode* OptimizerRetrieval::findDbKey(ValueExprNode* dbkey, SLONG* positi
 			return dbkey;
 
 		++*position;
-		return NULL;
+		return nullptr;
 	}
 
-	ConcatenateNode* concatNode = nodeAs<ConcatenateNode>(dbkey);
+	const auto concatNode = nodeAs<ConcatenateNode>(dbkey);
 
 	if (concatNode)
 	{
@@ -1228,27 +948,20 @@ ValueExprNode* OptimizerRetrieval::findDbKey(ValueExprNode* dbkey, SLONG* positi
 			return dbkey_temp;
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 
-InversionNode* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
+//
+// Build node for index scan
+//
+
+InversionNode* Retrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 {
-/**************************************
- *
- *	m a k e I n d e x S c a n N o d e
- *
- **************************************
- *
- * Functional description
- *	Build node for index scan.
- *
- **************************************/
-
 	if (!createIndexScanNodes)
-		return NULL;
+		return nullptr;
 
-	index_desc* const idx = indexScratch->idx;
+	index_desc* const idx = indexScratch->index;
 
 	// Check whether this is during a compile or during a SET INDEX operation
 	if (csb)
@@ -1264,8 +977,8 @@ InversionNode* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch)
 	if (!(csb->csb_g_flags & csb_internal))
 		MET_lookup_index(tdbb, indexName, relation->rel_name, idx->idx_id + 1);
 
-	IndexRetrieval* const retrieval =
-		FB_NEW_POOL(pool) IndexRetrieval(pool, relation, idx, indexName);
+	const auto retrieval =
+		FB_NEW_POOL(getPool()) IndexRetrieval(getPool(), relation, idx, indexName);
 
 	// Pick up lower bound segment values
 	ValueExprNode** lower = retrieval->irb_value;
@@ -1283,13 +996,13 @@ InversionNode* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch)
 		retrieval->irb_generic |= irb_descending;
 	}
 
-	int i = 0;
 	bool ignoreNullsOnScan = true;
-	IndexScratchSegment** segment = indexScratch->segments.begin();
+	const auto& segments = indexScratch->segments;
 
-	for (i = 0; i < MAX(indexScratch->lowerCount, indexScratch->upperCount); i++)
+	const auto count = MAX(indexScratch->lowerCount, indexScratch->upperCount);
+	for (unsigned i = 0; i < count; i++)
 	{
-		if (segment[i]->scanType == segmentScanMissing)
+		if (segments[i].scanType == segmentScanMissing)
 		{
 			*lower++ = *upper++ = NullNode::instance();
 			ignoreNullsOnScan = false;
@@ -1297,27 +1010,25 @@ InversionNode* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch)
 		else
 		{
 			if (i < indexScratch->lowerCount)
-				*lower++ = segment[i]->lowerValue;
+				*lower++ = segments[i].lowerValue;
 
 			if (i < indexScratch->upperCount)
-				*upper++ = segment[i]->upperValue;
+				*upper++ = segments[i].upperValue;
 
-			if (segment[i]->scanType == segmentScanEquivalent)
+			if (segments[i].scanType == segmentScanEquivalent)
 				ignoreNullsOnScan = false;
 		}
 	}
 
-	i = MAX(indexScratch->lowerCount, indexScratch->upperCount) - 1;
-
-	if (i >= 0)
+	if (count)
 	{
-		if (segment[i]->scanType == segmentScanStarting)
+		if (segments[count - 1].scanType == segmentScanStarting)
 			retrieval->irb_generic |= irb_starting;
 
-		if (segment[i]->excludeLower)
+		if (segments[count - 1].excludeLower)
 			retrieval->irb_generic |= irb_exclude_lower;
 
-		if (segment[i]->excludeUpper)
+		if (segments[count - 1].excludeUpper)
 			retrieval->irb_generic |= irb_exclude_upper;
 	}
 
@@ -1335,11 +1046,10 @@ InversionNode* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch)
 	if (retrieval->irb_lower_count == retrieval->irb_upper_count)
 	{
 		retrieval->irb_generic |= irb_equality;
-		segment = indexScratch->segments.begin();
 
-		for (i = 0; i < retrieval->irb_lower_count; i++)
+		for (unsigned i = 0; i < retrieval->irb_lower_count; i++)
 		{
-			if (segment[i]->lowerValue != segment[i]->upperValue)
+			if (segments[i].lowerValue != segments[i].upperValue)
 			{
 				retrieval->irb_generic &= ~irb_equality;
 				break;
@@ -1363,28 +1073,17 @@ InversionNode* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch)
 	idx->idx_runtime_flags |= idx_used;
 
 	const ULONG impure = csb ? csb->allocImpure<impure_inversion>() : 0;
-	return FB_NEW_POOL(pool) InversionNode(retrieval, impure);
+	return FB_NEW_POOL(getPool()) InversionNode(retrieval, impure);
 }
 
-InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* inversions) const
-{
-/**************************************
- *
- *	m a k e I n v e r s i o n
- *
- **************************************
- *
- * Select best available inversion candidates
- * and compose them to 1 inversion.
- * This was never implemented:
- * If top is true the datapages-cost is
- * also used in the calculation (only needed
- * for top InversionNode generation).
- *
- **************************************/
+//
+// Select best available inversion candidates and compose them to 1 inversion
+//
 
-	if (inversions->isEmpty() && !navigationCandidate)
-		return NULL;
+InversionCandidate* Retrieval::makeInversion(InversionCandidateList& inversions) const
+{
+	if (inversions.isEmpty() && !navigationCandidate)
+		return nullptr;
 
 	const double streamCardinality =
 		MAX(csb->csb_rpt[stream].csb_cardinality, MINIMUM_CARDINALITY);
@@ -1414,28 +1113,25 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 	// Force to always choose at least one index
 	bool firstCandidate = true;
 
-	InversionCandidate* invCandidate = NULL;
+	InversionCandidate* invCandidate = nullptr;
 
-	for (InversionCandidate** iter = inversions->begin();
-		iter != inversions->end(); ++iter)
+	for (auto inversion : inversions)
 	{
-		InversionCandidate* const inversion = *iter;
-		const IndexScratch* const indexScratch = inversion->scratch;
+		const auto indexScratch = inversion->scratch;
 
 		// If the explicit plan doesn't mention this index, fake it as used
 		// thus excluding it from the cost-based algorithm. Otherwise,
 		// given this index is suitable for navigation, also mark it as used.
 
 		if ((indexScratch &&
-			(indexScratch->idx->idx_runtime_flags & idx_plan_dont_use)) ||
+			(indexScratch->index->idx_runtime_flags & idx_plan_dont_use)) ||
 			(!customPlan && inversion == navigationCandidate))
 		{
 			inversion->used = true;
 		}
 	}
 
-	// The matches returned in this inversion are always sorted.
-	SortedArray<BoolExprNode*> matches;
+	MatchedBooleanList matches;
 
 	if (navigationCandidate)
 	{
@@ -1450,15 +1146,14 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 			firstCandidate = false;
 	}
 
-	for (FB_SIZE_T i = 0; i < inversions->getCount(); i++)
+	for (FB_SIZE_T i = 0; i < inversions.getCount(); i++)
 	{
 		// Initialize vars before walking through candidates
-		InversionCandidate* bestCandidate = NULL;
+		InversionCandidate* bestCandidate = nullptr;
 		bool restartLoop = false;
 
-		for (FB_SIZE_T currentPosition = 0; currentPosition < inversions->getCount(); ++currentPosition)
+		for (const auto currentInv : inversions)
 		{
-			InversionCandidate* currentInv = (*inversions)[currentPosition];
 			if (!currentInv->used)
 			{
 				// If this is a unique full equal matched inversion we're done, so
@@ -1466,7 +1161,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 				if (currentInv->unique && currentInv->dependencies && !currentInv->condition)
 				{
 					if (!invCandidate)
-						invCandidate = FB_NEW_POOL(pool) InversionCandidate(pool);
+						invCandidate = FB_NEW_POOL(getPool()) InversionCandidate(getPool());
 
 					if (!currentInv->inversion && currentInv->scratch)
 						invCandidate->inversion = makeIndexScanNode(currentInv->scratch);
@@ -1483,10 +1178,10 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					invCandidate->dependencies = currentInv->dependencies;
 					matches.clear();
 
-					for (FB_SIZE_T j = 0; j < currentInv->matches.getCount(); j++)
+					for (const auto currentMatch : currentInv->matches)
 					{
-						if (!matches.exist(currentInv->matches[j]))
-							matches.add(currentInv->matches[j]);
+						if (!matches.exist(currentMatch))
+							matches.add(currentMatch);
 					}
 
 					if (currentInv->boolean)
@@ -1504,14 +1199,14 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 
 				// Look if a match is already used by previous matches.
 				bool anyMatchAlreadyUsed = false, matchUsedByNavigation = false;
-				for (FB_SIZE_T k = 0; k < currentInv->matches.getCount(); k++)
+				for (const auto currentMatch : currentInv->matches)
 				{
-					if (matches.exist(currentInv->matches[k]))
+					if (matches.exist(currentMatch))
 					{
 						anyMatchAlreadyUsed = true;
 
 						if (navigationCandidate &&
-							navigationCandidate->matches.exist(currentInv->matches[k]))
+							navigationCandidate->matches.exist(currentMatch))
 						{
 							matchUsedByNavigation = true;
 						}
@@ -1529,10 +1224,10 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 
 					// If a match on this index was already used by another
 					// index, add also the other matches from this index.
-					for (FB_SIZE_T j = 0; j < currentInv->matches.getCount(); j++)
+					for (const auto currentMatch : currentInv->matches)
 					{
-						if (!matches.exist(currentInv->matches[j]))
-							matches.add(currentInv->matches[j]);
+						if (!matches.exist(currentMatch))
+							matches.add(currentMatch);
 					}
 
 					// Restart loop, because other indexes could also be excluded now.
@@ -1633,7 +1328,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 
 				if (!invCandidate)
 				{
-					invCandidate = FB_NEW_POOL(pool) InversionCandidate(pool);
+					invCandidate = FB_NEW_POOL(getPool()) InversionCandidate(getPool());
 					if (!bestCandidate->inversion && bestCandidate->scratch) {
 						invCandidate->inversion = makeIndexScanNode(bestCandidate->scratch);
 					}
@@ -1684,10 +1379,10 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 						MAX(bestCandidate->matchedSegments, invCandidate->matchedSegments);
 					invCandidate->dependencies += bestCandidate->dependencies;
 
-					for (FB_SIZE_T j = 0; j < bestCandidate->matches.getCount(); j++)
+					for (const auto bestMatch : bestCandidate->matches)
 					{
-						if (!matches.exist(bestCandidate->matches[j]))
-	                        matches.add(bestCandidate->matches[j]);
+						if (!matches.exist(bestMatch))
+	                        matches.add(bestMatch);
 					}
 
 					if (bestCandidate->boolean)
@@ -1721,7 +1416,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 	if (navigationCandidate)
 	{
 		if (!invCandidate)
-			invCandidate = FB_NEW_POOL(pool) InversionCandidate(pool);
+			invCandidate = FB_NEW_POOL(getPool()) InversionCandidate(getPool());
 
 		invCandidate->unique = navigationCandidate->unique;
 		invCandidate->selectivity *= navigationCandidate->selectivity;
@@ -1736,28 +1431,20 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 	return invCandidate;
 }
 
-bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* boolean,
-	USHORT scope) const
+bool Retrieval::matchBoolean(IndexScratch* indexScratch,
+							 BoolExprNode* boolean,
+							 unsigned scope) const
 {
-/**************************************
- *
- *	m a t c h B o o l e a n
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
 	if (boolean->nodFlags & ExprNode::FLAG_DEOPTIMIZE)
 		return false;
 
-	ComparativeBoolNode* cmpNode = nodeAs<ComparativeBoolNode>(boolean);
-	MissingBoolNode* missingNode = nodeAs<MissingBoolNode>(boolean);
-	NotBoolNode* notNode = nodeAs<NotBoolNode>(boolean);
-	RseBoolNode* rseNode = nodeAs<RseBoolNode>(boolean);
+	const auto cmpNode = nodeAs<ComparativeBoolNode>(boolean);
+	const auto missingNode = nodeAs<MissingBoolNode>(boolean);
+	const auto notNode = nodeAs<NotBoolNode>(boolean);
+	const auto rseNode = nodeAs<RseBoolNode>(boolean);
 	bool forward = true;
-	ValueExprNode* value = NULL;
-	ValueExprNode* match = NULL;
+	ValueExprNode* value = nullptr;
+	ValueExprNode* match = nullptr;
 
 	if (cmpNode)
 	{
@@ -1775,19 +1462,21 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 	}
 
 	ValueExprNode* value2 = (cmpNode && cmpNode->blrOp == blr_between) ?
-		cmpNode->arg3 : NULL;
+		cmpNode->arg3 : nullptr;
 
-	if (indexScratch->idx->idx_flags & idx_expressn)
+	const auto idx = indexScratch->index;
+
+	if (idx->idx_flags & idx_expressn)
 	{
 		// see if one side or the other is matchable to the index expression
 
-	    fb_assert(indexScratch->idx->idx_expression != NULL);
+	    fb_assert(idx->idx_expression);
 
-		if (!checkExpressionIndex(csb, indexScratch->idx, match, stream) ||
+		if (!checkExpressionIndex(csb, idx, match, stream) ||
 			(value && !value->computable(csb, stream, false)))
 		{
 			if ((!cmpNode || cmpNode->blrOp != blr_starting) && value &&
-				checkExpressionIndex(csb, indexScratch->idx, value, stream) &&
+				checkExpressionIndex(csb, idx, value, stream) &&
 				match->computable(csb, stream, false))
 			{
 				ValueExprNode* temp = match;
@@ -1851,27 +1540,27 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 	// match the field to an index, if possible, and save the value to be matched
 	// as either the lower or upper bound for retrieval, or both
 
-	FieldNode* const fieldNode = nodeAs<FieldNode>(match);
+	const auto fieldNode = nodeAs<FieldNode>(match);
 
-	if (!(indexScratch->idx->idx_flags & idx_expressn))
+	if (!(idx->idx_flags & idx_expressn))
 		fb_assert(fieldNode);
 
-	const bool isDesc = (indexScratch->idx->idx_flags & idx_descending);
+	const bool isDesc = (idx->idx_flags & idx_descending);
 
 	// Needed for int64 matches, see injectCast() function
-	CastNode *cast = NULL, *cast2 = NULL;
+	CastNode *cast = nullptr, *cast2 = nullptr;
 
-	fb_assert(indexScratch->segments.getCount() == indexScratch->idx->idx_count);
+	fb_assert(indexScratch->segments.getCount() == idx->idx_count);
 
-	for (int i = 0; i < indexScratch->idx->idx_count; i++)
+	for (unsigned i = 0; i < idx->idx_count; i++)
 	{
-		if (!(indexScratch->idx->idx_flags & idx_expressn) &&
-			fieldNode->fieldId != indexScratch->idx->idx_rpt[i].idx_field)
+		if (!(idx->idx_flags & idx_expressn) &&
+			fieldNode->fieldId != idx->idx_rpt[i].idx_field)
 		{
 			continue;
 		}
 
-		IndexScratchSegment* const segment = indexScratch->segments[i];
+		const auto segment = &indexScratch->segments[i];
 
 		if (cmpNode)
 		{
@@ -2021,7 +1710,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 			if (!((segment->scanType == segmentScanEqual) ||
 				(segment->scanType == segmentScanEquivalent)))
 			{
-				segment->lowerValue = segment->upperValue = NULL;
+				segment->lowerValue = segment->upperValue = nullptr;
 				segment->scanType = segmentScanMissing;
 				segment->excludeLower = false;
 				segment->excludeUpper = false;
@@ -2049,24 +1738,18 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 	return false;
 }
 
-InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
+//
+// Check whether a boolean is a DB_KEY based comparison
+//
+
+InversionCandidate* Retrieval::matchDbKey(BoolExprNode* boolean) const
 {
-/**************************************
- *
- *	m a t c h D b K e y
- *
- **************************************
- *
- * Functional description
- *  Check whether a boolean is a DB_KEY based comparison.
- *
- **************************************/
 	// If this isn't an equality, it isn't even interesting
 
-	ComparativeBoolNode* cmpNode = nodeAs<ComparativeBoolNode>(boolean);
+	const auto cmpNode = nodeAs<ComparativeBoolNode>(boolean);
 
 	if (!cmpNode)
-		return NULL;
+		return nullptr;
 
 	switch (cmpNode->blrOp)
 	{
@@ -2080,7 +1763,7 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 			break;
 
 		default:
-			return NULL;
+			return nullptr;
 	}
 
 	// Find the side of the equality that is potentially a dbkey.
@@ -2105,14 +1788,14 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 	}
 
 	if (!dbkey)
-		return NULL;
+		return nullptr;
 
 	// Make sure we have the correct stream
 
 	const auto keyNode = nodeAs<RecordKeyNode>(dbkey);
 
 	if (!keyNode || keyNode->blrOp != blr_dbkey || keyNode->recStream != stream)
-		return NULL;
+		return nullptr;
 
 	// If this is a dbkey for the appropriate stream, it's invertable
 
@@ -2122,8 +1805,8 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 	bool unique = false;
 	double selectivity = 0;
 
-	ValueExprNode* lower = NULL;
-	ValueExprNode* upper = NULL;
+	ValueExprNode* lower = nullptr;
+	ValueExprNode* upper = nullptr;
 
 	switch (cmpNode->blrOp)
 	{
@@ -2172,22 +1855,22 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 		break;
 
 	default:
-		return NULL;
+		return nullptr;
 	}
 
 	if (lower && !lower->computable(csb, stream, false))
-		return NULL;
+		return nullptr;
 
 	if (upper && !upper->computable(csb, stream, false))
-		return NULL;
+		return nullptr;
 
-	InversionCandidate* const invCandidate = FB_NEW_POOL(pool) InversionCandidate(pool);
+	const auto invCandidate = FB_NEW_POOL(getPool()) InversionCandidate(getPool());
 	invCandidate->unique = unique;
 	invCandidate->selectivity = selectivity;
 	invCandidate->cost = 0;
 	invCandidate->matches.add(boolean);
-	boolean->findDependentFromStreams(this, &invCandidate->dependentFromStreams);
-	invCandidate->dependencies = (int) invCandidate->dependentFromStreams.getCount();
+	boolean->findDependentFromStreams(csb, stream, &invCandidate->dependentFromStreams);
+	invCandidate->dependencies = invCandidate->dependentFromStreams.getCount();
 
 	if (createIndexScanNodes)
 	{
@@ -2195,7 +1878,7 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 		{
 			fb_assert(lower == upper);
 
-			InversionNode* const inversion = FB_NEW_POOL(pool) InversionNode(lower, n);
+			const auto inversion = FB_NEW_POOL(getPool()) InversionNode(lower, n);
 			inversion->impure = csb->allocImpure<impure_inversion>();
 			invCandidate->inversion = inversion;
 		}
@@ -2204,7 +1887,7 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 			fb_assert(n == 0);
 			fb_assert(lower || upper);
 
-			DbKeyRangeNode* const dbkeyRange = FB_NEW_POOL(pool) DbKeyRangeNode(lower, upper);
+			const auto dbkeyRange = FB_NEW_POOL(getPool()) DbKeyRangeNode(lower, upper);
 			invCandidate->dbkeyRanges.add(dbkeyRange);
 		}
 	}
@@ -2212,22 +1895,16 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 	return invCandidate;
 }
 
-InversionCandidate* OptimizerRetrieval::matchOnIndexes(
-	IndexScratchList* inputIndexScratches, BoolExprNode* boolean, USHORT scope) const
+//
+// Try to match boolean on every index.
+// If the boolean is an "OR" node then a inversion candidate could be returned.
+//
+
+InversionCandidate* Retrieval::matchOnIndexes(IndexScratchList& inputIndexScratches,
+											  BoolExprNode* boolean,
+											  unsigned scope) const
 {
-/**************************************
- *
- *	m a t c h O n I n d e x e s
- *
- **************************************
- *
- * Functional description
- *  Try to match boolean on every index.
- *  If the boolean is an "OR" node then a
- *  inversion candidate could be returned.
- *
- **************************************/
-	BinaryBoolNode* binaryNode = nodeAs<BinaryBoolNode>(boolean);
+	const auto binaryNode = nodeAs<BinaryBoolNode>(boolean);
 
 	// Handle the "OR" case up front
 	if (binaryNode && binaryNode->blrOp == blr_or)
@@ -2235,54 +1912,34 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 		InversionCandidateList inversions;
 
 		// Make list for index matches
-		IndexScratchList indexOrScratches;
 
 		// Copy information from caller
-
-		FB_SIZE_T i = 0;
-
-		for (; i < inputIndexScratches->getCount(); i++)
-		{
-			IndexScratch& scratch = (*inputIndexScratches)[i];
-			indexOrScratches.add(scratch);
-		}
+		IndexScratchList indexOrScratches(inputIndexScratches);
 
 		// We use a scope variable to see on how
 		// deep we are in a nested or conjunction.
 		scope++;
 
-		InversionCandidate* invCandidate1 =
-			matchOnIndexes(&indexOrScratches, binaryNode->arg1, scope);
+		auto invCandidate1 = matchOnIndexes(indexOrScratches, binaryNode->arg1, scope);
 
 		if (invCandidate1)
 			inversions.add(invCandidate1);
 
-		BinaryBoolNode* childBoolNode = nodeAs<BinaryBoolNode>(binaryNode->arg1);
+		auto childBoolNode = nodeAs<BinaryBoolNode>(binaryNode->arg1);
 
 		// Get usable inversions based on indexOrScratches and scope
 		if (!childBoolNode || childBoolNode->blrOp != blr_or)
-			getInversionCandidates(&inversions, &indexOrScratches, scope);
+			getInversionCandidates(inversions, indexOrScratches, scope);
 
-		invCandidate1 = makeInversion(&inversions);
-
-		// Clear list to remove previously matched conjunctions
-		indexOrScratches.clear();
+		invCandidate1 = makeInversion(inversions);
 
 		// Copy information from caller
-
-		i = 0;
-
-		for (; i < inputIndexScratches->getCount(); i++)
-		{
-			IndexScratch& scratch = (*inputIndexScratches)[i];
-			indexOrScratches.add(scratch);
-		}
+		indexOrScratches = inputIndexScratches;
 
 		// Clear inversion list
 		inversions.clear();
 
-		InversionCandidate* invCandidate2 = matchOnIndexes(
-			&indexOrScratches, binaryNode->arg2, scope);
+		auto invCandidate2 = matchOnIndexes(indexOrScratches, binaryNode->arg2, scope);
 
 		if (invCandidate2)
 			inversions.add(invCandidate2);
@@ -2291,15 +1948,15 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 
 		// Make inversion based on indexOrScratches and scope
 		if (!childBoolNode || childBoolNode->blrOp != blr_or)
-			getInversionCandidates(&inversions, &indexOrScratches, scope);
+			getInversionCandidates(inversions, indexOrScratches, scope);
 
-		invCandidate2 = makeInversion(&inversions);
+		invCandidate2 = makeInversion(inversions);
 
 		if (invCandidate1 && invCandidate2 &&
 			(invCandidate1->indexes || invCandidate1->unique) &&
 			(invCandidate2->indexes || invCandidate2->unique))
 		{
-			InversionCandidate* invCandidate = FB_NEW_POOL(pool) InversionCandidate(pool);
+			const auto invCandidate = FB_NEW_POOL(getPool()) InversionCandidate(getPool());
 			invCandidate->inversion = composeInversion(invCandidate1->inversion,
 				invCandidate2->inversion, InversionNode::TYPE_OR);
 			invCandidate->selectivity = invCandidate1->selectivity + invCandidate2->selectivity -
@@ -2313,8 +1970,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 
 			if (invCandidate1->condition && invCandidate2->condition)
 			{
-				BinaryBoolNode* const newNode =
-					FB_NEW_POOL(*tdbb->getDefaultPool()) BinaryBoolNode(*tdbb->getDefaultPool(), blr_or);
+				const auto newNode = FB_NEW_POOL(getPool()) BinaryBoolNode(getPool(), blr_or);
 				newNode->arg1 = invCandidate1->condition;
 				newNode->arg2 = invCandidate2->condition;
 				invCandidate->condition = newNode;
@@ -2329,18 +1985,15 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 			}
 
 			// Add matches conjunctions that exists in both left and right inversion
-			if ((invCandidate1->matches.getCount()) && (invCandidate2->matches.getCount()))
+			if (invCandidate1->matches.hasData() && invCandidate2->matches.hasData())
 			{
 				SortedArray<BoolExprNode*> matches;
 
-				for (FB_SIZE_T j = 0; j < invCandidate1->matches.getCount(); j++)
-					matches.add(invCandidate1->matches[j]);
+				for (const auto match : invCandidate1->matches)
+					matches.add(match);
 
-				for (FB_SIZE_T j = 0; j < invCandidate2->matches.getCount(); j++)
-				{
-					if (matches.exist(invCandidate2->matches[j]))
-						invCandidate->matches.add(invCandidate2->matches[j]);
-				}
+				for (const auto match : invCandidate2->matches)
+					matches.add(match);
 			}
 
 			return invCandidate;
@@ -2354,9 +2007,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 			{
 				if (invCandidate1->condition)
 				{
-					BinaryBoolNode* const newNode =
-						FB_NEW_POOL(*tdbb->getDefaultPool())
-							BinaryBoolNode(*tdbb->getDefaultPool(), blr_or);
+					const auto newNode = FB_NEW_POOL(getPool()) BinaryBoolNode(getPool(), blr_or);
 					newNode->arg1 = invCandidate1->condition;
 					newNode->arg2 = condition;
 					condition = newNode;
@@ -2375,9 +2026,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 			{
 				if (invCandidate2->condition)
 				{
-					BinaryBoolNode* const newNode =
-						FB_NEW_POOL(*tdbb->getDefaultPool())
-							BinaryBoolNode(*tdbb->getDefaultPool(), blr_or);
+					const auto newNode = FB_NEW_POOL(getPool()) BinaryBoolNode(getPool(), blr_or);
 					newNode->arg1 = invCandidate2->condition;
 					newNode->arg2 = condition;
 					condition = newNode;
@@ -2388,7 +2037,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 			}
 		}
 
-		return NULL;
+		return nullptr;
 	}
 
 	if (binaryNode && binaryNode->blrOp == blr_and)
@@ -2409,20 +2058,18 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 		if (invCandidate)
 			inversions.add(invCandidate);
 
-		return makeInversion(&inversions);
+		return makeInversion(inversions);
 	}
 
 	// Check for DB_KEY comparison
 	InversionCandidate* const invCandidate = matchDbKey(boolean);
 
 	// Walk through indexes
-	for (FB_SIZE_T i = 0; i < inputIndexScratches->getCount(); i++)
+	for (auto& indexScratch : inputIndexScratches)
 	{
-		IndexScratch& indexScratch = (*inputIndexScratches)[i];
-
 		// Try to match the boolean against a index.
-		if (!(indexScratch.idx->idx_runtime_flags & idx_plan_dont_use) ||
-			(indexScratch.idx->idx_runtime_flags & idx_plan_navigate))
+		if (!(indexScratch.index->idx_runtime_flags & idx_plan_dont_use) ||
+			(indexScratch.index->idx_runtime_flags & idx_plan_navigate))
 		{
 			matchBoolean(&indexScratch, boolean, scope);
 		}
@@ -2432,102 +2079,14 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 }
 
 
-#ifdef OPT_DEBUG_RETRIEVAL
-void OptimizerRetrieval::printCandidate(const InversionCandidate* candidate) const
+//
+// Check if the boolean is valid for using it against the given index segment
+//
+
+bool Retrieval::validateStarts(IndexScratch* indexScratch,
+							   ComparativeBoolNode* cmpNode,
+							   unsigned segment) const
 {
-/**************************************
- *
- *	p r i n t C a n d i d a t e
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	FILE *opt_debug_file = os_utils::fopen(OPTIMIZER_DEBUG_FILE, "a");
-	fprintf(opt_debug_file, "     cost(%1.2f), selectivity(%1.10f), indexes(%d), matched(%d, %d)",
-		candidate->cost, candidate->selectivity, candidate->indexes, candidate->matchedSegments,
-		candidate->nonFullMatchedSegments);
-	if (candidate->unique)
-		fprintf(opt_debug_file, ", unique");
-	int depFromCount = candidate->dependentFromStreams.getCount();
-	if (depFromCount >= 1)
-	{
-		fprintf(opt_debug_file, ", dependent from ");
-		for (int i = 0; i < depFromCount; i++)
-		{
-			if (i == 0)
-				fprintf(opt_debug_file, "%d", candidate->dependentFromStreams[i]);
-			else
-				fprintf(opt_debug_file, ", %d", candidate->dependentFromStreams[i]);
-		}
-	}
-	fprintf(opt_debug_file, "\n");
-	fclose(opt_debug_file);
-}
-
-void OptimizerRetrieval::printCandidates(const InversionCandidateList* inversions) const
-{
-/**************************************
- *
- *	p r i n t C a n d i d a t e s
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	FILE *opt_debug_file = os_utils::fopen(OPTIMIZER_DEBUG_FILE, "a");
-	fprintf(opt_debug_file, "    retrieval candidates:\n");
-	fclose(opt_debug_file);
-	const InversionCandidate* const* inversion = inversions->begin();
-	for (int i = 0; i < inversions->getCount(); i++)
-	{
-		const InversionCandidate* candidate = inversion[i];
-		printCandidate(candidate);
-	}
-}
-
-void OptimizerRetrieval::printFinalCandidate(const InversionCandidate* candidate) const
-{
-/**************************************
- *
- *	p r i n t F i n a l C a n d i d a t e
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	if (candidate)
-	{
-		FILE *opt_debug_file = os_utils::fopen(OPTIMIZER_DEBUG_FILE, "a");
-		fprintf(opt_debug_file, "    final candidate: ");
-		fclose(opt_debug_file);
-		printCandidate(candidate);
-	}
-}
-#endif
-
-
-bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeBoolNode* cmpNode,
-	USHORT segment) const
-{
-/**************************************
- *
- *	v a l i d a t e S t a r t s
- *
- **************************************
- *
- * Functional description
- *  Check if the boolean is valid for
- *  using it against the given index segment.
- *
- **************************************/
-
 	fb_assert(cmpNode && cmpNode->blrOp == blr_starting);
 	if (!cmpNode || cmpNode->blrOp != blr_starting)
 		return false;
@@ -2535,19 +2094,21 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeB
 	ValueExprNode* field = cmpNode->arg1;
 	ValueExprNode* value = cmpNode->arg2;
 
-	if (indexScratch->idx->idx_flags & idx_expressn)
+	const auto idx = indexScratch->index;
+
+	if (idx->idx_flags & idx_expressn)
 	{
 		// AB: What if the expression contains a number/float etc.. and
 		// we use starting with against it? Is that allowed?
-		fb_assert(indexScratch->idx->idx_expression != NULL);
+		fb_assert(idx->idx_expression);
 
-		if (!(checkExpressionIndex(csb, indexScratch->idx, field, stream) ||
+		if (!(checkExpressionIndex(csb, idx, field, stream) ||
 			(value && !value->computable(csb, stream, false))))
 		{
 			// AB: Can we swap de left and right sides by a starting with?
 			// X STARTING WITH 'a' that is never the same as 'a' STARTING WITH X
 			if (value &&
-				checkExpressionIndex(csb, indexScratch->idx, value, stream) &&
+				checkExpressionIndex(csb, idx, value, stream) &&
 				field->computable(csb, stream, false))
 			{
 				field = value;
@@ -2559,7 +2120,7 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeB
 	}
 	else
 	{
-		FieldNode* fieldNode = nodeAs<FieldNode>(field);
+		const auto fieldNode = nodeAs<FieldNode>(field);
 
 		if (!fieldNode)
 		{
@@ -2570,14 +2131,14 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeB
 			return false;
 			/*
 			if (!nodeIs<FieldNode>(value))
-				return NULL;
+				return nullptr;
 			field = value;
 			value = cmpNode->arg1;
 			*/
 		}
 
 		// Every string starts with an empty string so don't bother using an index in that case.
-		LiteralNode* literal = nodeAs<LiteralNode>(value);
+		const auto literal = nodeAs<LiteralNode>(value);
 
 		if (literal)
 		{
@@ -2592,11 +2153,11 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeB
 		// AB: Check if the index-segment is usable for using starts.
 		// Thus it should be of type string, etc...
 		if (fieldNode->fieldStream != stream ||
-			fieldNode->fieldId != indexScratch->idx->idx_rpt[segment].idx_field ||
-			!(indexScratch->idx->idx_rpt[segment].idx_itype == idx_string ||
-				indexScratch->idx->idx_rpt[segment].idx_itype == idx_byte_array ||
-				indexScratch->idx->idx_rpt[segment].idx_itype == idx_metadata ||
-				indexScratch->idx->idx_rpt[segment].idx_itype >= idx_first_intl_string) ||
+			fieldNode->fieldId != idx->idx_rpt[segment].idx_field ||
+			!(idx->idx_rpt[segment].idx_itype == idx_string ||
+				idx->idx_rpt[segment].idx_itype == idx_byte_array ||
+				idx->idx_rpt[segment].idx_itype == idx_metadata ||
+				idx->idx_rpt[segment].idx_itype >= idx_first_intl_string) ||
 			!value->computable(csb, stream, false))
 		{
 			return false;
@@ -2607,640 +2168,56 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeB
 }
 
 
-OptimizerInnerJoin::OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const StreamList& streams,
-									   SortNode* sort_clause, PlanNode* plan_clause)
-	: pool(p), innerStreams(p)
+#ifdef OPT_DEBUG_RETRIEVAL
+void Retrieval::printCandidate(const InversionCandidate* candidate) const
 {
-/**************************************
- *
- *	O p t i m i z e r I n n e r J o i n
- *
- **************************************
- *
- *  Initialize
- *
- **************************************/
-	tdbb = NULL;
-	SET_TDBB(tdbb);
-	this->database = tdbb->getDatabase();
-	this->optimizer = opt;
-	this->csb = this->optimizer->opt_csb;
-	this->sort = sort_clause;
-	this->plan = plan_clause;
-	this->remainingStreams = 0;
-
-	innerStreams.grow(streams.getCount());
-	InnerJoinStreamInfo** innerStream = innerStreams.begin();
-	for (FB_SIZE_T i = 0; i < innerStreams.getCount(); i++)
+	optimizer->printf("     cost (%1.2f), selectivity (%1.10f), indexes (%d), matched (%d, %d)",
+		candidate->cost, candidate->selectivity, candidate->indexes, candidate->matchedSegments,
+		candidate->nonFullMatchedSegments);
+	if (candidate->unique)
+		optimizer->printf(", unique");
+	if (candidate->dependentFromStreams.hasData())
 	{
-		innerStream[i] = FB_NEW_POOL(p) InnerJoinStreamInfo(p);
-		innerStream[i]->stream = streams[i];
-	}
-
-	calculateStreamInfo();
-}
-
-OptimizerInnerJoin::~OptimizerInnerJoin()
-{
-/**************************************
- *
- *	~O p t i m i z e r I n n e r J o i n
- *
- **************************************
- *
- *  Finish with giving back memory.
- *
- **************************************/
-
-	for (FB_SIZE_T i = 0; i < innerStreams.getCount(); i++)
-	{
-		for (FB_SIZE_T j = 0; j < innerStreams[i]->indexedRelationships.getCount(); j++)
-			delete innerStreams[i]->indexedRelationships[j];
-
-		delete innerStreams[i];
-	}
-}
-
-void OptimizerInnerJoin::calculateStreamInfo()
-{
-/**************************************
- *
- *	c a l c u l a t e S t r e a m I n f o
- *
- **************************************
- *
- *  Calculate the needed information for
- *  all streams.
- *
- **************************************/
-	StreamList streams;
-
-	// First get the base cost without any relation to any other inner join stream
-	for (auto innerStream : innerStreams)
-	{
-		streams.add(innerStream->stream);
-
-		const auto csb_tail = &csb->csb_rpt[innerStream->stream];
-		csb_tail->activate();
-
-		OptimizerRetrieval optimizerRetrieval(pool, optimizer, innerStream->stream,
-											  false, false, sort);
-		AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getCost());
-
-		innerStream->baseCost = candidate->cost;
-		innerStream->baseSelectivity = candidate->selectivity;
-		innerStream->baseIndexes = candidate->indexes;
-		innerStream->baseUnique = candidate->unique;
-		innerStream->baseNavigated = candidate->navigated;
-
-		csb_tail->deactivate();
-	}
-
-	StreamStateHolder stateHolder(csb, streams);
-	stateHolder.activate();
-
-	// Collect stream inter-dependencies
-	for (const auto innerStream : innerStreams)
-		getIndexedRelationships(innerStream);
-
-	// Unless PLAN is enforced, sort the streams based on independecy and cost
-	if (!plan && (innerStreams.getCount() > 1))
-	{
-		StreamInfoList tempStreams(pool);
-
-		for (const auto innerStream : innerStreams)
+		optimizer->printf(", dependent from streams: ");
+		const auto end = candidate->dependentFromStreams.end();
+		for (auto iter = candidate->dependentFromStreams.begin(); iter != end; iter++)
 		{
-			FB_SIZE_T index = 0;
-			for (; index < tempStreams.getCount(); index++)
-			{
-				// First those streams which can't be used by other streams
-				// or can't depend on a stream
-				if (innerStream->isIndependent() && !tempStreams[index]->isIndependent())
-					break;
-
-				// Next those with the lowest previous expected streams
-				const int compare = innerStream->previousExpectedStreams -
-					tempStreams[index]->previousExpectedStreams;
-
-				if (compare < 0)
-					break;
-
-				if (compare == 0)
-				{
-					// Next those with the cheapest base cost
-					if (innerStream->baseCost < tempStreams[index]->baseCost)
-						break;
-				}
-			}
-			tempStreams.insert(index, innerStream);
-		}
-
-		// Finally update the innerStreams with the sorted streams
-		innerStreams.clear();
-		innerStreams.join(tempStreams);
-	}
-}
-
-bool OptimizerInnerJoin::cheaperRelationship(IndexRelationship* checkRelationship,
-		IndexRelationship* withRelationship) const
-{
-/**************************************
- *
- *	c h e a p e r R e l a t i o n s h i p
- *
- **************************************
- *
- *  Return true if checking relationship
- *	is cheaper as withRelationship.
- *
- **************************************/
-	if (checkRelationship->cost == 0)
-		return true;
-
-	if (withRelationship->cost == 0)
-		return false;
-
-	const double compareValue = checkRelationship->cost / withRelationship->cost;
-	if (compareValue >= 0.98 && compareValue <= 1.02)
-	{
-		// cost is nearly the same, now check uniqueness and cardinality
-
-		if (checkRelationship->unique == withRelationship->unique)
-		{
-			if (checkRelationship->cardinality < withRelationship->cardinality)
-				return true;
-		}
-		else if (checkRelationship->unique)
-			return true;
-		else if (withRelationship->unique)
-			return false;
-	}
-	else if (checkRelationship->cost < withRelationship->cost)
-		return true;
-
-	return false;
-}
-
-void OptimizerInnerJoin::estimateCost(StreamType stream, double* cost,
-	double* resulting_cardinality, bool start) const
-{
-/**************************************
- *
- *	e s t i m a t e C o s t
- *
- **************************************
- *
- *  Estimate the cost for the stream.
- *
- **************************************/
-	// Create the optimizer retrieval generation class and calculate
-	// which indexes will be used and the total estimated selectivity will be returned
-	OptimizerRetrieval optimizerRetrieval(pool, optimizer, stream, false, false,
-										  (start ? sort : NULL));
-	AutoPtr<const InversionCandidate> candidate(optimizerRetrieval.getCost());
-
-	*cost = candidate->cost;
-
-	// Calculate cardinality
-	const CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[stream];
-	const double cardinality = csb_tail->csb_cardinality * candidate->selectivity;
-
-	*resulting_cardinality = MAX(cardinality, MINIMUM_CARDINALITY);
-}
-
-StreamType OptimizerInnerJoin::findJoinOrder()
-{
-/**************************************
- *
- *	f i n d J o i n O r d e r
- *
- **************************************
- *
- *  Find the best order out of the streams.
- *  First return a stream if it can't use
- *  an index based on a previous stream and
- *  it can't be used by another stream.
- *  Next loop through the remaining streams
- *  and find the best order.
- *
- **************************************/
-
-	optimizer->opt_best_count = 0;
-
-#ifdef OPT_DEBUG
-	// Debug
-	printStartOrder();
-#endif
-
-	int filters = 0, navigations = 0;
-
-	FB_SIZE_T i = 0;
-	remainingStreams = 0;
-
-	for (i = 0; i < innerStreams.getCount(); i++)
-	{
-		if (!innerStreams[i]->used)
-		{
-			remainingStreams++;
-
-			const int currentFilter = innerStreams[i]->isFiltered() ? 1 : 0;
-
-			if (navigations && currentFilter)
-				navigations = 0;
-
-			filters += currentFilter;
-
-			if (innerStreams[i]->baseNavigated && currentFilter == filters)
-				navigations++;
-
-			if (innerStreams[i]->isIndependent())
-			{
-				if (!optimizer->opt_best_count || innerStreams[i]->baseCost < optimizer->opt_best_cost)
-				{
-					optimizer->opt_streams[0].opt_best_stream = innerStreams[i]->stream;
-					optimizer->opt_best_count = 1;
-					optimizer->opt_best_cost = innerStreams[i]->baseCost;
-				}
-			}
+			optimizer->printf("%u", *iter);
+			if (iter != end - 1)
+				optimizer->printf(", ");
 		}
 	}
-
-	if (optimizer->opt_best_count == 0)
-	{
-		IndexedRelationships indexedRelationships(pool);
-
-		for (i = 0; i < innerStreams.getCount(); i++)
-		{
-			if (!innerStreams[i]->used)
-			{
-				// If optimization for first rows has been requested and index navigations are
-				// possible, then consider only join orders starting with a navigational stream.
-				// Except cases when other streams have local predicates applied.
-
-				const int currentFilter = innerStreams[i]->isFiltered() ? 1 : 0;
-
-				if (!optimizer->favorFirstRows || !navigations ||
-					(innerStreams[i]->baseNavigated && currentFilter == filters))
-				{
-					indexedRelationships.clear();
-					findBestOrder(0, innerStreams[i], &indexedRelationships, 0.0, 1.0);
-
-					if (plan)
-					{
-						// If a explicit PLAN was specified we should be ready;
-						break;
-					}
-				}
-#ifdef OPT_DEBUG
-				// Debug
-				printProcessList(&indexedRelationships, innerStreams[i]->stream);
-#endif
-			}
-		}
-	}
-
-	// Mark streams as used
-	for (StreamType stream = 0; stream < optimizer->opt_best_count; stream++)
-	{
-		InnerJoinStreamInfo* streamInfo = getStreamInfo(optimizer->opt_streams[stream].opt_best_stream);
-		streamInfo->used = true;
-	}
-
-#ifdef OPT_DEBUG
-	// Debug
-	printBestOrder();
-#endif
-
-	return optimizer->opt_best_count;
+	optimizer->printf("\n");
 }
 
-void OptimizerInnerJoin::findBestOrder(StreamType position, InnerJoinStreamInfo* stream,
-	IndexedRelationships* processList, double cost, double cardinality)
+void Retrieval::printCandidates(const InversionCandidateList& inversions) const
 {
-/**************************************
- *
- *	f i n d B e s t O r d e r
- *
- **************************************
- *  Make different combinations to find
- *  out the join order.
- *  For every position we start with the
- *  stream that has the best selectivity
- *  for that position. If we've have
- *  used up all our streams after that
- *  we assume we're done.
- *
- **************************************/
+	if (inversions.getCount() < 2)
+		return;
 
-	fb_assert(processList);
+	const auto tail = &csb->csb_rpt[stream];
 
-	const bool start = (position == 0);
+	string relName(tail->csb_relation->rel_name.c_str());
+	if (tail->csb_alias)
+	relName += " as " + *tail->csb_alias;
+	optimizer->printf("    retrieval candidates for stream %u (%s):\n", stream, relName.c_str());
 
-	// do some initializations.
-	csb->csb_rpt[stream->stream].activate();
-	optimizer->opt_streams[position].opt_stream_number = stream->stream;
-	position++;
-	const OptimizerBlk::opt_stream* order_end = optimizer->opt_streams.begin() + position;
-
-	// Save the various flag bits from the optimizer block to reset its
-	// state after each test.
-	HalfStaticArray<bool, OPT_STATIC_ITEMS> streamFlags(pool);
-	streamFlags.grow(innerStreams.getCount());
-	for (FB_SIZE_T i = 0; i < streamFlags.getCount(); i++)
-		streamFlags[i] = innerStreams[i]->used;
-
-	// Compute delta and total estimate cost to fetch this stream.
-	double position_cost, position_cardinality, new_cost = 0, new_cardinality = 0;
-
-	if (!plan)
-	{
-		estimateCost(stream->stream, &position_cost, &position_cardinality, start);
-		new_cost = cost + cardinality * position_cost;
-		new_cardinality = position_cardinality * cardinality;
-	}
-
-	// If the partial order is either longer than any previous partial order,
-	// or the same length and cheap, save order as "best".
-	if (position > optimizer->opt_best_count ||
-		(position == optimizer->opt_best_count && new_cost < optimizer->opt_best_cost))
-	{
-		optimizer->opt_best_count = position;
-		optimizer->opt_best_cost = new_cost;
-		for (OptimizerBlk::opt_stream* tail = optimizer->opt_streams.begin(); tail < order_end; tail++)
-			tail->opt_best_stream = tail->opt_stream_number;
-	}
-
-#ifdef OPT_DEBUG
-	// Debug information
-	printFoundOrder(position, position_cost, position_cardinality, new_cost, new_cardinality);
-#endif
-
-	// mark this stream as "used" in the sense that it is already included
-	// in this particular proposed stream ordering.
-	stream->used = true;
-	bool done = false;
-
-	// if we've used up all the streams there's no reason to go any further.
-	if (position == remainingStreams)
-		done = true;
-
-	// If we know a combination with all streams used and the
-	// current cost is higher as the one from the best we're done.
-	if ((optimizer->opt_best_count == remainingStreams) && (optimizer->opt_best_cost < new_cost))
-		done = true;
-
-	if (!done && !plan)
-	{
-		// Add these relations to the processing list
-		for (FB_SIZE_T j = 0; j < stream->indexedRelationships.getCount(); j++)
-		{
-			IndexRelationship* relationship = stream->indexedRelationships[j];
-			InnerJoinStreamInfo* relationStreamInfo = getStreamInfo(relationship->stream);
-			if (!relationStreamInfo->used)
-			{
-				bool found = false;
-				IndexRelationship** processRelationship = processList->begin();
-				FB_SIZE_T index;
-				for (index = 0; index < processList->getCount(); index++)
-				{
-					if (relationStreamInfo->stream == processRelationship[index]->stream)
-					{
-						// If the cost of this relationship is cheaper then remove the
-						// old relationship and add this one.
-						if (cheaperRelationship(relationship, processRelationship[index]))
-						{
-							processList->remove(index);
-							break;
-						}
-
-						found = true;
-						break;
-					}
-				}
-				if (!found)
-				{
-					// Add relationship sorted on cost (cheapest as first)
-					IndexRelationship** relationships = processList->begin();
-					for (index = 0; index < processList->getCount(); index++)
-					{
-						if (cheaperRelationship(relationship, relationships[index]))
-							break;
-					}
-					processList->insert(index, relationship);
-				}
-			}
-		}
-
-		IndexRelationship** nextRelationship = processList->begin();
-		for (FB_SIZE_T j = 0; j < processList->getCount(); j++)
-		{
-			InnerJoinStreamInfo* relationStreamInfo = getStreamInfo(nextRelationship[j]->stream);
-			if (!relationStreamInfo->used)
-			{
-				findBestOrder(position, relationStreamInfo, processList, new_cost, new_cardinality);
-				break;
-			}
-		}
-	}
-
-	if (plan)
-	{
-		// If a explicit PLAN was specific pick the next relation.
-		// The order in innerStreams is expected to be exactly the order as
-		// specified in the explicit PLAN.
-		for (FB_SIZE_T j = 0; j < innerStreams.getCount(); j++)
-		{
-			InnerJoinStreamInfo* nextStream = innerStreams[j];
-			if (!nextStream->used)
-			{
-				findBestOrder(position, nextStream, processList, new_cost, new_cardinality);
-				break;
-			}
-		}
-	}
-
-	// Clean up from any changes made for compute the cost for this stream
-	csb->csb_rpt[stream->stream].deactivate();
-	for (FB_SIZE_T i = 0; i < streamFlags.getCount(); i++)
-		innerStreams[i]->used = streamFlags[i];
+	for (const auto candidate : inversions)
+		printCandidate(candidate);
 }
 
-void OptimizerInnerJoin::getIndexedRelationships(InnerJoinStreamInfo* testStream)
+void Retrieval::printFinalCandidate(const InversionCandidate* candidate) const
 {
-/**************************************
- *
- *	g e t I n d e x e d R e l a t i o n s h i p
- *
- **************************************
- *
- *  Check if the testStream can use a index
- *  when the baseStream is active. If so
- *  then we create a indexRelationship
- *  and fill it with the needed information.
- *  The reference is added to the baseStream
- *  and the baseStream is added as previous
- *  expected stream to the testStream.
- *
- **************************************/
-	const auto csb_tail = &csb->csb_rpt[testStream->stream];
+	if (!candidate)
+		return;
 
-	OptimizerRetrieval optimizerRetrieval(pool, optimizer, testStream->stream, false, false, NULL);
-	AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getCost());
+	const auto tail = &csb->csb_rpt[stream];
 
-	for (auto baseStream : innerStreams)
-	{
-		if (baseStream->stream != testStream->stream &&
-			candidate->dependentFromStreams.exist(baseStream->stream))
-		{
-			// If we could use more conjunctions on the testing stream
-			// with the base stream active as without the base stream
-			// then the test stream has a indexed relationship with the base stream.
-			IndexRelationship* indexRelationship = FB_NEW_POOL(pool) IndexRelationship();
-			indexRelationship->stream = testStream->stream;
-			indexRelationship->unique = candidate->unique;
-			indexRelationship->cost = candidate->cost;
-			indexRelationship->cardinality = candidate->unique ?
-				csb_tail->csb_cardinality : csb_tail->csb_cardinality * candidate->selectivity;
+	string relName(tail->csb_relation->rel_name.c_str());
+	if (tail->csb_alias)
+		relName += " as " + *tail->csb_alias;
+	optimizer->printf("    final candidate for stream %u (%s):\n", stream, relName.c_str());
 
-			// indexRelationship are kept sorted on cost and unique in the indexRelations array.
-			// The unique and cheapest indexed relationships are on the first position.
-			FB_SIZE_T index = 0;
-			for (; index < baseStream->indexedRelationships.getCount(); index++)
-			{
-				if (cheaperRelationship(indexRelationship, baseStream->indexedRelationships[index]))
-					break;
-			}
-			baseStream->indexedRelationships.insert(index, indexRelationship);
-			testStream->previousExpectedStreams++;
-		}
-	}
-}
-
-InnerJoinStreamInfo* OptimizerInnerJoin::getStreamInfo(StreamType stream)
-{
-/**************************************
- *
- *	g e t S t r e a m I n f o
- *
- **************************************
- *
- *  Return stream information based on
- *  the stream number.
- *
- **************************************/
-
-	for (FB_SIZE_T i = 0; i < innerStreams.getCount(); i++)
-	{
-		if (innerStreams[i]->stream == stream)
-			return innerStreams[i];
-	}
-
-	// We should never come here
-	fb_assert(false);
-	return NULL;
-}
-
-#ifdef OPT_DEBUG
-void OptimizerInnerJoin::printBestOrder() const
-{
-/**************************************
- *
- *	p r i n t B e s t O r d e r
- *
- **************************************
- *
- *  Dump finally selected stream order.
- *
- **************************************/
-
-	FILE *opt_debug_file = os_utils::fopen(OPTIMIZER_DEBUG_FILE, "a");
-	fprintf(opt_debug_file, " best order, streams: ");
-	for (StreamType i = 0; i < optimizer->opt_best_count; i++)
-	{
-		if (i == 0)
-			fprintf(opt_debug_file, "%d", optimizer->opt_streams[i].opt_best_stream);
-		else
-			fprintf(opt_debug_file, ", %d", optimizer->opt_streams[i].opt_best_stream);
-	}
-	fprintf(opt_debug_file, "\n");
-	fclose(opt_debug_file);
-}
-
-void OptimizerInnerJoin::printFoundOrder(StreamType position, double positionCost,
-		double positionCardinality, double cost, double cardinality) const
-{
-/**************************************
- *
- *	p r i n t F o u n d O r d e r
- *
- **************************************
- *
- *  Dump currently passed streams to a
- *  debug file.
- *
- **************************************/
-
-	FILE *opt_debug_file = os_utils::fopen(OPTIMIZER_DEBUG_FILE, "a");
-	fprintf(opt_debug_file, "  position %2.2d:", position);
-	fprintf(opt_debug_file, " pos. cardinality(%10.2f) pos. cost(%10.2f)", positionCardinality, positionCost);
-	fprintf(opt_debug_file, " cardinality(%10.2f) cost(%10.2f)", cardinality, cost);
-	fprintf(opt_debug_file, ", streams: ", position);
-	const OptimizerBlk::opt_stream* tail = optimizer->opt_streams.begin();
-	const OptimizerBlk::opt_stream* const order_end = tail + position;
-	for (; tail < order_end; tail++)
-	{
-		if (tail == optimizer->opt_streams.begin())
-			fprintf(opt_debug_file, "%d", tail->opt_stream_number);
-		else
-			fprintf(opt_debug_file, ", %d", tail->opt_stream_number);
-	}
-	fprintf(opt_debug_file, "\n");
-	fclose(opt_debug_file);
-}
-
-void OptimizerInnerJoin::printProcessList(const IndexedRelationships* processList,
-	StreamType stream) const
-{
-/**************************************
- *
- *	p r i n t P r o c e s s L i s t
- *
- **************************************
- *
- *  Dump the processlist to a debug file.
- *
- **************************************/
-
-	FILE *opt_debug_file = os_utils::fopen(OPTIMIZER_DEBUG_FILE, "a");
-	fprintf(opt_debug_file, "   basestream %d, relationships: stream(cost)", stream);
-	const IndexRelationship* const* relationships = processList->begin();
-	for (int i = 0; i < processList->getCount(); i++)
-		fprintf(opt_debug_file, ", %d (%1.2f)", relationships[i]->stream, relationships[i]->cost);
-	fprintf(opt_debug_file, "\n");
-	fclose(opt_debug_file);
-}
-
-void OptimizerInnerJoin::printStartOrder() const
-{
-/**************************************
- *
- *	p r i n t B e s t O r d e r
- *
- **************************************
- *
- *  Dump finally selected stream order.
- *
- **************************************/
-
-	FILE *opt_debug_file = os_utils::fopen(OPTIMIZER_DEBUG_FILE, "a");
-	fprintf(opt_debug_file, "Start join order: with stream(baseCost)");
-	bool firstStream = true;
-	for (int i = 0; i < innerStreams.getCount(); i++)
-	{
-		if (!innerStreams[i]->used)
-			fprintf(opt_debug_file, ", %d (%1.2f)", innerStreams[i]->stream, innerStreams[i]->baseCost);
-	}
-	fprintf(opt_debug_file, "\n");
-	fclose(opt_debug_file);
+	printCandidate(candidate);
 }
 #endif

@@ -48,7 +48,6 @@
 #include "../jrd/align.h"
 #include "../jrd/lls.h"
 #include "../jrd/exe.h"
-#include "../jrd/rse.h"
 #include "../jrd/scl.h"
 #include "../jrd/tra.h"
 #include "../jrd/lck.h"
@@ -69,12 +68,11 @@
 #include "../jrd/jrd_proto.h"
 
 #include "../jrd/lck_proto.h"
-#include "../jrd/opt_proto.h"
 #include "../jrd/par_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../common/dsc_proto.h"
-#include "../jrd/Optimizer.h"
+#include "../jrd/optimizer/Optimizer.h"
 
 #include "../jrd/DataTypeUtil.h"
 #include "../jrd/SysFunction.h"
@@ -520,32 +518,15 @@ RecordSource* CMP_post_rse(thread_db* tdbb, CompilerScratch* csb, RseNode* rse)
  **************************************/
 	SET_TDBB(tdbb);
 
-	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(rse, type_nod);
+	const auto rsb = Optimizer::compile(tdbb, csb, rse);
 
-	RecordSource* rsb = OPT_compile(tdbb, csb, rse, NULL);
-
-	if (rse->flags & RseNode::FLAG_SINGULAR)
-		rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) SingularStream(csb, rsb);
-
-	if (rse->flags & RseNode::FLAG_WRITELOCK)
-	{
-		for (StreamType i = 0; i < csb->csb_n_stream; i++)
-			csb->csb_rpt[i].csb_flags |= csb_update;
-
-		rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) LockedStream(csb, rsb);
-	}
-
-	if (rse->flags & RseNode::FLAG_SCROLLABLE)
-		rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) BufferedStream(csb, rsb);
-
-	// mark all the substreams as inactive
+	// Mark all the substreams as inactive
 
 	StreamList streams;
 	rse->computeRseStreams(streams);
 
-	for (StreamList::iterator i = streams.begin(); i != streams.end(); ++i)
-		csb->csb_rpt[*i].deactivate();
+	for (const auto stream : streams)
+		csb->csb_rpt[stream].deactivate();
 
 	return rsb;
 }
