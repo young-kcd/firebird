@@ -1143,7 +1143,7 @@ Firebird::PathName getPrefix(unsigned int prefType, const char* name)
 
 	if (s.hasData() && name[0])
 	{
-		s += '/';
+		s += PathUtils::dir_sep;
 	}
 	s += name;
 	gds__prefix(tmp, s.c_str());
