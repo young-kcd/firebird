@@ -289,7 +289,7 @@ void InnerJoin::findBestOrder(unsigned position,
 		streamFlags.add(innerStream->used);
 
 	// Compute delta and total estimate cost to fetch this stream
-	double position_cost, position_cardinality, new_cost = 0, new_cardinality = 0;
+	double position_cost = 0, position_cardinality = 0, new_cost = 0, new_cardinality = 0;
 
 	if (!plan)
 	{
