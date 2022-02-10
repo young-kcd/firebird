@@ -970,7 +970,7 @@ RecordSource* Optimizer::compile(BoolExprNodeStack* parentStack)
 
 			CMP_post_access(tdbb, csb, tail->csb_relation->rel_security_name,
 				tail->csb_view ? tail->csb_view->rel_id : 0,
-				SCL_update, SCL_object_table, tail->csb_relation->rel_name);
+				SCL_update, obj_relations, tail->csb_relation->rel_name);
 		}
 
 		rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) LockedStream(csb, rsb);
