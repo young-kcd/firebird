@@ -1311,7 +1311,7 @@ static bool			drop_files(const jrd_file*);
 static void			find_intl_charset(thread_db*, Jrd::Attachment*, const DatabaseOptions*);
 static void			init_database_lock(thread_db*);
 static void			run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
-static jrd_req*		verify_request_synchronization(Statement* statement, USHORT level);
+static Request*		verify_request_synchronization(Statement* statement, USHORT level);
 static void			purge_transactions(thread_db*, Jrd::Attachment*, const bool);
 static void			check_single_maintenance(thread_db* tdbb);
 
@@ -1357,7 +1357,7 @@ TraceFailedConnection::TraceFailedConnection(const char* filename, const Databas
 // do it here to prevent committing every record update
 // in a statement
 //
-static void check_autocommit(thread_db* tdbb, jrd_req* request)
+static void check_autocommit(thread_db* tdbb, Request* request)
 {
 	jrd_tra* const transaction = request->req_transaction;
 
@@ -3880,7 +3880,7 @@ void JRequest::receive(CheckStatusWrapper* user_status, int level, unsigned int 
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 		check_database(tdbb);
 
-		jrd_req* request = verify_request_synchronization(getHandle(), level);
+		Request* request = verify_request_synchronization(getHandle(), level);
 
 		try
 		{
@@ -4017,7 +4017,7 @@ void JRequest::getInfo(CheckStatusWrapper* user_status, int level, unsigned int 
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 		check_database(tdbb);
 
-		jrd_req* request = verify_request_synchronization(getHandle(), level);
+		Request* request = verify_request_synchronization(getHandle(), level);
 
 		try
 		{
@@ -4220,7 +4220,7 @@ void JRequest::send(CheckStatusWrapper* user_status, int level, unsigned int msg
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 		check_database(tdbb);
 
-		jrd_req* request = verify_request_synchronization(getHandle(), level);
+		Request* request = verify_request_synchronization(getHandle(), level);
 
 		try
 		{
@@ -4447,7 +4447,7 @@ void JRequest::startAndSend(CheckStatusWrapper* user_status, ITransaction* tra, 
 		validateHandle(tdbb, transaction);
 		check_database(tdbb);
 
-		jrd_req* request = getHandle()->getRequest(tdbb, level);
+		Request* request = getHandle()->getRequest(tdbb, level);
 
 		try
 		{
@@ -4505,7 +4505,7 @@ void JRequest::start(CheckStatusWrapper* user_status, ITransaction* tra, int lev
 		validateHandle(tdbb, transaction);
 		check_database(tdbb);
 
-		jrd_req* request = getHandle()->getRequest(tdbb, level);
+		Request* request = getHandle()->getRequest(tdbb, level);
 
 		try
 		{
@@ -4703,7 +4703,7 @@ void JAttachment::transactRequest(CheckStatusWrapper* user_status, ITransaction*
 			const MessageNode* inMessage = NULL;
 			const MessageNode* outMessage = NULL;
 
-			jrd_req* request = NULL;
+			Request* request = NULL;
 			MemoryPool* new_pool = att->createPool();
 
 			try
@@ -4922,7 +4922,7 @@ void JRequest::unwind(CheckStatusWrapper* user_status, int level)
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 		check_database(tdbb);
 
-		jrd_req* request = verify_request_synchronization(getHandle(), level);
+		Request* request = verify_request_synchronization(getHandle(), level);
 
 		try
 		{
@@ -8335,7 +8335,7 @@ static void run_commit_triggers(thread_db* tdbb, jrd_tra* transaction)
 //
 // @param request The incoming, parent request to be replaced.
 // @param level The level of the sub-request we need to find.
-static jrd_req* verify_request_synchronization(Statement* statement, USHORT level)
+static Request* verify_request_synchronization(Statement* statement, USHORT level)
 {
 	if (level)
 	{
@@ -8895,7 +8895,7 @@ void thread_db::setTransaction(jrd_tra* val)
 	traStat = val ? &val->tra_stats : RuntimeStatistics::getDummy();
 }
 
-void thread_db::setRequest(jrd_req* val)
+void thread_db::setRequest(Request* val)
 {
 	request = val;
 	reqStat = val ? &val->req_stats : RuntimeStatistics::getDummy();
@@ -9084,7 +9084,7 @@ void JRD_autocommit_ddl(thread_db* tdbb, jrd_tra* transaction)
 }
 
 
-void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_length, void* msg)
+void JRD_receive(thread_db* tdbb, Request* request, USHORT msg_type, ULONG msg_length, void* msg)
 {
 /**************************************
  *
@@ -9108,7 +9108,7 @@ void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_l
 }
 
 
-void JRD_send(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_length, const void* msg)
+void JRD_send(thread_db* tdbb, Request* request, USHORT msg_type, ULONG msg_length, const void* msg)
 {
 /**************************************
  *
@@ -9132,7 +9132,7 @@ void JRD_send(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_leng
 }
 
 
-void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
+void JRD_start(Jrd::thread_db* tdbb, Request* request, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -9221,7 +9221,7 @@ void JRD_rollback_retaining(thread_db* tdbb, jrd_tra* transaction)
 }
 
 
-void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
+void JRD_start_and_send(thread_db* tdbb, Request* request, jrd_tra* transaction,
 	USHORT msg_type, ULONG msg_length, const void* msg)
 {
 /**************************************
@@ -9349,7 +9349,7 @@ void JRD_start_transaction(thread_db* tdbb, jrd_tra** transaction,
 }
 
 
-void JRD_unwind_request(thread_db* tdbb, jrd_req* request)
+void JRD_unwind_request(thread_db* tdbb, Request* request)
 {
 /**************************************
  *

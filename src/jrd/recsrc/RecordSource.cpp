@@ -188,7 +188,7 @@ RecordStream::RecordStream(CompilerScratch* csb, StreamType stream, const Format
 
 bool RecordStream::refetchRecord(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	jrd_tra* const transaction = request->req_transaction;
 
 	record_param* const rpb = &request->req_rpb[m_stream];
@@ -207,7 +207,7 @@ bool RecordStream::refetchRecord(thread_db* tdbb) const
 
 bool RecordStream::lockRecord(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	jrd_tra* const transaction = request->req_transaction;
 
 	record_param* const rpb = &request->req_rpb[m_stream];
@@ -231,7 +231,7 @@ void RecordStream::findUsedStreams(StreamList& streams, bool /*expandAll*/) cons
 		streams.add(m_stream);
 }
 
-void RecordStream::invalidateRecords(jrd_req* request) const
+void RecordStream::invalidateRecords(Request* request) const
 {
 	record_param* const rpb = &request->req_rpb[m_stream];
 	rpb->rpb_number.setValid(false);
@@ -239,7 +239,7 @@ void RecordStream::invalidateRecords(jrd_req* request) const
 
 void RecordStream::nullRecords(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	record_param* const rpb = &request->req_rpb[m_stream];
 
 	rpb->rpb_number.setValid(false);

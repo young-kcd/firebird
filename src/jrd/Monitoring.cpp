@@ -1078,7 +1078,7 @@ void Monitoring::putTransaction(SnapshotData::DumpRecord& record, const jrd_tra*
 	record.reset(rel_mon_transactions);
 
 	int temp = mon_state_idle;
-	for (const jrd_req* request = transaction->tra_requests;
+	for (const Request* request = transaction->tra_requests;
 		request; request = request->req_tra_next)
 	{
 		if (request->req_transaction && (request->req_flags & req_active))
@@ -1176,7 +1176,7 @@ void Monitoring::putStatement(SnapshotData::DumpRecord& record, const Statement*
 }
 
 
-void Monitoring::putRequest(SnapshotData::DumpRecord& record, const jrd_req* request,
+void Monitoring::putRequest(SnapshotData::DumpRecord& record, const Request* request,
 							const string& plan)
 {
 	fb_assert(request);
@@ -1236,12 +1236,12 @@ void Monitoring::putRequest(SnapshotData::DumpRecord& record, const jrd_req* req
 }
 
 
-void Monitoring::putCall(SnapshotData::DumpRecord& record, const jrd_req* request)
+void Monitoring::putCall(SnapshotData::DumpRecord& record, const Request* request)
 {
 	fb_assert(request);
 
 	const auto dbb = request->req_attachment->att_database;
-	const jrd_req* initialRequest = request->req_caller;
+	const Request* initialRequest = request->req_caller;
 
 	while (initialRequest->req_caller)
 	{
@@ -1470,7 +1470,7 @@ void Monitoring::dumpAttachment(thread_db* tdbb, Attachment* attachment)
 	for (transaction = attachment->att_transactions; transaction;
 		 transaction = transaction->tra_next)
 	{
-		for (jrd_req* request = transaction->tra_requests;
+		for (Request* request = transaction->tra_requests;
 			request && (request->req_flags & req_active) && (request->req_transaction == transaction);
 			request = request->req_caller)
 		{

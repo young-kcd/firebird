@@ -161,7 +161,7 @@ const int PREPARE_LOCKERR	= 3;
 static int prepare_update(thread_db*, jrd_tra*, TraNumber commit_tid_read, record_param*,
 	record_param*, record_param*, PageStack&, bool);
 
-static void protect_system_table_insert(thread_db* tdbb, const jrd_req* req, const jrd_rel* relation,
+static void protect_system_table_insert(thread_db* tdbb, const Request* req, const jrd_rel* relation,
 	bool force_flag = false);
 static void protect_system_table_delupd(thread_db* tdbb, const jrd_rel* relation, const char* operation,
 	bool force_flag = false);
@@ -223,7 +223,7 @@ static bool assert_gc_enabled(const jrd_tra* transaction, const jrd_rel* relatio
 inline void check_gbak_cheating_insupd(thread_db* tdbb, const jrd_rel* relation, const char* op)
 {
 	const Attachment* const attachment = tdbb->getAttachment();
-	const jrd_req* const request = tdbb->getRequest();
+	const Request* const request = tdbb->getRequest();
 
 	if (relation->isSystem() && attachment->isGbak() && !(attachment->att_flags & ATT_creator) &&
 		!request->hasInternalStatement())
@@ -1451,7 +1451,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 }
 
 
-static bool check_prepare_result(int prepare_result, jrd_tra* transaction, jrd_req* request, record_param* rpb)
+static bool check_prepare_result(int prepare_result, jrd_tra* transaction, Request* request, record_param* rpb)
 {
 /**************************************
  *
@@ -1469,7 +1469,7 @@ static bool check_prepare_result(int prepare_result, jrd_tra* transaction, jrd_r
 	if (prepare_result == PREPARE_OK)
 		return true;
 
-	jrd_req* top_request = request->req_snapshot.m_owner;
+	Request* top_request = request->req_snapshot.m_owner;
 
 	const bool restart_ready = top_request &&
 		(top_request->req_flags & req_restart_ready);
@@ -1520,7 +1520,7 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	MetaName object_name, package_name;
 
 	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 	jrd_rel* relation = rpb->rpb_relation;
 
 #ifdef VIO_DEBUG
@@ -3476,7 +3476,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	jrd_rel* relation = rpb->rpb_relation;
 
 	DeferredWork* work = NULL;
@@ -4081,7 +4081,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 		case PREPARE_DELETE:
 			if ((transaction->tra_flags & TRA_read_consistency))
 			{
-				jrd_req* top_request = tdbb->getRequest()->req_snapshot.m_owner;
+				Request* top_request = tdbb->getRequest()->req_snapshot.m_owner;
 				if (top_request && !(top_request->req_flags & req_update_conflict))
 				{
 					if (!(top_request->req_flags & req_restart_ready))
@@ -5116,7 +5116,7 @@ static void invalidate_cursor_records(jrd_tra* transaction, record_param* mod_rp
  **************************************/
 	fb_assert(mod_rpb && mod_rpb->rpb_relation);
 
-	for (jrd_req* request = transaction->tra_requests; request; request = request->req_tra_next)
+	for (Request* request = transaction->tra_requests; request; request = request->req_tra_next)
 	{
 		if (request->req_flags & req_active)
 		{
@@ -5870,7 +5870,7 @@ static int prepare_update(	thread_db*		tdbb,
 
 
 static void protect_system_table_insert(thread_db* tdbb,
-										const jrd_req* request,
+										const Request* request,
 										const jrd_rel* relation,
 										bool force_flag)
 {
@@ -5918,7 +5918,7 @@ static void protect_system_table_delupd(thread_db* tdbb,
  *
  **************************************/
 	const Attachment* const attachment = tdbb->getAttachment();
-	const jrd_req* const request = tdbb->getRequest();
+	const Request* const request = tdbb->getRequest();
 
 	if (!force_flag)
 	{

@@ -91,7 +91,7 @@ public:
 	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 	// add and add2 are used in somewhat obscure way in aggregation.
 	static dsc* add(thread_db* tdbb, const dsc* desc, impure_value* value, const ValueExprNode* node,
@@ -160,7 +160,7 @@ public:
 		return NULL;
 	}
 
-	virtual dsc* execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
+	virtual dsc* execute(thread_db* /*tdbb*/, Request* /*request*/) const
 	{
 		fb_assert(false);
 		return NULL;
@@ -196,7 +196,7 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	NestConst<ValueExprNode> dateTimeArg;
@@ -230,7 +230,7 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	NestConst<BoolExprNode> boolean;
@@ -269,7 +269,7 @@ public:
 	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	MetaName dsqlAlias;
@@ -310,7 +310,7 @@ public:
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 	virtual bool possiblyUnknown() const
 	{
@@ -369,7 +369,7 @@ public:
 		return NULL;
 	}
 
-	virtual dsc* execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
+	virtual dsc* execute(thread_db* /*tdbb*/, Request* /*request*/) const
 	{
 		fb_assert(false);
 		return NULL;
@@ -409,7 +409,7 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	NestConst<ValueExprNode> arg1;
@@ -435,7 +435,7 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 };
 
 
@@ -459,7 +459,7 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	unsigned precision;
@@ -486,7 +486,7 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	unsigned precision;
@@ -512,7 +512,7 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 };
 
 
@@ -535,7 +535,7 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 };
 
 
@@ -575,7 +575,7 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	Firebird::string label;
@@ -673,7 +673,7 @@ public:
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	NestConst<ValueExprNode> arg;
@@ -704,7 +704,7 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	dsc domDesc;
@@ -737,7 +737,7 @@ public:
 	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	UCHAR blrSubOp;
@@ -802,7 +802,7 @@ public:
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 private:
 	static dsql_fld* resolveContext(DsqlCompilerScratch* dsqlScratch,
@@ -853,7 +853,7 @@ public:
 	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	GeneratorItem generator;
@@ -898,7 +898,7 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	NestConst<ValueExprNode> arg;
@@ -927,7 +927,7 @@ public:
 	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 	SLONG getSlong() const
 	{
@@ -992,7 +992,7 @@ public:
 		return NULL;
 	}
 
-	virtual dsc* execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
+	virtual dsc* execute(thread_db* /*tdbb*/, Request* /*request*/) const
 	{
 		fb_assert(false);
 		return NULL;
@@ -1041,7 +1041,7 @@ public:
 		return NULL;
 	}
 
-	virtual dsc* execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
+	virtual dsc* execute(thread_db* /*tdbb*/, Request* /*request*/) const
 	{
 		fb_assert(false);
 		return NULL;
@@ -1117,7 +1117,7 @@ public:
 		return NULL;
 	}
 
-	virtual dsc* execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
+	virtual dsc* execute(thread_db* /*tdbb*/, Request* /*request*/) const
 	{
 		fb_assert(false);
 		return NULL;
@@ -1151,7 +1151,7 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	unsigned precision;
@@ -1178,7 +1178,7 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	unsigned precision;
@@ -1209,7 +1209,7 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	NestConst<ValueExprNode> arg;
@@ -1247,7 +1247,7 @@ public:
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 private:
 	static Firebird::GlobalPtr<NullNode> INSTANCE;
@@ -1553,7 +1553,7 @@ public:
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	NestConst<ValueExprNode> aggExpr;
@@ -1595,12 +1595,12 @@ public:
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 
-	jrd_req* getParamRequest(jrd_req* request) const;
+	Request* getParamRequest(Request* request) const;
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	dsql_msg* dsqlMessage = nullptr;
@@ -1665,7 +1665,7 @@ public:
 	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 	const char* getAlias(bool rdb) const
 	{
@@ -1742,7 +1742,7 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	NestConst<ValueExprNode> field;
@@ -1801,7 +1801,7 @@ public:
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	NestConst<StmtNode> stmt;
@@ -1835,7 +1835,7 @@ public:
 	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	const UCHAR blrOp;
@@ -1869,7 +1869,7 @@ public:
 	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	UCHAR blrSubOp;
@@ -1923,7 +1923,7 @@ public:
 	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	NestConst<RecordSourceNode> dsqlRse;
@@ -1964,7 +1964,7 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 	static dsc* perform(thread_db* tdbb, impure_value* impure, const dsc* valueDsc,
 		const dsc* startDsc, const dsc* lengthDsc);
@@ -2005,7 +2005,7 @@ public:
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	NestConst<ValueExprNode> expr;
@@ -2039,7 +2039,7 @@ public:
 	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	MetaName name;
@@ -2078,7 +2078,7 @@ public:
 	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	UCHAR where;
@@ -2125,7 +2125,7 @@ public:
 	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	QualifiedName name;
@@ -2172,7 +2172,7 @@ public:
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	NestConst<BoolExprNode> condition;
@@ -2200,13 +2200,13 @@ public:
 		dsqlDesc = desc;
 	}
 
-	jrd_req* getVarRequest(jrd_req* request) const;
+	Request* getVarRequest(Request* request) const;
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 public:
 	MetaName dsqlName;

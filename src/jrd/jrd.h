@@ -106,7 +106,7 @@ const unsigned MAX_CALLBACKS	= 50;
 class thread_db;
 class Attachment;
 class jrd_tra;
-class jrd_req;
+class Request;
 class Statement;
 class jrd_file;
 class Format;
@@ -506,7 +506,7 @@ private:
 	Database*	database;
 	Attachment*	attachment;
 	jrd_tra*	transaction;
-	jrd_req*	request;
+	Request*	request;
 	RuntimeStatistics *reqStat, *traStat, *attStat, *dbbStat;
 
 public:
@@ -591,17 +591,17 @@ public:
 
 	void setTransaction(jrd_tra* val);
 
-	jrd_req* getRequest()
+	Request* getRequest()
 	{
 		return request;
 	}
 
-	const jrd_req* getRequest() const
+	const Request* getRequest() const
 	{
 		return request;
 	}
 
-	void setRequest(jrd_req* val);
+	void setRequest(Request* val);
 
 	SSHORT getCharSet() const;
 

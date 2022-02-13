@@ -103,10 +103,10 @@ Firebird::string ResultSet::getString(thread_db* tdbb, unsigned param)
 {
 	fb_assert(param > 0);
 
-	jrd_req* request = stmt->getDsqlRequest()->getRequest();
+	Request* request = stmt->getDsqlRequest()->getRequest();
 
 	// Setup tdbb info necessary for blobs.
-	AutoSetRestore2<jrd_req*, thread_db> autoRequest(
+	AutoSetRestore2<Request*, thread_db> autoRequest(
 		tdbb, &thread_db::getRequest, &thread_db::setRequest, request);
 	AutoSetRestore<jrd_tra*> autoRequestTrans(&request->req_transaction,
 		tdbb->getTransaction());
@@ -131,10 +131,10 @@ void ResultSet::moveDesc(thread_db* tdbb, unsigned param, dsc& desc)
 {
 	fb_assert(param > 0);
 
-	jrd_req* request = stmt->getDsqlRequest()->getRequest();
+	Request* request = stmt->getDsqlRequest()->getRequest();
 
 	// Setup tdbb info necessary for blobs.
-	AutoSetRestore2<jrd_req*, thread_db> autoRequest(
+	AutoSetRestore2<Request*, thread_db> autoRequest(
 		tdbb, &thread_db::getRequest, &thread_db::setRequest, request);
 	AutoSetRestore<jrd_tra*> autoRequestTrans(&request->req_transaction,
 		tdbb->getTransaction());

@@ -54,11 +54,11 @@ public:
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
-	virtual bool execute(thread_db* tdbb, jrd_req* request) const;
+	virtual bool execute(thread_db* tdbb, Request* request) const;
 
 private:
-	virtual bool executeAnd(thread_db* tdbb, jrd_req* request) const;
-	virtual bool executeOr(thread_db* tdbb, jrd_req* request) const;
+	virtual bool executeAnd(thread_db* tdbb, Request* request) const;
+	virtual bool executeOr(thread_db* tdbb, Request* request) const;
 
 public:
 	UCHAR blrOp;
@@ -106,12 +106,12 @@ public:
 	virtual BoolExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Boolean1(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Boolean2(thread_db* tdbb, CompilerScratch* csb);
-	virtual bool execute(thread_db* tdbb, jrd_req* request) const;
+	virtual bool execute(thread_db* tdbb, Request* request) const;
 
 private:
-	bool stringBoolean(thread_db* tdbb, jrd_req* request, dsc* desc1, dsc* desc2,
+	bool stringBoolean(thread_db* tdbb, Request* request, dsc* desc1, dsc* desc2,
 		bool computedInvariant) const;
-	bool sleuth(thread_db* tdbb, jrd_req* request, const dsc* desc1, const dsc* desc2) const;
+	bool sleuth(thread_db* tdbb, Request* request, const dsc* desc1, const dsc* desc2) const;
 
 	BoolExprNode* createRseNode(DsqlCompilerScratch* dsqlScratch, UCHAR rseBlrOp);
 
@@ -151,7 +151,7 @@ public:
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual BoolExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Boolean2(thread_db* tdbb, CompilerScratch* csb);
-	virtual bool execute(thread_db* tdbb, jrd_req* request) const;
+	virtual bool execute(thread_db* tdbb, Request* request) const;
 
 public:
 	bool dsqlUnknown;
@@ -183,7 +183,7 @@ public:
 
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual BoolExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
-	virtual bool execute(thread_db* tdbb, jrd_req* request) const;
+	virtual bool execute(thread_db* tdbb, Request* request) const;
 
 private:
 	BoolExprNode* process(DsqlCompilerScratch* dsqlScratch, bool invert);
@@ -235,7 +235,7 @@ public:
 	virtual BoolExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Boolean1(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Boolean2(thread_db* tdbb, CompilerScratch* csb);
-	virtual bool execute(thread_db* tdbb, jrd_req* request) const;
+	virtual bool execute(thread_db* tdbb, Request* request) const;
 
 private:
 	BoolExprNode* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb);

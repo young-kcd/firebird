@@ -27,7 +27,7 @@
 namespace Jrd {
 	class CompilerScratch;
 	class jrd_rel;
-	class jrd_req;
+	class Request;
 	class Statement;
 	class thread_db;
 	class ItemInfo;

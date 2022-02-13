@@ -51,9 +51,9 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 
-	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
-	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggInit(thread_db* tdbb, Request* request) const;
+	virtual void aggPass(thread_db* tdbb, Request* request, dsc* desc) const;
+	virtual dsc* aggExecute(thread_db* tdbb, Request* request) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
@@ -81,9 +81,9 @@ public:
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual AggNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
-	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
-	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggInit(thread_db* tdbb, Request* request) const;
+	virtual void aggPass(thread_db* tdbb, Request* request, dsc* desc) const;
+	virtual dsc* aggExecute(thread_db* tdbb, Request* request) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
@@ -114,11 +114,11 @@ public:
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual AggNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
-	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
-	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggInit(thread_db* tdbb, Request* request) const;
+	virtual void aggPass(thread_db* tdbb, Request* request, dsc* desc) const;
+	virtual dsc* aggExecute(thread_db* tdbb, Request* request) const;
 
-	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
+	virtual dsc* winPass(thread_db* tdbb, Request* request, SlidingWindow* window) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
@@ -149,9 +149,9 @@ public:
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual AggNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
-	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggInit(thread_db* tdbb, Request* request) const;
 
-	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
+	virtual dsc* winPass(thread_db* tdbb, Request* request, SlidingWindow* window) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
@@ -178,9 +178,9 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 
-	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggInit(thread_db* tdbb, Request* request) const;
 
-	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
+	virtual dsc* winPass(thread_db* tdbb, Request* request, SlidingWindow* window) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
@@ -202,9 +202,9 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 
-	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggInit(thread_db* tdbb, Request* request) const;
 
-	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
+	virtual dsc* winPass(thread_db* tdbb, Request* request, SlidingWindow* window) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
@@ -228,9 +228,9 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 
-	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggInit(thread_db* tdbb, Request* request) const;
 
-	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
+	virtual dsc* winPass(thread_db* tdbb, Request* request, SlidingWindow* window) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
@@ -269,9 +269,9 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 
-	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggInit(thread_db* tdbb, Request* request) const;
 
-	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
+	virtual dsc* winPass(thread_db* tdbb, Request* request, SlidingWindow* window) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
@@ -306,8 +306,8 @@ public:
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 
-	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
-	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
+	virtual void aggInit(thread_db* tdbb, Request* request) const;
+	virtual dsc* winPass(thread_db* tdbb, Request* request, SlidingWindow* window) const;
 
 protected:
 	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
@@ -373,9 +373,9 @@ public:
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual AggNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
-	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggInit(thread_db* tdbb, Request* request) const;
 
-	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
+	virtual dsc* winPass(thread_db* tdbb, Request* request, SlidingWindow* window) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;

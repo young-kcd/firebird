@@ -55,7 +55,7 @@ namespace Jrd {
 
 class ArrayField;
 class blb;
-class jrd_req;
+class Request;
 class jrd_tra;
 
 // Various structures in the impure area
@@ -254,7 +254,7 @@ public:
 	blb*				arr_blob;			// Blob for data access
 	jrd_tra*			arr_transaction;	// Parent transaction block
 	ArrayField*			arr_next;			// Next array in transaction
-	jrd_req*			arr_request;		// request
+	Request*			arr_request;		// request
 	SLONG				arr_effective_length;	// Length of array instance
 	USHORT				arr_desc_length;	// Length of array descriptor
 	ULONG				arr_temp_id;		// Temporary ID for open array inside the transaction

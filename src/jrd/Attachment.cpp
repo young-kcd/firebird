@@ -646,7 +646,7 @@ bool Attachment::hasActiveRequests() const
 	for (const jrd_tra* transaction = att_transactions;
 		transaction; transaction = transaction->tra_next)
 	{
-		for (const jrd_req* request = transaction->tra_requests;
+		for (const Request* request = transaction->tra_requests;
 			request; request = request->req_tra_next)
 		{
 			if (request->req_transaction && (request->req_flags & req_active))
@@ -659,7 +659,7 @@ bool Attachment::hasActiveRequests() const
 
 
 // Find an inactive incarnation of a system request. If necessary, clone it.
-jrd_req* Jrd::Attachment::findSystemRequest(thread_db* tdbb, USHORT id, USHORT which)
+Request* Jrd::Attachment::findSystemRequest(thread_db* tdbb, USHORT id, USHORT which)
 {
 	static const int MAX_RECURSION = 100;
 
@@ -685,7 +685,7 @@ jrd_req* Jrd::Attachment::findSystemRequest(thread_db* tdbb, USHORT id, USHORT w
 			// Msg363 "request depth exceeded. (Recursive definition?)"
 		}
 
-		jrd_req* clone = statement->getRequest(tdbb, n);
+		Request* clone = statement->getRequest(tdbb, n);
 
 		if (!(clone->req_flags & (req_active | req_reserved)))
 		{

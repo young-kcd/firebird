@@ -459,7 +459,7 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 
 	if (m_callerPrivileges)
 	{
-		jrd_req* request = tdbb->getRequest();
+		Request* request = tdbb->getRequest();
 		auto statement = request ? request->getStatement() : NULL;
 		CallerName callerName;
 		const Routine* routine;

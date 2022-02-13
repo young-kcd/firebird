@@ -125,7 +125,7 @@ namespace Jrd
 	public:
 		Applier(Firebird::MemoryPool& pool,
 				const Firebird::PathName& database,
-				Jrd::jrd_req* request)
+				Jrd::Request* request)
 			: PermanentStorage(pool),
 			  m_txnMap(pool), m_database(pool, database),
 			  m_request(request), m_bitmap(FB_NEW_POOL(pool) RecordBitmap(pool)), m_record(NULL)
@@ -150,7 +150,7 @@ namespace Jrd
 	private:
 		TransactionMap m_txnMap;
 		const Firebird::PathName m_database;
-		jrd_req* m_request;
+		Request* m_request;
 		Firebird::AutoPtr<RecordBitmap> m_bitmap;
 		Record* m_record;
 		JReplicator* m_interface;

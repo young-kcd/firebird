@@ -541,8 +541,8 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool&
 	fb_assert(idx->idx_expression != NULL);
 
 	// check for resursive expression evaluation
-	jrd_req* const org_request = tdbb->getRequest();
-	jrd_req* const expr_request = idx->idx_expression_statement->findRequest(tdbb, true);
+	Request* const org_request = tdbb->getRequest();
+	Request* const expr_request = idx->idx_expression_statement->findRequest(tdbb, true);
 
 	if (expr_request == NULL)
 		ERR_post(Arg::Gds(isc_random) << "Attempt to evaluate index expression recursively");
@@ -3281,7 +3281,7 @@ static DSC* eval(thread_db* tdbb, const ValueExprNode* node, DSC* temp, bool* is
  **************************************/
 	SET_TDBB(tdbb);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	dsc* desc = EVL_expr(tdbb, request, node);
 	*isNull = false;

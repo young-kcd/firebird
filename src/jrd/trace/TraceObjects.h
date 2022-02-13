@@ -342,7 +342,7 @@ private:
 class TraceDscFromValues : public TraceDescriptors
 {
 public:
-	TraceDscFromValues(Firebird::MemoryPool& pool, jrd_req* request, const ValueListNode* params) :
+	TraceDscFromValues(Firebird::MemoryPool& pool, Request* request, const ValueListNode* params) :
 		TraceDescriptors(pool),
 		m_request(request),
 		m_params(params)
@@ -352,7 +352,7 @@ protected:
 	void fillParams();
 
 private:
-	jrd_req* m_request;
+	Request* m_request;
 	const ValueListNode* m_params;
 };
 
@@ -402,7 +402,7 @@ class TraceProcedureImpl :
 	public Firebird::AutoIface<Firebird::ITraceProcedureImpl<TraceProcedureImpl, Firebird::CheckStatusWrapper> >
 {
 public:
-	TraceProcedureImpl(jrd_req* request, Firebird::PerformanceInfo* perf) :
+	TraceProcedureImpl(Request* request, Firebird::PerformanceInfo* perf) :
 		m_request(request),
 		m_perf(perf),
 		m_inputs(*getDefaultMemoryPool(), request->req_proc_caller, request->req_proc_inputs),
@@ -420,7 +420,7 @@ public:
 	Firebird::PerformanceInfo* getPerf()	{ return m_perf; };
 
 private:
-	jrd_req* const m_request;
+	Request* const m_request;
 	Firebird::PerformanceInfo* const m_perf;
 	TraceDscFromValues m_inputs;
 	Firebird::string m_name;
@@ -431,7 +431,7 @@ class TraceFunctionImpl :
 	public Firebird::AutoIface<Firebird::ITraceFunctionImpl<TraceFunctionImpl, Firebird::CheckStatusWrapper> >
 {
 public:
-	TraceFunctionImpl(jrd_req* request, Firebird::ITraceParams* inputs, Firebird::PerformanceInfo* perf, const dsc* value) :
+	TraceFunctionImpl(Request* request, Firebird::ITraceParams* inputs, Firebird::PerformanceInfo* perf, const dsc* value) :
 		m_request(request),
 		m_perf(perf),
 		m_inputs(inputs),
@@ -450,7 +450,7 @@ public:
 	Firebird::PerformanceInfo* getPerf()	{ return m_perf; };
 
 private:
-	jrd_req* const m_request;
+	Request* const m_request;
 	Firebird::PerformanceInfo* const m_perf;
 	Firebird::ITraceParams* m_inputs;
 	TraceDscFromDsc m_value;
@@ -462,7 +462,7 @@ class TraceTriggerImpl :
 	public Firebird::AutoIface<Firebird::ITraceTriggerImpl<TraceTriggerImpl, Firebird::CheckStatusWrapper> >
 {
 public:
-	TraceTriggerImpl(const jrd_req* trig, SSHORT which, Firebird::PerformanceInfo* perf) :
+	TraceTriggerImpl(const Request* trig, SSHORT which, Firebird::PerformanceInfo* perf) :
 	  m_trig(trig),
 	  m_which(which),
 	  m_perf(perf)
@@ -476,7 +476,7 @@ public:
 	Firebird::PerformanceInfo* getPerf()	{ return m_perf; }
 
 private:
-	const jrd_req* const m_trig;
+	const Request* const m_trig;
 	const SSHORT m_which;
 	Firebird::PerformanceInfo* const m_perf;
 };

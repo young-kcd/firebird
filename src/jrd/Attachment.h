@@ -68,7 +68,7 @@ namespace Jrd
 	class thread_db;
 	class Database;
 	class jrd_tra;
-	class jrd_req;
+	class Request;
 	class Lock;
 	class jrd_file;
 	class Format;
@@ -546,7 +546,7 @@ private:
 
 public:
 	Firebird::SortedArray<Statement*> att_statements;	// Statements belonging to attachment
-	Firebird::SortedArray<jrd_req*> att_requests;	// Requests belonging to attachment
+	Firebird::SortedArray<Request*> att_requests;	// Requests belonging to attachment
 	Lock*		att_id_lock;				// Attachment lock (if any)
 	AttNumber	att_attachment_id;			// Attachment ID
 	Lock*		att_cancel_lock;			// Lock to cancel the active request
@@ -625,7 +625,7 @@ public:
 	Firebird::ICryptKeyCallback*	att_crypt_callback;		// callback for DB crypt
 	Firebird::DecimalStatus			att_dec_status;			// error handling and rounding
 
-	jrd_req* findSystemRequest(thread_db* tdbb, USHORT id, USHORT which);
+	Request* findSystemRequest(thread_db* tdbb, USHORT id, USHORT which);
 
 	Firebird::Array<CharSetContainer*>	att_charsets;		// intl character set descriptions
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<

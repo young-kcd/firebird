@@ -35,7 +35,7 @@ namespace
 {
 	bool validate(thread_db* tdbb)
 	{
-		const jrd_req* const request = tdbb->getRequest();
+		const Request* const request = tdbb->getRequest();
 
 		if (request->req_flags & req_abort)
 			return false;
@@ -47,7 +47,7 @@ namespace
 	}
 
 	// Initialize dependent invariants
-	void initializeInvariants(jrd_req* request, const VarInvariantArray* invariants)
+	void initializeInvariants(Request* request, const VarInvariantArray* invariants)
 	{
 		if (invariants)
 		{
@@ -105,7 +105,7 @@ Cursor::Cursor(CompilerScratch* csb, const RecordSource* rsb,
 
 void Cursor::open(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_active = true;
@@ -117,7 +117,7 @@ void Cursor::open(thread_db* tdbb) const
 
 void Cursor::close(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (impure->irsb_active)
@@ -135,7 +135,7 @@ bool Cursor::fetchNext(thread_db* tdbb) const
 	if (!validate(tdbb))
 		return false;
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!impure->irsb_active)
@@ -207,7 +207,7 @@ bool Cursor::fetchAbsolute(thread_db* tdbb, SINT64 offset) const
 	if (!validate(tdbb))
 		return false;
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!impure->irsb_active)
@@ -268,7 +268,7 @@ bool Cursor::fetchRelative(thread_db* tdbb, SINT64 offset) const
 	if (!validate(tdbb))
 		return false;
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!impure->irsb_active)
@@ -335,7 +335,7 @@ bool Cursor::fetchRelative(thread_db* tdbb, SINT64 offset) const
 }
 
 // Check if the cursor is in a good state for access a field.
-void Cursor::checkState(jrd_req* request) const
+void Cursor::checkState(Request* request) const
 {
 	const Impure* const impure = request->getImpure<Impure>(m_impure);
 

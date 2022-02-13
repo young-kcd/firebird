@@ -31,7 +31,7 @@ struct dsc;
 namespace Jrd
 {
 	class jrd_tra;
-	class jrd_req;
+	class Request;
 	class Statement;
 	class jrd_prc;
 	class Format;

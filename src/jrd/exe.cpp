@@ -214,11 +214,11 @@ string StatusXcp::as_text() const
 }
 
 
-static void execute_looper(thread_db*, jrd_req*, jrd_tra*, const StmtNode*, jrd_req::req_s);
-static void looper_seh(thread_db*, jrd_req*, const StmtNode*);
-static void release_blobs(thread_db*, jrd_req*);
-static void trigger_failure(thread_db*, jrd_req*);
-static void stuff_stack_trace(const jrd_req*);
+static void execute_looper(thread_db*, Request*, jrd_tra*, const StmtNode*, Request::req_s);
+static void looper_seh(thread_db*, Request*, const StmtNode*);
+static void release_blobs(thread_db*, Request*);
+static void trigger_failure(thread_db*, Request*);
+static void stuff_stack_trace(const Request*);
 
 const size_t MAX_STACK_TRACE = 2048;
 
@@ -229,7 +229,7 @@ void EXE_assignment(thread_db* tdbb, const AssignmentNode* node)
 	DEV_BLKCHK(node, type_nod);
 
 	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	// Get descriptors of src field/parameter/variable, etc.
 	request->req_flags &= ~req_null;
@@ -243,7 +243,7 @@ void EXE_assignment(thread_db* tdbb, const AssignmentNode* node)
 void EXE_assignment(thread_db* tdbb, const ValueExprNode* source, const ValueExprNode* target)
 {
 	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	// Get descriptors of src field/parameter/variable, etc.
 	request->req_flags &= ~req_null;
@@ -257,14 +257,14 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bo
 	const ValueExprNode* missing_node, const ValueExprNode* missing2_node)
 {
 	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const auto toVar = nodeAs<VariableNode>(to);
 
 	if (toVar && toVar->outerDecl)
 		request = toVar->getVarRequest(request);
 
-	AutoSetRestore2<jrd_req*, thread_db> autoSetRequest(
+	AutoSetRestore2<Request*, thread_db> autoSetRequest(
 		tdbb, &thread_db::getRequest, &thread_db::setRequest, request);
 
 	// Get descriptors of receiving and sending fields/parameters, variables, etc.
@@ -299,7 +299,7 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bo
 
 		if (toParam->argInfo)
 		{
-			AutoSetRestore2<jrd_req*, thread_db> autoSetRequest(
+			AutoSetRestore2<Request*, thread_db> autoSetRequest(
 				tdbb, &thread_db::getRequest, &thread_db::setRequest, paramRequest);
 
 			EVL_validate(tdbb, Item(Item::TYPE_PARAMETER, message->messageNumber, toParam->argNumber),
@@ -315,7 +315,7 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bo
 
 		if (toVar->varInfo)
 		{
-			AutoSetRestore2<jrd_req*, thread_db> autoSetRequest(
+			AutoSetRestore2<Request*, thread_db> autoSetRequest(
 				tdbb, &thread_db::getRequest, &thread_db::setRequest, varRequest);
 
 			EVL_validate(tdbb, Item(Item::TYPE_VARIABLE, toVar->varId),
@@ -589,7 +589,7 @@ void EXE_execute_ddl_triggers(thread_db* tdbb, jrd_tra* transaction, bool preTri
 
 
 void EXE_receive(thread_db* tdbb,
-				 jrd_req* request,
+				 Request* request,
 				 USHORT msg,
 				 ULONG length,
 				 void* buffer,
@@ -647,9 +647,9 @@ void EXE_receive(thread_db* tdbb,
 	try
 	{
 		if (nodeIs<StallNode>(request->req_message))
-			execute_looper(tdbb, request, transaction, request->req_next, jrd_req::req_sync);
+			execute_looper(tdbb, request, transaction, request->req_next, Request::req_sync);
 
-		if (!(request->req_flags & req_active) || request->req_operation != jrd_req::req_send)
+		if (!(request->req_flags & req_active) || request->req_operation != Request::req_send)
 			ERR_post(Arg::Gds(isc_req_sync));
 
 		const MessageNode* message = nodeAs<MessageNode>(request->req_message);
@@ -694,7 +694,7 @@ void EXE_receive(thread_db* tdbb,
 			}
 		}
 
-		execute_looper(tdbb, request, transaction, request->req_next, jrd_req::req_proceed);
+		execute_looper(tdbb, request, transaction, request->req_next, Request::req_proceed);
 	}
 	catch (const Exception&)
 	{
@@ -744,7 +744,7 @@ void EXE_receive(thread_db* tdbb,
 
 
 // Release a request instance.
-void EXE_release(thread_db* tdbb, jrd_req* request)
+void EXE_release(thread_db* tdbb, Request* request)
 {
 	DEV_BLKCHK(request, type_req);
 
@@ -768,7 +768,7 @@ void EXE_release(thread_db* tdbb, jrd_req* request)
 }
 
 
-void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const void* buffer)
+void EXE_send(thread_db* tdbb, Request* request, USHORT msg, ULONG length, const void* buffer)
 {
 /**************************************
  *
@@ -792,7 +792,7 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const
 	const StmtNode* message = NULL;
 	const StmtNode* node;
 
-	if (request->req_operation != jrd_req::req_receive)
+	if (request->req_operation != Request::req_receive)
 		ERR_post(Arg::Gds(isc_req_sync));
 	node = request->req_message;
 
@@ -831,11 +831,11 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const
 
 	memcpy(request->getImpure<UCHAR>(message->impureOffset), buffer, length);
 
-	execute_looper(tdbb, request, transaction, request->req_next, jrd_req::req_proceed);
+	execute_looper(tdbb, request, transaction, request->req_next, Request::req_proceed);
 }
 
 
-void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
+void EXE_start(thread_db* tdbb, Request* request, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -908,11 +908,11 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 
 	execute_looper(tdbb, request, transaction,
 				   request->getStatement()->topNode,
-				   jrd_req::req_evaluate);
+				   Request::req_evaluate);
 }
 
 
-void EXE_unwind(thread_db* tdbb, jrd_req* request)
+void EXE_unwind(thread_db* tdbb, Request* request)
 {
 /**************************************
  *
@@ -935,7 +935,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 		if (statement->fors.getCount() || request->req_ext_resultset || request->req_ext_stmt)
 		{
 			Jrd::ContextPoolHolder context(tdbb, request->req_pool);
-			jrd_req* old_request = tdbb->getRequest();
+			Request* old_request = tdbb->getRequest();
 			jrd_tra* old_transaction = tdbb->getTransaction();
 			try {
 				tdbb->setRequest(request);
@@ -1002,10 +1002,10 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 
 
 static void execute_looper(thread_db* tdbb,
-						   jrd_req* request,
+						   Request* request,
 						   jrd_tra* transaction,
 						   const StmtNode* node,
-						   jrd_req::req_s next_state)
+						   Request::req_s next_state)
 {
 /**************************************
  *
@@ -1120,7 +1120,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	jrd_tra* const transaction = request ? request->req_transaction : tdbb->getTransaction();
 
 	TrigVector* vector = *triggers;
@@ -1149,7 +1149,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 	else
 		TimeZoneUtil::validateGmtTimeStamp(timestamp);
 
-	jrd_req* trigger = NULL;
+	Request* trigger = NULL;
 
 	try
 	{
@@ -1210,7 +1210,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 				EXE_start(tdbb, trigger, transaction);
 			}
 
-			const bool ok = (trigger->req_operation != jrd_req::req_unwind);
+			const bool ok = (trigger->req_operation != Request::req_unwind);
 			trace.finish(ok ? ITracePlugin::RESULT_SUCCESS : ITracePlugin::RESULT_FAILED);
 
 			EXE_unwind(tdbb, trigger);
@@ -1246,11 +1246,11 @@ void EXE_execute_triggers(thread_db* tdbb,
 }
 
 
-static void stuff_stack_trace(const jrd_req* request)
+static void stuff_stack_trace(const Request* request)
 {
 	string sTrace;
 
-	for (const jrd_req* req = request; req; req = req->req_caller)
+	for (const Request* req = request; req; req = req->req_caller)
 	{
 		const Statement* const statement = req->getStatement();
 
@@ -1310,7 +1310,7 @@ static void stuff_stack_trace(const jrd_req* request)
 }
 
 
-const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* node)
+const StmtNode* EXE_looper(thread_db* tdbb, Request* request, const StmtNode* node)
 {
 /**************************************
  *
@@ -1348,7 +1348,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 	{
 		try
 		{
-			if (request->req_operation == jrd_req::req_evaluate)
+			if (request->req_operation == Request::req_evaluate)
 			{
 				JRD_reschedule(tdbb);
 
@@ -1390,7 +1390,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 
 			exeState.errorPending = true;
 			exeState.catchDisabled = true;
-			request->req_operation = jrd_req::req_unwind;
+			request->req_operation = Request::req_unwind;
 			request->req_label = 0;
 
 			if (!(tdbb->tdbb_flags & TDBB_stack_trace_done) && !(tdbb->tdbb_flags & TDBB_sys_error))
@@ -1453,7 +1453,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 
 
 // Start looper under Windows SEH (Structured Exception Handling) control
-static void looper_seh(thread_db* tdbb, jrd_req* request, const StmtNode* node)
+static void looper_seh(thread_db* tdbb, Request* request, const StmtNode* node)
 {
 #ifdef WIN_NT
 	START_CHECK_FOR_EXCEPTIONS(NULL);
@@ -1475,7 +1475,7 @@ static void looper_seh(thread_db* tdbb, jrd_req* request, const StmtNode* node)
 }
 
 
-static void release_blobs(thread_db* tdbb, jrd_req* request)
+static void release_blobs(thread_db* tdbb, Request* request)
 {
 /**************************************
  *
@@ -1550,7 +1550,7 @@ static void release_blobs(thread_db* tdbb, jrd_req* request)
 }
 
 
-static void trigger_failure(thread_db* tdbb, jrd_req* trigger)
+static void trigger_failure(thread_db* tdbb, Request* trigger)
 {
 /**************************************
  *

@@ -346,10 +346,10 @@ void PreparedStatement::setDesc(thread_db* tdbb, unsigned param, const dsc& valu
 {
 	fb_assert(param > 0);
 
-	jrd_req* request = getDsqlRequest()->getRequest();
+	Request* request = getDsqlRequest()->getRequest();
 
 	// Setup tdbb info necessary for blobs.
-	AutoSetRestore2<jrd_req*, thread_db> autoRequest(
+	AutoSetRestore2<Request*, thread_db> autoRequest(
 		tdbb, &thread_db::getRequest, &thread_db::setRequest, request);
 	AutoSetRestore<jrd_tra*> autoRequestTrans(&request->req_transaction,
 		tdbb->getTransaction());

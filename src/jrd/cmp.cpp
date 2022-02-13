@@ -199,7 +199,7 @@ Statement* CMP_compile(thread_db* tdbb, const UCHAR* blr, ULONG blrLength, bool 
 	return statement;
 }
 
-jrd_req* CMP_compile_request(thread_db* tdbb, const UCHAR* blr, ULONG blrLength, bool internalFlag)
+Request* CMP_compile_request(thread_db* tdbb, const UCHAR* blr, ULONG blrLength, bool internalFlag)
 {
 /**************************************
  *
@@ -401,7 +401,7 @@ void CMP_post_resource(	ResourceList* rsc_ptr, void* obj, Resource::rsc_s type, 
 }
 
 
-void CMP_release(thread_db* tdbb, jrd_req* request)
+void CMP_release(thread_db* tdbb, Request* request)
 {
 /**************************************
  *

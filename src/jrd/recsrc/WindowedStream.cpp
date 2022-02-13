@@ -61,14 +61,14 @@ namespace
 		void print(thread_db* tdbb, Firebird::string& plan, bool detailed, unsigned level) const;
 
 		void markRecursive();
-		void invalidateRecords(jrd_req* request) const;
+		void invalidateRecords(Request* request) const;
 
 		void findUsedStreams(StreamList& streams, bool expandAll) const;
 		void nullRecords(thread_db* tdbb) const;
 
 		void locate(thread_db* tdbb, FB_UINT64 position) const
 		{
-			jrd_req* const request = tdbb->getRequest();
+			Request* const request = tdbb->getRequest();
 			Impure* const impure = request->getImpure<Impure>(m_impure);
 			impure->irsb_position = position;
 		}
@@ -78,7 +78,7 @@ namespace
 			return m_next->getCount(tdbb);
 		}
 
-		FB_UINT64 getPosition(jrd_req* request) const
+		FB_UINT64 getPosition(Request* request) const
 		{
 			Impure* const impure = request->getImpure<Impure>(m_impure);
 			return impure->irsb_position;
@@ -98,7 +98,7 @@ namespace
 
 	void BufferedStreamWindow::open(thread_db* tdbb) const
 	{
-		jrd_req* const request = tdbb->getRequest();
+		Request* const request = tdbb->getRequest();
 		Impure* const impure = request->getImpure<Impure>(m_impure);
 
 		impure->irsb_flags = irsb_open;
@@ -107,7 +107,7 @@ namespace
 
 	void BufferedStreamWindow::close(thread_db* tdbb) const
 	{
-		jrd_req* const request = tdbb->getRequest();
+		Request* const request = tdbb->getRequest();
 
 		invalidateRecords(request);
 
@@ -119,7 +119,7 @@ namespace
 
 	bool BufferedStreamWindow::getRecord(thread_db* tdbb) const
 	{
-		jrd_req* const request = tdbb->getRequest();
+		Request* const request = tdbb->getRequest();
 		Impure* const impure = request->getImpure<Impure>(m_impure);
 
 		if (!(impure->irsb_flags & irsb_open))
@@ -158,7 +158,7 @@ namespace
 		m_next->findUsedStreams(streams, expandAll);
 	}
 
-	void BufferedStreamWindow::invalidateRecords(jrd_req* request) const
+	void BufferedStreamWindow::invalidateRecords(Request* request) const
 	{
 		m_next->invalidateRecords(request);
 	}
@@ -335,7 +335,7 @@ WindowedStream::WindowedStream(thread_db* tdbb, Optimizer* opt,
 
 void WindowedStream::open(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open;
@@ -346,7 +346,7 @@ void WindowedStream::open(thread_db* tdbb) const
 
 void WindowedStream::close(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 
 	invalidateRecords(request);
 
@@ -364,7 +364,7 @@ bool WindowedStream::getRecord(thread_db* tdbb) const
 {
 	JRD_reschedule(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
@@ -397,7 +397,7 @@ void WindowedStream::markRecursive()
 	m_joinedStream->markRecursive();
 }
 
-void WindowedStream::invalidateRecords(jrd_req* request) const
+void WindowedStream::invalidateRecords(Request* request) const
 {
 	m_joinedStream->invalidateRecords(request);
 }
@@ -509,7 +509,7 @@ void WindowedStream::WindowStream::open(thread_db* tdbb) const
 {
 	BaseAggWinStream::open(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = getImpure(request);
 
 	impure->partitionBlock.startPosition = impure->partitionBlock.endPosition =
@@ -533,7 +533,7 @@ void WindowedStream::WindowStream::open(thread_db* tdbb) const
 
 void WindowedStream::WindowStream::close(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (impure->irsb_flags & irsb_open)
@@ -546,7 +546,7 @@ bool WindowedStream::WindowStream::getRecord(thread_db* tdbb) const
 {
 	JRD_reschedule(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	record_param* const rpb = &request->req_rpb[m_stream];
 	Impure* const impure = getImpure(request);
 
@@ -893,7 +893,7 @@ void WindowedStream::WindowStream::nullRecords(thread_db* tdbb) const
 	m_next->nullRecords(tdbb);
 }
 
-const void WindowedStream::WindowStream::getFrameValue(thread_db* tdbb, jrd_req* request,
+const void WindowedStream::WindowStream::getFrameValue(thread_db* tdbb, Request* request,
 	const Frame* frame, impure_value_ex* impureValue) const
 {
 	dsc* desc = EVL_expr(tdbb, request, frame->value);
@@ -928,7 +928,7 @@ const void WindowedStream::WindowStream::getFrameValue(thread_db* tdbb, jrd_req*
 	}
 }
 
-SINT64 WindowedStream::WindowStream::locateFrameRange(thread_db* tdbb, jrd_req* request, Impure* impure,
+SINT64 WindowedStream::WindowStream::locateFrameRange(thread_db* tdbb, Request* request, Impure* impure,
 	const Frame* frame, const dsc* offsetDesc, SINT64 position) const
 {
 	if (m_order->expressions.getCount() != 1)
@@ -1044,7 +1044,7 @@ SINT64 WindowedStream::WindowStream::locateFrameRange(thread_db* tdbb, jrd_req* 
 // ------------------------------
 
 SlidingWindow::SlidingWindow(thread_db* aTdbb, const BaseBufferedStream* aStream,
-			jrd_req* request,
+			Request* request,
 			FB_UINT64 aPartitionStart, FB_UINT64 aPartitionEnd,
 			FB_UINT64 aFrameStart, FB_UINT64 aFrameEnd)
 	: tdbb(aTdbb),	// Note: instantiate the class only as local variable

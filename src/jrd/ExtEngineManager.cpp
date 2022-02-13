@@ -134,9 +134,9 @@ namespace
 			return type_alignments[desc->dsc_dtype];
 		}
 
-		virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+		virtual const StmtNode* execute(thread_db* tdbb, Request* request, ExeState* exeState) const
 		{
-			if (request->req_operation == jrd_req::req_evaluate)
+			if (request->req_operation == Request::req_evaluate)
 			{
 				// Clear the message. This is important for external routines.
 				UCHAR* msg = request->getImpure<UCHAR>(impureOffset);
@@ -204,9 +204,9 @@ namespace
 			return this;
 		}
 
-		const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+		const StmtNode* execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 		{
-			if (request->req_operation == jrd_req::req_evaluate)
+			if (request->req_operation == Request::req_evaluate)
 			{
 				dsc* defaultDesc = NULL;
 
@@ -242,7 +242,7 @@ namespace
 					MOV_move(tdbb, &temp, &desc);
 				}
 
-				request->req_operation = jrd_req::req_return;
+				request->req_operation = Request::req_return;
 			}
 
 			return parentStmt;
@@ -322,9 +322,9 @@ namespace
 		{
 		}
 
-		virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+		virtual const StmtNode* execute(thread_db* tdbb, Request* request, ExeState* exeState) const
 		{
-			if (request->req_operation == jrd_req::req_evaluate)
+			if (request->req_operation == Request::req_evaluate)
 			{
 				UCHAR* inMsg = extInMessageNode ? request->getImpure<UCHAR>(extInMessageNode->impureOffset) : NULL;
 				UCHAR* outMsg = request->getImpure<UCHAR>(extOutMessageNode->impureOffset);
@@ -361,7 +361,7 @@ namespace
 			statements.add(FB_NEW_POOL(pool) StallNode(pool));
 		}
 
-		virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+		virtual const StmtNode* execute(thread_db* tdbb, Request* request, ExeState* exeState) const
 		{
 			impure_state* const impure = request->getImpure<impure_state>(impureOffset);
 			ExtEngineManager::ResultSet*& resultSet = request->req_ext_resultset;
@@ -373,7 +373,7 @@ namespace
 
 			switch (request->req_operation)
 			{
-				case jrd_req::req_evaluate:
+				case Request::req_evaluate:
 					fb_assert(!resultSet);
 					resultSet = procedure->open(tdbb, extInMsg, extOutMsg);
 
@@ -386,8 +386,8 @@ namespace
 						*eof = -1;
 					// fall into
 
-				case jrd_req::req_proceed:
-				case jrd_req::req_sync:
+				case Request::req_proceed:
+				case Request::req_sync:
 					if (resultSet)
 					{
 						if (resultSet->fetch(tdbb) && (request->req_flags & req_proc_fetch))
@@ -401,10 +401,10 @@ namespace
 					}
 
 					impure->sta_state = 0;	// suspend node
-					request->req_operation = jrd_req::req_sync;
+					request->req_operation = Request::req_sync;
 					break;
 
-				case jrd_req::req_unwind:
+				case Request::req_unwind:
 					delete resultSet;
 					resultSet = NULL;
 					break;
@@ -450,21 +450,21 @@ namespace
 			return this;
 		}
 
-		const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+		const StmtNode* execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 		{
-			if (request->req_operation == jrd_req::req_evaluate)
+			if (request->req_operation == Request::req_evaluate)
 			{
 				trigger->execute(tdbb, request, request->req_trigger_action,
 					getRpb(request, 0), getRpb(request, 1));
 
-				request->req_operation = jrd_req::req_return;
+				request->req_operation = Request::req_return;
 			}
 
 			return parentStmt;
 		}
 
 	private:
-		static record_param* getRpb(jrd_req* request, USHORT n)
+		static record_param* getRpb(Request* request, USHORT n)
 		{
 			return request->req_rpb.getCount() > n && request->req_rpb[n].rpb_number.isValid() ?
 				&request->req_rpb[n] : NULL;
@@ -893,7 +893,7 @@ ExtEngineManager::Trigger::~Trigger()
 }
 
 
-void ExtEngineManager::Trigger::execute(thread_db* tdbb, jrd_req* request, unsigned action,
+void ExtEngineManager::Trigger::execute(thread_db* tdbb, Request* request, unsigned action,
 	record_param* oldRpb, record_param* newRpb) const
 {
 	EngineAttachmentInfo* attInfo = extManager->getEngineAttachment(tdbb, engine);
@@ -1039,7 +1039,7 @@ void ExtEngineManager::Trigger::setupComputedFields(thread_db* tdbb, MemoryPool&
 }
 
 
-void ExtEngineManager::Trigger::setValues(thread_db* tdbb, jrd_req* request, Array<UCHAR>& msgBuffer,
+void ExtEngineManager::Trigger::setValues(thread_db* tdbb, Request* request, Array<UCHAR>& msgBuffer,
 	record_param* rpb) const
 {
 	if (!rpb || !rpb->rpb_record)

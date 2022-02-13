@@ -35,7 +35,7 @@
 namespace Jrd
 {
 	class thread_db;
-	class jrd_req;
+	class Request;
 	class jrd_prc;
 	class AggNode;
 	class BoolExprNode;
@@ -68,7 +68,7 @@ namespace Jrd
 						   bool detailed, unsigned level) const = 0;
 
 		virtual void markRecursive() = 0;
-		virtual void invalidateRecords(jrd_req* request) const = 0;
+		virtual void invalidateRecords(Request* request) const = 0;
 
 		virtual void findUsedStreams(StreamList& streams, bool expandAll = false) const = 0;
 		virtual void nullRecords(thread_db* tdbb) const = 0;
@@ -130,7 +130,7 @@ namespace Jrd
 		bool lockRecord(thread_db* tdbb) const override;
 
 		void markRecursive() override;
-		void invalidateRecords(jrd_req* request) const override;
+		void invalidateRecords(Request* request) const override;
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
 		void nullRecords(thread_db* tdbb) const override;
@@ -306,7 +306,7 @@ namespace Jrd
 	{
 		struct Impure : public RecordSource::Impure
 		{
-			jrd_req* irsb_req_handle;
+			Request* irsb_req_handle;
 			UCHAR* irsb_message;
 		};
 
@@ -355,7 +355,7 @@ namespace Jrd
 				   bool detailed, unsigned level) const override;
 
 		void markRecursive() override;
-		void invalidateRecords(jrd_req* request) const override;
+		void invalidateRecords(Request* request) const override;
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
 		void nullRecords(thread_db* tdbb) const override;
@@ -383,7 +383,7 @@ namespace Jrd
 				   bool detailed, unsigned level) const override;
 
 		void markRecursive() override;
-		void invalidateRecords(jrd_req* request) const override;
+		void invalidateRecords(Request* request) const override;
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
 		void nullRecords(thread_db* tdbb) const override;
@@ -413,7 +413,7 @@ namespace Jrd
 				   bool detailed, unsigned level) const override;
 
 		void markRecursive() override;
-		void invalidateRecords(jrd_req* request) const override;
+		void invalidateRecords(Request* request) const override;
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
 		void nullRecords(thread_db* tdbb) const override;
@@ -449,7 +449,7 @@ namespace Jrd
 				   bool detailed, unsigned level) const override;
 
 		void markRecursive() override;
-		void invalidateRecords(jrd_req* request) const override;
+		void invalidateRecords(Request* request) const override;
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
 		void nullRecords(thread_db* tdbb) const override;
@@ -480,7 +480,7 @@ namespace Jrd
 				   bool detailed, unsigned level) const override;
 
 		void markRecursive() override;
-		void invalidateRecords(jrd_req* request) const override;
+		void invalidateRecords(Request* request) const override;
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
 		void nullRecords(thread_db* tdbb) const override;
@@ -575,7 +575,7 @@ namespace Jrd
 				   bool detailed, unsigned level) const override;
 
 		void markRecursive() override;
-		void invalidateRecords(jrd_req* request) const override;
+		void invalidateRecords(Request* request) const override;
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
 		void nullRecords(thread_db* tdbb) const override;
@@ -598,7 +598,7 @@ namespace Jrd
 		bool compareKeys(const UCHAR* p, const UCHAR* q) const;
 
 		UCHAR* getData(thread_db* tdbb) const;
-		void mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const;
+		void mapData(thread_db* tdbb, Request* request, UCHAR* data) const;
 
 		bool isKey(const dsc* desc) const
 		{
@@ -624,7 +624,7 @@ namespace Jrd
 	class SlidingWindow
 	{
 	public:
-		SlidingWindow(thread_db* aTdbb, const BaseBufferedStream* aStream, jrd_req* request,
+		SlidingWindow(thread_db* aTdbb, const BaseBufferedStream* aStream, Request* request,
 			FB_UINT64 aPartitionStart, FB_UINT64 aPartitionEnd,
 			FB_UINT64 aFrameStart, FB_UINT64 aFrameEnd);
 		~SlidingWindow();
@@ -714,28 +714,28 @@ namespace Jrd
 		bool lockRecord(thread_db* tdbb) const override;
 
 		void markRecursive() override;
-		void invalidateRecords(jrd_req* request) const override;
+		void invalidateRecords(Request* request) const override;
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
 
 	protected:
-		Impure* getImpure(jrd_req* request) const
+		Impure* getImpure(Request* request) const
 		{
 			return request->getImpure<typename ThisType::Impure>(m_impure);
 		}
 
 		bool evaluateGroup(thread_db* tdbb) const;
 
-		void aggInit(thread_db* tdbb, jrd_req* request, const MapNode* map) const;
-		bool aggPass(thread_db* tdbb, jrd_req* request,
+		void aggInit(thread_db* tdbb, Request* request, const MapNode* map) const;
+		bool aggPass(thread_db* tdbb, Request* request,
 			const NestValueArray& sourceList, const NestValueArray& targetList) const;
-		void aggExecute(thread_db* tdbb, jrd_req* request,
+		void aggExecute(thread_db* tdbb, Request* request,
 			const NestValueArray& sourceList, const NestValueArray& targetList) const;
-		void aggFinish(thread_db* tdbb, jrd_req* request, const MapNode* map) const;
+		void aggFinish(thread_db* tdbb, Request* request, const MapNode* map) const;
 
 		// Cache the values of a group/order in the impure.
 		template <typename AdjustFunctor>
-		void cacheValues(thread_db* tdbb, jrd_req* request,
+		void cacheValues(thread_db* tdbb, Request* request,
 			const NestValueArray* group, impure_value* values,
 			AdjustFunctor adjustFunctor) const
 		{
@@ -761,11 +761,11 @@ namespace Jrd
 			}
 		}
 
-		int lookForChange(thread_db* tdbb, jrd_req* request,
+		int lookForChange(thread_db* tdbb, Request* request,
 			const NestValueArray* group, const SortNode* sort, impure_value* values) const;
 
 	private:
-		bool getNextRecord(thread_db* tdbb, jrd_req* request) const;
+		bool getNextRecord(thread_db* tdbb, Request* request) const;
 
 	protected:
 		NestConst<NextType> m_next;
@@ -855,16 +855,16 @@ namespace Jrd
 			void nullRecords(thread_db* tdbb) const;
 
 		protected:
-			Impure* getImpure(jrd_req* request) const
+			Impure* getImpure(Request* request) const
 			{
 				return request->getImpure<Impure>(m_impure);
 			}
 
 		private:
-			const void getFrameValue(thread_db* tdbb, jrd_req* request,
+			const void getFrameValue(thread_db* tdbb, Request* request,
 				const Frame* frame, impure_value_ex* impureValue) const;
 
-			SINT64 locateFrameRange(thread_db* tdbb, jrd_req* request, Impure* impure,
+			SINT64 locateFrameRange(thread_db* tdbb, Request* request, Impure* impure,
 				const Frame* frame, const dsc* offsetDesc, SINT64 position) const;
 
 		private:
@@ -893,7 +893,7 @@ namespace Jrd
 			bool detailed, unsigned level) const override;
 
 		void markRecursive() override;
-		void invalidateRecords(jrd_req* request) const override;
+		void invalidateRecords(Request* request) const override;
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
 		void nullRecords(thread_db* tdbb) const override;
@@ -909,7 +909,7 @@ namespace Jrd
 	public:
 		virtual void locate(thread_db* tdbb, FB_UINT64 position) const = 0;
 		virtual FB_UINT64 getCount(thread_db* tdbb) const = 0;
-		virtual FB_UINT64 getPosition(jrd_req* request) const = 0;
+		virtual FB_UINT64 getPosition(Request* request) const = 0;
 	};
 
 	class BufferedStream : public BaseBufferedStream
@@ -953,7 +953,7 @@ namespace Jrd
 				   bool detailed, unsigned level) const override;
 
 		void markRecursive() override;
-		void invalidateRecords(jrd_req* request) const override;
+		void invalidateRecords(Request* request) const override;
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
 		void nullRecords(thread_db* tdbb) const override;
@@ -961,7 +961,7 @@ namespace Jrd
 		void locate(thread_db* tdbb, FB_UINT64 position) const override;
 		FB_UINT64 getCount(thread_db* tdbb) const override;
 
-		FB_UINT64 getPosition(jrd_req* request) const override
+		FB_UINT64 getPosition(Request* request) const override
 		{
 			Impure* const impure = request->getImpure<Impure>(m_impure);
 			return impure->irsb_position;
@@ -993,7 +993,7 @@ namespace Jrd
 				   bool detailed, unsigned level) const override;
 
 		void markRecursive() override;
-		void invalidateRecords(jrd_req* request) const override;
+		void invalidateRecords(Request* request) const override;
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
 		void nullRecords(thread_db* tdbb) const override;
@@ -1022,7 +1022,7 @@ namespace Jrd
 				   bool detailed, unsigned level) const override;
 
 		void markRecursive() override;
-		void invalidateRecords(jrd_req* request) const override;
+		void invalidateRecords(Request* request) const override;
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
 		void nullRecords(thread_db* tdbb) const override;
@@ -1071,13 +1071,13 @@ namespace Jrd
 				   bool detailed, unsigned level) const override;
 
 		void markRecursive() override;
-		void invalidateRecords(jrd_req* request) const override;
+		void invalidateRecords(Request* request) const override;
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
 		void nullRecords(thread_db* tdbb) const override;
 
 	private:
-		ULONG computeHash(thread_db* tdbb, jrd_req* request,
+		ULONG computeHash(thread_db* tdbb, Request* request,
 						  const SubStream& sub, UCHAR* buffer) const;
 		bool fetchRecord(thread_db* tdbb, Impure* impure, FB_SIZE_T stream) const;
 
@@ -1131,7 +1131,7 @@ namespace Jrd
 				   bool detailed, unsigned level) const override;
 
 		void markRecursive() override;
-		void invalidateRecords(jrd_req* request) const override;
+		void invalidateRecords(Request* request) const override;
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
 		void nullRecords(thread_db* tdbb) const override;
@@ -1188,7 +1188,7 @@ namespace Jrd
 				   bool detailed, unsigned level) const override;
 
 		void markRecursive() override;
-		void invalidateRecords(jrd_req* request) const override;
+		void invalidateRecords(Request* request) const override;
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
 
 	private:
@@ -1229,11 +1229,11 @@ namespace Jrd
 				   bool detailed, unsigned level) const override;
 
 		void markRecursive() override;
-		void invalidateRecords(jrd_req* request) const override;
+		void invalidateRecords(Request* request) const override;
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
 
 	private:
-		void cleanupLevel(jrd_req* request, Impure* impure) const;
+		void cleanupLevel(Request* request, Impure* impure) const;
 
 		const StreamType m_mapStream;
 		NestConst<RecordSource> m_root;
@@ -1267,7 +1267,7 @@ namespace Jrd
 				   bool detailed, unsigned level) const override;
 
 		void markRecursive() override;
-		void invalidateRecords(jrd_req* request) const override;
+		void invalidateRecords(Request* request) const override;
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
 		void nullRecords(thread_db* tdbb) const override;

@@ -209,7 +209,7 @@ Statement* Statement::makeStatement(thread_db* tdbb, CompilerScratch* csb, bool 
 	Database* const dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
-	jrd_req* const old_request = tdbb->getRequest();
+	Request* const old_request = tdbb->getRequest();
 	tdbb->setRequest(NULL);
 
 	Statement* statement = NULL;
@@ -310,7 +310,7 @@ Statement* Statement::makeStatement(thread_db* tdbb, CompilerScratch* csb, bool 
 }
 
 // Turn a parsed scratch into an executable request.
-jrd_req* Statement::makeRequest(thread_db* tdbb, CompilerScratch* csb, bool internalFlag)
+Request* Statement::makeRequest(thread_db* tdbb, CompilerScratch* csb, bool internalFlag)
 {
 	Statement* statement = makeStatement(tdbb, csb, internalFlag);
 	return statement->getRequest(tdbb, 0);
@@ -330,7 +330,7 @@ const Routine* Statement::getRoutine() const
 // Determine if any request of this statement are active.
 bool Statement::isActive() const
 {
-	for (const jrd_req* const* request = requests.begin(); request != requests.end(); ++request)
+	for (const Request* const* request = requests.begin(); request != requests.end(); ++request)
 	{
 		if (*request && ((*request)->req_flags & req_in_use))
 			return true;
@@ -339,7 +339,7 @@ bool Statement::isActive() const
 	return false;
 }
 
-jrd_req* Statement::findRequest(thread_db* tdbb, bool unique)
+Request* Statement::findRequest(thread_db* tdbb, bool unique)
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
@@ -351,14 +351,14 @@ jrd_req* Statement::findRequest(thread_db* tdbb, bool unique)
 	// Search clones for one request in use by this attachment.
 	// If not found, return first inactive request.
 
-	jrd_req* clone = NULL;
+	Request* clone = NULL;
 	USHORT count = 0;
 	const USHORT clones = requests.getCount();
 	USHORT n;
 
 	for (n = 0; n < clones; ++n)
 	{
-		jrd_req* next = getRequest(tdbb, n);
+		Request* next = getRequest(tdbb, n);
 
 		if (next->req_attachment == attachment)
 		{
@@ -391,7 +391,7 @@ jrd_req* Statement::findRequest(thread_db* tdbb, bool unique)
 	return clone;
 }
 
-jrd_req* Statement::getRequest(thread_db* tdbb, USHORT level)
+Request* Statement::getRequest(thread_db* tdbb, USHORT level)
 {
 	SET_TDBB(tdbb);
 
@@ -408,7 +408,7 @@ jrd_req* Statement::getRequest(thread_db* tdbb, USHORT level)
 		&dbb->dbb_memory_stats : &attachment->att_memory_stats;
 
 	// Create the request.
-	jrd_req* const request = FB_NEW_POOL(*pool) jrd_req(attachment, this, parentStats);
+	Request* const request = FB_NEW_POOL(*pool) Request(attachment, this, parentStats);
 
 	if (level == 0)
 		pool->setStatsGroup(request->req_memory_stats);
@@ -646,7 +646,7 @@ void Statement::release(thread_db* tdbb)
 		}
 	}
 
-	for (jrd_req** instance = requests.begin(); instance != requests.end(); ++instance)
+	for (Request** instance = requests.begin(); instance != requests.end(); ++instance)
 		EXE_release(tdbb, *instance);
 
 	const auto attachment = tdbb->getAttachment();

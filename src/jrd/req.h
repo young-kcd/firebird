@@ -165,7 +165,7 @@ private:
 
 // request block
 
-class jrd_req : public pool_alloc<type_req>
+class Request : public pool_alloc<type_req>
 {
 private:
 	class TimeStampCache
@@ -266,7 +266,7 @@ private:
 	};
 
 public:
-	jrd_req(Attachment* attachment, /*const*/ Statement* aStatement,
+	Request(Attachment* attachment, /*const*/ Statement* aStatement,
 			Firebird::MemoryStats* parent_stats)
 		: statement(aStatement),
 		  req_pool(statement->pool),
@@ -358,10 +358,10 @@ public:
 	// Transaction pointer and doubly linked list pointers for requests in this
 	// transaction. Maintained by TRA_attach_request/TRA_detach_request.
 	jrd_tra*	req_transaction;
-	jrd_req*	req_tra_next;
-	jrd_req*	req_tra_prev;
+	Request*	req_tra_next;
+	Request*	req_tra_prev;
 
-	jrd_req*	req_caller;				// Caller of this request
+	Request*	req_caller;				// Caller of this request
 										// This field may be used to reconstruct the whole call stack
 	TempBlobIdTree req_blobs;			// Temporary BLOBs owned by this request
 	const StmtNode*	req_message;		// Current message for send/receive
@@ -388,7 +388,7 @@ public:
 	Firebird::AutoPtr<Jrd::RuntimeStatistics> req_fetch_baseline; // State of request performance counters when we reported it last time
 	SINT64 req_fetch_elapsed;	// Number of clock ticks spent while fetching rows for this request since we reported it last time
 	SINT64 req_fetch_rowcount;	// Total number of rows returned by this request
-	jrd_req* req_proc_caller;	// Procedure's caller request
+	Request* req_proc_caller;	// Procedure's caller request
 	const ValueListNode* req_proc_inputs;	// and its node with input parameters
 	TraNumber req_conflict_txn;	// Transaction number for update conflict in read consistency mode
 
@@ -405,7 +405,7 @@ public:
 	// Fields to support read consistency in READ COMMITTED transactions
 	struct snapshot_data
 	{
-		jrd_req*		m_owner;
+		Request*		m_owner;
 		SnapshotHandle	m_handle;
 		CommitNumber	m_number;
 

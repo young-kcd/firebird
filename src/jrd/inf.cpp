@@ -1008,7 +1008,7 @@ UCHAR* INF_put_item(UCHAR item,
 }
 
 
-ULONG INF_request_info(const jrd_req* request,
+ULONG INF_request_info(const Request* request,
 					   const ULONG item_length,
 					   const UCHAR* items,
 					   const ULONG output_length,
@@ -1090,9 +1090,9 @@ ULONG INF_request_info(const jrd_req* request,
 			else
 			{
 				auto state = isc_info_req_active;
-				if (request->req_operation == jrd_req::req_send)
+				if (request->req_operation == Request::req_send)
 					state = isc_info_req_send;
-				else if (request->req_operation == jrd_req::req_receive)
+				else if (request->req_operation == Request::req_receive)
 				{
 					const StmtNode* node = request->req_next;
 
@@ -1101,7 +1101,7 @@ ULONG INF_request_info(const jrd_req* request,
 					else
 						state = isc_info_req_receive;
 				}
-				else if ((request->req_operation == jrd_req::req_return) &&
+				else if ((request->req_operation == Request::req_return) &&
 					(request->req_flags & req_stall))
 				{
 					state = isc_info_req_sql_stall;
@@ -1113,8 +1113,8 @@ ULONG INF_request_info(const jrd_req* request,
 		case isc_info_message_number:
 		case isc_info_message_size:
 			if (!(request->req_flags & req_active) ||
-				(request->req_operation != jrd_req::req_receive &&
-					request->req_operation != jrd_req::req_send))
+				(request->req_operation != Request::req_receive &&
+					request->req_operation != Request::req_send))
 			{
 				buffer_ptr[0] = item;
 				item = isc_info_error;

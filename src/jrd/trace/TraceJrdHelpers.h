@@ -94,7 +94,7 @@ private:
 class TraceProcExecute
 {
 public:
-	TraceProcExecute(thread_db* tdbb, jrd_req* request, jrd_req* caller, const ValueListNode* inputs) :
+	TraceProcExecute(thread_db* tdbb, Request* request, Request* caller, const ValueListNode* inputs) :
 		m_tdbb(tdbb),
 		m_request(request)
 	{
@@ -161,14 +161,14 @@ public:
 private:
 	bool m_need_trace;
 	thread_db* const m_tdbb;
-	jrd_req* const m_request;
+	Request* const m_request;
 	SINT64 m_start_clock;
 };
 
 class TraceProcFetch
 {
 public:
-	TraceProcFetch(thread_db* tdbb, jrd_req* request) :
+	TraceProcFetch(thread_db* tdbb, Request* request) :
 		m_tdbb(tdbb),
 		m_request(request)
 	{
@@ -219,7 +219,7 @@ public:
 private:
 	bool m_need_trace;
 	thread_db* const m_tdbb;
-	jrd_req* const m_request;
+	Request* const m_request;
 	SINT64 m_start_clock;
 };
 
@@ -227,7 +227,7 @@ private:
 class TraceFuncExecute
 {
 public:
-	TraceFuncExecute(thread_db* tdbb, jrd_req* request, jrd_req* caller,
+	TraceFuncExecute(thread_db* tdbb, Request* request, Request* caller,
 					 const UCHAR* inMsg, ULONG inMsgLength) :
 		m_tdbb(tdbb),
 		m_request(request),
@@ -301,7 +301,7 @@ public:
 private:
 	bool m_need_trace;
 	thread_db* const m_tdbb;
-	jrd_req* const m_request;
+	Request* const m_request;
 	const UCHAR* m_inMsg;
 	ULONG m_inMsgLength;
 	SINT64 m_start_clock;
@@ -311,7 +311,7 @@ private:
 class TraceTrigExecute
 {
 public:
-	TraceTrigExecute(thread_db* tdbb, jrd_req* trigger, int which_trig) :
+	TraceTrigExecute(thread_db* tdbb, Request* trigger, int which_trig) :
 		m_tdbb(tdbb),
 		m_request(trigger),
 		m_which_trig(which_trig)
@@ -367,7 +367,7 @@ public:
 private:
 	bool m_need_trace;
 	thread_db* const m_tdbb;
-	jrd_req* const m_request;
+	Request* const m_request;
 	SINT64 m_start_clock;
 	const int m_which_trig;
 };
@@ -437,7 +437,7 @@ private:
 class TraceBlrExecute
 {
 public:
-	TraceBlrExecute(thread_db* tdbb, jrd_req* request) :
+	TraceBlrExecute(thread_db* tdbb, Request* request) :
 		m_tdbb(tdbb),
 		m_request(request)
 	{
@@ -490,7 +490,7 @@ public:
 private:
 	bool m_need_trace;
 	thread_db* const m_tdbb;
-	jrd_req* const m_request;
+	Request* const m_request;
 	SINT64 m_start_clock;
 };
 

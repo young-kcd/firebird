@@ -134,7 +134,7 @@ dsc* EVL_assign_to(thread_db* tdbb, const ValueExprNode* node)
 
 	DEV_BLKCHK(node, type_nod);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	// The only nodes that can be assigned to are: argument, field and variable.
 
@@ -243,7 +243,7 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, const InversionNode* node, RecordBitm
 
 	case InversionNode::TYPE_DBKEY:
 		{
-			jrd_req* request = tdbb->getRequest();
+			Request* request = tdbb->getRequest();
 			impure_inversion* impure = request->getImpure<impure_inversion>(node->impure);
 			RecordBitmap::reset(impure->inv_bitmap);
 			const dsc* const desc = EVL_expr(tdbb, request, node->value);
@@ -303,7 +303,7 @@ void EVL_dbkey_bounds(thread_db* tdbb, const Array<DbKeyRangeNode*>& ranges,
 **************************************/
 	SET_TDBB(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 
 	for (const auto node : ranges)
 	{
@@ -624,7 +624,7 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 	if (itemInfo == NULL)
 		return;
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 	bool err = false;
 
 	if (null && !itemInfo->nullable)

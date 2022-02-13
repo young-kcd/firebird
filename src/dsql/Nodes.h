@@ -746,7 +746,7 @@ public:
 	}
 
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) const = 0;
-	virtual bool execute(thread_db* tdbb, jrd_req* request) const = 0;
+	virtual bool execute(thread_db* tdbb, Request* request) const = 0;
 };
 
 class ValueExprNode : public ExprNode
@@ -828,7 +828,7 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc) = 0;
 
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const = 0;
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const = 0;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const = 0;
 
 public:
 	SCHAR nodScale;
@@ -885,7 +885,7 @@ public:
 		return NULL;
 	}
 
-	virtual dsc* execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
+	virtual dsc* execute(thread_db* /*tdbb*/, Request* /*request*/) const
 	{
 		fb_assert(false);
 		return NULL;
@@ -1043,19 +1043,19 @@ public:
 		return false;
 	}
 
-	virtual dsc* winPass(thread_db* /*tdbb*/, jrd_req* /*request*/, SlidingWindow* /*window*/) const
+	virtual dsc* winPass(thread_db* /*tdbb*/, Request* /*request*/, SlidingWindow* /*window*/) const
 	{
 		return NULL;
 	}
 
-	virtual void aggInit(thread_db* tdbb, jrd_req* request) const = 0;	// pure, but defined
-	virtual void aggFinish(thread_db* tdbb, jrd_req* request) const;
-	virtual bool aggPass(thread_db* tdbb, jrd_req* request) const;
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggInit(thread_db* tdbb, Request* request) const = 0;	// pure, but defined
+	virtual void aggFinish(thread_db* tdbb, Request* request) const;
+	virtual bool aggPass(thread_db* tdbb, Request* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 	virtual unsigned getCapabilities() const = 0;
-	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const = 0;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const = 0;
+	virtual void aggPass(thread_db* tdbb, Request* request, dsc* desc) const = 0;
+	virtual dsc* aggExecute(thread_db* tdbb, Request* request) const = 0;
 
 	virtual AggNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
@@ -1087,11 +1087,11 @@ public:
 	explicit WinFuncNode(MemoryPool& pool, const AggInfo& aAggInfo, ValueExprNode* aArg = NULL);
 
 public:
-	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
+	virtual void aggPass(thread_db* tdbb, Request* request, dsc* desc) const
 	{
 	}
 
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const
+	virtual dsc* aggExecute(thread_db* tdbb, Request* request) const
 	{
 		return NULL;
 	}
@@ -1441,7 +1441,7 @@ public:
 
 	struct ExeState
 	{
-		ExeState(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
+		ExeState(thread_db* tdbb, Request* request, jrd_tra* transaction)
 			: savedTdbb(tdbb),
 			  oldPool(tdbb->getDefaultPool()),
 			  oldRequest(tdbb->getRequest()),
@@ -1467,7 +1467,7 @@ public:
 
 		thread_db* savedTdbb;
 		MemoryPool* oldPool;		// Save the old pool to restore on exit.
-		jrd_req* oldRequest;		// Save the old request to restore on exit.
+		Request* oldRequest;		// Save the old request to restore on exit.
 		jrd_tra* oldTransaction;	// Save the old transcation to restore on exit.
 		const StmtNode* topNode;
 		const StmtNode* prevNode;
@@ -1529,7 +1529,7 @@ public:
 		return NULL;
 	}
 
-	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const = 0;
+	virtual const StmtNode* execute(thread_db* tdbb, Request* request, ExeState* exeState) const = 0;
 
 public:
 	NestConst<StmtNode> parentStmt;
@@ -1567,7 +1567,7 @@ public:
 		return NULL;
 	}
 
-	const StmtNode* execute(thread_db* /*tdbb*/, jrd_req* /*request*/, ExeState* /*exeState*/) const
+	const StmtNode* execute(thread_db* /*tdbb*/, Request* /*request*/, ExeState* /*exeState*/) const
 	{
 		fb_assert(false);
 		return NULL;

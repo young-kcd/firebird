@@ -52,7 +52,7 @@ SortedStream::SortedStream(CompilerScratch* csb, RecordSource* next, SortMap* ma
 
 void SortedStream::open(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open;
@@ -67,7 +67,7 @@ void SortedStream::open(thread_db* tdbb) const
 
 void SortedStream::close(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 
 	invalidateRecords(request);
 
@@ -88,7 +88,7 @@ bool SortedStream::getRecord(thread_db* tdbb) const
 {
 	JRD_reschedule(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
@@ -150,7 +150,7 @@ void SortedStream::findUsedStreams(StreamList& streams, bool expandAll) const
 	m_next->findUsedStreams(streams, expandAll);
 }
 
-void SortedStream::invalidateRecords(jrd_req* request) const
+void SortedStream::invalidateRecords(Request* request) const
 {
 	m_next->invalidateRecords(request);
 }
@@ -162,7 +162,7 @@ void SortedStream::nullRecords(thread_db* tdbb) const
 
 Sort* SortedStream::init(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 
 	m_next->open(tdbb);
 	ULONG records = 0;
@@ -310,7 +310,7 @@ bool SortedStream::compareKeys(const UCHAR* p, const UCHAR* q) const
 
 UCHAR* SortedStream::getData(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	ULONG* data = nullptr;
@@ -319,7 +319,7 @@ UCHAR* SortedStream::getData(thread_db* tdbb) const
 	return reinterpret_cast<UCHAR*>(data);
 }
 
-void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
+void SortedStream::mapData(thread_db* tdbb, Request* request, UCHAR* data) const
 {
 	StreamType stream = INVALID_STREAM;
 	dsc from, to;

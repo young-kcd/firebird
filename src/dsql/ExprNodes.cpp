@@ -1838,7 +1838,7 @@ ValueExprNode* ArithmeticNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* ArithmeticNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* ArithmeticNode::execute(thread_db* tdbb, Request* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 
@@ -3214,7 +3214,7 @@ ValueExprNode* AtNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* AtNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* AtNode::execute(thread_db* tdbb, Request* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
@@ -3332,7 +3332,7 @@ ValueExprNode* BoolAsValueNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* BoolAsValueNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* BoolAsValueNode::execute(thread_db* tdbb, Request* request) const
 {
 	UCHAR booleanVal = (UCHAR) boolean->execute(tdbb, request);
 
@@ -3552,7 +3552,7 @@ ValueExprNode* CastNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 }
 
 // Cast from one datatype to another.
-dsc* CastNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* CastNode::execute(thread_db* tdbb, Request* request) const
 {
 	dsc* value = EVL_expr(tdbb, request, source);
 
@@ -3732,7 +3732,7 @@ ValueExprNode* CoalesceNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* CoalesceNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* CoalesceNode::execute(thread_db* tdbb, Request* request) const
 {
 	for (auto& item : args->items)
 	{
@@ -3931,7 +3931,7 @@ ValueExprNode* ConcatenateNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* ConcatenateNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* ConcatenateNode::execute(thread_db* tdbb, Request* request) const
 {
 	const dsc* value1 = EVL_expr(tdbb, request, arg1);
 	const ULONG flags = request->req_flags;
@@ -4164,7 +4164,7 @@ ValueExprNode* CurrentDateNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* CurrentDateNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* CurrentDateNode::execute(thread_db* tdbb, Request* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
@@ -4267,7 +4267,7 @@ ValueExprNode* CurrentTimeNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 	return this;
 }
 
-dsc* CurrentTimeNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* CurrentTimeNode::execute(thread_db* tdbb, Request* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
@@ -4372,7 +4372,7 @@ ValueExprNode* CurrentTimeStampNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch
 	return this;
 }
 
-dsc* CurrentTimeStampNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* CurrentTimeStampNode::execute(thread_db* tdbb, Request* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
@@ -4450,7 +4450,7 @@ ValueExprNode* CurrentRoleNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 }
 
 // CVC: Current role will get a validated role; IE one that exists.
-dsc* CurrentRoleNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* CurrentRoleNode::execute(thread_db* tdbb, Request* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
@@ -4536,7 +4536,7 @@ ValueExprNode* CurrentUserNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* CurrentUserNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* CurrentUserNode::execute(thread_db* tdbb, Request* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
@@ -4785,7 +4785,7 @@ ValueExprNode* DecodeNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* DecodeNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* DecodeNode::execute(thread_db* tdbb, Request* request) const
 {
 	dsc* testDesc = EVL_expr(tdbb, request, test);
 
@@ -5123,7 +5123,7 @@ ValueExprNode* DerivedExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* DerivedExprNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* DerivedExprNode::execute(thread_db* tdbb, Request* request) const
 {
 	if (cursorNumber.specified)
 		request->req_cursors[cursorNumber.value]->checkState(request);
@@ -5208,7 +5208,7 @@ ValueExprNode* DomainValidationNode::pass2(thread_db* tdbb, CompilerScratch* csb
 	return this;
 }
 
-dsc* DomainValidationNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
+dsc* DomainValidationNode::execute(thread_db* /*tdbb*/, Request* request) const
 {
 	if (request->req_domain_validation == NULL ||
 		(request->req_domain_validation->dsc_flags & DSC_null))
@@ -5419,7 +5419,7 @@ ValueExprNode* ExtractNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 }
 
 // Handles EXTRACT(part FROM date/time/timestamp)
-dsc* ExtractNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* ExtractNode::execute(thread_db* tdbb, Request* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
@@ -6796,7 +6796,7 @@ ValueExprNode* FieldNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* FieldNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* FieldNode::execute(thread_db* tdbb, Request* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 
@@ -7056,7 +7056,7 @@ ValueExprNode* GenIdNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* GenIdNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* GenIdNode::execute(thread_db* tdbb, Request* request) const
 {
 	request->req_flags &= ~req_null;
 
@@ -7254,7 +7254,7 @@ ValueExprNode* InternalInfoNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 }
 
 // Return a given element of the internal engine data.
-dsc* InternalInfoNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* InternalInfoNode::execute(thread_db* tdbb, Request* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
@@ -7954,7 +7954,7 @@ ValueExprNode* LiteralNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* LiteralNode::execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
+dsc* LiteralNode::execute(thread_db* /*tdbb*/, Request* /*request*/) const
 {
 	return const_cast<dsc*>(&litDesc);
 }
@@ -8131,7 +8131,7 @@ ValueExprNode* LocalTimeNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 	return this;
 }
 
-dsc* LocalTimeNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* LocalTimeNode::execute(thread_db* tdbb, Request* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
@@ -8223,7 +8223,7 @@ ValueExprNode* LocalTimeStampNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/
 	return this;
 }
 
-dsc* LocalTimeStampNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* LocalTimeStampNode::execute(thread_db* tdbb, Request* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
@@ -8834,7 +8834,7 @@ ValueExprNode* NegateNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* NegateNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* NegateNode::execute(thread_db* tdbb, Request* request) const
 {
 	request->req_flags &= ~req_null;
 
@@ -8962,7 +8962,7 @@ ValueExprNode* NullNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) const
 	return &INSTANCE;
 }
 
-dsc* NullNode::execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
+dsc* NullNode::execute(thread_db* /*tdbb*/, Request* /*request*/) const
 {
 	return NULL;
 }
@@ -9363,7 +9363,7 @@ ValueExprNode* OverNode::copy(thread_db* /*tdbb*/, NodeCopier& /*copier*/) const
 	return NULL;
 }
 
-dsc* OverNode::execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
+dsc* OverNode::execute(thread_db* /*tdbb*/, Request* /*request*/) const
 {
 	fb_assert(false);
 	return NULL;
@@ -9645,7 +9645,7 @@ bool ParameterNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* 
 	return o && outerDecl == o->outerDecl && dsqlParameter->par_index == o->dsqlParameter->par_index;
 }
 
-jrd_req* ParameterNode::getParamRequest(jrd_req* request) const
+Request* ParameterNode::getParamRequest(Request* request) const
 {
 	auto paramRequest = request;
 
@@ -9715,7 +9715,7 @@ ValueExprNode* ParameterNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* ParameterNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* ParameterNode::execute(thread_db* tdbb, Request* request) const
 {
 	dsc* retDesc;
 	impure_value* impureForOuter;
@@ -9733,7 +9733,7 @@ dsc* ParameterNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	const auto paramRequest = getParamRequest(request);
 
-	AutoSetRestore2<jrd_req*, thread_db> autoSetRequest(
+	AutoSetRestore2<Request*, thread_db> autoSetRequest(
 		tdbb, &thread_db::getRequest, &thread_db::setRequest, paramRequest);
 	const dsc* desc;
 
@@ -10278,7 +10278,7 @@ ValueExprNode* RecordKeyNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* RecordKeyNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
+dsc* RecordKeyNode::execute(thread_db* /*tdbb*/, Request* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	const record_param* rpb = &request->req_rpb[recStream];
@@ -10466,7 +10466,7 @@ ValueExprNode* ScalarNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 }
 
 // Evaluate a scalar item from an array.
-dsc* ScalarNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* ScalarNode::execute(thread_db* tdbb, Request* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	const dsc* desc = EVL_expr(tdbb, request, field);
@@ -10553,7 +10553,7 @@ ValueExprNode* StmtExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return NULL;
 }
 
-dsc* StmtExprNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* StmtExprNode::execute(thread_db* tdbb, Request* request) const
 {
 	fb_assert(false);
 	return NULL;
@@ -10680,7 +10680,7 @@ ValueExprNode* StrCaseNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 }
 
 // Low/up case a string.
-dsc* StrCaseNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* StrCaseNode::execute(thread_db* tdbb, Request* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
@@ -10898,7 +10898,7 @@ ValueExprNode* StrLenNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 }
 
 // Handles BIT_LENGTH(s), OCTET_LENGTH(s) and CHAR[ACTER]_LENGTH(s)
-dsc* StrLenNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* StrLenNode::execute(thread_db* tdbb, Request* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
@@ -11351,7 +11351,7 @@ ValueExprNode* SubQueryNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 }
 
 // Evaluate a subquery expression.
-dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* SubQueryNode::execute(thread_db* tdbb, Request* request) const
 {
 	impure_value* impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
@@ -11674,7 +11674,7 @@ ValueExprNode* SubstringNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* SubstringNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* SubstringNode::execute(thread_db* tdbb, Request* request) const
 {
 	impure_value* impure = request->getImpure<impure_value>(impureOffset);
 
@@ -11980,7 +11980,7 @@ ValueExprNode* SubstringSimilarNode::pass2(thread_db* tdbb, CompilerScratch* csb
 	return this;
 }
 
-dsc* SubstringSimilarNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* SubstringSimilarNode::execute(thread_db* tdbb, Request* request) const
 {
 	// Run all expression arguments.
 
@@ -12277,7 +12277,7 @@ ValueExprNode* SysFuncCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* SysFuncCallNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* SysFuncCallNode::execute(thread_db* tdbb, Request* request) const
 {
 	impure_value* impure = request->getImpure<impure_value>(impureOffset);
 	return function->evlFunc(tdbb, function, args->items, impure);
@@ -12546,7 +12546,7 @@ ValueExprNode* TrimNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 }
 
 // Perform trim function = TRIM([where what FROM] string).
-dsc* TrimNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* TrimNode::execute(thread_db* tdbb, Request* request) const
 {
 	impure_value* impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
@@ -12974,7 +12974,7 @@ ValueExprNode* UdfCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* UdfCallNode::execute(thread_db* tdbb, Request* request) const
 {
 	UCHAR* impure = request->getImpure<UCHAR>(impureOffset);
 	Impure* impureArea = request->getImpure<Impure>(impureOffset);
@@ -13098,7 +13098,7 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 		const SavNumber savNumber = transaction->tra_save_point ?
 			transaction->tra_save_point->getNumber() : 0;
 
-		jrd_req* funcRequest = function->getStatement()->findRequest(tdbb);
+		Request* funcRequest = function->getStatement()->findRequest(tdbb);
 
 		// trace function execution start
 		TraceFuncExecute trace(tdbb, funcRequest, request, inMsg, inMsgLength);
@@ -13490,7 +13490,7 @@ ValueExprNode* ValueIfNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* ValueIfNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* ValueIfNode::execute(thread_db* tdbb, Request* request) const
 {
 	return EVL_expr(tdbb, request, (condition->execute(tdbb, request) ? trueValue : falseValue));
 }
@@ -13652,7 +13652,7 @@ bool VariableNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* o
 	return true;
 }
 
-jrd_req* VariableNode::getVarRequest(jrd_req* request) const
+Request* VariableNode::getVarRequest(Request* request) const
 {
 	auto varRequest = request;
 
@@ -13709,7 +13709,7 @@ ValueExprNode* VariableNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* VariableNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* VariableNode::execute(thread_db* tdbb, Request* request) const
 {
 	const auto varRequest = getVarRequest(request);
 	const auto varImpure = varRequest->getImpure<impure_value>(varDecl->impureOffset);
@@ -13736,7 +13736,7 @@ dsc* VariableNode::execute(thread_db* tdbb, jrd_req* request) const
 		{
 			if (varInfo)
 			{
-				AutoSetRestore2<jrd_req*, thread_db> autoSetRequest(
+				AutoSetRestore2<Request*, thread_db> autoSetRequest(
 					tdbb, &thread_db::getRequest, &thread_db::setRequest, varRequest);
 
 				EVL_validate(tdbb, Item(Item::TYPE_VARIABLE, varId), varInfo,

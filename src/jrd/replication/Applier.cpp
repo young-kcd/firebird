@@ -204,7 +204,7 @@ namespace
 	class LocalThreadContext
 	{
 	public:
-		LocalThreadContext(thread_db* tdbb, jrd_tra* tra, jrd_req* req = NULL)
+		LocalThreadContext(thread_db* tdbb, jrd_tra* tra, Request* req = NULL)
 			: m_tdbb(tdbb)
 		{
 			tdbb->setTransaction(tra);

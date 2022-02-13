@@ -111,7 +111,7 @@ static void preModifyEraseTriggers(thread_db* tdbb, TrigVector** trigs,
 	StmtNode::WhichTrigger whichTrig, record_param* rpb, record_param* rec, TriggerAction op);
 static void preprocessAssignments(thread_db* tdbb, CompilerScratch* csb,
 	StreamType stream, CompoundStmtNode* compoundNode, const Nullable<OverrideClause>* insertOverride);
-static void restartRequest(const jrd_req* request, jrd_tra* transaction);
+static void restartRequest(const Request* request, jrd_tra* transaction);
 static void validateExpressions(thread_db* tdbb, const Array<ValidateInfo>& validations);
 
 }	// namespace Jrd
@@ -382,12 +382,12 @@ AssignmentNode* AssignmentNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* AssignmentNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* AssignmentNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		EXE_assignment(tdbb, this);
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 	}
 
 	return parentStmt;
@@ -484,14 +484,14 @@ BlockNode* BlockNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+const StmtNode* BlockNode::execute(thread_db* tdbb, Request* request, ExeState* exeState) const
 {
 	jrd_tra* transaction = request->req_transaction;
 	SavNumber savNumber;
 
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
+		case Request::req_evaluate:
 			if (!(transaction->tra_flags & TRA_system))
 			{
 				const Savepoint* const savepoint = transaction->startSavepoint();
@@ -500,7 +500,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 			}
 			return action;
 
-		case jrd_req::req_unwind:
+		case Request::req_unwind:
 		{
 			if (request->req_flags & (req_leave | req_continue_loop))
 			{
@@ -574,7 +574,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 
 					if (testAndFixupError(tdbb, request, handlerNode->conditions))
 					{
-						request->req_operation = jrd_req::req_evaluate;
+						request->req_operation = Request::req_evaluate;
 						exeState->errorPending = false;
 
 						// On entering looper exeState->oldRequest etc. are saved.
@@ -649,7 +649,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 			return temp;
 		}
 
-		case jrd_req::req_return:
+		case Request::req_return:
 			if (!(transaction->tra_flags & TRA_system))
 			{
 				savNumber = *request->getImpure<SavNumber>(impureOffset);
@@ -673,7 +673,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 }
 
 // Test for match of current state with list of error conditions. Fix type and code of the exception.
-bool BlockNode::testAndFixupError(thread_db* tdbb, jrd_req* request, const ExceptionArray& conditions)
+bool BlockNode::testAndFixupError(thread_db* tdbb, Request* request, const ExceptionArray& conditions)
 {
 	if (tdbb->tdbb_flags & TDBB_sys_error)
 		return false;
@@ -841,13 +841,13 @@ CompoundStmtNode* CompoundStmtNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* CompoundStmtNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* CompoundStmtNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
 	const NestConst<StmtNode>* end = statements.end();
 
 	if (onlyAssignments)
 	{
-		if (request->req_operation == jrd_req::req_evaluate)
+		if (request->req_operation == Request::req_evaluate)
 		{
 			for (const NestConst<StmtNode>* i = statements.begin(); i != end; ++i)
 			{
@@ -862,7 +862,7 @@ const StmtNode* CompoundStmtNode::execute(thread_db* tdbb, jrd_req* request, Exe
 				EXE_assignment(tdbb, static_cast<const AssignmentNode*>(stmt));
 			}
 
-			request->req_operation = jrd_req::req_return;
+			request->req_operation = Request::req_return;
 		}
 
 		return parentStmt;
@@ -872,18 +872,18 @@ const StmtNode* CompoundStmtNode::execute(thread_db* tdbb, jrd_req* request, Exe
 
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
+		case Request::req_evaluate:
 			impure->sta_state = 0;
 			// fall into
 
-		case jrd_req::req_return:
-		case jrd_req::req_sync:
+		case Request::req_return:
+		case Request::req_sync:
 			if (impure->sta_state < statements.getCount())
 			{
-				request->req_operation = jrd_req::req_evaluate;
+				request->req_operation = Request::req_evaluate;
 				return statements[impure->sta_state++];
 			}
-			request->req_operation = jrd_req::req_return;
+			request->req_operation = Request::req_return;
 			// fall into
 
 		default:
@@ -938,11 +938,11 @@ void ContinueLeaveNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->appendUChar(labelNumber);
 }
 
-const StmtNode* ContinueLeaveNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* ContinueLeaveNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
-		request->req_operation = jrd_req::req_unwind;
+		request->req_operation = Request::req_unwind;
 		request->req_label = labelNumber;
 		request->req_flags |= (blrOp == blr_continue_loop ? req_continue_loop : req_leave);
 	}
@@ -1117,7 +1117,7 @@ CursorStmtNode* CursorStmtNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* CursorStmtNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* CursorStmtNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
 	fb_assert(cursorNumber < request->req_cursors.getCount());
 	const Cursor* const cursor = request->req_cursors[cursorNumber];
@@ -1126,18 +1126,18 @@ const StmtNode* CursorStmtNode::execute(thread_db* tdbb, jrd_req* request, ExeSt
 	switch (cursorOp)
 	{
 		case blr_cursor_open:
-			if (request->req_operation == jrd_req::req_evaluate)
+			if (request->req_operation == Request::req_evaluate)
 			{
 				cursor->open(tdbb);
-				request->req_operation = jrd_req::req_return;
+				request->req_operation = Request::req_return;
 			}
 			return parentStmt;
 
 		case blr_cursor_close:
-			if (request->req_operation == jrd_req::req_evaluate)
+			if (request->req_operation == Request::req_evaluate)
 			{
 				cursor->close(tdbb);
-				request->req_operation = jrd_req::req_return;
+				request->req_operation = Request::req_return;
 			}
 			return parentStmt;
 
@@ -1145,7 +1145,7 @@ const StmtNode* CursorStmtNode::execute(thread_db* tdbb, jrd_req* request, ExeSt
 		case blr_cursor_fetch_scroll:
 			switch (request->req_operation)
 			{
-				case jrd_req::req_evaluate:
+				case Request::req_evaluate:
 					if (cursor->isUpdateCounters())
 						request->req_records_affected.clear();
 
@@ -1187,11 +1187,11 @@ const StmtNode* CursorStmtNode::execute(thread_db* tdbb, jrd_req* request, ExeSt
 
 					if (fetched)
 					{
-						request->req_operation = jrd_req::req_evaluate;
+						request->req_operation = Request::req_evaluate;
 						return intoStmt;
 					}
 
-					request->req_operation = jrd_req::req_return;
+					request->req_operation = Request::req_return;
 
 				default:
 					return parentStmt;
@@ -1329,9 +1329,9 @@ DeclareCursorNode* DeclareCursorNode::pass2(thread_db* tdbb, CompilerScratch* cs
 	return this;
 }
 
-const StmtNode* DeclareCursorNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* DeclareCursorNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		// Set up the cursors array...
 		if (cursorNumber >= request->req_cursors.getCount())
@@ -1339,7 +1339,7 @@ const StmtNode* DeclareCursorNode::execute(thread_db* /*tdbb*/, jrd_req* request
 
 		// And store cursor there.
 		request->req_cursors[cursorNumber] = cursor;
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 	}
 
 	return parentStmt;
@@ -1439,15 +1439,15 @@ DeclareLocalTableNode* DeclareLocalTableNode::pass2(thread_db* /*tdbb*/, Compile
 	return this;
 }
 
-const StmtNode* DeclareLocalTableNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* DeclareLocalTableNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
-		request->req_operation = jrd_req::req_return;
+	if (request->req_operation == Request::req_evaluate)
+		request->req_operation = Request::req_return;
 
 	return parentStmt;
 }
 
-DeclareLocalTableNode::Impure* DeclareLocalTableNode::getImpure(thread_db* tdbb, jrd_req* request, bool createWhenDead) const
+DeclareLocalTableNode::Impure* DeclareLocalTableNode::getImpure(thread_db* tdbb, Request* request, bool createWhenDead) const
 {
 	const auto impure = request->getImpure<Impure>(impureOffset);
 
@@ -1780,12 +1780,12 @@ DeclareSubFuncNode* DeclareSubFuncNode::pass2(thread_db* /*tdbb*/, CompilerScrat
 	return this;
 }
 
-const StmtNode* DeclareSubFuncNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* DeclareSubFuncNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
 	// Nothing to execute. This is the declaration node.
 
-	if (request->req_operation == jrd_req::req_evaluate)
-		request->req_operation = jrd_req::req_return;
+	if (request->req_operation == Request::req_evaluate)
+		request->req_operation = Request::req_return;
 
 	return parentStmt;
 }
@@ -2121,12 +2121,12 @@ DeclareSubProcNode* DeclareSubProcNode::pass2(thread_db* /*tdbb*/, CompilerScrat
 	return this;
 }
 
-const StmtNode* DeclareSubProcNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* DeclareSubProcNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
 	// Nothing to execute. This is the declaration node.
 
-	if (request->req_operation == jrd_req::req_evaluate)
-		request->req_operation = jrd_req::req_return;
+	if (request->req_operation == Request::req_evaluate)
+		request->req_operation = Request::req_return;
 
 	return parentStmt;
 }
@@ -2216,9 +2216,9 @@ DeclareVariableNode* DeclareVariableNode::pass2(thread_db* /*tdbb*/, CompilerScr
 	return this;
 }
 
-const StmtNode* DeclareVariableNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* DeclareVariableNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		impure_value* variable = request->getImpure<impure_value>(impureOffset);
 		variable->vlu_desc = varDesc;
@@ -2238,7 +2238,7 @@ const StmtNode* DeclareVariableNode::execute(thread_db* tdbb, jrd_req* request, 
 		else
 			variable->vlu_desc.dsc_address = (UCHAR*) &variable->vlu_misc;
 
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 	}
 
 	return parentStmt;
@@ -2569,13 +2569,13 @@ EraseNode* EraseNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* EraseNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+const StmtNode* EraseNode::execute(thread_db* tdbb, Request* request, ExeState* exeState) const
 {
 	const StmtNode* retNode;
 
-	if (request->req_operation == jrd_req::req_unwind)
+	if (request->req_operation == Request::req_unwind)
 		retNode = parentStmt;
-	else if (request->req_operation == jrd_req::req_return && subStatement)
+	else if (request->req_operation == Request::req_return && subStatement)
 	{
 		if (!exeState->topNode)
 		{
@@ -2599,7 +2599,7 @@ const StmtNode* EraseNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 			exeState->whichEraseTrig = ALL_TRIGS;
 		}
 		else
-			request->req_operation = jrd_req::req_evaluate;
+			request->req_operation = Request::req_evaluate;
 	}
 	else
 	{
@@ -2614,7 +2614,7 @@ const StmtNode* EraseNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 }
 
 // Perform erase operation.
-const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const
+const StmtNode* EraseNode::erase(thread_db* tdbb, Request* request, WhichTrigger whichTrig) const
 {
 	jrd_tra* transaction = request->req_transaction;
 	record_param* rpb = &request->req_rpb[stream];
@@ -2622,7 +2622,7 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
+		case Request::req_evaluate:
 		{
 			if (!(marks & MARK_AVOID_COUNTERS))
 				request->req_records_affected.bumpModified(false);
@@ -2640,14 +2640,14 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 			return statement;
 		}
 
-		case jrd_req::req_return:
+		case Request::req_return:
 			break;
 
 		default:
 			return parentStmt;
 	}
 
-	request->req_operation = jrd_req::req_return;
+	request->req_operation = Request::req_return;
 	RLCK_reserve_relation(tdbb, transaction, relation, true);
 
 	if (rpb->rpb_runtime_flags & RPB_just_deleted)
@@ -2884,7 +2884,7 @@ ErrorHandlerNode* ErrorHandlerNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* ErrorHandlerNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* exeState) const
+const StmtNode* ErrorHandlerNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* exeState) const
 {
 	if ((request->req_flags & req_error_handler) && !exeState->errorPending)
 	{
@@ -2897,7 +2897,7 @@ const StmtNode* ErrorHandlerNode::execute(thread_db* /*tdbb*/, jrd_req* request,
 	const StmtNode* retNode = parentStmt;
 	retNode = retNode->parentStmt;
 
-	if (request->req_operation == jrd_req::req_unwind)
+	if (request->req_operation == Request::req_unwind)
 		retNode = retNode->parentStmt;
 
 	request->req_last_xcp.clear();
@@ -3205,12 +3205,12 @@ ExecProcedureNode* ExecProcedureNode::pass2(thread_db* tdbb, CompilerScratch* cs
 	return this;
 }
 
-const StmtNode* ExecProcedureNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* ExecProcedureNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		executeProcedure(tdbb, request);
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 	}
 
 	return parentStmt;
@@ -3218,7 +3218,7 @@ const StmtNode* ExecProcedureNode::execute(thread_db* tdbb, jrd_req* request, Ex
 
 // Execute a stored procedure. Begin by assigning the input parameters.
 // End by assigning the output parameters.
-void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) const
+void ExecProcedureNode::executeProcedure(thread_db* tdbb, Request* request) const
 {
 	if (!procedure->isImplemented())
 	{
@@ -3275,7 +3275,7 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 	const SavNumber savNumber = transaction->tra_save_point ?
 		transaction->tra_save_point->getNumber() : 0;
 
-	jrd_req* procRequest = procedure->getStatement()->findRequest(tdbb);
+	Request* procRequest = procedure->getStatement()->findRequest(tdbb);
 
 	// trace procedure execution start
 	TraceProcExecute trace(tdbb, procRequest, request, inputTargets);
@@ -3754,12 +3754,12 @@ ExecStatementNode* ExecStatementNode::pass2(thread_db* tdbb, CompilerScratch* cs
 	return this;
 }
 
-const StmtNode* ExecStatementNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* ExecStatementNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
 	EDS::Statement** stmtPtr = request->getImpure<EDS::Statement*>(impureOffset);
 	EDS::Statement* stmt = *stmtPtr;
 
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		fb_assert(!*stmtPtr);
 
@@ -3798,10 +3798,10 @@ const StmtNode* ExecStatementNode::execute(thread_db* tdbb, jrd_req* request, Ex
 		else
 			stmt->execute(tdbb, tran, inpNames, inputs, excessInputs, outputs);
 
-		request->req_operation = jrd_req::req_return;
-	}  // jrd_req::req_evaluate
+		request->req_operation = Request::req_return;
+	}  // Request::req_evaluate
 
-	if (request->req_operation == jrd_req::req_return || request->req_operation == jrd_req::req_sync)
+	if (request->req_operation == Request::req_return || request->req_operation == Request::req_sync)
 	{
 		fb_assert(stmt);
 
@@ -3809,15 +3809,15 @@ const StmtNode* ExecStatementNode::execute(thread_db* tdbb, jrd_req* request, Ex
 		{
 			if (stmt->fetch(tdbb, outputs))
 			{
-				request->req_operation = jrd_req::req_evaluate;
+				request->req_operation = Request::req_evaluate;
 				return innerStmt;
 			}
 
-			request->req_operation = jrd_req::req_return;
+			request->req_operation = Request::req_return;
 		}
 	}
 
-	if (request->req_operation == jrd_req::req_unwind)
+	if (request->req_operation == Request::req_unwind)
 	{
 		const LabelNode* label = nodeAs<LabelNode>(parentStmt.getObject());
 
@@ -3825,7 +3825,7 @@ const StmtNode* ExecStatementNode::execute(thread_db* tdbb, jrd_req* request, Ex
 			(request->req_flags & req_continue_loop))
 		{
 			request->req_flags &= ~req_continue_loop;
-			request->req_operation = jrd_req::req_sync;
+			request->req_operation = Request::req_sync;
 			return this;
 		}
 	}
@@ -3836,7 +3836,7 @@ const StmtNode* ExecStatementNode::execute(thread_db* tdbb, jrd_req* request, Ex
 	return parentStmt;
 }
 
-void ExecStatementNode::getString(thread_db* tdbb, jrd_req* request, const ValueExprNode* node,
+void ExecStatementNode::getString(thread_db* tdbb, Request* request, const ValueExprNode* node,
 	string& str, bool useAttCS) const
 {
 	MoveBuffer buffer;
@@ -3925,23 +3925,23 @@ IfNode* IfNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* IfNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* IfNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		if (condition->execute(tdbb, request))
 		{
-			request->req_operation = jrd_req::req_evaluate;
+			request->req_operation = Request::req_evaluate;
 			return trueAction;
 		}
 
 		if (falseAction)
 		{
-			request->req_operation = jrd_req::req_evaluate;
+			request->req_operation = Request::req_evaluate;
 			return falseAction;
 		}
 
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 	}
 
 	return parentStmt;
@@ -4010,14 +4010,14 @@ InAutonomousTransactionNode* InAutonomousTransactionNode::pass2(thread_db* tdbb,
 	return this;
 }
 
-const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
 	Database* const dbb = tdbb->getDatabase();
 	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	Impure* const impure = request->getImpure<Impure>(impureOffset);
 
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		// Force unconditional reschedule. It prevents new transactions being
 		// started after an attachment or a database shutdown has been initiated.
@@ -4071,7 +4071,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 
 	switch (request->req_operation)
 	{
-	case jrd_req::req_return:
+	case Request::req_return:
 		if (!(attachment->att_flags & ATT_no_db_triggers))
 		{
 			// run ON TRANSACTION COMMIT triggers
@@ -4086,13 +4086,13 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 		}
 
 		{ // scope
-			AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
+			AutoSetRestore2<Request*, thread_db> autoNullifyRequest(
 				tdbb, &thread_db::getRequest, &thread_db::setRequest, NULL);
 			TRA_commit(tdbb, transaction, false);
 		} // end scope
 		break;
 
-	case jrd_req::req_unwind:
+	case Request::req_unwind:
 		if (request->req_flags & (req_leave | req_continue_loop))
 		{
 			try
@@ -4110,7 +4110,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 					transaction->releaseSavepoint(tdbb);
 				}
 
-				AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
+				AutoSetRestore2<Request*, thread_db> autoNullifyRequest(
 					tdbb, &thread_db::getRequest, &thread_db::setRequest, NULL);
 				TRA_commit(tdbb, transaction, false);
 			}
@@ -4140,7 +4140,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 
 			try
 			{
-				AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
+				AutoSetRestore2<Request*, thread_db> autoNullifyRequest(
 					tdbb, &thread_db::getRequest, &thread_db::setRequest, NULL);
 
 				TRA_rollback(tdbb, transaction, false, false);
@@ -4230,9 +4230,9 @@ InitVariableNode* InitVariableNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* InitVariableNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* InitVariableNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		if (varInfo)
 		{
@@ -4255,7 +4255,7 @@ const StmtNode* InitVariableNode::execute(thread_db* tdbb, jrd_req* request, Exe
 			}
 		}
 
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 	}
 
 	return parentStmt;
@@ -4684,9 +4684,9 @@ ExceptionNode* ExceptionNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* ExceptionNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* ExceptionNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		if (exception)
 		{
@@ -4703,7 +4703,7 @@ const StmtNode* ExceptionNode::execute(thread_db* tdbb, jrd_req* request, ExeSta
 		{
 			// PsqlException is undefined and there weren't any exceptions before,
 			// so just do nothing.
-			request->req_operation = jrd_req::req_return;
+			request->req_operation = Request::req_return;
 		}
 	}
 
@@ -4715,7 +4715,7 @@ void ExceptionNode::setError(thread_db* tdbb) const
 {
 	SET_TDBB(tdbb);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	if (!exception)
 	{
@@ -5072,7 +5072,7 @@ StmtNode* ForNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* ForNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
 	jrd_tra* transaction = request->req_transaction;
 	ImpureMerge* merge = request->getImpure<ImpureMerge>(impureOffset);
@@ -5080,7 +5080,7 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
+		case Request::req_evaluate:
 			// initialize impure values
 			impure->savepoint = 0;
 			impure->writeLockMode = false;
@@ -5102,13 +5102,13 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 
 			// fall into
 
-		case jrd_req::req_return:
+		case Request::req_return:
 			if (stall)
 				return stall;
 
 			// fall into
 
-		case jrd_req::req_sync:
+		case Request::req_sync:
 			{
 				if (hasLineColumn)
 				{
@@ -5119,7 +5119,7 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 				const bool fetched = cursor->fetchNext(tdbb);
 				if (withLock)
 				{
-					const jrd_req* top_request = request->req_snapshot.m_owner;
+					const Request* top_request = request->req_snapshot.m_owner;
 					if ((top_request) && (top_request->req_flags & req_update_conflict))
 						impure->writeLockMode = true;
 				}
@@ -5129,11 +5129,11 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 					if (impure->writeLockMode && withLock)
 					{
 						// Skip statement execution and fetch (and try to lock) next record.
-						request->req_operation = jrd_req::req_sync;
+						request->req_operation = Request::req_sync;
 						return this;
 					}
 
-					request->req_operation = jrd_req::req_evaluate;
+					request->req_operation = Request::req_evaluate;
 					return statement;
 				}
 			}
@@ -5141,7 +5141,7 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 			if (impure->writeLockMode)
 				restartRequest(request, transaction);
 
-			request->req_operation = jrd_req::req_return;
+			request->req_operation = Request::req_return;
 
 			if (impure->savepoint)
 			{
@@ -5157,7 +5157,7 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 
 		default:
 		{
-			if (request->req_operation == jrd_req::req_unwind)
+			if (request->req_operation == Request::req_unwind)
 			{
 				if (request->req_flags & (req_leave | req_continue_loop))
 				{
@@ -5169,7 +5169,7 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 						(request->req_flags & req_continue_loop))
 					{
 						request->req_flags &= ~req_continue_loop;
-						request->req_operation = jrd_req::req_sync;
+						request->req_operation = Request::req_sync;
 						return this;
 					}
 
@@ -5204,13 +5204,13 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 	return NULL;
 }
 
-bool ForNode::isWriteLockMode(jrd_req* request) const
+bool ForNode::isWriteLockMode(Request* request) const
 {
 	const Impure* impure = request->getImpure<Impure>(impureOffset);
 	return impure->writeLockMode;
 }
 
-void ForNode::setWriteLockMode(jrd_req* request) const
+void ForNode::setWriteLockMode(Request* request) const
 {
 	Impure* impure = request->getImpure<Impure>(impureOffset);
 	fb_assert(!impure->writeLockMode);
@@ -5218,7 +5218,7 @@ void ForNode::setWriteLockMode(jrd_req* request) const
 	impure->writeLockMode = true;
 }
 
-void ForNode::checkRecordUpdated(thread_db* tdbb, jrd_req* request, record_param* rpb) const
+void ForNode::checkRecordUpdated(thread_db* tdbb, Request* request, record_param* rpb) const
 {
 	jrd_rel* relation = rpb->rpb_relation;
 	if (!(marks & MARK_MERGE) || relation->isVirtual() || relation->rel_file || relation->rel_view_rse)
@@ -5233,7 +5233,7 @@ void ForNode::checkRecordUpdated(thread_db* tdbb, jrd_req* request, record_param
 		Arg::Gds(isc_merge_dup_update).raise();
 }
 
-void ForNode::setRecordUpdated(thread_db* tdbb, jrd_req* request, record_param* rpb) const
+void ForNode::setRecordUpdated(thread_db* tdbb, Request* request, record_param* rpb) const
 {
 	jrd_rel* relation = rpb->rpb_relation;
 	if (!(marks & MARK_MERGE) || relation->isVirtual() || relation->rel_file || relation->rel_view_rse)
@@ -5286,16 +5286,16 @@ HandlerNode* HandlerNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* HandlerNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* HandlerNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
+		case Request::req_evaluate:
 			return statement;
 
-		case jrd_req::req_unwind:
+		case Request::req_unwind:
 			if (!request->req_label)
-				request->req_operation = jrd_req::req_return;
+				request->req_operation = Request::req_return;
 
 		default:
 			return parentStmt;
@@ -5349,21 +5349,21 @@ LabelNode* LabelNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* LabelNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* LabelNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
+		case Request::req_evaluate:
 			return statement;
 
-		case jrd_req::req_unwind:
+		case Request::req_unwind:
 			fb_assert(!(request->req_flags & req_continue_loop));
 
 			if (request->req_label == labelNumber &&
 				(request->req_flags & (req_leave | req_error_handler)))
 			{
 				request->req_flags &= ~req_leave;
-				request->req_operation = jrd_req::req_return;
+				request->req_operation = Request::req_return;
 			}
 			// fall into
 
@@ -5475,16 +5475,16 @@ LoopNode* LoopNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* LoopNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* LoopNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
-		case jrd_req::req_return:
-			request->req_operation = jrd_req::req_evaluate;
+		case Request::req_evaluate:
+		case Request::req_return:
+			request->req_operation = Request::req_evaluate;
 			return statement;
 
-		case jrd_req::req_unwind:
+		case Request::req_unwind:
 		{
 			const LabelNode* label = nodeAs<LabelNode>(parentStmt.getObject());
 
@@ -5492,7 +5492,7 @@ const StmtNode* LoopNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeStat
 				(request->req_flags & req_continue_loop))
 			{
 				request->req_flags &= ~req_continue_loop;
-				request->req_operation = jrd_req::req_evaluate;
+				request->req_operation = Request::req_evaluate;
 				return statement;
 			}
 			// fall into
@@ -6372,13 +6372,13 @@ MessageNode* MessageNode::pass2(thread_db* /*tdbb*/, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* MessageNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* MessageNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		USHORT* flags = request->getImpure<USHORT>(impureFlags);
 		memset(flags, 0, sizeof(USHORT) * format->fmt_count);
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 	}
 
 	return parentStmt;
@@ -6890,15 +6890,15 @@ ModifyNode* ModifyNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* ModifyNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+const StmtNode* ModifyNode::execute(thread_db* tdbb, Request* request, ExeState* exeState) const
 {
 	impure_state* impure = request->getImpure<impure_state>(impureOffset);
 	const StmtNode* retNode;
 
-	if (request->req_operation == jrd_req::req_unwind)
+	if (request->req_operation == Request::req_unwind)
 		return parentStmt;
 
-	if (request->req_operation == jrd_req::req_return && !impure->sta_state && subMod)
+	if (request->req_operation == Request::req_return && !impure->sta_state && subMod)
 	{
 		if (!exeState->topNode)
 		{
@@ -6922,7 +6922,7 @@ const StmtNode* ModifyNode::execute(thread_db* tdbb, jrd_req* request, ExeState*
 			exeState->whichModTrig = ALL_TRIGS;
 		}
 		else
-			request->req_operation = jrd_req::req_evaluate;
+			request->req_operation = Request::req_evaluate;
 	}
 	else
 	{
@@ -6937,7 +6937,7 @@ const StmtNode* ModifyNode::execute(thread_db* tdbb, jrd_req* request, ExeState*
 }
 
 // Execute a MODIFY statement.
-const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const
+const StmtNode* ModifyNode::modify(thread_db* tdbb, Request* request, WhichTrigger whichTrig) const
 {
 	jrd_tra* transaction = request->req_transaction;
 	impure_state* impure = request->getImpure<impure_state>(impureOffset);
@@ -6949,24 +6949,24 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
+		case Request::req_evaluate:
 			if (!(marks & MARK_AVOID_COUNTERS))
 				request->req_records_affected.bumpModified(false);
 
 			if (impure->sta_state == 0 && forNode && forNode->isWriteLockMode(request))
-				request->req_operation = jrd_req::req_return;
+				request->req_operation = Request::req_return;
 				// fall thru
 			else
 				break;
 
-		case jrd_req::req_return:
+		case Request::req_return:
 			if (impure->sta_state == 1)
 			{
 				impure->sta_state = 0;
 				Record* orgRecord = orgRpb->rpb_record;
 				const Record* newRecord = newRpb->rpb_record;
 				orgRecord->copyDataFrom(newRecord, true);
-				request->req_operation = jrd_req::req_evaluate;
+				request->req_operation = Request::req_evaluate;
 				return statement;
 			}
 
@@ -7047,7 +7047,7 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 				if (statement2)
 				{
 					impure->sta_state = 2;
-					request->req_operation = jrd_req::req_evaluate;
+					request->req_operation = Request::req_evaluate;
 					return statement2;
 				}
 			}
@@ -7068,7 +7068,7 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 
 	if (orgRpb->rpb_runtime_flags & RPB_just_deleted)
 	{
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 		return parentStmt;
 	}
 
@@ -7090,7 +7090,7 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 
 	if (orgRpb->rpb_runtime_flags & RPB_undo_deleted)
 	{
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 		return parentStmt;
 	}
 
@@ -7221,10 +7221,10 @@ DmlNode* OuterMapNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 	return node;
 }
 
-const StmtNode* OuterMapNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+const StmtNode* OuterMapNode::execute(thread_db* tdbb, Request* request, ExeState* exeState) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
-		request->req_operation = jrd_req::req_return;
+	if (request->req_operation == Request::req_evaluate)
+		request->req_operation = Request::req_return;
 
 	return parentStmt;
 }
@@ -7295,9 +7295,9 @@ PostEventNode* PostEventNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* PostEventNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* PostEventNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		jrd_tra* transaction = request->req_transaction;
 
@@ -7312,7 +7312,7 @@ const StmtNode* PostEventNode::execute(thread_db* tdbb, jrd_req* request, ExeSta
 		if (transaction->tra_flags & TRA_autocommit)
 			transaction->tra_flags |= TRA_perform_autocommit;
 
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 	}
 
 	return parentStmt;
@@ -7373,23 +7373,23 @@ ReceiveNode* ReceiveNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 // Execute a RECEIVE statement. This can be entered either with "req_evaluate" (ordinary receive
 // statement) or "req_proceed" (select statement).
 // In the latter case, the statement isn't every formalled evaluated.
-const StmtNode* ReceiveNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* ReceiveNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
-		case jrd_req::req_return:
+		case Request::req_return:
 			if (!(request->req_batch_mode && batchFlag))
 				break;
 			// fall into
 
-		case jrd_req::req_evaluate:
-			request->req_operation = jrd_req::req_receive;
+		case Request::req_evaluate:
+			request->req_operation = Request::req_receive;
 			request->req_message = message;
 			request->req_flags |= req_stall;
 			return this;
 
-		case jrd_req::req_proceed:
-			request->req_operation = jrd_req::req_evaluate;
+		case Request::req_proceed:
+			request->req_operation = Request::req_evaluate;
 			return statement;
 
 		default:
@@ -7946,12 +7946,12 @@ StoreNode* StoreNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* StoreNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+const StmtNode* StoreNode::execute(thread_db* tdbb, Request* request, ExeState* exeState) const
 {
 	impure_state* impure = request->getImpure<impure_state>(impureOffset);
 	const StmtNode* retNode;
 
-	if (request->req_operation == jrd_req::req_return && !impure->sta_state && subStore)
+	if (request->req_operation == Request::req_return && !impure->sta_state && subStore)
 	{
 		if (!exeState->topNode)
 		{
@@ -7975,7 +7975,7 @@ const StmtNode* StoreNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 			exeState->whichStoTrig = ALL_TRIGS;
 		}
 		else
-			request->req_operation = jrd_req::req_evaluate;
+			request->req_operation = Request::req_evaluate;
 	}
 	else
 	{
@@ -7990,7 +7990,7 @@ const StmtNode* StoreNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 }
 
 // Execute a STORE statement.
-const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const
+const StmtNode* StoreNode::store(thread_db* tdbb, Request* request, WhichTrigger whichTrig) const
 {
 	jrd_tra* transaction = request->req_transaction;
 	impure_state* impure = request->getImpure<impure_state>(impureOffset);
@@ -8007,7 +8007,7 @@ const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger
 
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
+		case Request::req_evaluate:
 			if (!(marks & MARK_AVOID_COUNTERS))
 			{
 				if (!nodeIs<ForNode>(parentStmt))
@@ -8021,7 +8021,7 @@ const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger
 				RLCK_reserve_relation(tdbb, transaction, relation, true);
 			break;
 
-		case jrd_req::req_return:
+		case Request::req_return:
 			if (!impure->sta_state)
 			{
 				SavepointChangeMarker scMarker(transaction);
@@ -8079,7 +8079,7 @@ const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger
 				if (statement2)
 				{
 					impure->sta_state = 1;
-					request->req_operation = jrd_req::req_evaluate;
+					request->req_operation = Request::req_evaluate;
 					return statement2;
 				}
 			}
@@ -8365,13 +8365,13 @@ SelectNode* SelectNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 // EXE_send will then loop thru the sub-statements of select looking for the appropriate RECEIVE
 // statement. When (or if) it finds it, it will set it up the next statement to be executed.
 // The RECEIVE, then, will be entered with the operation "req_proceed".
-const StmtNode* SelectNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* SelectNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
+		case Request::req_evaluate:
 			request->req_message = this;
-			request->req_operation = jrd_req::req_receive;
+			request->req_operation = Request::req_receive;
 			request->req_flags |= req_stall;
 			return this;
 
@@ -8432,9 +8432,9 @@ SetGeneratorNode* SetGeneratorNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* SetGeneratorNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* SetGeneratorNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		jrd_tra* const transaction = request->req_transaction;
 
@@ -8447,7 +8447,7 @@ const StmtNode* SetGeneratorNode::execute(thread_db* tdbb, jrd_req* request, Exe
 		DdlNode::executeDdlTrigger(tdbb, transaction, DdlNode::DTW_AFTER,
 			DDL_TRIGGER_ALTER_SEQUENCE, generator.name, NULL, *request->getStatement()->sqlText);
 
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 	}
 
 	return parentStmt;
@@ -8493,19 +8493,19 @@ StallNode* StallNode::pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 // Execute a stall statement. This is like a blr_receive, except that there is no need for a
 // gds__send () from the user (i.e. EXE_send () in the engine).
 // A gds__receive () will unblock the user.
-const StmtNode* StallNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* StallNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
-		case jrd_req::req_return:
+		case Request::req_evaluate:
+		case Request::req_return:
 			request->req_message = this;
-			request->req_operation = jrd_req::req_return;
+			request->req_operation = Request::req_return;
 			request->req_flags |= req_stall;
 			return this;
 
-		case jrd_req::req_proceed:
-			request->req_operation = jrd_req::req_return;
+		case Request::req_proceed:
+			request->req_operation = Request::req_return;
 			return parentStmt;
 
 		default:
@@ -8587,11 +8587,11 @@ SuspendNode* SuspendNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 }
 
 // Execute a SEND statement.
-const StmtNode* SuspendNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* SuspendNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
+		case Request::req_evaluate:
 		{
 			// ASF: If this is the send in the tail of a procedure and the procedure was called
 			// with a SELECT, don't run all the send statements. It may make validations fail when
@@ -8623,14 +8623,14 @@ const StmtNode* SuspendNode::execute(thread_db* tdbb, jrd_req* request, ExeState
 			// fall into
 		}
 
-		case jrd_req::req_return:
-			request->req_operation = jrd_req::req_send;
+		case Request::req_return:
+			request->req_operation = Request::req_send;
 			request->req_message = message;
 			request->req_flags |= req_stall;
 			return this;
 
-		case jrd_req::req_proceed:
-			request->req_operation = jrd_req::req_return;
+		case Request::req_proceed:
+			request->req_operation = Request::req_return;
 			return parentStmt;
 
 		default:
@@ -8751,11 +8751,11 @@ SavepointEncloseNode* SavepointEncloseNode::pass2(thread_db* tdbb, CompilerScrat
 	return this;
 }
 
-const StmtNode* SavepointEncloseNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* SavepointEncloseNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
 	const auto transaction = request->req_transaction;
 
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		if (!(transaction->tra_flags & TRA_system))
 		{
@@ -8766,7 +8766,7 @@ const StmtNode* SavepointEncloseNode::execute(thread_db* tdbb, jrd_req* request,
 		return statement;
 	}
 
-	if (request->req_operation == jrd_req::req_return)
+	if (request->req_operation == Request::req_return)
 	{
 		if (!(transaction->tra_flags & TRA_system))
 		{
@@ -9160,9 +9160,9 @@ TruncateLocalTableNode* TruncateLocalTableNode::copy(thread_db* tdbb, NodeCopier
 	return node;
 }
 
-const StmtNode* TruncateLocalTableNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* TruncateLocalTableNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		const auto localTable = request->getStatement()->localTables[tableNumber];
 
@@ -9172,7 +9172,7 @@ const StmtNode* TruncateLocalTableNode::execute(thread_db* tdbb, jrd_req* reques
 			recordBuffer = nullptr;
 		}
 
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 	}
 
 	return parentStmt;
@@ -10876,9 +10876,9 @@ static void preprocessAssignments(thread_db* tdbb, CompilerScratch* csb,
 	}
 }
 
-static void restartRequest(const jrd_req* request, jrd_tra* transaction)
+static void restartRequest(const Request* request, jrd_tra* transaction)
 {
-	const jrd_req* top_request = request->req_snapshot.m_owner;
+	const Request* top_request = request->req_snapshot.m_owner;
 	fb_assert(top_request);
 	fb_assert(top_request->req_flags & req_update_conflict);
 
@@ -10898,7 +10898,7 @@ static void validateExpressions(thread_db* tdbb, const Array<ValidateInfo>& vali
 
 	for (Array<ValidateInfo>::const_iterator i = validations.begin(); i != end; ++i)
 	{
-		jrd_req* request = tdbb->getRequest();
+		Request* request = tdbb->getRequest();
 
 		if (!i->boolean->execute(tdbb, request) && !(request->req_flags & req_null))
 		{

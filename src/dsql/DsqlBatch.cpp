@@ -652,7 +652,7 @@ private:
 
 	// execute request
 	m_dsqlRequest->req_transaction = transaction;
-	jrd_req* req = m_dsqlRequest->getRequest();
+	Request* req = m_dsqlRequest->getRequest();
 	fb_assert(req);
 
 	// prepare completion interface

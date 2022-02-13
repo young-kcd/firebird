@@ -41,7 +41,7 @@ class DsqlCompilerScratch;
 class DsqlCursor;
 class DsqlDmlStatement;
 class dsql_par;
-class jrd_req;
+class Request;
 class jrd_tra;
 class Statement;
 class SessionManagementNode;
@@ -70,7 +70,7 @@ public:
 		return nullptr;
 	}
 
-	virtual jrd_req* getRequest() const
+	virtual Request* getRequest() const
 	{
 		return nullptr;
 	}
@@ -160,7 +160,7 @@ public:
 
 	Statement* getStatement() const override;
 
-	jrd_req* getRequest() const override
+	Request* getRequest() const override
 	{
 		return request;
 	}
@@ -209,7 +209,7 @@ public:
 
 private:
 	Firebird::RefPtr<Firebird::IMessageMetadata> delayedFormat;
-	jrd_req* request = nullptr;
+	Request* request = nullptr;
 	bool needDelayedFormat = false;
 	bool firstRowFetched = false;
 };

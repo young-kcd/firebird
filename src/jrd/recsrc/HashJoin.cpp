@@ -283,7 +283,7 @@ HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, FB_SIZE_T count,
 
 void HashJoin::open(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open | irsb_mustread;
@@ -324,7 +324,7 @@ void HashJoin::open(thread_db* tdbb) const
 
 void HashJoin::close(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	invalidateRecords(request);
@@ -350,7 +350,7 @@ bool HashJoin::getRecord(thread_db* tdbb) const
 {
 	JRD_reschedule(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
@@ -470,7 +470,7 @@ void HashJoin::findUsedStreams(StreamList& streams, bool expandAll) const
 		m_args[i].source->findUsedStreams(streams, expandAll);
 }
 
-void HashJoin::invalidateRecords(jrd_req* request) const
+void HashJoin::invalidateRecords(Request* request) const
 {
 	m_leader.source->invalidateRecords(request);
 
@@ -487,7 +487,7 @@ void HashJoin::nullRecords(thread_db* tdbb) const
 }
 
 ULONG HashJoin::computeHash(thread_db* tdbb,
-							jrd_req* request,
+							Request* request,
 						    const SubStream& sub,
 							UCHAR* keyBuffer) const
 {

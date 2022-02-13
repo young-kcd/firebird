@@ -2795,7 +2795,7 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 			SelectivityList selectivity(*tdbb->getDefaultPool());
 
 			jrd_tra* const current_transaction = tdbb->getTransaction();
-			jrd_req* const current_request = tdbb->getRequest();
+			Request* const current_request = tdbb->getRequest();
 
 			try
 			{
@@ -5911,10 +5911,10 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 							ValueExprNode* defaultNode = static_cast<ValueExprNode*>(MET_parse_blob(
 								tdbb, relation, defaultValue, NULL, &defaultStatement, false, false));
 
-							jrd_req* const defaultRequest = defaultStatement->findRequest(tdbb);
+							Request* const defaultRequest = defaultStatement->findRequest(tdbb);
 
 							// Attention: this is scoped to the end of this "try".
-							AutoSetRestore2<jrd_req*, thread_db> autoRequest(tdbb,
+							AutoSetRestore2<Request*, thread_db> autoRequest(tdbb,
 								&thread_db::getRequest, &thread_db::setRequest, defaultRequest);
 
 							defaultRequest->validateTimeStamp();

@@ -87,7 +87,7 @@ namespace Jrd
 	class ValueListNode;
 	class WindowClause;
 	class jrd_tra;
-	class jrd_req;
+	class Request;
 	class blb;
 	struct bid;
 
