@@ -986,7 +986,7 @@ void DdlNode::executeDdlTrigger(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 	const MetaName& oldNewObjectName)
 {
 	executeDdlTrigger(tdbb, transaction, when, action, objectName, oldNewObjectName,
-		*dsqlScratch->getStatement()->getSqlText());
+		*dsqlScratch->getDsqlStatement()->getSqlText());
 }
 
 void DdlNode::storeGlobalField(thread_db* tdbb, jrd_tra* transaction, MetaName& name,
@@ -1355,7 +1355,6 @@ void CommentOnNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 
 	switch (objType)
 	{
-		case obj_schema:
 		case obj_database:
 			SCL_check_database(tdbb, SCL_alter);
 			break;
@@ -1578,12 +1577,6 @@ void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 			status << Arg::Gds(isc_dyn_package_not_found) << Arg::Str(objNameStr);
 			break;
 
-		case obj_schema:
-			tableClause = "rdb$schemas";
-			columnClause = "rdb$schema_name";
-			status << Arg::Gds(isc_dyn_schema_not_found) << Arg::Str(objNameStr);
-			break;
-
 		default:
 			fb_assert(false);
 			return;
@@ -1742,7 +1735,7 @@ void CreateAlterFunctionNode::checkPermission(thread_db* tdbb, jrd_tra* transact
 			return;
 	}
 
-	SCL_check_create_access(tdbb, SCL_object_function);
+	SCL_check_create_access(tdbb, obj_functions);
 }
 
 void CreateAlterFunctionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
@@ -2343,6 +2336,8 @@ void CreateAlterFunctionNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* 
 		dsqlScratch->cursorNumber = 0;
 
 		StmtNode* stmtNode = body->dsqlPass(dsqlScratch);
+
+		dsqlScratch->putOuterMaps();
 		GEN_hidden_variables(dsqlScratch);
 
 		dsqlScratch->appendUChar(blr_stall);
@@ -2353,7 +2348,7 @@ void CreateAlterFunctionNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* 
 
 		stmtNode->genBlr(dsqlScratch);
 
-		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_DDL);
+		dsqlScratch->getDsqlStatement()->setType(DsqlStatement::TYPE_DDL);
 		dsqlScratch->appendUChar(blr_end);
 		dsqlScratch->genReturn(false);
 		dsqlScratch->appendUChar(blr_end);
@@ -2748,7 +2743,7 @@ void CreateAlterProcedureNode::checkPermission(thread_db* tdbb, jrd_tra* transac
 			return;
 	}
 
-	SCL_check_create_access(tdbb, SCL_object_procedure);
+	SCL_check_create_access(tdbb, obj_procedures);
 }
 
 void CreateAlterProcedureNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
@@ -2878,7 +2873,7 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 	AutoCacheRequest requestHandle(tdbb, drq_m_prcs2, DYN_REQUESTS);
 	bool modified = false;
 
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+	DsqlStatement* statement = dsqlScratch->getDsqlStatement();
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		P IN RDB$PROCEDURES
@@ -2972,7 +2967,7 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 
 					P.RDB$PROCEDURE_TYPE.NULL = FALSE;
 					P.RDB$PROCEDURE_TYPE = (USHORT)
-						(statement->getFlags() & DsqlCompiledStatement::FLAG_SELECTABLE ?
+						(statement->getFlags() & DsqlStatement::FLAG_SELECTABLE ?
 							prc_selectable : prc_executable);
 				}
 			}
@@ -3236,6 +3231,8 @@ void CreateAlterProcedureNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch*
 	dsqlScratch->cursorNumber = 0;
 
 	StmtNode* stmtNode = body->dsqlPass(dsqlScratch);
+
+	dsqlScratch->putOuterMaps();
 	GEN_hidden_variables(dsqlScratch);
 
 	dsqlScratch->appendUChar(blr_stall);
@@ -3246,7 +3243,7 @@ void CreateAlterProcedureNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch*
 
 	stmtNode->genBlr(dsqlScratch);
 
-	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_DDL);
+	dsqlScratch->getDsqlStatement()->setType(DsqlStatement::TYPE_DDL);
 	dsqlScratch->appendUChar(blr_end);
 	dsqlScratch->genReturn(true);
 	dsqlScratch->appendUChar(blr_end);
@@ -3752,6 +3749,8 @@ void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* d
 		dsqlScratch->scopeLevel++;
 
 		StmtNode* stmtNode = body->dsqlPass(dsqlScratch);
+
+		dsqlScratch->putOuterMaps();
 		GEN_hidden_variables(dsqlScratch);
 
 		// dimitr: I see no reason to deny EXIT command in triggers,
@@ -3775,7 +3774,7 @@ void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* d
 		// The statement type may have been set incorrectly when parsing
 		// the trigger actions, so reset it to reflect the fact that this
 		// is a data definition statement; also reset the ddl node.
-		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_DDL);
+		dsqlScratch->getDsqlStatement()->setType(DsqlStatement::TYPE_DDL);
 	}
 
 	invalid = false;
@@ -3945,7 +3944,7 @@ string CreateCollationNode::internalPrint(NodePrinter& printer) const
 
 void CreateCollationNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
-	SCL_check_create_access(tdbb, SCL_object_collation);
+	SCL_check_create_access(tdbb, obj_collations);
 }
 
 void CreateCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
@@ -4313,7 +4312,7 @@ string CreateDomainNode::internalPrint(NodePrinter& printer) const
 
 void CreateDomainNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
-	SCL_check_create_access(tdbb, SCL_object_domain);
+	SCL_check_create_access(tdbb, obj_domains);
 }
 
 void CreateDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
@@ -5451,7 +5450,7 @@ void CreateAlterExceptionNode::checkPermission(thread_db* tdbb, jrd_tra* transac
 			return;
 	}
 
-	SCL_check_create_access(tdbb, SCL_object_exception);
+	SCL_check_create_access(tdbb, obj_exceptions);
 }
 
 void CreateAlterExceptionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
@@ -5658,7 +5657,7 @@ void CreateAlterSequenceNode::checkPermission(thread_db* tdbb, jrd_tra* transact
 			return;
 	}
 
-	SCL_check_create_access(tdbb, SCL_object_generator);
+	SCL_check_create_access(tdbb, obj_generators);
 }
 
 void CreateAlterSequenceNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
@@ -6747,6 +6746,7 @@ void RelationNode::defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 				definition.unique = constraint.type != Constraint::TYPE_FK;
 				if (constraint.index->descending)
 					definition.descending = true;
+				definition.inactive = false;
 				definition.columns = constraint.columns;
 				definition.refRelation = constraint.refRelation;
 				definition.refColumns = constraint.refColumns;
@@ -7390,7 +7390,7 @@ string CreateRelationNode::internalPrint(NodePrinter& printer) const
 
 void CreateRelationNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
-	SCL_check_create_access(tdbb, SCL_object_table);
+	SCL_check_create_access(tdbb, obj_relations);
 }
 
 void CreateRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
@@ -8670,7 +8670,7 @@ void CreateAlterViewNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 			return;
 	}
 
-	SCL_check_create_access(tdbb, SCL_object_view);
+	SCL_check_create_access(tdbb, obj_views);
 }
 
 void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
@@ -9831,6 +9831,7 @@ void CreateIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	definition.relation = relation->dsqlName;
 	definition.unique = unique;
 	definition.descending = descending;
+	definition.inactive = false;
 
 	if (columns)
 	{
@@ -10091,7 +10092,7 @@ string CreateFilterNode::internalPrint(NodePrinter& printer) const
 
 void CreateFilterNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
-	SCL_check_create_access(tdbb, SCL_object_filter);
+	SCL_check_create_access(tdbb, obj_filters);
 }
 
 // Define a blob filter.
@@ -10347,7 +10348,7 @@ string CreateAlterRoleNode::internalPrint(NodePrinter& printer) const
 void CreateAlterRoleNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	if (createFlag)
-		SCL_check_create_access(tdbb, SCL_object_role);
+		SCL_check_create_access(tdbb, obj_roles);
 	else
 		SCL_check_role(tdbb, name, SCL_alter);
 }
@@ -10735,7 +10736,7 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 		(Arg::Gds(isc_adm_task_denied) << Arg::Gds(isc_miss_prvlg) << "CHANGE_MAPPING_RULES").raise();
 
 	if (from)
-		fromUtf8 = from->toUtf8(dsqlScratch);
+		fromUtf8 = from->toUtf8(transaction);
 
 	if (global)
 	{
@@ -11513,10 +11514,10 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 	const GranteeClause* userNod, const char* privs,
 	MetaName field, int options)
 {
-	SSHORT userType = userNod->first;
+	ObjectType userType = userNod->first;
 	MetaName user(userNod->second);
 	MetaName dummyName;
-	const SSHORT objType = object ? object->first : obj_type_MAX;
+	const ObjectType objType = object ? object->first : obj_type_MAX;
 	const MetaName objName(object ? object->second : "");
 	bool crdb = false;
 
@@ -11668,7 +11669,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 			break;
 
 		default:
-			fb_assert(object == NULL || objType >= obj_database);
+			fb_assert(object == NULL || isDdlObject(objType));
 	}
 
 	if (options == 1)	// with grant option
@@ -11872,10 +11873,8 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 					}
 
 					default:
-						if (objType >= obj_database)
-						{
+						if (isDdlObject(objType))
 							checkGrantorCanGrantDdl(tdbb, transaction, currentUser.c_str(), priv, objName);
-						}
 						else
 							fb_assert(false);
 				}
@@ -12297,10 +12296,14 @@ void GrantRevokeNode::checkGrantorCanGrantDdl(thread_db* tdbb, jrd_tra* transact
 		WITH ((PRV.RDB$USER = UPPERCASE(grantor.c_str()) AND
 				PRV.RDB$USER_TYPE = obj_user) OR (PRV.RDB$USER_TYPE = obj_sql_role)) AND
 			 PRV.RDB$RELATION_NAME EQ objName.c_str() AND
-			 PRV.RDB$OBJECT_TYPE >= obj_database AND
+			 PRV.RDB$OBJECT_TYPE >= obj_database AND	// it might be deleted but I believe it's more efficient
 			 PRV.RDB$PRIVILEGE EQ privilege
 	{
 		if ( (PRV.RDB$USER_TYPE == obj_sql_role) && !attachment->att_user->roleInUse(tdbb, PRV.RDB$USER))
+			continue;
+
+		// Double check if the object is DDL one.
+		if (!isDdlObject(PRV.RDB$OBJECT_TYPE))
 			continue;
 
 		if (PRV.RDB$GRANT_OPTION == WITH_GRANT_OPTION)

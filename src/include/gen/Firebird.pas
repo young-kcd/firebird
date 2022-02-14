@@ -1555,6 +1555,7 @@ type
 	IBatch = class(IReferenceCounted)
 		const VERSION = 4;
 		const VERSION1 = Byte(1);
+		const CURRENT_VERSION = Byte(IBatch.VERSION1);
 		const TAG_MULTIERROR = Byte(1);
 		const TAG_RECORD_COUNTS = Byte(2);
 		const TAG_BUFFER_BYTES_SIZE = Byte(3);
@@ -3847,6 +3848,7 @@ const
 	isc_dpb_set_bind = byte(93);
 	isc_dpb_decfloat_round = byte(94);
 	isc_dpb_decfloat_traps = byte(95);
+	isc_dpb_clear_map = byte(96);
 	isc_dpb_address = byte(1);
 	isc_dpb_addr_protocol = byte(1);
 	isc_dpb_addr_endpoint = byte(2);
@@ -5150,6 +5152,8 @@ const
 	 isc_inf_invalid_args = 335545275;
 	 isc_sysf_invalid_null_empty = 335545276;
 	 isc_bad_loctab_num = 335545277;
+	 isc_quoted_str_bad = 335545278;
+	 isc_quoted_str_miss = 335545279;
 	 isc_gfix_db_name = 335740929;
 	 isc_gfix_invalid_sw = 335740930;
 	 isc_gfix_incmp_sw = 335740932;

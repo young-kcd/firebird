@@ -51,7 +51,7 @@ namespace Jrd
 class Attachment;
 class BlobControl;
 class jrd_rel;
-class jrd_req;
+class Request;
 class jrd_tra;
 class vcl;
 class thread_db;
@@ -123,6 +123,13 @@ public:
 	void toPageHeader(Ods::blh* header) const;
 	void getFromPage(USHORT length, const UCHAR* data);
 	void storeToPage(USHORT* length, Firebird::Array<UCHAR>& buffer, const UCHAR** data, void* stack);
+
+	static bid copy(thread_db* tdbb, const bid* source)
+	{
+		bid destination;
+		copy_blob(tdbb, source, &destination, 0, nullptr, 0);
+		return destination;
+	}
 
 private:
 	static blb* allocate_blob(thread_db*, jrd_tra*);

@@ -1143,7 +1143,7 @@ Firebird::PathName getPrefix(unsigned int prefType, const char* name)
 
 	if (s.hasData() && name[0])
 	{
-		s += '/';
+		s += PathUtils::dir_sep;
 	}
 	s += name;
 	gds__prefix(tmp, s.c_str());
@@ -1613,6 +1613,13 @@ bool containsErrorCode(const ISC_STATUS* v, ISC_STATUS code)
 	return false;
 }
 
+inline bool sqlSymbolChar(char c, bool first)
+{
+	if (c & 0x80)
+		return false;
+	return (isdigit(c) && !first) || isalpha(c) || c == '_' || c == '$';
+}
+
 const char* dpbItemUpper(const char* s, FB_SIZE_T l, Firebird::string& buf)
 {
 	if (l && (s[0] == '"' || s[0] == '\''))
@@ -1625,30 +1632,38 @@ const char* dpbItemUpper(const char* s, FB_SIZE_T l, Firebird::string& buf)
 		{
 			if (s[i] == end_quote)
 			{
-				if (++i >= l || s[i] != end_quote)
-					break;		// delimited quote, done processing
+				if (++i >= l)
+				{
+					if (ascii && s[0] == '\'')
+						buf.upper();
+
+					return buf.c_str();
+				}
+
+				if (s[i] != end_quote)
+				{
+					buf.assign(&s[i], l - i);
+					(Firebird::Arg::Gds(isc_quoted_str_bad) << buf).raise();
+				}
 
 				// skipped the escape quote, continue processing
 			}
-
-			if (s[i] & 0x80)
+			else if (!sqlSymbolChar(s[i], i == 1))
 				ascii = false;
+
 			buf += s[i];
 		}
 
-		if (ascii && s[0] == '\'')
-			buf.upper();
-
-		return buf.c_str();
+		buf.assign(1, s[0]);
+		(Firebird::Arg::Gds(isc_quoted_str_miss) << buf).raise();
 	}
 
 	// non-quoted string - try to uppercase
 	for (FB_SIZE_T i = 0; i < l; ++i)
 	{
-		if (!(s[i] & 0x80))
-			buf += toupper(s[i]);
-		else
+		if (!sqlSymbolChar(s[i], i == 0))
 			return NULL;				// contains non-ascii data
+		buf += toupper(s[i]);
 	}
 
 	return buf.c_str();

@@ -45,7 +45,7 @@ public:
 };
 
 
-class KeywordsTableScan : public VirtualTableScan
+class KeywordsTableScan final : public VirtualTableScan
 {
 public:
 	KeywordsTableScan(CompilerScratch* csb, const Firebird::string& alias,

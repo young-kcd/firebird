@@ -39,7 +39,6 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
-#include "../jrd/opt_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/cvt_proto.h"
 #include "../jrd/CryptoManager.h"
@@ -48,6 +47,7 @@
 #include "../jrd/Monitoring.h"
 #include "../jrd/Function.h"
 #include "../jrd/met.h"
+#include "../jrd/optimizer/Optimizer.h"
 
 #ifdef WIN_NT
 #include <process.h>
@@ -447,6 +447,9 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 	RecordBuffer* const dbb_buffer = allocBuffer(tdbb, pool, rel_mon_database);
 	RecordBuffer* const att_buffer = allocBuffer(tdbb, pool, rel_mon_attachments);
 	RecordBuffer* const tra_buffer = allocBuffer(tdbb, pool, rel_mon_transactions);
+	RecordBuffer* const cmp_stmt_buffer = dbb->getEncodedOdsVersion() >= ODS_13_1 ?
+		allocBuffer(tdbb, pool, rel_mon_compiled_statements) :
+		nullptr;
 	RecordBuffer* const stmt_buffer = allocBuffer(tdbb, pool, rel_mon_statements);
 	RecordBuffer* const call_buffer = allocBuffer(tdbb, pool, rel_mon_calls);
 	RecordBuffer* const io_stat_buffer = allocBuffer(tdbb, pool, rel_mon_io_stats);
@@ -561,6 +564,9 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 			break;
 		case rel_mon_transactions:
 			buffer = tra_buffer;
+			break;
+		case rel_mon_compiled_statements:
+			buffer = cmp_stmt_buffer;
 			break;
 		case rel_mon_statements:
 			buffer = stmt_buffer;
@@ -1040,7 +1046,7 @@ void Monitoring::putAttachment(SnapshotData::DumpRecord& record, const Jrd::Atta
 	// statement timeout, milliseconds
 	record.storeInteger(f_mon_att_stmt_timeout, attachment->getStatementTimeout());
 
-	if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_13_1)
+	if (dbb->getEncodedOdsVersion() >= ODS_13_1)
 	{
 		char timeZoneBuffer[TimeZoneUtil::MAX_SIZE];
 		TimeZoneUtil::format(timeZoneBuffer, sizeof(timeZoneBuffer), attachment->att_current_timezone);
@@ -1073,7 +1079,7 @@ void Monitoring::putTransaction(SnapshotData::DumpRecord& record, const jrd_tra*
 	record.reset(rel_mon_transactions);
 
 	int temp = mon_state_idle;
-	for (const jrd_req* request = transaction->tra_requests;
+	for (const Request* request = transaction->tra_requests;
 		request; request = request->req_tra_next)
 	{
 		if (request->req_transaction && (request->req_flags & req_active))
@@ -1135,10 +1141,48 @@ void Monitoring::putTransaction(SnapshotData::DumpRecord& record, const jrd_tra*
 }
 
 
-void Monitoring::putRequest(SnapshotData::DumpRecord& record, const jrd_req* request,
+void Monitoring::putStatement(SnapshotData::DumpRecord& record, const Statement* statement, const string& plan)
+{
+	fb_assert(statement);
+
+	record.reset(rel_mon_compiled_statements);
+
+	// compiled statement id
+	record.storeInteger(f_mon_cmp_stmt_id, statement->getStatementId());
+
+	// sql text
+	if (statement->sqlText)
+		record.storeString(f_mon_cmp_stmt_sql_text, *statement->sqlText);
+
+	// explained plan
+	if (plan.hasData())
+		record.storeString(f_mon_cmp_stmt_expl_plan, plan);
+
+	// object name/type
+	if (const auto routine = statement->getRoutine())
+	{
+		if (routine->getName().package.hasData())
+			record.storeString(f_mon_cmp_stmt_pkg_name, routine->getName().package);
+
+		record.storeString(f_mon_cmp_stmt_name, routine->getName().identifier);
+		record.storeInteger(f_mon_cmp_stmt_type, routine->getObjectType());
+	}
+	else if (!statement->triggerName.isEmpty())
+	{
+		record.storeString(f_mon_cmp_stmt_name, statement->triggerName);
+		record.storeInteger(f_mon_cmp_stmt_type, obj_trigger);
+	}
+
+	record.write();
+}
+
+
+void Monitoring::putRequest(SnapshotData::DumpRecord& record, const Request* request,
 							const string& plan)
 {
 	fb_assert(request);
+
+	const auto dbb = request->req_attachment->att_database;
 
 	record.reset(rel_mon_statements);
 
@@ -1166,7 +1210,7 @@ void Monitoring::putRequest(SnapshotData::DumpRecord& record, const jrd_req* req
 	else
 		record.storeInteger(f_mon_stmt_state, mon_state_idle);
 
-	const JrdStatement* const statement = request->getStatement();
+	const Statement* const statement = request->getStatement();
 
 	// sql text
 	if (statement->sqlText)
@@ -1182,6 +1226,10 @@ void Monitoring::putRequest(SnapshotData::DumpRecord& record, const jrd_req* req
 
 	// statement timeout, milliseconds
 	record.storeInteger(f_mon_stmt_timeout, request->req_timeout);
+
+	if (dbb->getEncodedOdsVersion() >= ODS_13_1)
+		record.storeInteger(f_mon_stmt_cmp_stmt_id, statement->getStatementId());
+
 	record.write();
 
 	putStatistics(record, request->req_stats, stat_id, stat_statement);
@@ -1189,11 +1237,13 @@ void Monitoring::putRequest(SnapshotData::DumpRecord& record, const jrd_req* req
 }
 
 
-void Monitoring::putCall(SnapshotData::DumpRecord& record, const jrd_req* request)
+void Monitoring::putCall(SnapshotData::DumpRecord& record, const Request* request)
 {
 	fb_assert(request);
 
-	const jrd_req* initialRequest = request->req_caller;
+	const auto dbb = request->req_attachment->att_database;
+	const Request* initialRequest = request->req_caller;
+
 	while (initialRequest->req_caller)
 	{
 		initialRequest = initialRequest->req_caller;
@@ -1210,7 +1260,7 @@ void Monitoring::putCall(SnapshotData::DumpRecord& record, const jrd_req* reques
 	if (initialRequest != request->req_caller)
 		record.storeInteger(f_mon_call_caller_id, request->req_caller->getRequestId());
 
-	const JrdStatement* statement = request->getStatement();
+	const Statement* statement = request->getStatement();
 	const Routine* routine = statement->getRoutine();
 
 	// object name/type
@@ -1241,6 +1291,9 @@ void Monitoring::putCall(SnapshotData::DumpRecord& record, const jrd_req* reques
 		record.storeInteger(f_mon_call_src_line, request->req_src_line);
 		record.storeInteger(f_mon_call_src_column, request->req_src_column);
 	}
+
+	if (dbb->getEncodedOdsVersion() >= ODS_13_1)
+		record.storeInteger(f_mon_call_cmp_stmt_id, statement->getStatementId());
 
 	// statistics
 	const int stat_id = fb_utils::genUniqueId();
@@ -1418,14 +1471,14 @@ void Monitoring::dumpAttachment(thread_db* tdbb, Attachment* attachment)
 	for (transaction = attachment->att_transactions; transaction;
 		 transaction = transaction->tra_next)
 	{
-		for (jrd_req* request = transaction->tra_requests;
+		for (Request* request = transaction->tra_requests;
 			request && (request->req_flags & req_active) && (request->req_transaction == transaction);
 			request = request->req_caller)
 		{
 			request->adjustCallerStats();
 
 			if (!(request->getStatement()->flags &
-					(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)) &&
+					(Statement::FLAG_INTERNAL | Statement::FLAG_SYS_TRIGGER)) &&
 				request->req_caller)
 			{
 				putCall(record, request);
@@ -1433,18 +1486,29 @@ void Monitoring::dumpAttachment(thread_db* tdbb, Attachment* attachment)
 		}
 	}
 
+	if (dbb->getEncodedOdsVersion() >= ODS_13_1)
+	{
+		// Statement information
+
+		for (const auto statement : attachment->att_statements)
+		{
+			if (!(statement->flags & (Statement::FLAG_INTERNAL | Statement::FLAG_SYS_TRIGGER)))
+			{
+				const string plan = Optimizer::getPlan(tdbb, statement, true);
+				putStatement(record, statement, plan);
+			}
+		}
+	}
+
 	// Request information
 
-	for (const jrd_req* const* i = attachment->att_requests.begin();
-		 i != attachment->att_requests.end();
-		 ++i)
+	for (const auto request : attachment->att_requests)
 	{
-		const jrd_req* const request = *i;
+		const auto statement = request->getStatement();
 
-		if (!(request->getStatement()->flags &
-				(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)))
+		if (!(statement->flags & (Statement::FLAG_INTERNAL | Statement::FLAG_SYS_TRIGGER)))
 		{
-			const string plan = OPT_get_plan(tdbb, request, true);
+			const string plan = Optimizer::getPlan(tdbb, statement, true);
 			putRequest(record, request, plan);
 		}
 	}

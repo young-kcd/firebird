@@ -2016,6 +2016,7 @@ namespace Firebird
 		static const unsigned VERSION = 4;
 
 		static const unsigned char VERSION1 = 1;
+		static const unsigned char CURRENT_VERSION = IBatch::VERSION1;
 		static const unsigned char TAG_MULTIERROR = 1;
 		static const unsigned char TAG_RECORD_COUNTS = 2;
 		static const unsigned char TAG_BUFFER_BYTES_SIZE = 3;

@@ -69,7 +69,7 @@ namespace Jrd
 	class thread_db;
 	class Database;
 	class jrd_tra;
-	class jrd_req;
+	class Request;
 	class Lock;
 	class jrd_file;
 	class Format;
@@ -95,7 +95,7 @@ namespace Jrd
 	class Trigger;
 	class TrigVector;
 	class Function;
-	class JrdStatement;
+	class Statement;
 	class Validation;
 	class Applier;
 
@@ -497,7 +497,8 @@ private:
 	StableAttachmentPart* att_stable;
 
 public:
-	Firebird::SortedArray<jrd_req*> att_requests;	// Requests belonging to attachment
+	Firebird::SortedArray<Statement*> att_statements;	// Statements belonging to attachment
+	Firebird::SortedArray<Request*> att_requests;	// Requests belonging to attachment
 	Lock*		att_id_lock;				// Attachment lock (if any)
 	AttNumber	att_attachment_id;			// Attachment ID
 	Lock*		att_cancel_lock;			// Lock to cancel the active request

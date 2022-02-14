@@ -315,7 +315,7 @@ public:
 	};
 
 private:
-	class IdleTimer FB_FINAL :
+	class IdleTimer final :
 		public Firebird::RefCntIface<Firebird::ITimerImpl<IdleTimer, Firebird::CheckStatusWrapper> >
 	{
 	public:
@@ -631,7 +631,7 @@ public:
 		const Firebird::string* sQuery = NULL);
 
 	// Active statement must be bound to parent jrd request
-	void bindToRequest(Jrd::jrd_req* request, Statement** impure);
+	void bindToRequest(Jrd::Request* request, Statement** impure);
 	void unBindFromRequest();
 
 protected:
@@ -666,7 +666,7 @@ protected:
 
 	Statement* m_nextFree;		// next free statement
 
-	Jrd::jrd_req* m_boundReq;
+	Jrd::Request* m_boundReq;
 	Statement** m_ReqImpure;
 	Statement* m_nextInReq;
 	Statement* m_prevInReq;
@@ -693,7 +693,7 @@ protected:
 	unsigned int m_outputs;
 
 	bool	m_callerPrivileges;
-	Jrd::jrd_req* m_preparedByReq;
+	Jrd::Request* m_preparedByReq;
 
 	// set in preprocess
 	Firebird::SortedObjectsArray<const Firebird::MetaString> m_sqlParamNames;

@@ -108,8 +108,8 @@ const unsigned MAX_CALLBACKS	= 50;
 class thread_db;
 class Attachment;
 class jrd_tra;
-class jrd_req;
-class JrdStatement;
+class Request;
+class Statement;
 class jrd_file;
 class Format;
 class BufferDesc;
@@ -139,7 +139,7 @@ class IndexBlock : public pool_alloc<type_idb>
 public:
 	IndexBlock*	idb_next;
 	ValueExprNode* idb_expression;			// node tree for index expression
-	JrdStatement* idb_expression_statement;	// statement for index expression evaluation
+	Statement* idb_expression_statement;	// statement for index expression evaluation
 	dsc			idb_expression_desc;		// descriptor for expression result
 	Lock*		idb_lock;					// lock to synchronize changes to index
 	USHORT		idb_id;
@@ -203,7 +203,7 @@ const USHORT WIN_garbage_collect	= 8;	// scan left a page for garbage collector
 
 
 #ifdef USE_ITIMER
-class TimeoutTimer FB_FINAL :
+class TimeoutTimer final :
 	public Firebird::RefCntIface<Firebird::ITimerImpl<TimeoutTimer, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -340,7 +340,7 @@ private:
 	Database*	database;
 	Attachment*	attachment;
 	jrd_tra*	transaction;
-	jrd_req*	request;
+	Request*	request;
 	RuntimeStatistics *reqStat, *traStat, *attStat, *dbbStat;
 
 public:
@@ -425,17 +425,17 @@ public:
 
 	void setTransaction(jrd_tra* val);
 
-	jrd_req* getRequest()
+	Request* getRequest()
 	{
 		return request;
 	}
 
-	const jrd_req* getRequest() const
+	const Request* getRequest() const
 	{
 		return request;
 	}
 
-	void setRequest(jrd_req* val);
+	void setRequest(Request* val);
 
 	SSHORT getCharSet() const;
 

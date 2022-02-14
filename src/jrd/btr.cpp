@@ -341,7 +341,7 @@ void IndexErrorContext::raise(thread_db* tdbb, idx_e result, Record* record)
 }
 
 
-USHORT BTR_all(thread_db* tdbb, jrd_rel* relation, IndexDescAlloc** csb_idx, RelationPages* relPages)
+void BTR_all(thread_db* tdbb, jrd_rel* relation, IndexDescList& idxList, RelationPages* relPages)
 {
 /**************************************
  *
@@ -363,21 +363,16 @@ USHORT BTR_all(thread_db* tdbb, jrd_rel* relation, IndexDescAlloc** csb_idx, Rel
 
 	index_root_page* const root = fetch_root(tdbb, &window, relation, relPages);
 	if (!root)
-		return 0;
+		return;
 
-	delete *csb_idx;
-	*csb_idx = FB_NEW_RPT(*tdbb->getDefaultPool(), root->irt_count) IndexDescAlloc();
-
-	index_desc* buffer = (*csb_idx)->items;
-	USHORT count = 0;
 	for (USHORT i = 0; i < root->irt_count; i++)
 	{
-		if (BTR_description(tdbb, relation, root, &buffer[count], i))
-			count++;
+		index_desc idx;
+		if (BTR_description(tdbb, relation, root, &idx, i))
+			idxList.add(idx);
 	}
 
 	CCH_RELEASE(tdbb, &window);
-	return count;
 }
 
 
@@ -547,8 +542,8 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool&
 	fb_assert(idx->idx_expression != NULL);
 
 	// check for resursive expression evaluation
-	jrd_req* const org_request = tdbb->getRequest();
-	jrd_req* const expr_request = idx->idx_expression_statement->findRequest(tdbb, true);
+	Request* const org_request = tdbb->getRequest();
+	Request* const expr_request = idx->idx_expression_statement->findRequest(tdbb, true);
 
 	if (expr_request == NULL)
 		ERR_post(Arg::Gds(isc_random) << "Attempt to evaluate index expression recursively");
@@ -578,9 +573,9 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool&
 		Jrd::ContextPoolHolder context(tdbb, expr_request->req_pool);
 
 		if (org_request)
-			expr_request->req_gmt_timestamp = org_request->req_gmt_timestamp;
+			expr_request->setGmtTimeStamp(org_request->getGmtTimeStamp());
 		else
-			TimeZoneUtil::validateGmtTimeStamp(expr_request->req_gmt_timestamp);
+			expr_request->validateTimeStamp();
 
 		if (!(result = EVL_expr(tdbb, expr_request, idx->idx_expression)))
 			result = &idx->idx_expression_desc;
@@ -595,7 +590,7 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool&
 		expr_request->req_caller = NULL;
 		expr_request->req_flags &= ~req_in_use;
 		expr_request->req_attachment = NULL;
-		expr_request->req_gmt_timestamp.invalidate();
+		expr_request->invalidateTimeStamp();
 
 		throw;
 	}
@@ -606,7 +601,7 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool&
 	expr_request->req_caller = NULL;
 	expr_request->req_flags &= ~req_in_use;
 	expr_request->req_attachment = NULL;
-	expr_request->req_gmt_timestamp.invalidate();
+	expr_request->invalidateTimeStamp();
 
 	return result;
 }
@@ -1242,7 +1237,8 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 				//
 				isNull = !EVL_field(relation, record, tail->idx_field, desc_ptr);
 
-				if (!isNull && desc_ptr->dsc_dtype == dtype_text)
+				if (!isNull && desc_ptr->dsc_dtype == dtype_text &&
+					tail->idx_field < record->getFormat()->fmt_desc.getCount())
 				{
 					// That's necessary for NO-PAD collations.
 					INTL_adjust_text_descriptor(tdbb, desc_ptr);
@@ -1281,7 +1277,8 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 					key->key_nulls |= 1 << n;
 				else
 				{
-					if (desc_ptr->dsc_dtype == dtype_text)
+					if (desc_ptr->dsc_dtype == dtype_text &&
+						tail->idx_field < record->getFormat()->fmt_desc.getCount())
 					{
 						// That's necessary for NO-PAD collations.
 						INTL_adjust_text_descriptor(tdbb, desc_ptr);
@@ -3285,7 +3282,7 @@ static DSC* eval(thread_db* tdbb, const ValueExprNode* node, DSC* temp, bool* is
  **************************************/
 	SET_TDBB(tdbb);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	dsc* desc = EVL_expr(tdbb, request, node);
 	*isNull = false;

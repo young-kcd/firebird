@@ -234,6 +234,7 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, JProvider* provider
 	  att_ss_user(NULL),
 	  att_user_ids(*pool),
 	  att_active_snapshots(*pool),
+	  att_statements(*pool),
 	  att_requests(*pool),
 	  att_lock_owner_id(Database::getLockOwnerId()),
 	  att_backup_state_counter(0),
@@ -574,7 +575,7 @@ bool Attachment::hasActiveRequests() const
 	for (const jrd_tra* transaction = att_transactions;
 		transaction; transaction = transaction->tra_next)
 	{
-		for (const jrd_req* request = transaction->tra_requests;
+		for (const Request* request = transaction->tra_requests;
 			request; request = request->req_tra_next)
 		{
 			if (request->req_transaction && (request->req_flags & req_active))

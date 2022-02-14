@@ -75,7 +75,7 @@ namespace Jrd
 		bool fetchAbsolute(thread_db* tdbb, SINT64 offset) const;
 		bool fetchRelative(thread_db* tdbb, SINT64 offset) const;
 
-		void checkState(jrd_req* request) const;
+		void checkState(Request* request) const;
 
 		const RecordSource* getAccessPath() const
 		{

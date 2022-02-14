@@ -671,7 +671,7 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 
 	ISC_get_user(&buffer, &eff_uid, &eff_gid);
 #ifdef WIN_NT
-	// WNET and XNET lowercase user names (as it's always case-insensitive in Windows)
+	// XNET lowercases user names (as it's always case-insensitive in Windows),
 	// so let's be consistent and use the same trick for INET as well
 	buffer.lower();
 #endif
@@ -716,7 +716,8 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 		REMOTE_PROTOCOL(PROTOCOL_VERSION14, ptype_lazy_send, 5),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION15, ptype_lazy_send, 6),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION16, ptype_lazy_send, 7),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION17, ptype_lazy_send, 8)
+		REMOTE_PROTOCOL(PROTOCOL_VERSION17, ptype_lazy_send, 8),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION18, ptype_lazy_send, 9)
 	};
 	fb_assert(FB_NELEM(protocols_to_try) <= FB_NELEM(cnct->p_cnct_versions));
 	cnct->p_cnct_count = FB_NELEM(protocols_to_try);

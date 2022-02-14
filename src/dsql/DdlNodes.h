@@ -1129,8 +1129,8 @@ public:
 
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	{
-		dsqlScratch->getStatement()->setType(
-			legacy ? DsqlCompiledStatement::TYPE_SET_GENERATOR : DsqlCompiledStatement::TYPE_DDL);
+		dsqlScratch->getDsqlStatement()->setType(
+			legacy ? DsqlStatement::TYPE_SET_GENERATOR : DsqlStatement::TYPE_DDL);
 		return this;
 	}
 
@@ -2279,7 +2279,7 @@ typedef RecreateNode<CreateAlterUserNode, DropUserNode, isc_dsql_recreate_user_f
 
 
 typedef Firebird::Pair<Firebird::NonPooled<char, ValueListNode*> > PrivilegeClause;
-typedef Firebird::Pair<Firebird::NonPooled<SSHORT, MetaName> > GranteeClause;
+typedef Firebird::Pair<Firebird::NonPooled<ObjectType, MetaName> > GranteeClause;
 
 class GrantRevokeNode : public PrivilegesNode, private ExecInSecurityDb
 {
@@ -2417,8 +2417,8 @@ public:
 public:
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	{
-		dsqlScratch->getStatement()->setType(
-			create ? DsqlCompiledStatement::TYPE_CREATE_DB : DsqlCompiledStatement::TYPE_DDL);
+		dsqlScratch->getDsqlStatement()->setType(
+			create ? DsqlStatement::TYPE_CREATE_DB : DsqlStatement::TYPE_DDL);
 		return this;
 	}
 

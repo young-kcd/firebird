@@ -41,7 +41,7 @@ using namespace Why;
 
 namespace {
 
-class DTransaction FB_FINAL : public RefCntIface<ITransactionImpl<DTransaction, CheckStatusWrapper> >
+class DTransaction final : public RefCntIface<ITransactionImpl<DTransaction, CheckStatusWrapper> >
 {
 public:
 	DTransaction()

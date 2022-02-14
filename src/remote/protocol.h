@@ -98,6 +98,12 @@ const USHORT PROTOCOL_STMT_TOUT = PROTOCOL_VERSION16;
 
 const USHORT PROTOCOL_VERSION17 = (FB_PROTOCOL_FLAG | 17);
 
+// Protocol 18:
+//	- supports op_fetch_scroll
+
+const USHORT PROTOCOL_VERSION18 = (FB_PROTOCOL_FLAG | 18);
+const USHORT PROTOCOL_FETCH_SCROLL = PROTOCOL_VERSION18;
+
 // Architecture types
 
 enum P_ARCH
@@ -143,6 +149,18 @@ const int INVALID_OBJECT = MAX_USHORT;
 //const USHORT STMT_BLOB			= 1;
 const USHORT STMT_NO_BATCH		= 2;
 const USHORT STMT_DEFER_EXECUTE	= 4;
+
+enum P_FETCH
+{
+	fetch_next		= 0,
+	fetch_prior		= 1,
+	fetch_first		= 2,
+	fetch_last		= 3,
+	fetch_absolute	= 4,
+	fetch_relative	= 5
+};
+
+const P_FETCH fetch_execute = fetch_next;
 
 // Operation (packet) types
 
@@ -296,6 +314,8 @@ enum P_OP
 	op_batch_cancel			= 109,
 	op_batch_sync			= 110,
 	op_info_batch			= 111,
+
+	op_fetch_scroll			= 112,
 
 	op_max
 };
@@ -605,6 +625,9 @@ typedef struct p_sqldata
     USHORT	p_sqldata_out_message_number;
     ULONG	p_sqldata_status;			// final eof status
 	ULONG	p_sqldata_timeout;			// statement timeout
+	ULONG	p_sqldata_cursor_flags;		// cursor flags
+	P_FETCH	p_sqldata_fetch_op;			// Fetch operation
+	SLONG	p_sqldata_fetch_pos;		// Fetch position
 } P_SQLDATA;
 
 typedef struct p_sqlfree

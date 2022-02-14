@@ -60,6 +60,7 @@
 #include "../jrd/RandomGenerator.h"
 #include "../common/os/guid.h"
 #include "../common/os/os_utils.h"
+#include "../jrd/ods.h"
 #include "../jrd/sbm.h"
 #include "../jrd/flu.h"
 #include "../jrd/RuntimeStatistics.h"
@@ -261,7 +262,7 @@ public:
 		bool exist;
 	};
 
-	class Linger FB_FINAL :
+	class Linger final :
 		public Firebird::RefCntIface<Firebird::ITimerImpl<Linger, Firebird::CheckStatusWrapper> >
 	{
 	public:
@@ -475,6 +476,11 @@ public:
 	bool isReplica(ReplicaMode mode) const
 	{
 		return (dbb_replica_mode == mode);
+	}
+
+	USHORT getEncodedOdsVersion() const
+	{
+		return ENCODE_ODS(dbb_ods_version, dbb_minor_version);
 	}
 
 private:

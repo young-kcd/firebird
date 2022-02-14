@@ -117,10 +117,10 @@ static const UCHAR sweep_tpb[] =
 };
 
 
-jrd_req* TRA_get_prior_request(thread_db* tdbb)
+Request* TRA_get_prior_request(thread_db* tdbb)
 {
 	// See if there is any request right above us in the call stack
-	jrd_req* org_request;
+	Request* org_request;
 	thread_db* jrd_ctx = tdbb;
 	do
 	{
@@ -145,7 +145,7 @@ jrd_req* TRA_get_prior_request(thread_db* tdbb)
 	return org_request;
 }
 
-void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request)
+void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::Request* request)
 {
 	// This function is called whenever request is started in a transaction.
 	// Setup context to preserve read consistency in READ COMMITTED transactions.
@@ -160,7 +160,7 @@ void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request)
 		return;
 
 	// See if there is any request right above us in the call stack
-	jrd_req* org_request = TRA_get_prior_request(tdbb);
+	Request* org_request = TRA_get_prior_request(tdbb);
 
 	if (org_request && org_request->req_transaction == transaction)
 	{
@@ -181,7 +181,7 @@ void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request)
 }
 
 
-void TRA_release_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request)
+void TRA_release_request_snapshot(Jrd::thread_db* tdbb, Jrd::Request* request)
 {
 	// This function is called whenever request has completed processing
 	// in a transaction (normally or abnormally)
@@ -201,7 +201,7 @@ void TRA_release_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request)
 }
 
 
-void TRA_attach_request(Jrd::jrd_tra* transaction, Jrd::jrd_req* request)
+void TRA_attach_request(Jrd::jrd_tra* transaction, Jrd::Request* request)
 {
 	// When request finishes normally transaction reference is not cleared.
 	// Then if afterwards request is restarted TRA_attach_request is called again.
@@ -229,7 +229,7 @@ void TRA_attach_request(Jrd::jrd_tra* transaction, Jrd::jrd_req* request)
 	transaction->tra_requests = request;
 }
 
-void TRA_detach_request(Jrd::jrd_req* request)
+void TRA_detach_request(Jrd::Request* request)
 {
 	if (!request->req_transaction)
 	{
@@ -531,8 +531,8 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 
 	// Set the state on the inventory page to be committed
 
-	TRA_set_state(tdbb, transaction, transaction->tra_number, tra_committed);
 	REPL_trans_commit(tdbb, transaction);
+	TRA_set_state(tdbb, transaction, transaction->tra_number, tra_committed);
 
 	// Perform any post commit work
 
@@ -1459,8 +1459,8 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 		return;
 	}
 
-	TRA_set_state(tdbb, transaction, transaction->tra_number, state);
 	REPL_trans_rollback(tdbb, transaction);
+	TRA_set_state(tdbb, transaction, transaction->tra_number, state);
 
 	TRA_release_transaction(tdbb, transaction, &trace);
 }
@@ -1642,12 +1642,12 @@ int TRA_snapshot_state(thread_db* tdbb, const jrd_tra* trans, TraNumber number, 
 		if ((trans->tra_flags & TRA_read_consistency) && state == tra_committed)
 		{
 			// GC thread accesses data directly without any request
-			if (jrd_req* current_request = tdbb->getRequest())
+			if (Request* current_request = tdbb->getRequest())
 			{
 				// Notes:
 				// 1) There is no request snapshot when we build expression index
 				// 2) Disable read committed snapshot after we encountered update conflict
-				jrd_req* snapshot_request = current_request->req_snapshot.m_owner;
+				Request* snapshot_request = current_request->req_snapshot.m_owner;
 				if (snapshot_request && !(snapshot_request->req_flags & req_update_conflict))
 				{
 					if (stateCn > snapshot_request->req_snapshot.m_number)
@@ -1996,8 +1996,8 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, TraNumber number, jrd_tra::wait_t 
 	if (state == tra_active)
 	{
 		state = tra_dead;
-		TRA_set_state(tdbb, 0, number, tra_dead);
 		REPL_trans_cleanup(tdbb, number);
+		TRA_set_state(tdbb, 0, number, tra_dead);
 	}
 
 	// If the transaction disappeared into limbo, died, for constructively
@@ -2528,15 +2528,15 @@ static void restart_requests(thread_db* tdbb, jrd_tra* trans)
  **************************************/
 	SET_TDBB(tdbb);
 
-	for (jrd_req** i = trans->tra_attachment->att_requests.begin();
+	for (Request** i = trans->tra_attachment->att_requests.begin();
 		 i != trans->tra_attachment->att_requests.end();
 		 ++i)
 	{
-		Array<jrd_req*>& requests = (*i)->getStatement()->requests;
+		Array<Request*>& requests = (*i)->getStatement()->requests;
 
-		for (jrd_req** j = requests.begin(); j != requests.end(); ++j)
+		for (Request** j = requests.begin(); j != requests.end(); ++j)
 		{
-			jrd_req* request = *j;
+			Request* request = *j;
 
 			if (request && request->req_transaction)
 			{
@@ -2632,13 +2632,13 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, i
 
 	if (!dbb->readOnly())
 	{
-		// Set the state on the inventory page
-		TRA_set_state(tdbb, transaction, old_number, state);
-
 		if (commit)
 			REPL_trans_commit(tdbb, transaction);
 		else
 			REPL_trans_rollback(tdbb, transaction);
+
+		// Set the state on the inventory page
+		TRA_set_state(tdbb, transaction, old_number, state);
 	}
 	if (dbb->dbb_config->getClearGTTAtRetaining())
 		release_temp_tables(tdbb, transaction);
@@ -4077,12 +4077,12 @@ void jrd_tra::checkBlob(thread_db* tdbb, const bid* blob_id, jrd_fld* fld, bool 
 
 					if (fld)
 					{
-						SCL_check_access(tdbb, s_class, 0, 0, SCL_select, SCL_object_column,
+						SCL_check_access(tdbb, s_class, 0, 0, SCL_select, obj_column,
 							false, fld->fld_name, blb_relation->rel_name);
 					}
 					else
 					{
-						SCL_check_access(tdbb, s_class, 0, 0, SCL_select, SCL_object_table,
+						SCL_check_access(tdbb, s_class, 0, 0, SCL_select, obj_relations,
 							false, blb_relation->rel_name);
 					}
 

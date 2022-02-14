@@ -24,6 +24,7 @@
 
 #include "../jrd/jrd.h"
 #include "../dsql/dsql.h"
+#include "../dsql/DsqlStatements.h"
 #include "../dsql/BlrDebugWriter.h"
 #include "../common/classes/array.h"
 #include "../jrd/MetaName.h"
@@ -73,14 +74,13 @@ public:
 
 public:
 	DsqlCompilerScratch(MemoryPool& p, dsql_dbb* aDbb, jrd_tra* aTransaction,
-				DsqlCompiledStatement* aStatement, DsqlCompilerScratch* aMainScratch = NULL)
+				DsqlStatement* aDsqlStatement = nullptr, DsqlCompilerScratch* aMainScratch = nullptr)
 		: BlrDebugWriter(p),
 		  dbb(aDbb),
 		  transaction(aTransaction),
-		  statement(aStatement),
+		  dsqlStatement(aDsqlStatement),
 		  flags(0),
 		  nestingLevel(0),
-		  ports(p),
 		  relation(NULL),
 		  mainContext(p),
 		  context(&mainContext),
@@ -117,10 +117,12 @@ public:
 		  outputVariables(p),
 		  returningClause(nullptr),
 		  currCteAlias(NULL),
+		  mainScratch(aMainScratch),
+		  outerMessagesMap(p),
+		  outerVarsMap(p),
 		  ctes(p),
 		  cteAliases(p),
 		  psql(false),
-		  mainScratch(aMainScratch),
 		  subFunctions(p),
 		  subProcedures(p)
 	{
@@ -142,7 +144,7 @@ public:
 public:
 	virtual bool isVersion4()
 	{
-		return statement->getBlrVersion() == 4;
+		return dsqlStatement->getBlrVersion() == 4;
 	}
 
 	MemoryPool& getPool()
@@ -165,14 +167,14 @@ public:
 		transaction = value;
 	}
 
-	DsqlCompiledStatement* getStatement()
+	DsqlStatement* getDsqlStatement() const
 	{
-		return statement;
+		return dsqlStatement;
 	}
 
-	DsqlCompiledStatement* getStatement() const
+	void setDsqlStatement(DsqlStatement* aDsqlStatement)
 	{
-		return statement;
+		dsqlStatement = aDsqlStatement;
 	}
 
 	void putBlrMarkers(ULONG marks);
@@ -181,6 +183,7 @@ public:
 	void putLocalVariables(CompoundStmtNode* parameters, USHORT locals);
 	void putLocalVariable(dsql_var* variable, const DeclareVariableNode* hostParam,
 		const MetaName& collationName);
+	void putOuterMaps();
 	dsql_var* makeVariable(dsql_fld*, const char*, const dsql_var::Type type, USHORT,
 		USHORT, USHORT);
 	dsql_var* resolveVariable(const MetaName& varName);
@@ -255,12 +258,11 @@ private:
 
 	dsql_dbb* dbb;						// DSQL attachment
 	jrd_tra* transaction;				// Transaction
-	DsqlCompiledStatement* statement;	// Compiled statement
+	DsqlStatement* dsqlStatement;		// DSQL statement
 
 public:
 	unsigned flags;						// flags
 	unsigned nestingLevel;				// begin...end nesting level
-	Firebird::Array<dsql_msg*> ports;	// Port messages
 	dsql_rel* relation;					// relation created by this request (for DDL)
 	DsqlContextStack mainContext;
 	DsqlContextStack* context;
@@ -299,14 +301,16 @@ public:
 	Firebird::Array<dsql_var*> outputVariables;
 	ReturningClause* returningClause;
 	const Firebird::string* const* currCteAlias;
+	DsqlCompilerScratch* mainScratch;
+	Firebird::NonPooledMap<USHORT, USHORT> outerMessagesMap;	// <outer, inner>
+	Firebird::NonPooledMap<USHORT, USHORT> outerVarsMap;		// <outer, inner>
 
 private:
 	Firebird::HalfStaticArray<SelectExprNode*, 4> ctes; // common table expressions
 	Firebird::HalfStaticArray<const Firebird::string*, 4> cteAliases; // CTE aliases in recursive members
 	bool psql;
-	DsqlCompilerScratch* mainScratch;
-	Firebird::GenericMap<Firebird::Left<MetaName, DeclareSubFuncNode*> > subFunctions;
-	Firebird::GenericMap<Firebird::Left<MetaName, DeclareSubProcNode*> > subProcedures;
+	Firebird::LeftPooledMap<MetaName, DeclareSubFuncNode*> subFunctions;
+	Firebird::LeftPooledMap<MetaName, DeclareSubProcNode*> subProcedures;
 };
 
 class PsqlChanger

@@ -28,7 +28,7 @@
 namespace Jrd {
 
 // Compiled statement.
-class JrdStatement : public pool_alloc<type_req>
+class Statement : public pool_alloc<type_req>
 {
 public:
 	static const unsigned FLAG_SYS_TRIGGER	= 0x01;
@@ -42,19 +42,28 @@ public:
 	static const unsigned MAX_REQUEST_SIZE = 50 * 1048576;	// 50 MB - just to be safe
 
 private:
-	JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb);
+	Statement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb);
 
 public:
-	static JrdStatement* makeStatement(thread_db* tdbb, CompilerScratch* csb, bool internalFlag);
-	static jrd_req* makeRequest(thread_db* tdbb, CompilerScratch* csb, bool internalFlag);
+	static Statement* makeStatement(thread_db* tdbb, CompilerScratch* csb, bool internalFlag);
+	static Request* makeRequest(thread_db* tdbb, CompilerScratch* csb, bool internalFlag);
+
+	StmtNumber getStatementId() const
+	{
+		if (!id)
+			id = JRD_get_thread_data()->getDatabase()->generateStatementId();
+		return id;
+	}
 
 	const Routine* getRoutine() const;
 	bool isActive() const;
 
-	jrd_req* findRequest(thread_db* tdbb, bool unique = false);
-	jrd_req* getRequest(thread_db* tdbb, USHORT level);
+	Request* findRequest(thread_db* tdbb, bool unique = false);
+	Request* getRequest(thread_db* tdbb, USHORT level);
 	void verifyAccess(thread_db* tdbb);
 	void release(thread_db* tdbb);
+
+	Firebird::string getPlan(thread_db* tdbb, bool detailed) const;
 
 private:
 	static void verifyTriggerAccess(thread_db* tdbb, jrd_rel* ownerRelation, TrigVector* triggers,
@@ -68,8 +77,9 @@ public:
 	unsigned flags;						// statement flags
 	unsigned blrVersion;
 	ULONG impureSize;					// Size of impure area
+	mutable StmtNumber id;				// statement identifier
 	Firebird::Array<record_param> rpbsSetup;
-	Firebird::Array<jrd_req*> requests;	// vector of requests
+	Firebird::Array<Request*> requests;	// vector of requests
 	ExternalAccessList externalList;	// Access to procedures/triggers to be checked
 	AccessItemList accessList;			// Access items to be checked
 	ResourceList resources;				// Resources (relations and indices)
@@ -77,8 +87,8 @@ public:
 	const Function* function;			// function, if any
 	MetaName triggerName;		// name of request (trigger), if any
 	Jrd::UserId* triggerInvoker;		// user name if trigger run with SQL SECURITY DEFINER
-	JrdStatement* parentStatement;		// Sub routine's parent statement
-	Firebird::Array<JrdStatement*> subStatements;	// Array of subroutines' statements
+	Statement* parentStatement;		// Sub routine's parent statement
+	Firebird::Array<Statement*> subStatements;	// Array of subroutines' statements
 	const StmtNode* topNode;			// top of execution tree
 	Firebird::Array<const RecordSource*> fors;	// record sources
 	Firebird::Array<const DeclareLocalTableNode*> localTables;	// local tables

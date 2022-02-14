@@ -2249,7 +2249,7 @@ void Statement::doSetInParams(thread_db* tdbb, unsigned int count, const MetaStr
 	const NestConst<ValueExprNode>* jrdVar = params;
 	GenericMap<Pair<NonPooled<const ValueExprNode*, dsc*> > > paramDescs(getPool());
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	for (FB_SIZE_T i = 0; i < count; ++i, ++jrdVar)
 	{
@@ -2364,7 +2364,7 @@ void Statement::getExtBlob(thread_db* tdbb, const dsc& src, dsc& dst)
 	{
 		extBlob->open(tdbb, *m_transaction, src, NULL);
 
-		jrd_req* request = tdbb->getRequest();
+		Request* request = tdbb->getRequest();
 		const UCHAR bpb[] = {isc_bpb_version1, isc_bpb_storage, 1, isc_bpb_storage_temp};
 		bid* localBlobID = (bid*) dst.dsc_address;
 		destBlob = blb::create2(tdbb, request->req_transaction, localBlobID, sizeof(bpb), bpb);
@@ -2408,7 +2408,7 @@ void Statement::putExtBlob(thread_db* tdbb, dsc& src, dsc& dst)
 	{
 		extBlob->create(tdbb, *m_transaction, dst, NULL);
 
-		jrd_req* request = tdbb->getRequest();
+		Request* request = tdbb->getRequest();
 		bid* srcBid = (bid*) src.dsc_address;
 
 		UCharBuffer bpb;
@@ -2478,7 +2478,7 @@ void Statement::raise(FbStatusVector* status, thread_db* tdbb, const char* sWher
 											Arg::Str(m_connection.getDataSourceName()));
 }
 
-void Statement::bindToRequest(jrd_req* request, Statement** impure)
+void Statement::bindToRequest(Request* request, Statement** impure)
 {
 	fb_assert(!m_boundReq);
 	fb_assert(!m_prevInReq);

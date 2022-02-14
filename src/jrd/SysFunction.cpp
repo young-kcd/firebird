@@ -1863,7 +1863,7 @@ dsc* evlStdMath(thread_db* tdbb, const SysFunction* function, const NestValueArr
 	fb_assert(args.getCount() == 1);
 	fb_assert(function->misc != NULL);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -1963,7 +1963,7 @@ dsc* evlAbs(thread_db* tdbb, const SysFunction*, const NestValueArray& args, imp
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -2021,7 +2021,7 @@ dsc* evlAsciiChar(thread_db* tdbb, const SysFunction*, const NestValueArray& arg
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -2043,7 +2043,7 @@ dsc* evlAsciiVal(thread_db* tdbb, const SysFunction*, const NestValueArray& args
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -2078,7 +2078,7 @@ dsc* evlAtan2(thread_db* tdbb, const SysFunction* function, const NestValueArray
 {
 	fb_assert(args.getCount() == 2);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* desc1 = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if desc1 is NULL
@@ -2147,7 +2147,7 @@ dsc* evlBin(thread_db* tdbb, const SysFunction* function, const NestValueArray& 
 	fb_assert(function->misc != NULL);
 
 	Function func = (Function)(IPTR) function->misc;
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	bool f128 = false;
 	for (unsigned i = 0; i < args.getCount(); ++i)
@@ -2213,7 +2213,7 @@ dsc* evlBinShift(thread_db* tdbb, const SysFunction* function, const NestValueAr
 	fb_assert(args.getCount() == 2);
 	fb_assert(function->misc != NULL);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value1 = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value1 is NULL
@@ -2264,7 +2264,7 @@ dsc* evlCeil(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -2349,7 +2349,7 @@ dsc* evlCharToUuid(thread_db* tdbb, const SysFunction* function, const NestValue
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -2467,7 +2467,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 {
 	fb_assert(args.getCount() == 3);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* quantityDsc = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if quantityDsc is NULL
@@ -2995,7 +2995,7 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 
 	fb_assert(args.getCount() == CRYPT_ARG_MAX);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	// parse args and check correctness
 	const dsc* dscs[CRYPT_ARG_MAX];
@@ -3513,7 +3513,7 @@ dsc* evlRsaEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const Ne
 
 	fb_assert(args.getCount() == RSA_CRYPT_ARG_MAX || args.getCount() == RSA_CRYPT_ARG_MAX - 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	// parse args and check correctness
 	const dsc* dscs[RSA_CRYPT_ARG_MAX];
@@ -3583,7 +3583,7 @@ dsc* evlRsaPrivate(thread_db* tdbb, const SysFunction* function, const NestValue
 
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -3614,7 +3614,7 @@ dsc* evlRsaPublic(thread_db* tdbb, const SysFunction* function, const NestValueA
 
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -3653,7 +3653,7 @@ dsc* evlRsaSign(thread_db* tdbb, const SysFunction* function, const NestValueArr
 
 	fb_assert(args.getCount() == RSA_SIGN_ARG_MAX || args.getCount() == RSA_SIGN_ARG_MAX - 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	// parse args and check correctness
 	const dsc* dscs[RSA_SIGN_ARG_MAX];
@@ -3722,7 +3722,7 @@ dsc* evlRsaVerify(thread_db* tdbb, const SysFunction* function, const NestValueA
 
 	fb_assert(args.getCount() == RSA_VERIFY_ARG_MAX || args.getCount() == RSA_VERIFY_ARG_MAX - 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	// parse args and check correctness
 	const dsc* dscs[RSA_VERIFY_ARG_MAX];
@@ -3781,7 +3781,7 @@ dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueAr
 {
 	fb_assert(args.getCount() == 3);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* partDsc = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if partDsc is NULL
@@ -4011,7 +4011,7 @@ dsc* evlExp(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -4048,7 +4048,7 @@ dsc* evlFirstLastDay(thread_db* tdbb, const SysFunction* function, const NestVal
 {
 	fb_assert(args.getCount() >= 2);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* partDsc = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if partDsc is NULL
@@ -4175,7 +4175,7 @@ dsc* evlFloor(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -4293,7 +4293,7 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	jrd_tra* transaction = tdbb->getTransaction();
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* nameSpace = EVL_expr(tdbb, request, args[0]);
@@ -4443,7 +4443,7 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 			else if ((transaction->tra_flags & TRA_read_committed) &&
 				(transaction->tra_flags & TRA_read_consistency))
 			{
-				jrd_req* snapshot_req = request->req_snapshot.m_owner;
+				Request* snapshot_req = request->req_snapshot.m_owner;
 				if (snapshot_req)
 					resultStr.printf("%" SQUADFORMAT, snapshot_req->req_snapshot.m_number);
 				else
@@ -4580,7 +4580,7 @@ dsc* evlSetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	jrd_tra* transaction = tdbb->getTransaction();
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* nameSpace = EVL_expr(tdbb, request, args[0]);
@@ -4680,7 +4680,7 @@ dsc* evlGetTranCN(thread_db* tdbb, const SysFunction* function, const NestValueA
 	fb_assert(args.getCount() == 1);
 
 	Database* dbb = tdbb->getDatabase();
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
@@ -4721,7 +4721,7 @@ dsc* evlHash(thread_db* tdbb, const SysFunction* function, const NestValueArray&
 {
 	fb_assert(args.getCount() >= 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -4780,7 +4780,7 @@ dsc* evlLeft(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 {
 	fb_assert(args.getCount() == 2);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* str = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if str is NULL
@@ -4804,7 +4804,7 @@ dsc* evlLnLog10(thread_db* tdbb, const SysFunction* function, const NestValueArr
 	fb_assert(args.getCount() == 1);
 	fb_assert(function->misc != NULL);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -4877,7 +4877,7 @@ dsc* evlLog(thread_db* tdbb, const SysFunction* function, const NestValueArray& 
 {
 	fb_assert(args.getCount() == 2);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value[2];
 	value[0] = EVL_expr(tdbb, request, args[0]);
@@ -4943,7 +4943,7 @@ dsc* evlQuantize(thread_db* tdbb, const SysFunction* function, const NestValueAr
 {
 	fb_assert(args.getCount() == 2);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value[2];
 	value[0] = EVL_expr(tdbb, request, args[0]);
@@ -4982,7 +4982,7 @@ dsc* evlCompare(thread_db* tdbb, const SysFunction* function, const NestValueArr
 {
 	fb_assert(args.getCount() == 2);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value[2];
 	value[0] = EVL_expr(tdbb, request, args[0]);
@@ -5038,7 +5038,7 @@ dsc* evlNormDec(thread_db* tdbb, const SysFunction* function, const NestValueArr
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value;
 	value = EVL_expr(tdbb, request, args[0]);
@@ -5071,7 +5071,7 @@ dsc* evlMakeDbkey(Jrd::thread_db* tdbb, const SysFunction* function, const NestV
 	// MAKE_DBKEY ( REL_NAME | REL_ID, RECNUM [, DPNUM [, PPNUM] ] )
 
 	Database* const dbb = tdbb->getDatabase();
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 
 	fb_assert(args.getCount() >= 2 && args.getCount() <= 4);
 
@@ -5172,7 +5172,7 @@ dsc* evlMaxMinValue(thread_db* tdbb, const SysFunction* function, const NestValu
 	fb_assert(args.getCount() >= 1);
 	fb_assert(function->misc != NULL);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 	dsc* result = NULL;
 
 	for (FB_SIZE_T i = 0; i < args.getCount(); ++i)
@@ -5212,7 +5212,7 @@ dsc* evlMod(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 {
 	fb_assert(args.getCount() == 2);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value1 = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value1 is NULL
@@ -5275,7 +5275,7 @@ dsc* evlOverlay(thread_db* tdbb, const SysFunction* function, const NestValueArr
 {
 	fb_assert(args.getCount() >= 3);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -5459,7 +5459,7 @@ dsc* evlPad(thread_db* tdbb, const SysFunction* function, const NestValueArray& 
 {
 	fb_assert(args.getCount() >= 2);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value1 = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value1 is NULL
@@ -5634,7 +5634,7 @@ dsc* evlPosition(thread_db* tdbb, const SysFunction* function, const NestValueAr
 {
 	fb_assert(args.getCount() >= 2);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value1 = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value1 is NULL
@@ -5760,7 +5760,7 @@ dsc* evlPower(thread_db* tdbb, const SysFunction* function, const NestValueArray
 {
 	fb_assert(args.getCount() == 2);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value[2];
 	value[0] = EVL_expr(tdbb, request, args[0]);
@@ -5836,7 +5836,7 @@ dsc* evlReplace(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 {
 	fb_assert(args.getCount() == 3);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 	dsc* values[3];	// 0 = searched, 1 = find, 2 = replacement
 	const dsc* firstBlob = NULL;
 
@@ -5994,7 +5994,7 @@ dsc* evlReverse(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -6097,7 +6097,7 @@ dsc* evlRight(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 {
 	fb_assert(args.getCount() == 2);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -6150,7 +6150,7 @@ dsc* evlRound(thread_db* tdbb, const SysFunction* function, const NestValueArray
 {
 	fb_assert(args.getCount() >= 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -6198,7 +6198,7 @@ dsc* evlSign(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -6229,7 +6229,7 @@ dsc* evlSqrt(thread_db* tdbb, const SysFunction* function, const NestValueArray&
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -6272,7 +6272,7 @@ dsc* evlTrunc(thread_db* tdbb, const SysFunction* function, const NestValueArray
 {
 	fb_assert(args.getCount() >= 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -6405,7 +6405,7 @@ dsc* evlUuidToChar(thread_db* tdbb, const SysFunction* function, const NestValue
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -6449,7 +6449,7 @@ dsc* evlRoleInUse(thread_db* tdbb, const SysFunction*, const NestValueArray& arg
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
@@ -6476,7 +6476,7 @@ dsc* evlSystemPrivilege(thread_db* tdbb, const SysFunction*, const NestValueArra
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
@@ -6498,7 +6498,7 @@ dsc* evlUnicodeChar(thread_db* tdbb, const SysFunction* function, const NestValu
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -6533,7 +6533,7 @@ dsc* evlUnicodeVal(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL

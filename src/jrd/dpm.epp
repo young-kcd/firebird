@@ -48,7 +48,6 @@
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
 #include "../jrd/pag.h"
-#include "../jrd/rse.h"
 #include "../jrd/val.h"
 #include "../jrd/met.h"
 #include "../jrd/vio_debug.h"
@@ -3774,6 +3773,8 @@ static void store_big_record(thread_db* tdbb,
 	} while (size > max_data);
 
 	// What's left fits on a page.  Luckily, we don't have to store it ourselves.
+
+	stack.push(prior);
 
 	// rpb is already converted to UTC
 	const Compressor dcc(*tdbb->getDefaultPool(), in - rpb->rpb_address, rpb->rpb_address);

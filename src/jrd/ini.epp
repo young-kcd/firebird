@@ -525,9 +525,10 @@ void INI_format(const char* owner, const char* charset)
 
 	length = acl - buffer;
 
-	for (int ddl_obj = obj_database + 1; ddl_obj < obj_type_MAX; ++ddl_obj)
+	for (int obj = obj_database + 1; obj < obj_type_MAX; obj++)
 	{
-		add_security_class(tdbb, reqAddSC, get_object_name(ddl_obj), length, buffer);
+		if (isDdlObject(obj))
+			add_security_class(tdbb, reqAddSC, getSecurityClassName(obj), length, buffer);
 	}
 
 	{ // scope

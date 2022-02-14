@@ -128,7 +128,7 @@ static const struct {
 
 // Class-wrapper around external SQLDA.
 // Can be used as local variable, but do it with care
-class SQLDAMetadata FB_FINAL :
+class SQLDAMetadata final :
 	public RefCntIface<IMessageMetadataImpl<SQLDAMetadata, CheckStatusWrapper> >
 {
 friend class SQLDAMetadataLauncher;
@@ -2800,7 +2800,7 @@ int API_ROUTINE gds__enable_subsystem(TEXT* /*subsystem*/)
 
 namespace
 {
-	class WaitCallback FB_FINAL :
+	class WaitCallback final :
 		public RefCntIface<IEventCallbackImpl<WaitCallback, CheckStatusWrapper> >
 	{
 	public:
@@ -2864,7 +2864,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* userStatus, isc_db_handle*
 
 namespace
 {
-	class QueCallback FB_FINAL : public RefCntIface<IEventCallbackImpl<QueCallback, CheckStatusWrapper> >
+	class QueCallback final : public RefCntIface<IEventCallbackImpl<QueCallback, CheckStatusWrapper> >
 	{
 	public:
 		QueCallback(FPTR_EVENT_CALLBACK aAst, void* aArg)
@@ -4149,7 +4149,7 @@ int YBlob::getSegment(CheckStatusWrapper* status, unsigned int bufferLength,
 		e.stuffException(status);
 	}
 
-	return 0;
+	return IStatus::RESULT_ERROR;
 }
 
 void YBlob::putSegment(CheckStatusWrapper* status, unsigned int length, const void* buffer)
@@ -4750,7 +4750,7 @@ int YResultSet::fetchNext(CheckStatusWrapper* status, void* buffer)
 		e.stuffException(status);
 	}
 
-	return FB_FALSE;
+	return IStatus::RESULT_ERROR;
 }
 
 int YResultSet::fetchPrior(CheckStatusWrapper* status, void* buffer)
@@ -4766,7 +4766,7 @@ int YResultSet::fetchPrior(CheckStatusWrapper* status, void* buffer)
 		e.stuffException(status);
 	}
 
-	return FB_FALSE;
+	return IStatus::RESULT_ERROR;
 }
 
 int YResultSet::fetchFirst(CheckStatusWrapper* status, void* buffer)
@@ -4782,7 +4782,7 @@ int YResultSet::fetchFirst(CheckStatusWrapper* status, void* buffer)
 		e.stuffException(status);
 	}
 
-	return FB_FALSE;
+	return IStatus::RESULT_ERROR;
 }
 
 int YResultSet::fetchLast(CheckStatusWrapper* status, void* buffer)
@@ -4798,7 +4798,7 @@ int YResultSet::fetchLast(CheckStatusWrapper* status, void* buffer)
 		e.stuffException(status);
 	}
 
-	return FB_FALSE;
+	return IStatus::RESULT_ERROR;
 }
 
 int YResultSet::fetchAbsolute(CheckStatusWrapper* status, int position, void* buffer)
@@ -4814,7 +4814,7 @@ int YResultSet::fetchAbsolute(CheckStatusWrapper* status, int position, void* bu
 		e.stuffException(status);
 	}
 
-	return FB_FALSE;
+	return IStatus::RESULT_ERROR;
 }
 
 int YResultSet::fetchRelative(CheckStatusWrapper* status, int offset, void* buffer)
@@ -4830,7 +4830,7 @@ int YResultSet::fetchRelative(CheckStatusWrapper* status, int offset, void* buff
 		e.stuffException(status);
 	}
 
-	return FB_FALSE;
+	return IStatus::RESULT_ERROR;
 }
 
 FB_BOOLEAN YResultSet::isEof(CheckStatusWrapper* status)

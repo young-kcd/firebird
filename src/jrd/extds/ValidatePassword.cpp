@@ -39,7 +39,7 @@ using namespace Firebird;
 
 namespace {
 
-class DummyCryptKey FB_FINAL :
+class DummyCryptKey final :
     public Firebird::AutoIface<Firebird::ICryptKeyImpl<DummyCryptKey, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -66,7 +66,7 @@ public:
 
 class SBlock;
 
-class CBlock FB_FINAL : public RefCntIface<IClientBlockImpl<CBlock, CheckStatusWrapper> >
+class CBlock final : public RefCntIface<IClientBlockImpl<CBlock, CheckStatusWrapper> >
 {
 public:
 	CBlock(const string& p_login, const string& p_password)
@@ -119,7 +119,7 @@ private:
 	SBlock* sBlock;
 };
 
-class SBlock FB_FINAL : public AutoIface<IServerBlockImpl<SBlock, CheckStatusWrapper> >
+class SBlock final : public AutoIface<IServerBlockImpl<SBlock, CheckStatusWrapper> >
 {
 public:
 	explicit SBlock(CBlock* par)

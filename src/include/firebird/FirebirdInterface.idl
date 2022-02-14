@@ -516,6 +516,7 @@ version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
 interface Batch : ReferenceCounted
 {
 	const uchar VERSION1 = 1;				// Tag for parameters block
+	const uchar CURRENT_VERSION = VERSION1;
 
 	// Tags for parameters
 	const uchar TAG_MULTIERROR = 1;			// Can have >1 buffers with errors

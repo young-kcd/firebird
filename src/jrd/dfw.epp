@@ -981,7 +981,7 @@ namespace
 
 			if (routine && !blobId.isEmpty())
 			{
-				JrdStatement* statement = NULL;
+				Statement* statement = NULL;
 				// Nickolay Samofatov: allocate statement memory pool...
 				MemoryPool* new_pool = attachment->createPool();
 				// block is used to ensure verify_cache()
@@ -2791,7 +2791,7 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 			SelectivityList selectivity(*tdbb->getDefaultPool());
 
 			jrd_tra* const current_transaction = tdbb->getTransaction();
-			jrd_req* const current_request = tdbb->getRequest();
+			Request* const current_request = tdbb->getRequest();
 
 			try
 			{
@@ -2806,6 +2806,10 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 			{
 				tdbb->setTransaction(current_transaction);
 				tdbb->setRequest(current_request);
+
+				// Get rid of the expression statement.
+				idx.idx_expression_statement->release(tdbb);
+
 				throw;
 			}
 
@@ -2814,9 +2818,8 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 
 			DFW_update_index(work->dfw_name.c_str(), idx.idx_id, selectivity, transaction);
 
-			// Get rid of the pool containing the expression tree
-
-			attachment->deletePool(new_pool);
+			// Get rid of the expression statement.
+			idx.idx_expression_statement->release(tdbb);
 		}
 		break;
 
@@ -5415,7 +5418,7 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
 
 	if ((relation || (type & TRIGGER_TYPE_MASK) != TRIGGER_TYPE_DML) && !blob_id.isEmpty())
 	{
-		JrdStatement* statement = NULL;
+		Statement* statement = NULL;
 		// Nickolay Samofatov: allocate statement memory pool...
 		MemoryPool* new_pool = attachment->createPool();
 		USHORT par_flags;
@@ -5887,19 +5890,19 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 					if (notNull && !defaultValue->isEmpty())
 					{
 						Jrd::ContextPoolHolder context(tdbb, attachment->createPool());
-						JrdStatement* defaultStatement = NULL;
+						Statement* defaultStatement = NULL;
 						try
 						{
 							ValueExprNode* defaultNode = static_cast<ValueExprNode*>(MET_parse_blob(
 								tdbb, relation.unsafePointer(), defaultValue, NULL, &defaultStatement, false, false));
 
-							jrd_req* const defaultRequest = defaultStatement->findRequest(tdbb);
+							Request* const defaultRequest = defaultStatement->findRequest(tdbb);
 
 							// Attention: this is scoped to the end of this "try".
-							AutoSetRestore2<jrd_req*, thread_db> autoRequest(tdbb,
+							AutoSetRestore2<Request*, thread_db> autoRequest(tdbb,
 								&thread_db::getRequest, &thread_db::setRequest, defaultRequest);
 
-							TimeZoneUtil::validateGmtTimeStamp(defaultRequest->req_gmt_timestamp);
+							defaultRequest->validateTimeStamp();
 
 							TRA_attach_request(transaction, defaultRequest);
 							dsc* result = EVL_expr(tdbb, defaultRequest, defaultNode);
