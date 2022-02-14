@@ -402,12 +402,7 @@ class TraceProcedureImpl :
 	public Firebird::AutoIface<Firebird::ITraceProcedureImpl<TraceProcedureImpl, Firebird::CheckStatusWrapper> >
 {
 public:
-	TraceProcedureImpl(Request* request, Firebird::PerformanceInfo* perf) :
-		m_request(request),
-		m_perf(perf),
-		m_inputs(*getDefaultMemoryPool(), request->req_proc_caller, request->req_proc_inputs),
-		m_name(m_request->getStatement()->procedure->getName().toString())
-	{}
+	TraceProcedureImpl(Request* request, Firebird::PerformanceInfo* perf);
 
 	// TraceProcedure implementation
 	const char* getProcName()

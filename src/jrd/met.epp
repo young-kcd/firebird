@@ -121,8 +121,7 @@ static void lookup_view_contexts(thread_db*, jrd_rel*);
 static void make_relation_scope_name(const TEXT*, const USHORT, string& str);
 static ValueExprNode* parse_field_default_blr(thread_db* tdbb, bid* blob_id);
 static BoolExprNode* parse_field_validation_blr(thread_db* tdbb, bid* blob_id, const MetaName name);
-static void save_trigger_data(thread_db*, TrigVectorPtr*, jrd_rel*, JrdStatement*, blb*, blb*,
-static bool resolve_charset_and_collation(thread_db*, USHORT*, const UCHAR*, const UCHAR*);
+static void save_trigger_data(thread_db*, TrigVectorPtr*, jrd_rel*, Statement*, blb*, blb*,
 	const TEXT*, FB_UINT64, bool, USHORT, const MetaName&, const string&,
 	const bid*, Nullable<bool> ssDefiner);
 static void scan_partners(thread_db*, jrd_rel*);
@@ -5523,7 +5522,7 @@ void MetadataCache::runDBTriggers(thread_db* tdbb, TriggerAction action)
 }
 
 // Find an inactive incarnation of a system request. If necessary, clone it.
-jrd_req* MetadataCache::findSystemRequest(thread_db* tdbb, USHORT id, InternalRequest which)
+Request* MetadataCache::findSystemRequest(thread_db* tdbb, USHORT id, InternalRequest which)
 {
 	static const int MAX_RECURSION = 100;
 
@@ -5533,7 +5532,7 @@ jrd_req* MetadataCache::findSystemRequest(thread_db* tdbb, USHORT id, InternalRe
 
 	fb_assert(which == IRQ_REQUESTS || which == DYN_REQUESTS);
 
-	JrdStatement* statement = (which == IRQ_REQUESTS ? mdc_internal[id] : mdc_dyn_req[id]);
+	Statement* statement = (which == IRQ_REQUESTS ? mdc_internal[id] : mdc_dyn_req[id]);
 
 	if (!statement)
 		return NULL;
@@ -5549,7 +5548,7 @@ jrd_req* MetadataCache::findSystemRequest(thread_db* tdbb, USHORT id, InternalRe
 			// Msg363 "request depth exceeded. (Recursive definition?)"
 		}
 
-		jrd_req* clone = statement->getRequest(tdbb, n);
+		Request* clone = statement->getRequest(tdbb, n);
 
 		if (!(clone->req_flags & (req_active | req_reserved)))
 		{
@@ -5803,10 +5802,10 @@ void Trigger::compile(thread_db* tdbb)
 			statement->triggerInvoker = att->getUserId(owner);
 
 		if (sysTrigger)
-			statement->flags |= JrdStatement::FLAG_SYS_TRIGGER;
+			statement->flags |= Statement::FLAG_SYS_TRIGGER;
 
 		if (flags & TRG_ignore_perm)
-			statement->flags |= JrdStatement::FLAG_IGNORE_PERM;
+			statement->flags |= Statement::FLAG_IGNORE_PERM;
 	}
 }
 

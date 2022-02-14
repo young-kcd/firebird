@@ -134,7 +134,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, TraNumber tran, bool a
 		for (auto& idx : indices)
 		{
 			MetaName idx_name;
-			MetadataCache::lookup_index(tdbb, idx_name, this->rel_name, idx->idx_id + 1);
+			MetadataCache::lookup_index(tdbb, idx_name, this->rel_name, idx.idx_id + 1);
 
 			idx.idx_root = 0;
 			SelectivityList selectivity(*pool);

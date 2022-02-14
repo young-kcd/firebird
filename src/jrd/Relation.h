@@ -52,7 +52,7 @@ public:
 
 	Firebird::HalfStaticArray<UCHAR, 128> blr;			// BLR code
 	Firebird::HalfStaticArray<UCHAR, 128> debugInfo;	// Debug info
-	JrdStatement* statement;							// Compiled statement
+	Statement* statement;								// Compiled statement
 	bool		releaseInProgress;
 	bool		sysTrigger;
 	FB_UINT64	type;						// Trigger type

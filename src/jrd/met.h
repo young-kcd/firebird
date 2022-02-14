@@ -173,7 +173,7 @@ public:
 
 	virtual SLONG getSclType() const
 	{
-		return SCL_object_procedure;
+		return obj_procedure;
 	}
 
 	virtual void releaseFormat()
@@ -282,7 +282,7 @@ public:
 
 	~MetadataCache();
 
-	jrd_req* findSystemRequest(thread_db* tdbb, USHORT id, InternalRequest which);
+	Request* findSystemRequest(thread_db* tdbb, USHORT id, InternalRequest which);
 
 	void releaseIntlObjects(thread_db* tdbb);			// defined in intl.cpp
 	void destroyIntlObjects(thread_db* tdbb);			// defined in intl.cpp
@@ -300,7 +300,7 @@ public:
 	void releaseTrigger(thread_db* tdbb, USHORT triggerId, const MetaName& name);
 	TrigVectorPtr* getTriggers(USHORT triggerId);
 
-	void cacheRequest(InternalRequest which, USHORT id, JrdStatement* stmt)
+	void cacheRequest(InternalRequest which, USHORT id, Statement* stmt)
 	{
 		if (which == IRQ_REQUESTS)
 			mdc_internal[id] = stmt;
@@ -426,8 +426,8 @@ private:
 	HazardArray<Function>			mdc_functions;			// User defined functions
 	HazardArray<Generator>			mdc_generators;
 
-	Firebird::Array<JrdStatement*>	mdc_internal;			// internal statements
-	Firebird::Array<JrdStatement*>	mdc_dyn_req;			// internal dyn statements
+	Firebird::Array<Statement*>	mdc_internal;				// internal statements
+	Firebird::Array<Statement*>	mdc_dyn_req;				// internal dyn statements
 
 	Firebird::Array<CharSetContainer*>	mdc_charsets;		// intl character set descriptions
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<

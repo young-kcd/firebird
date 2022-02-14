@@ -706,11 +706,12 @@ const char* TraceStatusVectorImpl::getText()
 	return m_error.c_str();
 }
 
-TraceProcedureImpl::TraceProcedureImpl(jrd_req* request, Firebird::PerformanceInfo* perf) :
+TraceProcedureImpl::TraceProcedureImpl(Request* request, Firebird::PerformanceInfo* perf) :
 	m_request(request),
 	m_perf(perf),
 	m_inputs(*getDefaultMemoryPool(), request->req_proc_caller, request->req_proc_inputs),
 	m_name(m_request->getStatement()->procedure->getName().toString())
 {}
+
 
 } // namespace Jrd
