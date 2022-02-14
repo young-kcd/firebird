@@ -5086,7 +5086,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tr
 		relation = MetadataCache::lookup_relation_id(tdbb, work->dfw_id, false);
 		if (relation)
 		{
-			const int id = MET_lookup_field(tdbb, relation, work->dfw_name);
+			const int id = MET_lookup_field(tdbb, relation.unsafePointer(), work->dfw_name);
 			if (id >= 0)
 			{
 				vec<jrd_fld*>* vector = relation->rel_fields;

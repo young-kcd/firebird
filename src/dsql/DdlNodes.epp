@@ -34,6 +34,7 @@
 #include "../jrd/obj.h"
 #include "../jrd/ods.h"
 #include "../jrd/tra.h"
+#include "../jrd/met.h"
 #include "../common/os/path_utils.h"
 #include "../jrd/CryptoManager.h"
 #include "../jrd/IntlManager.h"
@@ -8417,7 +8418,7 @@ void DropRelationNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 void DropRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction)
 {
-	jrd_rel* rel_drop = MetadataCache::lookup_relation(tdbb, name);
+	HazardPtr<jrd_rel> rel_drop = MetadataCache::lookup_relation(tdbb, name);
 	if (rel_drop)
 		MET_scan_relation(tdbb, rel_drop);
 

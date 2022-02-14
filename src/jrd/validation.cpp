@@ -553,6 +553,7 @@ VI. ADDITIONAL NOTES
 #include "../jrd/rse.h"
 #include "../jrd/tra.h"
 #include "../jrd/svc.h"
+#include "../jrd/met.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/dpm_proto.h"
@@ -1659,7 +1660,7 @@ void Validation::walk_database()
 			output("%s\n", relName.c_str());
 
 			int errs = vdr_errors;
-			walk_relation(relation);
+			walk_relation(relation.unsafePointer());
 			errs = vdr_errors - errs;
 
 			if (!errs)

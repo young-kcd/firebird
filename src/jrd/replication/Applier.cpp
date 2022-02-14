@@ -26,6 +26,7 @@
 #include "../jrd/blb.h"
 #include "../jrd/req.h"
 #include "../jrd/ini.h"
+#include "../jrd/met.h"
 #include "ibase.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
@@ -522,10 +523,11 @@ void Applier::insertRecord(thread_db* tdbb, TraNumber traNum,
 
 	TRA_attach_request(transaction, m_request);
 
-	const auto relation = MetadataCache::lookup_relation(tdbb, relName);
-	if (!relation)
+	const auto rel = MetadataCache::lookup_relation(tdbb, relName);
+	if (!rel)
 		raiseError("Table %s is not found", relName.c_str());
 
+	const auto relation = rel.unsafePointer();
 	if (!(relation->rel_flags & REL_scanned))
 		MET_scan_relation(tdbb, relation);
 
@@ -642,9 +644,10 @@ void Applier::updateRecord(thread_db* tdbb, TraNumber traNum,
 
 	TRA_attach_request(transaction, m_request);
 
-	const auto relation = MetadataCache::lookup_relation(tdbb, relName);
-	if (!relation)
+	const auto rel = MetadataCache::lookup_relation(tdbb, relName);
+	if (!rel)
 		raiseError("Table %s is not found", relName.c_str());
+	const auto relation = rel.unsafePointer();
 
 	if (!(relation->rel_flags & REL_scanned))
 		MET_scan_relation(tdbb, relation);
@@ -782,9 +785,10 @@ void Applier::deleteRecord(thread_db* tdbb, TraNumber traNum,
 
 	TRA_attach_request(transaction, m_request);
 
-	const auto relation = MetadataCache::lookup_relation(tdbb, relName);
-	if (!relation)
+	const auto rel = MetadataCache::lookup_relation(tdbb, relName);
+	if (!rel)
 		raiseError("Table %s is not found", relName.c_str());
+	const auto relation = rel.unsafePointer();
 
 	if (!(relation->rel_flags & REL_scanned))
 		MET_scan_relation(tdbb, relation);
@@ -858,7 +862,7 @@ void Applier::setSequence(thread_db* tdbb, const MetaName& genName, SINT64 value
 		if (gen_id < 0)
 			raiseError("Generator %s is not found", genName.c_str());
 
-		dbb->dbb_mdc->setSequence(gen_id, genName);
+		dbb->dbb_mdc->setSequence(tdbb, gen_id, genName);
 	}
 
 	AutoSetRestoreFlag<ULONG> noCascade(&tdbb->tdbb_flags, TDBB_repl_in_progress, !m_enableCascade);

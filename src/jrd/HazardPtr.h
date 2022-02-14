@@ -48,22 +48,7 @@ namespace Jrd {
 	protected:
 		virtual ~HazardObject();
 	public:
-		virtual int release(thread_db* tdbb);
-	};
-
-	class RefHazardObject : public HazardObject
-	{
-	public:
-		RefHazardObject()
-			: counter(1)		// non-std reference counted implementation
-		{ }
-
-		~RefHazardObject() override;
-		int release(thread_db* tdbb) override;
-		virtual void addRef(thread_db* tdbb);
-
-	private:
-		std::atomic<int> counter;
+		int delayedDelete(thread_db* tdbb);
 	};
 
 	class HazardDelayedDelete : public Firebird::PermanentStorage
@@ -280,6 +265,11 @@ namespace Jrd {
 			return hazardPointer == v;
 		}
 
+		bool operator!=(const T* v) const
+		{
+			return hazardPointer != v;
+		}
+
 		operator bool() const
 		{
 			return hazardPointer != nullptr;
@@ -434,8 +424,8 @@ namespace Jrd {
 				if (!m_objects[id >> SUBARRAY_SHIFT].compare_exchange_strong(sub, newSub,
 					std::memory_order_release, std::memory_order_acquire))
 				{
-					// someone else already installed this subarray
-					// ok for us - just free unneeded memory
+					// Someone else already installed this subarray.
+					// OK for us - just free unneeded memory.
 					delete[] newSub;
 				}
 				else
@@ -448,7 +438,7 @@ namespace Jrd {
 				std::memory_order_release, std::memory_order_acquire));	// empty body
 
 			if (oldVal)
-				oldVal->release(tdbb);		// delayedDelete
+				oldVal->delayedDelete(tdbb);
 
 			return HazardPtr<Object>(tdbb, *sub);
 		}

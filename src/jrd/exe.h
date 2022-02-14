@@ -509,7 +509,7 @@ public:
 	AccessItemList	csb_access;					// Access items to be checked
 	vec<DeclareVariableNode*>*	csb_variables;	// Vector of variables, if any
 	ResourceList	csb_resources;				// Resources (relations and indexes)
-	Firebird::Array<Dependency>	csb_dependencies;	// objects that this statement depends upon
+	Firebird::Array<Dependency>	csb_dependencies;	// objects that this statement depends upon			/// !!!!!!!!!!!!!!!!!
 	Firebird::Array<const RecordSource*> csb_fors;	// record sources
 	Firebird::Array<const DeclareLocalTableNode*> csb_localTables;	// local tables
 	Firebird::Array<ULONG*> csb_invariants;		// stack of pointer to nodes invariant offsets

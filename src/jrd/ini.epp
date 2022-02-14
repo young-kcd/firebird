@@ -758,7 +758,7 @@ void INI_init2(thread_db* tdbb)
 			delete relation->rel_current_format;
 			delete relation->rel_formats;
 			delete relation->rel_fields;
-			relation->release(tdbb);			// delayedDelete
+			relation->delayedDelete(tdbb);
 			mdc->setRelation(tdbb, id, nullptr);
 
 			fld = relfld + RFLD_RPT;

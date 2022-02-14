@@ -537,7 +537,8 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, dsc* desc, ItemInfo* item
 			if (csb->csb_g_flags & csb_get_dependencies)
 			{
 				CompilerScratch::Dependency dependency(obj_relation);
-				dependency.relation = MetadataCache::lookup_relation(tdbb, *relationName);
+				HazardPtr<jrd_rel> rel = MetadataCache::lookup_relation(tdbb, *relationName);
+				dependency.relation = rel.unsafePointer();		// !!!!!!!!!!!!!!!!!!!!
 				dependency.subName = fieldName;
 				csb->csb_dependencies.push(dependency);
 			}
@@ -1340,7 +1341,7 @@ RseNode* PAR_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 				const RelationSourceNode* subNode = nodeAs<RelationSourceNode>(rse->rse_relations[iter]);
 				if (!subNode)
 					continue;
-				const RelationSourceNode* relNode = static_cast<const RelationSourceNode*>(subNode);
+				const RelationSourceNode* relNode = static_cast<const RelationSourceNode*>(subNode);		// ?????????????????????????
 				const jrd_rel* relation = relNode->relation;
 				fb_assert(relation);
 				if (relation->isVirtual())

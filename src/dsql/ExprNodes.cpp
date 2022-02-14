@@ -31,6 +31,7 @@
 #include "../jrd/align.h"
 #include "firebird/impl/blr.h"
 #include "../jrd/tra.h"
+#include "../jrd/met.h"
 #include "../jrd/Function.h"
 #include "../jrd/SysFunction.h"
 #include "../jrd/recsrc/RecordSource.h"
@@ -4864,7 +4865,7 @@ DmlNode* DefaultNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	if (csb->csb_g_flags & csb_get_dependencies)
 	{
 		CompilerScratch::Dependency dependency(obj_relation);
-		dependency.relation = MetadataCache::lookup_relation(tdbb, relationName);
+		dependency.relation = MetadataCache::lookup_relation(tdbb, relationName).unsafePointer();
 		dependency.subName = FB_NEW_POOL(pool) MetaName(fieldName);
 		csb->csb_dependencies.push(dependency);
 	}
@@ -4873,11 +4874,11 @@ DmlNode* DefaultNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 	while (true)
 	{
-		jrd_rel* relation = MetadataCache::lookup_relation(tdbb, relationName);
+		HazardPtr<jrd_rel> relation = MetadataCache::lookup_relation(tdbb, relationName);
 
 		if (relation && relation->rel_fields)
 		{
-			int fieldId = MET_lookup_field(tdbb, relation, fieldName);
+			int fieldId = MET_lookup_field(tdbb, relation.unsafePointer(), fieldName);
 
 			if (fieldId >= 0)
 			{
@@ -5826,7 +5827,7 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 				(procedure->flags & Routine::FLAG_BEING_SCANNED) ||
 				(procedure->flags & Routine::FLAG_BEING_ALTERED)))
 		{
-			const jrd_prc* scan_proc = MetadataCache::findProcedure(tdbb, procedure->getId(), false, 0);
+			HazardPtr<jrd_prc> scan_proc = MetadataCache::findProcedure(tdbb, procedure->getId(), false, 0);
 
 			if (scan_proc != procedure)
 				procedure = NULL;
@@ -12759,11 +12760,14 @@ DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 		}
 	}
 
+	HazardPtr<Function> func;
+	if (!node->function)
+	{
+		func = Function::lookup(tdbb, name, false);			// !!!!!!!!!!!!!!!!!!! resource
+		node->function = func.unsafePointer();
+	}
+
 	Function* function = node->function;
-
-	if (!function)
-		function = node->function = Function::lookup(tdbb, name, false);
-
 	if (function)
 	{
 		if (function->isImplemented() && !function->isDefined())
@@ -12881,7 +12885,13 @@ ValueExprNode* UdfCallNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	UdfCallNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) UdfCallNode(*tdbb->getDefaultPool(), name);
 	node->args = copier.copy(tdbb, args);
-	node->function = isSubRoutine ? function : Function::lookup(tdbb, name, false);
+	if (isSubRoutine)
+		node->function = function;
+	else
+	{
+		HazardPtr<Function> func = Function::lookup(tdbb, name, false);	// !!!!!!!!!!!!!!!!!!! resource
+		node->function = func.unsafePointer();
+	}
 	return node;
 }
 

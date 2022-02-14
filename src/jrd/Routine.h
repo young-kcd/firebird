@@ -41,7 +41,7 @@ namespace Jrd
 	class Parameter;
 	class UserId;
 
-	class Routine : public Firebird::PermanentStorage, public RefHazardObject
+	class Routine : public Firebird::PermanentStorage, public HazardObject
 	{
 	protected:
 		explicit Routine(MemoryPool& p)
@@ -154,10 +154,12 @@ namespace Jrd
 		{
 		}
 
-		int release(thread_db* tdbb) override;
+		int release(thread_db* tdbb);
 		void releaseStatement(thread_db* tdbb);
 		void remove(thread_db* tdbb);
-		virtual void releaseExternal() {};
+		virtual void releaseExternal()
+		{
+		}
 
 	public:
 		virtual int getObjectType() const = 0;

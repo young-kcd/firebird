@@ -19,6 +19,7 @@
 
 #include "firebird.h"
 #include "../jrd/jrd.h"
+#include "../jrd/met.h"
 #include "../jrd/intl.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"

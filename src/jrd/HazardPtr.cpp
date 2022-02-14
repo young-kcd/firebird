@@ -37,36 +37,11 @@ using namespace Firebird;
 HazardObject::~HazardObject()
 { }
 
-int HazardObject::release(thread_db* tdbb)
+int HazardObject::delayedDelete(thread_db* tdbb)
 {
 	HazardDelayedDelete& dd = tdbb->getAttachment()->att_delayed_delete;
 	dd.delayedDelete(this);
 	return 0;
-}
-
-RefHazardObject::~RefHazardObject()
-{
-	fb_assert(counter == 0);
-}
-
-int RefHazardObject::release(thread_db* tdbb)
-{
-	fb_assert(counter > 0);
-	if (--counter == 0)
-	{
-		HazardObject::release(tdbb);
-		return 0;
-	}
-
-	return 1;
-}
-
-void RefHazardObject::addRef(thread_db*)
-{
-	fb_assert(counter >= 0);
-	if (counter < 1)
-		fatal_exception::raise("Attempt to reuse released object failed");		// need special error handling? !!!!!!!!!!!
-	++counter;
 }
 
 HazardDelayedDelete* HazardBase::getHazardDelayed(thread_db* tdbb)

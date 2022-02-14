@@ -79,7 +79,7 @@ public:
 	bool isActive() const;
 
 	void compile(thread_db*);				// Ensure that trigger is compiled
-	int release(thread_db*) override;		// Try to free trigger request
+	int release(thread_db*);				// Try to free trigger request
 
 	explicit Trigger(MemoryPool& p)
 		: blr(p),
@@ -109,10 +109,10 @@ public:
 
 	TrigVector()
 		: HazardArray<Trigger>(Firebird::AutoStorage::getAutoMemoryPool()),
-		  useCount(0)
+		  useCount(0), addCount(0)
 	{ }
 
-	HazardPtr<Trigger> add(Trigger*);
+	HazardPtr<Trigger> add(thread_db* tdbb, Trigger*);
 
 	void addRef()
 	{
@@ -138,11 +138,12 @@ public:
 
 	~TrigVector()
 	{
-		fb_assert(useCount.value() == 0);
+		fb_assert(useCount.load() == 0);
 	}
 
 private:
-	Firebird::AtomicCounter useCount;
+	std::atomic<int> useCount;
+	std::atomic<FB_SIZE_T> addCount;
 };
 
 typedef std::atomic<TrigVector*> TrigVectorPtr;

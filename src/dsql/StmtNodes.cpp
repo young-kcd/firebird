@@ -32,6 +32,7 @@
 #include "../jrd/ids.h"
 #include "../jrd/ini.h"
 #include "../jrd/tra.h"
+#include "../jrd/met.h"
 #include "../jrd/Coercion.h"
 #include "../jrd/Function.h"
 #include "../jrd/Optimizer.h"
@@ -107,7 +108,7 @@ static void pass1Validations(thread_db* tdbb, CompilerScratch* csb, Array<Valida
 static ForNode* pass2FindForNode(StmtNode* node, StreamType stream);
 static void postTriggerAccess(CompilerScratch* csb, jrd_rel* ownerRelation,
 	ExternalAccess::exa_act operation, jrd_rel* view);
-static void preModifyEraseTriggers(thread_db* tdbb, TrigVector** trigs,
+static void preModifyEraseTriggers(thread_db* tdbb, TrigVectorPtr* trigs,
 	StmtNode::WhichTrigger whichTrig, record_param* rpb, record_param* rec, TriggerAction op);
 static void preprocessAssignments(thread_db* tdbb, CompilerScratch* csb,
 	StreamType stream, CompoundStmtNode* compoundNode, const Nullable<OverrideClause>* insertOverride);
@@ -2917,13 +2918,14 @@ DmlNode* ExecProcedureNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 {
 	SET_TDBB(tdbb);
 
+	HazardPtr<jrd_prc> proc;
 	jrd_prc* procedure = NULL;
 	QualifiedName name;
 
 	if (blrOp == blr_exec_pid)
 	{
 		const USHORT pid = csb->csb_blr_reader.getWord();
-		if (!(procedure = MetadataCache::lookup_procedure_id(tdbb, pid, false, false, 0)))
+		if (!(proc = MetadataCache::lookup_procedure_id(tdbb, pid, false, false, 0)))
 			name.identifier.printf("id %d", pid);
 	}
 	else
@@ -2944,8 +2946,11 @@ DmlNode* ExecProcedureNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 			}
 		}
 		else
-			procedure = MetadataCache::lookup_procedure(tdbb, name, false);
+			proc = MetadataCache::lookup_procedure(tdbb, name, false);
 	}
+
+	if (proc && !procedure)
+		procedure = proc.unsafePointer();
 
 	if (!procedure)
 		PAR_error(csb, Arg::Gds(isc_prcnotdef) << Arg::Str(name.toString()));
@@ -10531,7 +10536,9 @@ static RelationSourceNode* pass1Update(thread_db* tdbb, CompilerScratch* csb, jr
 
 		for (FB_SIZE_T i = 0; i < trigger->getCount(); i++)
 		{
-			if (!(*trigger)[i].sysTrigger)
+			HazardPtr<Trigger> tr;
+			trigger->load(i, tr);
+			if (!tr->sysTrigger)
 			{
 				userTriggers = true;
 				break;
@@ -10633,7 +10640,7 @@ static void postTriggerAccess(CompilerScratch* csb, jrd_rel* ownerRelation,
 }
 
 // Perform operation's pre-triggers, storing active rpb in chain.
-static void preModifyEraseTriggers(thread_db* tdbb, TrigVector** trigs,
+static void preModifyEraseTriggers(thread_db* tdbb, TrigVectorPtr* trigs,
 	StmtNode::WhichTrigger whichTrig, record_param* rpb, record_param* rec, TriggerAction op)
 {
 	if (!tdbb->getTransaction()->tra_rpblist)
@@ -10715,7 +10722,7 @@ static void preprocessAssignments(thread_db* tdbb, CompilerScratch* csb,
 					}
 					else if (relation->rel_view_rse && fld->fld_source_rel_field.first.hasData())
 					{
-						relation = MetadataCache::lookup_relation(tdbb, fld->fld_source_rel_field.first);
+						relation = MetadataCache::lookup_relation(tdbb, fld->fld_source_rel_field.first).unsafePointer();
 
 						fb_assert(relation);
 						if (!relation)

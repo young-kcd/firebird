@@ -601,3 +601,13 @@ void RelationPages::free(RelationPages*& nextFree)
 	dpMap.clear();
 	dpMapMark = 0;
 }
+
+
+/// TrigVector
+
+HazardPtr<Trigger> TrigVector::add(thread_db* tdbb, Trigger* trig)
+{
+	FB_SIZE_T id = addCount.fetch_add(1);
+	return store(tdbb, id, trig);
+}
+

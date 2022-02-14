@@ -40,6 +40,7 @@
 #include "../jrd/intl.h"
 #include "../jrd/irq.h"
 #include "../jrd/tra.h"
+#include "../jrd/met.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/metd_proto.h"

@@ -28,10 +28,10 @@
 // req.h includes exe.h => Jrd::CompilerScratch and Jrd::CompilerScratch::csb_repeat.
 #include "../jrd/scl.h"
 
-namespace Jrd
-{
-	class RelationSourceNode;
-}
+//namespace Jrd
+//{
+//	class RelationSourceNode;
+// ????????????????????????? }
 
 StreamType* CMP_alloc_map(Jrd::thread_db*, Jrd::CompilerScratch*, StreamType stream);
 Jrd::ValueExprNode* CMP_clone_node_opt(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::ValueExprNode*);

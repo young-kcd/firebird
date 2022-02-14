@@ -1657,6 +1657,12 @@ DmlNode* MET_get_dependencies(thread_db* tdbb,
 }
 
 
+jrd_fld* MET_get_field(const Jrd::HazardPtr<Jrd::jrd_rel>& relation, USHORT id)
+{
+	return MET_get_field(relation.unsafePointer(), id);
+}
+
+
 jrd_fld* MET_get_field(const jrd_rel* relation, USHORT id)
 {
 /**************************************
@@ -2156,7 +2162,7 @@ bool MET_load_exception(thread_db* tdbb, ExceptionItem& item)
 }
 
 
-int MET_lookup_field(thread_db* tdbb, Jrd::HazardPtr<jrd_rel> relation, const MetaName& name)
+int MET_lookup_field(thread_db* tdbb, jrd_rel* relation, const MetaName& name)
 {
 /**************************************
  *
@@ -2172,6 +2178,8 @@ int MET_lookup_field(thread_db* tdbb, Jrd::HazardPtr<jrd_rel> relation, const Me
  *****************************************/
 	SET_TDBB(tdbb);
 	Attachment* attachment = tdbb->getAttachment();
+
+	// validate relation in cache??????????????
 
 	// Start by checking field names that we already know
 	vec<jrd_fld*>* vector = relation->rel_fields;
@@ -3177,6 +3185,39 @@ void MetadataCache::post_existence(thread_db* tdbb, jrd_rel* relation)
 }
 
 
+void MET_release_existence(thread_db* tdbb, jrd_rel* relation)
+{
+/**************************************
+ *
+ *      M E T _ r e l e a s e _ e x i s t e n c e
+ *
+ **************************************
+ *
+ * Functional description
+ *      Release interest in relation. If no remaining interest
+ *      and we're blocking the drop of the relation then release
+ *      existence lock and mark deleted.
+ *
+ **************************************/
+	if (!relation->rel_use_count)
+		return;
+
+	--relation->rel_use_count;
+
+	if (!relation->rel_use_count)
+	{
+		if (relation->rel_flags & REL_blocking)
+			LCK_re_post(tdbb, relation->rel_existence_lock);
+
+		// release trigger requests
+		relation->releaseTriggers(tdbb, false);
+
+		// close external file
+		EXT_fini(relation, true);
+	}
+}
+
+
 void MET_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length, const UCHAR* msg)
 {
 /**************************************
@@ -3658,39 +3699,6 @@ HazardPtr<jrd_rel> MetadataCache::findRelation(thread_db* tdbb, USHORT id)
 		delete newRelation;
 
 	return relation;
-}
-
-
-void MET_release_existence(thread_db* tdbb, jrd_rel* relation)
-{
-/**************************************
- *
- *      M E T _ r e l e a s e _ e x i s t e n c e
- *
- **************************************
- *
- * Functional description
- *      Release interest in relation. If no remaining interest
- *      and we're blocking the drop of the relation then release
- *      existence lock and mark deleted.
- *
- **************************************/
-	if (!relation->rel_use_count)
-		return;
-
-	--relation->rel_use_count;
-
-	if (!relation->rel_use_count)
-	{
-		if (relation->rel_flags & REL_blocking)
-			LCK_re_post(tdbb, relation->rel_existence_lock);
-
-		// release trigger requests
-		relation->releaseTriggers(tdbb, false);
-
-		// close external file
-		EXT_fini(relation, true);
-	}
 }
 
 
@@ -4941,7 +4949,7 @@ static void save_trigger_data(thread_db* tdbb, TrigVectorPtr* ptr, jrd_rel* rela
 	t->ssDefiner = ssDefiner;
 	t->owner = relation ? relation->rel_owner_name : tdbb->getDatabase()->dbb_owner;
 
-	vector->add(t);
+	vector->add(tdbb, t);
 }
 
 
@@ -5559,8 +5567,7 @@ void MetadataCache::releaseRelations(thread_db* tdbb)
 			if (relation->rel_file)
 				EXT_fini(relation.unsafePointer(), false);
 
-			//relation->delayedDelete(tdbb); //!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			delete relation.unsafePointer();
+			relation->delayedDelete(tdbb);
 			mdc_relations.store(tdbb, n, nullptr);
 		}
 	}

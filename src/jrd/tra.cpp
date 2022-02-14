@@ -38,6 +38,7 @@
 #include "../jrd/exe.h"
 #include "../jrd/extds/ExtDS.h"
 #include "../jrd/rse.h"
+#include "../jrd/met.h"
 #include "../jrd/intl_classes.h"
 #include "../common/ThreadStart.h"
 #include "../jrd/TimeZone.h"
@@ -2143,7 +2144,7 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN* window, bool dontW
 #endif
 
 
-static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* relation,
+static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, HazardPtr<jrd_rel>& rel,
 	UCHAR lock_type, const char* option_name, RelationLockTypeMap& lockmap, const int level)
 {
 /**************************************
@@ -2166,6 +2167,7 @@ static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rel
 				 Arg::Gds(isc_tpb_reserv_max_recursion) << Arg::Num(30));
 	}
 
+	jrd_rel* relation = rel.unsafePointer();
 	const char* const relation_name = relation->rel_name.c_str();
 
 	// LCK_none < LCK_SR < LCK_PR < LCK_SW < LCK_EX
@@ -2254,7 +2256,7 @@ static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rel
 		if (ctx[i]->vcx_type == VCT_PROCEDURE)
 			continue;
 
-		jrd_rel* base_rel = MetadataCache::lookup_relation(tdbb, ctx[i]->vcx_relation_name);
+		HazardPtr<jrd_rel> base_rel = MetadataCache::lookup_relation(tdbb, ctx[i]->vcx_relation_name);
 		if (!base_rel)
 		{
 			// should be a BUGCHECK
@@ -2477,7 +2479,7 @@ static void release_temp_tables(thread_db* tdbb, jrd_tra* transaction)
 
 	for (FB_SIZE_T i = 0; i < mdc->relCount(); i++)
 	{
-		jrd_rel* relation = mdc->getRelation(tdbb, i);
+		HazardPtr<jrd_rel> relation = mdc->getRelation(tdbb, i);
 
 		if (relation && (relation->rel_flags & REL_temp_tran))
 			relation->delPages(tdbb, transaction->tra_number);
@@ -2502,7 +2504,7 @@ static void retain_temp_tables(thread_db* tdbb, jrd_tra* transaction, TraNumber 
 
 	for (FB_SIZE_T i = 0; i < mdc->relCount(); i++)
 	{
-		jrd_rel* relation = mdc->getRelation(tdbb, i);
+		HazardPtr<jrd_rel> relation = mdc->getRelation(tdbb, i);
 
 		if (relation && (relation->rel_flags & REL_temp_tran))
 			relation->retainPages(tdbb, transaction->tra_number, new_number);
@@ -3181,7 +3183,7 @@ static void transaction_options(thread_db* tdbb,
 				const MetaName metaName = attachment->nameToMetaCharSet(tdbb, orgName);
 
 				tpb += len;
-				jrd_rel* relation = MetadataCache::lookup_relation(tdbb, metaName);
+				HazardPtr<jrd_rel> relation = MetadataCache::lookup_relation(tdbb, metaName);
 				if (!relation)
 				{
 					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
@@ -4050,9 +4052,9 @@ void jrd_tra::checkBlob(thread_db* tdbb, const bid* blob_id, jrd_fld* fld, bool 
 		!tra_fetched_blobs.locate(*blob_id))
 	{
 		MetadataCache* mdc = tra_attachment->att_database->dbb_mdc;
-		//jrd_rel* blb_relation;
+		HazardPtr<jrd_rel> blb_relation = mdc->getRelation(tdbb, rel_id);
 
-		if (rel_id < mdc->relCount() && (auto blb_relation = mdc->getRelation(tdbb, rel_id)))
+		if (blb_relation)
 		{
 			const MetaName security_name = fld ?
 				fld->fld_security_name : blb_relation->rel_security_name;

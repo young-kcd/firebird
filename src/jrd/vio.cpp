@@ -60,6 +60,7 @@
 #include "../jrd/exe.h"
 #include "../jrd/rse.h"
 #include "../jrd/scl.h"
+#include "../jrd/met.h"
 #include "../common/classes/alloc.h"
 #include "../common/ThreadStart.h"
 #include "../jrd/vio_debug.h"
@@ -1570,8 +1571,8 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	if (needDfw(tdbb, transaction))
 	{
-		jrd_rel* r2;
-		const jrd_prc* procedure;
+		HazardPtr<jrd_rel> r2;
+		HazardPtr<jrd_prc> procedure;
 		USHORT id;
 		DeferredWork* work;
 
@@ -1629,7 +1630,7 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				}
 				EVL_field(0, rpb->rpb_record, f_rel_name, &desc);
 				DFW_post_work(transaction, dfw_delete_relation, &desc, id);
-				jrd_rel* rel_drop = MetadataCache::lookup_relation_id(tdbb, id, false);
+				HazardPtr<jrd_rel> rel_drop = MetadataCache::lookup_relation_id(tdbb, id, false);
 				if (rel_drop)
 					MET_scan_relation(tdbb, rel_drop);
 			}
@@ -1719,11 +1720,11 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 					MetaName index_name;
 					MOV_get_metaname(tdbb, &desc3, index_name);
 
-					jrd_rel *partner;
+					HazardPtr<jrd_rel> partner;
 					index_desc idx;
 
-					if ((BTR_lookup(tdbb, r2, id - 1, &idx, r2->getBasePages())) &&
-						MET_lookup_partner(tdbb, r2, &idx, index_name.nullStr()) &&
+					if ((BTR_lookup(tdbb, r2.unsafePointer(), id - 1, &idx, r2->getBasePages())) &&
+						MET_lookup_partner(tdbb, r2.unsafePointer(), &idx, index_name.nullStr()) &&
 						(partner = MetadataCache::lookup_relation_id(tdbb, idx.idx_primary_relation, false)) )
 					{
 						DFW_post_work_arg(transaction, work, 0, partner->rel_id,
@@ -3911,7 +3912,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 	rpb.rpb_stream_flags = RPB_s_no_data | RPB_s_sweeper;
 	rpb.getWindow(tdbb).win_flags = WIN_large_scan;
 
-	jrd_rel* relation = NULL; // wasn't initialized: memory problem in catch () part.
+	HazardPtr<jrd_rel> relation;
 	vec<jrd_rel*>* vector = NULL;
 
 	GarbageCollector* gc = dbb->dbb_garbage_collector;
@@ -3930,18 +3931,18 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 				!relation->isTemporary() &&
 				relation->getPages(tdbb)->rel_pages)
 			{
-				jrd_rel::GCShared gcGuard(tdbb, relation);
+				jrd_rel::GCShared gcGuard(tdbb, relation.unsafePointer());
 				if (!gcGuard.gcEnabled())
 				{
 					ret = false;
 					break;
 				}
 
-				rpb.rpb_relation = relation;
+				rpb.rpb_relation = relation.unsafePointer();
 				rpb.rpb_number.setValue(BOF_NUMBER);
 				rpb.rpb_org_scans = relation->rel_scan_count++;
 
-				traceSweep->beginSweepRelation(relation);
+				traceSweep->beginSweepRelation(relation.unsafePointer());
 
 				if (gc) {
 					gc->sweptRelation(transaction->tra_oldest_active, relation->rel_id);
@@ -3961,7 +3962,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 						cache->updateActiveSnapshots(tdbb, &attachment->att_active_snapshots);
 				}
 
-				traceSweep->endSweepRelation(relation);
+				traceSweep->endSweepRelation(relation.unsafePointer());
 
 				--relation->rel_scan_count;
 			}
@@ -4786,7 +4787,6 @@ void Database::garbage_collector(Database* dbb)
 		rpb.getWindow(tdbb).win_flags = WIN_garbage_collector;
 		rpb.rpb_stream_flags = RPB_s_no_data | RPB_s_sweeper;
 
-		jrd_rel* relation = NULL;
 		jrd_tra* transaction = NULL;
 
 		AutoPtr<GarbageCollector> gc(FB_NEW_POOL(*attachment->att_pool) GarbageCollector(
@@ -4838,7 +4838,6 @@ void Database::garbage_collector(Database* dbb)
 				// out from under us while garbage collection is in-progress.
 
 				bool found = false, gc_exit = false;
-				relation = NULL;
 
 				USHORT relID;
 				PageBitmap* gc_bitmap = NULL;
@@ -4846,7 +4845,7 @@ void Database::garbage_collector(Database* dbb)
 				if ((dbb->dbb_flags & DBB_gc_pending) &&
 					(gc_bitmap = gc->getPages(dbb->dbb_oldest_snapshot, relID)))
 				{
-					relation = MetadataCache::lookup_relation_id(tdbb, relID, false);
+					HazardPtr<jrd_rel> relation = MetadataCache::lookup_relation_id(tdbb, relID, false);
 					if (!relation || (relation->rel_flags & (REL_deleted | REL_deleting)))
 					{
 						delete gc_bitmap;
@@ -4856,11 +4855,11 @@ void Database::garbage_collector(Database* dbb)
 
 					if (gc_bitmap)
 					{
-						jrd_rel::GCShared gcGuard(tdbb, relation);
+						jrd_rel::GCShared gcGuard(tdbb, relation.unsafePointer());
 						if (!gcGuard.gcEnabled())
 							continue;
 
-						rpb.rpb_relation = relation;
+						rpb.rpb_relation = relation.unsafePointer();
 
 						while (gc_bitmap->getFirst())
 						{

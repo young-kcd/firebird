@@ -78,6 +78,7 @@
 #include "../jrd/cch.h"
 #include "../jrd/nbak.h"
 #include "../jrd/tra.h"
+#include "../jrd/met.h"
 #include "../jrd/vio_debug.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/dpm_proto.h"
@@ -1121,7 +1122,7 @@ void PAG_header(thread_db* tdbb, bool info)
 	if (header->hdr_flags & hdr_SQL_dialect_3)
 		dbb->dbb_flags |= DBB_DB_SQL_dialect_3;
 
-	jrd_rel* relation = MetadataCache::findRelation(tdbb, 0);
+	HazardPtr<jrd_rel> relation = MetadataCache::findRelation(tdbb, 0);
 	RelationPages* relPages = relation->getBasePages();
 	if (!relPages->rel_pages)
 	{

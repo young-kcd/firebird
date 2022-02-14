@@ -359,7 +359,7 @@ public:
 		: TypedNode<RecordSourceNode, RecordSourceNode::TYPE_RELATION>(pool),
 		  dsqlName(pool, aDsqlName),
 		  alias(pool),
-		  relation(NULL),
+		  //relation(NULL),
 		  view(NULL),
 		  context(0)
 	{

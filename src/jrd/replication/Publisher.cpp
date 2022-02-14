@@ -25,6 +25,7 @@
 #include "../jrd/ods.h"
 #include "../jrd/req.h"
 #include "../jrd/tra.h"
+#include "../jrd/met.h"
 #include "firebird/impl/blr.h"
 #include "../jrd/trig.h"
 #include "../jrd/Database.h"
@@ -658,7 +659,7 @@ void REPL_gen_id(thread_db* tdbb, SLONG genId, SINT64 value)
 	if (!database->dbb_mdc->getSequence(tdbb, genId, genName))
 	{
 		MET_lookup_generator_id(tdbb, genId, genName, nullptr);
-		database->dbb_mdc->setSequence(genId, genName);
+		database->dbb_mdc->setSequence(tdbb, genId, genName);
 	}
 
 	fb_assert(genName.hasData());

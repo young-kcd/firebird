@@ -1699,7 +1699,7 @@ void blb::put_slice(thread_db*	tdbb,
 
 	SSHORT	n;
 	if (info.sdl_info_field.length()) {
-	    n = MET_lookup_field(tdbb, relation, info.sdl_info_field);
+	    n = MET_lookup_field(tdbb, relation.unsafePointer(), info.sdl_info_field);
 	}
 	else {
 		n = info.sdl_info_fid;

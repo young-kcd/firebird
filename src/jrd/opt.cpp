@@ -56,6 +56,7 @@
 #include "../jrd/rse.h"
 #include "../jrd/ini.h"
 #include "../jrd/intl.h"
+#include "../jrd/met.h"
 #include "../jrd/Collation.h"
 #include "../common/gdsassert.h"
 #include "../jrd/btr_proto.h"

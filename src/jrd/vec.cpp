@@ -24,10 +24,13 @@
 
 #include "firebird.h"
 #include "../jrd/vec.h"
+#include "../jrd/jrd.h"
 #include "../jrd/err_proto.h"
 
 
 #if defined(DEV_BUILD)
+
+using namespace Jrd;
 
 thread_db* JRD_get_thread_data()
 {
@@ -55,6 +58,3 @@ void CHECK_DBB(const Database* dbb)
 }
 
 #endif // DEV_BUILD
-
-#endif // JRD_VEC_H
-

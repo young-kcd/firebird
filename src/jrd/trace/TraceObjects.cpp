@@ -36,6 +36,7 @@
 #include "../../common/isc_s_proto.h"
 #include "../../jrd/jrd.h"
 #include "../../jrd/tra.h"
+#include "../../jrd/met.h"
 #include "../../jrd/DataTypeUtil.h"
 #include "../../dsql/ExprNodes.h"
 #include "../../dsql/StmtNodes.h"
