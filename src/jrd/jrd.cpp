@@ -2072,6 +2072,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 
 				// Can't allow garbage collection during database validation.
 
+				AutoSetRestoreFlag<ULONG> noCleanup(&attachment->att_flags, ATT_no_cleanup, true);
 				VIO_fini(tdbb);
 
 				if (!VAL_validate(tdbb, options.dpb_verify))
