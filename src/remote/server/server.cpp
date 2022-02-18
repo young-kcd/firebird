@@ -3454,7 +3454,8 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 
 	if (statement->rsr_cursor)
 	{
-		 Arg::Gds(isc_dsql_cursor_open_err).raise();
+		(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
+			Arg::Gds(isc_dsql_cursor_open_err)).raise();
 	}
 
 	InternalMessageBuffer iMsgBuffer(sqldata->p_sqldata_blr.cstr_length,
@@ -3570,7 +3571,8 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			sqldata->p_sqldata_blr.cstr_address, msg_length, NULL);
 
 		if (!msgBuffer.metadata)
-			Arg::Gds(isc_dsql_cursor_open_err).raise();
+			(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
+				Arg::Gds(isc_dsql_cursor_open_err)).raise();
 
 		statement->rsr_cursor->setDelayedOutputFormat(&status_vector, msgBuffer.metadata);
 		check(&status_vector);
