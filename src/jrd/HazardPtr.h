@@ -90,18 +90,9 @@ namespace Jrd {
 			: hazardPointer(nullptr)
 		{ }
 
-		explicit HazardPtr(thread_db* tdbb)
-			: HazardBase(tdbb),
-			  hazardPointer(nullptr)
-		{ }
-
-		explicit HazardPtr(Attachment* att)
-			: HazardBase(att),
-			  hazardPointer(nullptr)
-		{ }
-
-		explicit HazardPtr(HazardDelayedDelete* hd)
-			: HazardBase(hd),
+		template <class DDS>
+		explicit HazardPtr(DDS* par)
+			: HazardBase(par),
 			  hazardPointer(nullptr)
 		{ }
 
