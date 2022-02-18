@@ -10658,10 +10658,11 @@ static RelationSourceNode* pass1Update(thread_db* tdbb, CompilerScratch* csb, jr
 	{
 		bool userTriggers = false;
 
-		for (FB_SIZE_T i = 0; i < trigger->getCount(); i++)
+		for (FB_SIZE_T i = 0; i < trigger->getCount(tdbb); i++)
 		{
 			HazardPtr<Trigger> tr;
-			trigger->load(i, tr);
+			if (!trigger->load(tdbb, i, tr))
+				continue;
 			if (!tr->sysTrigger)
 			{
 				userTriggers = true;

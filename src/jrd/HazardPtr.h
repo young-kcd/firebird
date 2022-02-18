@@ -51,58 +51,7 @@ namespace Jrd {
 		int delayedDelete(thread_db* tdbb);
 	};
 
-	class HazardDelayedDelete : public Firebird::PermanentStorage
-	{
-	public:
-		typedef const void* Ptr;
-
-	private:
-		static const unsigned int INITIAL_SIZE = 4;
-		static const unsigned int DELETED_LIST_SIZE = 32;
-
-		typedef Firebird::SortedArray<Ptr, Firebird::InlineStorage<Ptr, 128>> LocalHP;
-
-		class HazardPointers : public HazardObject, public pool_alloc_rpt<Ptr>
-		{
-		private:
-			HazardPointers(unsigned size)
-				: hpCount(0), hpSize(size)
-			{ }
-
-		public:
-			unsigned int hpCount;
-			unsigned int hpSize;
-			Ptr hp[1];
-
-			static HazardPointers* create(MemoryPool& p, unsigned size);
-		};
-
-	public:
-		enum class GarbageCollectMethod {GC_NORMAL, GC_ALL, GC_FORCE};
-
-		HazardDelayedDelete(MemoryPool& dbbPool, MemoryPool& attPool)
-			: Firebird::PermanentStorage(dbbPool),
-			  toDelete(attPool),
-			  hazardPointers(HazardPointers::create(getPool(), INITIAL_SIZE))
-		{ }
-
-		void add(Ptr ptr);
-		void remove(Ptr ptr);
-
-		void delayedDelete(HazardObject* mem, bool gc = true);
-		void garbageCollect(GarbageCollectMethod gcMethod);
-
-		// required in order to correctly pass that memory to DBB when destroying attachment
-		HazardPointers* getHazardPointers();
-
-	private:
-		static void copyHazardPointers(LocalHP& local, Ptr* from, unsigned count);
-		static void copyHazardPointers(thread_db* tdbb, LocalHP& local, Attachment* from);
-
-		Firebird::HalfStaticArray<HazardObject*, DELETED_LIST_SIZE> toDelete;
-		std::atomic<HazardPointers*> hazardPointers;
-	};
-
+	class HazardDelayedDelete;
 	class HazardBase
 	{
 	protected:
@@ -122,19 +71,8 @@ namespace Jrd {
 			: hazardDelayed(nullptr)
 		{ }
 
-		void add(const void* hazardPointer)
-		{
-			if (!hazardDelayed)
-				hazardDelayed = getHazardDelayed();
-			hazardDelayed->add(hazardPointer);
-		}
-
-		void remove(const void* hazardPointer)
-		{
-			if (!hazardDelayed)
-				hazardDelayed = getHazardDelayed();
-			hazardDelayed->remove(hazardPointer);
-		}
+		inline void add(const void* hazardPointer);
+		inline void remove(const void* hazardPointer);
 
 	private:
 		HazardDelayedDelete* hazardDelayed;
@@ -167,8 +105,9 @@ namespace Jrd {
 			  hazardPointer(nullptr)
 		{ }
 
-		HazardPtr(thread_db* tdbb, std::atomic<T*>& from)
-			: HazardBase(tdbb),
+		template <class DDS>
+		HazardPtr(DDS* par, const std::atomic<T*>& from)
+			: HazardBase(par),
 			  hazardPointer(nullptr)
 		{
 			set(from);
@@ -214,7 +153,7 @@ namespace Jrd {
 			return get();
 		}
 
-		void set(std::atomic<T*>& from)
+		void set(const std::atomic<T*>& from)
 		{
 			T* v = from.load(std::memory_order_relaxed);
 			do
@@ -343,6 +282,177 @@ namespace Jrd {
 	}
 
 
+	// Shared read here means that any thread can read from vector using HP.
+	// It can be modified only in single thread, caller is responsible for that.
+
+	template <typename T, FB_SIZE_T CAP>
+	class SharedReadVector : public Firebird::PermanentStorage
+	{
+	public:
+		class Generation : public HazardObject, public pool_alloc_rpt<T>
+		{
+		private:
+			Generation(FB_SIZE_T size)
+				: count(0), capacity(size)
+			{ }
+
+			FB_SIZE_T count, capacity;
+			T data[1];
+
+		public:
+			static Generation* create(MemoryPool& p, FB_SIZE_T cap)
+			{
+				return FB_NEW_RPT(p, CAP) Generation(CAP);
+			}
+
+			FB_SIZE_T getCount() const
+			{
+				return count;
+			}
+
+			FB_SIZE_T getCapacity() const
+			{
+				return capacity;
+			}
+
+			const T& value(FB_SIZE_T i) const
+			{
+				fb_assert(i < count);
+				return data[i];
+			}
+
+			T& value(FB_SIZE_T i)
+			{
+				fb_assert(i < count);
+				return data[i];
+			}
+
+			bool hasSpace(FB_SIZE_T needs = 1) const
+			{
+				return count + needs <= capacity;
+			}
+
+			bool add(const Generation* from)
+			{
+				if (!hasSpace(from->count))
+					return false;
+				memcpy(&data[count], from->data, from->count * sizeof(T));
+				count += from->count;
+				return true;
+			}
+
+			T* add()
+			{
+				if (!hasSpace())
+					return nullptr;
+				return &data[count++];
+			}
+
+			void truncate(const T& notValue)
+			{
+				while (count && data[count - 1] == notValue)
+					count--;
+			}
+		};
+
+		SharedReadVector(MemoryPool& p)
+			: Firebird::PermanentStorage(p),
+			  v(Generation::create(getPool(), CAP))
+		{ }
+
+		~SharedReadVector()
+		{
+			delete writeAccessor();
+		}
+
+		Generation* writeAccessor()
+		{
+			return v.load(std::memory_order_acquire);
+		}
+
+		template <class DDS>
+		HazardPtr<Generation> readAccessor(DDS* par) const
+		{
+			return HazardPtr<Generation>(par, v);
+		}
+
+		inline void grow(HazardDelayedDelete* dd, FB_SIZE_T newSize = 0);
+
+	private:
+		std::atomic<Generation*> v;
+	};
+
+
+	class HazardDelayedDelete : public Firebird::PermanentStorage
+	{
+	private:
+		static const unsigned int INITIAL_SIZE = 4;
+		static const unsigned int DELETED_LIST_SIZE = 32;
+
+		typedef Firebird::SortedArray<const void*, Firebird::InlineStorage<const void*, 128>> LocalHP;
+
+	public:
+		enum class GarbageCollectMethod {GC_NORMAL, GC_ALL, GC_FORCE};
+		typedef SharedReadVector<const void*,INITIAL_SIZE>::Generation HazardPointers;
+
+		HazardDelayedDelete(MemoryPool& dbbPool, MemoryPool& attPool)
+			: Firebird::PermanentStorage(dbbPool),
+			  toDelete(attPool),
+			  hazardPointers(getPool())
+		{ }
+
+		void add(const void* ptr);
+		void remove(const void* ptr);
+
+		void delayedDelete(HazardObject* mem, bool gc = true);
+		void garbageCollect(GarbageCollectMethod gcMethod);
+
+		// required in order to correctly pass that memory to DBB when destroying attachment
+		HazardPointers* getHazardPointers();
+
+	private:
+		static void copyHazardPointers(LocalHP& local, HazardPtr<HazardPointers>& from);
+		static void copyHazardPointers(thread_db* tdbb, LocalHP& local, Attachment* from);
+
+		Firebird::HalfStaticArray<HazardObject*, DELETED_LIST_SIZE> toDelete;
+		SharedReadVector<const void*,INITIAL_SIZE> hazardPointers;
+	};
+
+
+	inline void HazardBase::add(const void* hazardPointer)
+	{
+		if (!hazardDelayed)
+			hazardDelayed = getHazardDelayed();
+		hazardDelayed->add(hazardPointer);
+	}
+
+	inline void HazardBase::remove(const void* hazardPointer)
+	{
+		if (!hazardDelayed)
+			hazardDelayed = getHazardDelayed();
+		hazardDelayed->remove(hazardPointer);
+	}
+
+	template <typename T, FB_SIZE_T CAP>
+	inline void SharedReadVector<T, CAP>::grow(HazardDelayedDelete* dd, FB_SIZE_T newSize)
+	{
+		Generation* oldGeneration = writeAccessor();
+		if (newSize && (oldGeneration->getCapacity() >= newSize))
+			return;
+
+		FB_SIZE_T doubleSize = oldGeneration->getCapacity() * 2;
+		if (newSize < doubleSize)
+			newSize = doubleSize;
+
+		Generation* newGeneration = Generation::create(getPool(), newSize);
+		newGeneration->add(oldGeneration);
+		v.store(newGeneration, std::memory_order_release);
+
+		// delay delete - someone else may access it
+		dd->delayedDelete(oldGeneration);
+	}
+
+
 	template <class Object>
 	class HazardArray : public Firebird::PermanentStorage
 	{
@@ -359,14 +469,16 @@ namespace Jrd {
 
 	public:
 		explicit HazardArray(MemoryPool& pool)
-			: Firebird::PermanentStorage(pool)
+			: Firebird::PermanentStorage(pool),
+			  m_objects(getPool())
 		{}
 
 		SLONG lookup(thread_db* tdbb, const Key& key, HazardPtr<Object>* object = nullptr) const
 		{
-			for (FB_SIZE_T i = 0; i < m_objects.getCount(); ++i)
+			auto a = m_objects.readAccessor(tdbb);
+			for (FB_SIZE_T i = 0; i < a->getCount(); ++i)
 			{
-				SubArrayElement* const sub = m_objects[i].load(std::memory_order_acquire);
+				SubArrayElement* const sub = a->value(i).load(std::memory_order_relaxed);
 				if (!sub)
 					continue;
 
@@ -387,9 +499,10 @@ namespace Jrd {
 
 		~HazardArray()
 		{
-			for (FB_SIZE_T i = 0; i < m_objects.getCount(); ++i)
+			auto a = m_objects.writeAccessor();
+			for (FB_SIZE_T i = 0; i < a->getCount(); ++i)
 			{
-				SubArrayElement* const sub = m_objects[i].load(std::memory_order_relaxed);
+				SubArrayElement* const sub = a->value(i).load(std::memory_order_relaxed);
 				if (!sub)
 					continue;
 
@@ -400,43 +513,43 @@ namespace Jrd {
 			}
 		}
 
-		FB_SIZE_T getCount() const
+		template <class DDS>
+		FB_SIZE_T getCount(DDS* par) const
 		{
-			return m_objects.getCount() << SUBARRAY_SHIFT;
+			return m_objects.readAccessor(par)->getCount() << SUBARRAY_SHIFT;
 		}
 
-		void grow(const FB_SIZE_T reqSize)
+		void grow(thread_db* tdbb, FB_SIZE_T reqSize)
 		{
+			fb_assert(reqSize > 0);
+			reqSize = ((reqSize - 1) >> SUBARRAY_SHIFT) + 1;
+
 			Firebird::MutexLockGuard g(objectsGrowMutex, FB_FUNCTION);
-			m_objects.grow(reqSize >> SUBARRAY_SHIFT);
+
+			m_objects.grow(HazardBase::getHazardDelayed(tdbb), reqSize);
+			auto a = m_objects.writeAccessor();
+			fb_assert(a->getCapacity() >= reqSize);
+			while (a->getCount() < reqSize)
+			{
+				SubArrayElement* sub = FB_NEW_POOL(getPool()) SubArrayElement[SUBARRAY_SIZE];
+				memset(sub, 0, sizeof(SubArrayElement) * SUBARRAY_SIZE);
+				a->add()->store(sub, std::memory_order_release);
+			}
 		}
 
 		HazardPtr<Object> store(thread_db* tdbb, FB_SIZE_T id, Object* const val)
 		{
-			if (id >= getCount())
-				grow(id + 1);
+			if (id >= getCount(tdbb))
+				grow(tdbb, id + 1);
 
-			SubArrayElement* sub = m_objects[id >> SUBARRAY_SHIFT].load(std::memory_order_acquire);
-			if (!sub)
-			{
-				SubArrayElement* newSub = FB_NEW_POOL(getPool()) SubArrayElement[SUBARRAY_SIZE];
-				memset(newSub, 0, sizeof(SubArrayElement) * SUBARRAY_SIZE);
-				if (!m_objects[id >> SUBARRAY_SHIFT].compare_exchange_strong(sub, newSub,
-					std::memory_order_release, std::memory_order_acquire))
-				{
-					// Someone else already installed this subarray.
-					// OK for us - just free unneeded memory.
-					delete[] newSub;
-				}
-				else
-					sub = newSub;
-			}
-
+			auto a = m_objects.readAccessor(tdbb);
+			SubArrayElement* sub = a->value(id >> SUBARRAY_SHIFT).load(std::memory_order_relaxed);
+			fb_assert(sub);
 			sub = &sub[id & SUBARRAY_MASK];
+
 			Object* oldVal = sub->load(std::memory_order_acquire);
 			while (!sub->compare_exchange_weak(oldVal, val,
 				std::memory_order_release, std::memory_order_acquire));	// empty body
-
 			if (oldVal)
 				oldVal->delayedDelete(tdbb);
 
@@ -445,10 +558,11 @@ namespace Jrd {
 
 		bool replace(thread_db* tdbb, FB_SIZE_T id, HazardPtr<Object>& oldVal, Object* const newVal)
 		{
-			if (id >= getCount())
-				grow(id + 1);
+			if (id >= getCount(tdbb))
+				grow(tdbb, id + 1);
 
-			SubArrayElement* sub = m_objects[id >> SUBARRAY_SHIFT].load(std::memory_order_acquire);
+			auto a = m_objects.readAccessor(tdbb);
+			SubArrayElement* sub = a->value(id >> SUBARRAY_SHIFT).load(std::memory_order_acquire);
 			fb_assert(sub);
 			sub = &sub[id & SUBARRAY_MASK];
 
@@ -460,11 +574,13 @@ namespace Jrd {
 			store(tdbb, id, val.unsafePointer());
 		}
 
-		bool load(FB_SIZE_T id, HazardPtr<Object>& val) const
+		template <class DDS>
+		bool load(DDS* par, FB_SIZE_T id, HazardPtr<Object>& val) const
 		{
-			if (id < getCount())
+			if (id < getCount(par))
 			{
-				SubArrayElement* sub = m_objects[id >> SUBARRAY_SHIFT].load(std::memory_order_acquire);
+				auto a = m_objects.readAccessor(par);
+				SubArrayElement* sub = a->value(id >> SUBARRAY_SHIFT).load(std::memory_order_acquire);
 				if (sub)
 				{
 					val.set(sub[id & SUBARRAY_MASK]);
@@ -522,13 +638,13 @@ namespace Jrd {
 			iterator(const HazardArray* a, Location loc = Location::Begin)
 				: array(a),
 				  hd(HazardPtr<Object>::getHazardDelayed()),
-				  index(loc == Location::Begin ? 0 : array->getCount())
+				  index(loc == Location::Begin ? 0 : array->getCount(hd))
 			{ }
 
 			HazardPtr<Object> get()
 			{
 				HazardPtr<Object> rc(hd);
-				array->load(index, rc);
+				array->load(hd, index, rc);
 				return rc;
 			}
 
@@ -549,7 +665,7 @@ namespace Jrd {
 		}
 
 	private:
-		Firebird::HalfStaticArray<ArrayElement, 4> m_objects;			//!!!!!!!
+		SharedReadVector<ArrayElement, 4> m_objects;
 		Firebird::Mutex objectsGrowMutex;
 	};
 

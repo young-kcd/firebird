@@ -296,9 +296,14 @@ public:
 	HazardPtr<jrd_rel> getRelation(thread_db* tdbb, ULONG rel_id);
 	HazardPtr<jrd_rel> getRelation(Attachment* att, ULONG rel_id);
 	void setRelation(thread_db* tdbb, ULONG rel_id, jrd_rel* rel);
-	USHORT relCount();
 	void releaseTrigger(thread_db* tdbb, USHORT triggerId, const MetaName& name);
 	TrigVectorPtr* getTriggers(USHORT triggerId);
+
+	template <class DDS>
+	USHORT relCount(DDS* par)
+	{
+		return mdc_relations.getCount(par);
+	}
 
 	void cacheRequest(InternalRequest which, USHORT id, Statement* stmt)
 	{
@@ -316,13 +321,13 @@ public:
 	{
 		HazardPtr<Function> rc(tdbb);
 
-		if (id >= mdc_functions.getCount())
+		if (id >= mdc_functions.getCount(tdbb))
 		{
 			if (grow)
-				mdc_functions.grow(id + 1);
+				mdc_functions.grow(tdbb, id + 1);
 		}
 		else
-			mdc_functions.load(id, rc);
+			mdc_functions.load(tdbb, id, rc);
 
 		return rc;
 	}
@@ -336,13 +341,13 @@ public:
 	{
 		HazardPtr<jrd_prc> rc(tdbb);
 
-		if (id >= mdc_procedures.getCount())
+		if (id >= mdc_procedures.getCount(tdbb))
 		{
 			if (grow)
-				mdc_procedures.grow(id + 1);
+				mdc_procedures.grow(tdbb, id + 1);
 		}
 		else
-			mdc_procedures.load(id, rc);
+			mdc_procedures.load(tdbb, id, rc);
 
 		return rc;
 	}
@@ -361,7 +366,7 @@ public:
 	{
 		HazardPtr<Generator> hp(tdbb);
 
-		if (!mdc_generators.load(id, hp))
+		if (!mdc_generators.load(tdbb, id, hp))
 			return false;
 
 		name = hp->value;

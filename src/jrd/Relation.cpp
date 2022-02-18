@@ -306,6 +306,7 @@ void jrd_rel::RelPagesSnapshot::clear()
 	inherited::clear();
 }
 
+/* ?????????????
 bool jrd_rel::hasTriggers() const
 {
 	typedef const TrigVector* ctv;
@@ -326,6 +327,7 @@ bool jrd_rel::hasTriggers() const
 	}
 	return false;
 }
+ */
 
 void jrd_rel::releaseTriggers(thread_db* tdbb, bool destroy)
 {

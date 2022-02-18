@@ -2111,7 +2111,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 					mdc->load_ddl_triggers(tdbb);
 
 					TrigVectorPtr* trig_connect = dbb->dbb_mdc->getTriggers(DB_TRIGGER_CONNECT | TRIGGER_TYPE_DB);
-					if (trig_connect && trig_connect->load() && !trig_connect->load()->isEmpty())
+					if (trig_connect && trig_connect->load() && !trig_connect->load()->isEmpty(tdbb))
 					{
 						// Start a transaction to execute ON CONNECT triggers.
 						// Ensure this transaction can't trigger auto-sweep.
@@ -8077,7 +8077,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 
 			if (!forcedPurge &&
 				!(attachment->att_flags & ATT_no_db_triggers) &&
-				trig_disconnect && trig_disconnect->load() && !trig_disconnect->load()->isEmpty())
+				trig_disconnect && trig_disconnect->load() && !trig_disconnect->load()->isEmpty(tdbb))
 			{
 				ThreadStatusGuard temp_status(tdbb);
 

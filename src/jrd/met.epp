@@ -2779,7 +2779,7 @@ HazardPtr<jrd_prc> MetadataCache::lookup_procedure_id(thread_db* tdbb, USHORT id
 	MetadataCache* mdc = attachment->att_database->dbb_mdc;
 	HazardPtr<jrd_prc> check_procedure, procedure;
 
-	if (mdc->mdc_procedures.load(id, procedure) &&
+	if (mdc->mdc_procedures.load(tdbb, id, procedure) &&
 		procedure->getId() == id &&
 		!(procedure->flags & Routine::FLAG_CLEARED) &&
 		!(procedure->flags & Routine::FLAG_BEING_SCANNED) &&
@@ -2942,7 +2942,7 @@ HazardPtr<jrd_rel> MetadataCache::lookup_relation_id(thread_db* tdbb, SLONG id, 
 	}
 
 	HazardPtr<jrd_rel> relation, check_relation;
-	if (mdc->mdc_relations.load(id, relation))
+	if (mdc->mdc_relations.load(tdbb, id, relation))
 	{
 		if (relation->rel_flags & REL_deleting)
 			CheckoutLockGuard guard(tdbb, relation->rel_drop_mutex, FB_FUNCTION);
@@ -3264,12 +3264,12 @@ HazardPtr<jrd_prc> MetadataCache::findProcedure(thread_db* tdbb, USHORT id, bool
 	Database* dbb = tdbb->getDatabase();
 	MetadataCache* mdc = dbb->dbb_mdc;
 
-	if (id >= mdc->mdc_procedures.getCount())
-		mdc->mdc_procedures.grow(id + 10);
+	if (id >= mdc->mdc_procedures.getCount(tdbb))
+		mdc->mdc_procedures.grow(tdbb, id + 10);
 
 	HazardPtr<jrd_prc> procedure;
 
-	if (mdc->mdc_procedures.load(id, procedure) && !(procedure->flags & Routine::FLAG_OBSOLETE))
+	if (mdc->mdc_procedures.load(tdbb, id, procedure) && !(procedure->flags & Routine::FLAG_OBSOLETE))
 	{
 		// Make sure PRC_being_scanned and PRC_scanned are not set at the same time
 
@@ -3657,7 +3657,7 @@ HazardPtr<jrd_rel> MetadataCache::findRelation(thread_db* tdbb, USHORT id)
 	MemoryPool& pool = mdc->getPool();
 
 	HazardPtr<jrd_rel> relation;
-	if (mdc->mdc_relations.load(id, relation))
+	if (mdc->mdc_relations.load(tdbb, id, relation))
 		return relation;
 
 	// From ODS 9 onwards, the first 128 relation IDS have been
@@ -5491,7 +5491,7 @@ void MetadataCache::runDBTriggers(thread_db* tdbb, TriggerAction action)
 	const unsigned trgKind = (action == TRIGGER_CONNECT) ? DB_TRIGGER_CONNECT : DB_TRIGGER_DISCONNECT;
 
 	const TrigVector* const triggers = mdc_triggers[trgKind];
-	if (!triggers || triggers->isEmpty())
+	if (!triggers || triggers->isEmpty(tdbb))
 		return;
 
 	ThreadStatusGuard temp_status(tdbb);
@@ -5560,10 +5560,10 @@ Request* MetadataCache::findSystemRequest(thread_db* tdbb, USHORT id, InternalRe
 
 void MetadataCache::releaseRelations(thread_db* tdbb)
 {
-	for (FB_SIZE_T n = 0; n < mdc_relations.getCount(); ++n)
+	for (FB_SIZE_T n = 0; n < mdc_relations.getCount(tdbb); ++n)
 	{
 		HazardPtr<jrd_rel> relation(tdbb);
-		if (mdc_relations.load(n, relation))
+		if (mdc_relations.load(tdbb, n, relation))
 		{
 			if (relation->rel_file)
 				EXT_fini(relation.unsafePointer(), false);
@@ -5693,20 +5693,15 @@ HazardPtr<Function> MetadataCache::lookupFunction(thread_db* tdbb, const Qualifi
 HazardPtr<jrd_rel> MetadataCache::getRelation(thread_db* tdbb, ULONG rel_id)
 {
 	HazardPtr<jrd_rel> rc(tdbb);
-	mdc_relations.load(rel_id, rc);
+	mdc_relations.load(tdbb, rel_id, rc);
 	return rc;
 }
 
 HazardPtr<jrd_rel> MetadataCache::getRelation(Attachment* att, ULONG rel_id)
 {
 	HazardPtr<jrd_rel> rc(att);
-	mdc_relations.load(rel_id, rc);
+	mdc_relations.load(att, rel_id, rc);
 	return rc;
-}
-
-USHORT MetadataCache::relCount()
-{
-	return mdc_relations.getCount();
 }
 
 void MetadataCache::setRelation(thread_db* tdbb, ULONG rel_id, jrd_rel* rel)

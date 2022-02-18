@@ -56,56 +56,42 @@ HazardDelayedDelete* HazardBase::getHazardDelayed(Attachment* att)
 	return &att->att_delayed_delete;
 }
 
-HazardDelayedDelete::HazardPointers* HazardDelayedDelete::HazardPointers::create(MemoryPool& p, unsigned size)
+void HazardDelayedDelete::add(const void* ptr)
 {
-	return FB_NEW_RPT(p, size) HazardPointers(size);
-}
-
-void HazardDelayedDelete::add(Ptr ptr)
-{
-	// as long as we access our own hazard pointers single relaxed load is OK
-	HazardPointers *hp = hazardPointers.load(std::memory_order_relaxed);
+	// as long as we access our own hazard pointers use of write accessor is always OK
+	auto hp = hazardPointers.writeAccessor();
 
 	// 1. Search for holes
-	for (unsigned n = 0; n < hp->hpCount; ++n)
+	for (unsigned n = 0; n < hp->getCount(); ++n)
 	{
-		if (!hp->hp[n])
+		if (hp->value(n) == nullptr)
 		{
-			hp->hp[n] = ptr;
+			// store
+			hp->value(n) = ptr;
 			return;
 		}
 	}
 
 	// 2. Grow if needed
-	if (hp->hpCount >= hp->hpSize)
-	{
-		HazardPointers* newHp = HazardPointers::create(getPool(), hp->hpSize * 2);
-		memcpy(newHp->hp, hp->hp, hp->hpCount * sizeof(hp->hp[0]));
-		newHp->hpCount = hp->hpCount;
-
-		HazardPointers* oldHp = hp;
-		hazardPointers.store((hp = newHp));
-		delayedDelete(oldHp);	// delay delete for a case when someone else is accessing it now
-	}
+	if (!hp->hasSpace())
+		hazardPointers.grow(this);
 
 	// 3. Append
-	hp->hp[hp->hpCount] = ptr;
-	hp->hpCount++;
+	hp = hazardPointers.writeAccessor();
+	*(hp->add()) = ptr;
 }
 
-void HazardDelayedDelete::remove(Ptr ptr)
+void HazardDelayedDelete::remove(const void* ptr)
 {
-	// as long as we access our own hazard pointers single relaxed load is OK
-	HazardPointers *hp = hazardPointers.load(std::memory_order_relaxed);
+	// as long as we access our own hazard pointers use of write accessor is always OK
+	auto hp = hazardPointers.writeAccessor();
 
-	for (unsigned n = 0; n < hp->hpCount; ++n)
+	for (unsigned n = 0; n < hp->getCount(); ++n)
 	{
-		if (hp->hp[n] == ptr)
+		if (hp->value(n) == ptr)
 		{
-			hp->hp[n] = nullptr;
-
-			while (hp->hpCount && !hp->hp[hp->hpCount - 1])
-				hp->hpCount--;
+			hp->value(n) = nullptr;
+			hp->truncate(nullptr);
 			return;
 		}
 	}
@@ -122,12 +108,13 @@ void HazardDelayedDelete::delayedDelete(HazardObject* mem, bool gc)
 		garbageCollect(GarbageCollectMethod::GC_NORMAL);
 }
 
-void HazardDelayedDelete::copyHazardPointers(LocalHP& local, Ptr* from, unsigned count)
+void HazardDelayedDelete::copyHazardPointers(LocalHP& local, HazardPtr<HazardPointers>& from)
 {
-	for (unsigned n = 0; n < count; ++n)
+	for (unsigned n = 0; n < from->getCount(); ++n)
 	{
-		if (from[n])
-			local.push(from[n]);
+		const void* ptr = from->value(n);
+		if (ptr)
+			local.push(ptr);
 	}
 }
 
@@ -135,16 +122,15 @@ void HazardDelayedDelete::copyHazardPointers(thread_db* tdbb, LocalHP& local, At
 {
 	for (Attachment* attachment = from; attachment; attachment = attachment->att_next)
 	{
-		HazardPtr<HazardPointers> hp(tdbb, attachment->att_delayed_delete.hazardPointers);
-		copyHazardPointers(local, hp->hp, hp->hpCount);
+		HazardPtr<HazardPointers> hp = attachment->att_delayed_delete.hazardPointers.readAccessor(tdbb);
+		copyHazardPointers(local, hp);
 	}
 }
 
 
 void HazardDelayedDelete::garbageCollect(GarbageCollectMethod gcMethod)
 {
-	HazardPointers *myHp = hazardPointers.load(std::memory_order_relaxed);
-	if (gcMethod == GarbageCollectMethod::GC_NORMAL && myHp->hpCount < DELETED_LIST_SIZE)
+	if (gcMethod == GarbageCollectMethod::GC_NORMAL && toDelete.getCount() < DELETED_LIST_SIZE)
 		return;
 
 	thread_db* tdbb = JRD_get_thread_data();
@@ -161,8 +147,8 @@ void HazardDelayedDelete::garbageCollect(GarbageCollectMethod gcMethod)
 		copyHazardPointers(tdbb, localCopy, database->dbb_attachments);
 		copyHazardPointers(tdbb, localCopy, database->dbb_sys_attachments);
 
-		HazardPtr<HazardPointers> hp(tdbb, database->dbb_delayed_delete.hazardPointers);
-		copyHazardPointers(localCopy, hp->hp, hp->hpCount);
+		HazardPtr<HazardPointers> hp = database->dbb_delayed_delete.hazardPointers.readAccessor(tdbb);
+		copyHazardPointers(localCopy, hp);
 	}
 	localCopy.sort();
 
@@ -175,7 +161,7 @@ void HazardDelayedDelete::garbageCollect(GarbageCollectMethod gcMethod)
 		else
 			delete toDelete[i];
 
-		if (i != keep)
+		if (i + 1 > keep)
 			toDelete[i] = nullptr;
 	}
 	toDelete.shrink(keep);
@@ -198,5 +184,5 @@ void HazardDelayedDelete::garbageCollect(GarbageCollectMethod gcMethod)
 HazardDelayedDelete::HazardPointers* HazardDelayedDelete::getHazardPointers()
 {
 	// as long as we access our own hazard pointers single relaxed load is OK
-	return hazardPointers.load(std::memory_order_relaxed);
+	return hazardPointers.writeAccessor();
 }

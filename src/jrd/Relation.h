@@ -119,14 +119,14 @@ public:
 		++useCount;
 	}
 
-	bool hasData() const
+	bool hasData(thread_db* tdbb) const
 	{
-		return getCount() > 0;
+		return getCount(tdbb) > 0;
 	}
 
-	bool isEmpty() const
+	bool isEmpty(thread_db* tdbb) const
 	{
-		return getCount() == 0;
+		return getCount(tdbb) == 0;
 	}
 
 	bool hasActive() const;
@@ -449,7 +449,7 @@ private:
 public:
 	explicit jrd_rel(MemoryPool& p);
 
-	bool hasTriggers() const;
+	// bool hasTriggers() const;  unused ???????????????????
 	void releaseTriggers(thread_db* tdbb, bool destroy);
 	void replaceTriggers(thread_db* tdbb, TrigVectorPtr* triggers);
 

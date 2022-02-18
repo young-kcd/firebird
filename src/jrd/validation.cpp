@@ -1619,7 +1619,7 @@ void Validation::walk_database()
 	}
 
 	MetadataCache* mdc = dbb->dbb_mdc;
-	for (USHORT i = 0; i < mdc->relCount(); i++)
+	for (USHORT i = 0; i < mdc->relCount(&dbb->dbb_delayed_delete); i++)
 	{
 #ifdef DEBUG_VAL_VERBOSE
 		if (i > dbb->dbb_max_sys_rel) // Why not system flag instead?

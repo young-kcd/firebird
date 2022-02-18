@@ -2476,7 +2476,7 @@ static void release_temp_tables(thread_db* tdbb, jrd_tra* transaction)
  **************************************/
 	MetadataCache* mdc = tdbb->getDatabase()->dbb_mdc;
 
-	for (FB_SIZE_T i = 0; i < mdc->relCount(); i++)
+	for (FB_SIZE_T i = 0; i < mdc->relCount(tdbb); i++)
 	{
 		HazardPtr<jrd_rel> relation = mdc->getRelation(tdbb, i);
 
@@ -2501,7 +2501,7 @@ static void retain_temp_tables(thread_db* tdbb, jrd_tra* transaction, TraNumber 
  **************************************/
 	MetadataCache* mdc = tdbb->getDatabase()->dbb_mdc;
 
-	for (FB_SIZE_T i = 0; i < mdc->relCount(); i++)
+	for (FB_SIZE_T i = 0; i < mdc->relCount(tdbb); i++)
 	{
 		HazardPtr<jrd_rel> relation = mdc->getRelation(tdbb, i);
 

@@ -688,10 +688,12 @@ void Statement::verifyTriggerAccess(thread_db* tdbb, jrd_rel* ownerRelation,
 
 	SET_TDBB(tdbb);
 
-	for (FB_SIZE_T i = 0; i < triggers->getCount(); i++)
+	for (FB_SIZE_T i = 0; i < triggers->getCount(tdbb); i++)
 	{
 		HazardPtr<Trigger> t(tdbb);
-		triggers->load(i, t);
+		if (!triggers->load(tdbb, i, t))
+			continue;
+
 		t->compile(tdbb);
 		if (!t->statement)
 			continue;
@@ -751,12 +753,13 @@ inline void Statement::triggersExternalAccess(thread_db* tdbb, ExternalAccessLis
 	if (!tvec)
 		return;
 
-	for (FB_SIZE_T i = 0; i < tvec->getCount(); i++)
+	for (FB_SIZE_T i = 0; i < tvec->getCount(tdbb); i++)
 	{
 		HazardPtr<Trigger> t(tdbb);
-		tvec->load(i, t);
-		t->compile(tdbb);
+		if (!tvec->load(tdbb, i, t))
+			continue;
 
+		t->compile(tdbb);
 		if (t->statement)
 		{
 			const MetaName& userName = (t->ssDefiner.specified && t->ssDefiner.value) ? t->owner : user;
