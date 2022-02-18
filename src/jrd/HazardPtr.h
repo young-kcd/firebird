@@ -274,9 +274,9 @@ namespace Jrd {
 
 
 	// Shared read here means that any thread can read from vector using HP.
-	// It can be modified only in single thread, caller is responsible for that.
+	// It can be modified only in single thread, caller must take care modifying thread is single.
 
-	template <typename T, FB_SIZE_T CAP>
+	template <typename T, FB_SIZE_T CAP, bool GC_ENABLED = true>
 	class SharedReadVector : public Firebird::PermanentStorage
 	{
 	public:
@@ -384,7 +384,9 @@ namespace Jrd {
 
 	public:
 		enum class GarbageCollectMethod {GC_NORMAL, GC_ALL, GC_FORCE};
-		typedef SharedReadVector<const void*,INITIAL_SIZE>::Generation HazardPointers;
+		// In this and only this case disable GC in delayedDelete()
+		typedef SharedReadVector<const void*, INITIAL_SIZE, true> HazardPointersStorage;
+		typedef HazardPointersStorage::Generation HazardPointers;
 
 		HazardDelayedDelete(MemoryPool& dbbPool, MemoryPool& attPool)
 			: Firebird::PermanentStorage(dbbPool),
@@ -406,7 +408,7 @@ namespace Jrd {
 		static void copyHazardPointers(thread_db* tdbb, LocalHP& local, Attachment* from);
 
 		Firebird::HalfStaticArray<HazardObject*, DELETED_LIST_SIZE> toDelete;
-		SharedReadVector<const void*,INITIAL_SIZE> hazardPointers;
+		HazardPointersStorage hazardPointers;
 	};
 
 
@@ -424,8 +426,8 @@ namespace Jrd {
 		hazardDelayed->remove(hazardPointer);
 	}
 
-	template <typename T, FB_SIZE_T CAP>
-	inline void SharedReadVector<T, CAP>::grow(HazardDelayedDelete* dd, FB_SIZE_T newSize)
+	template <typename T, FB_SIZE_T CAP, bool GC_ENABLED>
+	inline void SharedReadVector<T, CAP, GC_ENABLED>::grow(HazardDelayedDelete* dd, FB_SIZE_T newSize)
 	{
 		Generation* oldGeneration = writeAccessor();
 		if (newSize && (oldGeneration->getCapacity() >= newSize))
@@ -440,7 +442,7 @@ namespace Jrd {
 		v.store(newGeneration, std::memory_order_release);
 
 		// delay delete - someone else may access it
-		dd->delayedDelete(oldGeneration);
+		dd->delayedDelete(oldGeneration, GC_ENABLED);
 	}
 
 
