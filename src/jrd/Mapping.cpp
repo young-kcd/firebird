@@ -867,13 +867,13 @@ private:
 				{
 					MappingHeader* sMem = sharedMemory->getHeader();
 					resetMap(sMem->databaseForReset, sMem->resetIndex);
+					p->flags &= ~MappingHeader::FLAG_DELIVER;
 
 					MappingHeader::Process* cur = &sMem->process[sMem->currentProcess];
 					if (sharedMemory->eventPost(&cur->callbackEvent) != FB_SUCCESS)
 					{
 						(Arg::Gds(isc_map_event) << "POST").raise();
 					}
-					p->flags &= ~MappingHeader::FLAG_DELIVER;
 				}
 
 				if (startup)
