@@ -257,8 +257,9 @@ public:
 
 		if (!att)
 		{
-			dataFlag = true;
 			downFlag = isDown;
+			if (!isDown)
+				dataFlag = true;
 			return;
 		}
 
@@ -1034,10 +1035,10 @@ bool mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 			if (syncType == SYNC_EXCLUSIVE)
 			{
 				if (!iSec)
-					iSec.attach(st, securityAlias, cryptCb);
+					secDown = iSec.attach(st, securityAlias, cryptCb);
 
 				if (db && !iDb)
-					iDb.attach(st, alias, cryptCb);
+					dbDown = iDb.attach(st, alias, cryptCb);
 			}
 
 			MutexEnsureUnlock g(treeMutex, FB_FUNCTION);
