@@ -98,7 +98,7 @@ public:
 			"msvcr110.dll";
 #elif _MSC_VER == 1800
 			"msvcr120.dll";
-#elif _MSC_VER >= 1900 && _MSC_VER <= 1930
+#elif _MSC_VER >= 1900 && _MSC_VER < 2000
 			"vcruntime140.dll";
 #else
 			"";
