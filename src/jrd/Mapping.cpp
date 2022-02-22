@@ -805,6 +805,7 @@ private:
 				if (p->flags & MappingHeader::FLAG_DELIVER)
 				{
 					resetMap(sharedMemory->getHeader()->databaseForReset);
+					p->flags &= ~MappingHeader::FLAG_DELIVER;
 
 					MappingHeader* sMem = sharedMemory->getHeader();
 					MappingHeader::Process* cur = &sMem->process[sMem->currentProcess];
@@ -812,7 +813,6 @@ private:
 					{
 						(Arg::Gds(isc_random) << "Error posting callbackEvent in mapping shared memory").raise();
 					}
-					p->flags &= ~MappingHeader::FLAG_DELIVER;
 				}
 
 				if (startup)
