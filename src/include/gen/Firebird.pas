@@ -3231,6 +3231,7 @@ const
 	isc_dpb_nolinger = byte(88);
 	isc_dpb_reset_icu = byte(89);
 	isc_dpb_map_attach = byte(90);
+	isc_dpb_clear_map = byte(96);
 	isc_dpb_address = byte(1);
 	isc_dpb_addr_protocol = byte(1);
 	isc_dpb_addr_endpoint = byte(2);

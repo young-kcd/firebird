@@ -123,6 +123,7 @@
 #define isc_dpb_nolinger				  88
 #define isc_dpb_reset_icu				  89
 #define isc_dpb_map_attach                90
+#define isc_dpb_clear_map                 96
 
 /**************************************************/
 /* clumplet tags used inside isc_dpb_address_path */
