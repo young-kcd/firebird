@@ -410,7 +410,7 @@ public:
 		{
 			if (getUnloadDetector()->unloadStarted())
 			{
-				Arg::Gds(isc_shutdown).raise();
+				Arg::Gds(isc_att_shutdown).raise();
 			}
 
 			IPluginBase* p = FB_NEW JProvider(factoryParameter);
@@ -1766,11 +1766,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				if (!allow_access)
 				{
 					// Note we throw exception here when entering full-shutdown mode
-					Arg::Gds v(isc_shutdown);
-					v << Arg::Str(org_filename);
-					if (attachment->att_user->usr_flags & USR_mapdown)
-						v << Arg::Gds(isc_map_down);
-					ERR_post(v);
+					ERR_post(Arg::Gds(isc_shutdown) << org_filename);
 				}
 			}
 
