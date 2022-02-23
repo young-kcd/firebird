@@ -2647,12 +2647,37 @@ void OptimizerInnerJoin::calculateStreamInfo()
 		csb_tail->deactivate();
 	}
 
-	// Collect stream inter-dependencies
-	StreamStateHolder stateHolder(csb, streams);
-	stateHolder.activate();
+	// Collect dependencies between every pair of streams
 
-	for (i = 0; i < innerStreams.getCount(); i++)
-		getIndexedRelationships(innerStreams[i]);
+	for (StreamType* iter = streams.begin(); iter != streams.end(); ++iter)
+	{
+		csb->csb_rpt[*iter].activate();
+
+		for (FB_SIZE_T j = 0; j < innerStreams.getCount(); j++)
+		{
+			const StreamType testStream = innerStreams[j]->stream;
+
+			if (*iter != testStream)
+			{
+				csb->csb_rpt[testStream].activate();
+				getIndexedRelationships(innerStreams[j]);
+				csb->csb_rpt[testStream].deactivate();
+			}
+		}
+
+		csb->csb_rpt[*iter].deactivate();
+	}
+
+	// Collect more complex inter-dependencies (involving three and more streams), if any
+
+	if (streams.getCount() > 2)
+	{
+		StreamStateHolder stateHolder(csb, streams);
+		stateHolder.activate();
+
+		for (i = 0; i < innerStreams.getCount(); i++)
+			getIndexedRelationships(innerStreams[i]);
+	}
 
 	// Sort the streams based on independecy and cost.
 	// Except when a PLAN was forced.
@@ -3047,6 +3072,21 @@ void OptimizerInnerJoin::getIndexedRelationships(InnerJoinStreamInfo* testStream
 		if (baseStream->stream != testStream->stream &&
 			candidate->dependentFromStreams.exist(baseStream->stream))
 		{
+			// If the base stream already depends on the testing stream, don't store it again
+			bool found = false;
+			for (const IndexRelationship* const* iter = baseStream->indexedRelationships.begin();
+				iter != baseStream->indexedRelationships.end(); ++iter)
+			{
+				if ((*iter)->stream == testStream->stream)
+				{
+					found = true;
+					break;
+				}
+			}
+
+			if (found)
+				continue;
+
 			// If we could use more conjunctions on the testing stream
 			// with the base stream active as without the base stream
 			// then the test stream has a indexed relationship with the base stream.
