@@ -121,20 +121,21 @@ void InnerJoin::calculateStreamInfo()
 	// Unless PLAN is enforced, sort the streams based on independency and cost
 	if (!plan && (innerStreams.getCount() > 1))
 	{
-		auto compare = [] (const void* a, const void* b)
+		StreamInfoList tempStreams;
+
+		for (const auto innerStream : innerStreams)
 		{
-			const auto first = *static_cast<const StreamInfo* const*>(a);
-			const auto second = *static_cast<const StreamInfo* const*>(b);
+			FB_SIZE_T index = 0;
+			for (; index < tempStreams.getCount(); index++)
+			{
+				if (StreamInfo::cheaperThan(innerStream, tempStreams[index]))
+					break;
+			}
+			tempStreams.insert(index, innerStream);
+		}
 
-			if (StreamInfo::cheaperThan(first, second))
-				return -1;
-			if (StreamInfo::cheaperThan(second, first))
-				return 1;
-
-			return 0;
-		};
-
-		qsort(innerStreams.begin(), innerStreams.getCount(), sizeof(StreamInfo*), compare);
+		// Finally update the innerStreams with the sorted streams
+		innerStreams = tempStreams;
 	}
 }
 
