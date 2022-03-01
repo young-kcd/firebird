@@ -222,6 +222,8 @@ void TraceManager::update_sessions()
 	}
 
 	// add new sessions
+	new_needs = trace_needs;
+	trace_needs = 0;
 	while (newSessions.hasData())
 	{
 		TraceSession* s = newSessions.pop();
@@ -233,6 +235,10 @@ void TraceManager::update_sessions()
 	if (trace_sessions.getCount() == 0)
 	{
 		trace_needs = 0;
+	}
+	else
+	{
+		trace_needs = new_needs;
 	}
 }
 
@@ -344,7 +350,7 @@ void TraceManager::update_session(const TraceSession& session)
 			sesInfo.ses_id = session.ses_id;
 			trace_sessions.add(sesInfo);
 
-			trace_needs |= info->factory->trace_needs();
+			new_needs |= info->factory->trace_needs();
 		}
 		else if (status->getState() & IStatus::STATE_ERRORS)
 		{
