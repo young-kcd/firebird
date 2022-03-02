@@ -2506,7 +2506,7 @@ static void compress(thread_db* tdbb,
 					to.dsc_sub_type = 0;
 					to.dsc_scale = 0;
 					to.dsc_ttype() = ttype_sort_key;
-					to.dsc_length = MAX_KEY * 4;
+					to.dsc_length = MIN(MAX_COLUMN_SIZE, MAX_KEY * 4);
 					ptr = to.dsc_address = reinterpret_cast<UCHAR*>(buffer.vary_string);
 					multiKeyLength = length = INTL_string_to_key(tdbb, itype, desc, &to, key_type);
 				}
