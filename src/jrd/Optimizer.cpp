@@ -1010,7 +1010,6 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 
 				if (iType >= idx_first_intl_string)
 				{
-					const USHORT iType = scratch.idx->idx_rpt[j].idx_itype;
 					TextType* textType = INTL_texttype_lookup(tdbb, INTL_INDEX_TO_TEXT(iType));
 
 					if (segment->scanType != segmentScanMissing && !(scratch.idx->idx_flags & idx_unique))
