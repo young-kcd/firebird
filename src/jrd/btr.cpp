@@ -1519,7 +1519,7 @@ idx_e BTR_make_key(thread_db* tdbb,
 	key->key_flags = 0;
 	key->key_nulls = 0;
 
-	const bool fuzzy = keyType == INTL_KEY_PARTIAL || keyType == INTL_KEY_MULTI_STARTING;
+	const bool fuzzy = (keyType == INTL_KEY_PARTIAL || keyType == INTL_KEY_MULTI_STARTING);
 	const bool descending = (idx->idx_flags & idx_descending);
 
 	const index_desc::idx_repeat* tail = idx->idx_rpt;
