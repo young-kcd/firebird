@@ -1027,8 +1027,8 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 					{
 						if (textType->getFlags() & TEXTTYPE_MULTI_STARTING_KEY)
 							scratch.useMultiStartingKeys = true;	// use INTL_KEY_MULTI_STARTING
-						else
-							scratch.usePartialKey = true;
+
+						scratch.usePartialKey = true;
 					}
 				}
 
@@ -1311,7 +1311,10 @@ InversionNode* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch)
 		retrieval->irb_generic |= irb_starting;	// Flag the need to use INTL_KEY_PARTIAL in btr.
 
 	if (indexScratch->useMultiStartingKeys)
-		retrieval->irb_generic |= irb_multi_starting; // Flag the need to use INTL_KEY_MULTI_STARTING in btr.
+	{
+		// Flag the need to use INTL_KEY_MULTI_STARTING in btr.
+		retrieval->irb_generic |= irb_multi_starting | irb_starting;
+	}
 
 	// This index is never used for IS NULL, thus we can ignore NULLs
 	// already at index scan. But this rule doesn't apply to nod_equiv
