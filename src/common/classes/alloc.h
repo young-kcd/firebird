@@ -57,6 +57,7 @@
 #endif
 
 #include <memory.h>
+#include <memory>
 
 #ifdef DEBUG_GDS_ALLOC
 #define FB_NEW new(*getDefaultMemoryPool(), __FILE__, __LINE__)
@@ -456,7 +457,137 @@ namespace Firebird
 
 	typedef AutoPtr<MemoryPool> AutoMemoryPool;
 
+	template <typename T>
+	class PoolAllocator
+	{
+	template <typename> friend class PoolAllocator;
+
+	public:
+		using value_type = T;
+		using size_type = size_t;
+		using pointer = T*;
+		using const_pointer = const T*;
+		using difference_type = std::ptrdiff_t;
+		using is_always_equal = std::true_type;
+
+		template <typename U>
+		struct rebind
+		{
+			typedef PoolAllocator<U> other;
+		};
+
+	public:
+		PoolAllocator(MemoryPool& aPool) noexcept
+			: pool(aPool)
+		{}
+
+		PoolAllocator(const PoolAllocator& o) noexcept
+			: pool(o.pool)
+		{}
+
+		template <class U>
+		PoolAllocator(const PoolAllocator<U>& o) noexcept
+			: pool(o.pool)
+		{}
+
+		~PoolAllocator() noexcept
+		{}
+
+	public:
+		constexpr pointer allocate(size_type n, const void* hint = nullptr)
+		{
+			return static_cast<T*>(pool.allocate(n * sizeof(T) ALLOC_ARGS));
+		}
+
+		constexpr void deallocate(pointer p, size_type n)
+		{
+			pool.deallocate(p);
+		}
+
+		constexpr size_type max_size() const noexcept
+		{
+			return size_t(-1) / sizeof(T);
+		}
+
+		template <typename U, typename... Args>
+		constexpr void construct(U* ptr, Args&&... args)
+		{
+			new ((void*) ptr) U(pool, std::forward<Args>(args)...);
+		}
+
+		template <typename U>
+		constexpr void destroy(U* ptr)
+		{
+			ptr->~U();
+		}
+
+		constexpr bool operator==(const PoolAllocator<T>& o) const noexcept
+		{
+			return &pool == &o.pool;
+		}
+
+		constexpr bool operator!=(const PoolAllocator<T>& o) const noexcept
+		{
+			return &pool != &o.pool;
+		}
+
+	private:
+		MemoryPool& pool;
+	};
 } // namespace Firebird
+
+
+template <typename TAlloc>
+struct std::allocator_traits<Firebird::PoolAllocator<TAlloc>>
+{
+	using Alloc = Firebird::PoolAllocator<TAlloc>;
+
+	using allocator_type = Alloc;
+	using value_type = typename Alloc::value_type;
+	using pointer = typename Alloc::pointer;
+	using const_pointer = typename Alloc::const_pointer;
+	using void_pointer = void*;
+	using const_void_pointer = const void*;
+	using size_type = typename Alloc::size_type;
+	using difference_type = typename Alloc::difference_type;
+	using reference = value_type&;
+	using const_reference = const value_type&;
+
+	using is_always_equal = typename Alloc::is_always_equal;
+
+	template <typename T>
+	using rebind_alloc = typename Alloc::template rebind<T>::other;
+
+	template <typename T>
+	using rebind_traits = allocator_traits<rebind_alloc<T>>;
+
+	static constexpr pointer allocate(Alloc& alloc, size_type size)
+	{
+		return alloc.allocate(size);
+	}
+
+	static constexpr void deallocate(Alloc& alloc, pointer ptr, size_type size)
+	{
+		alloc.deallocate(ptr, size);
+	}
+
+	template <typename T, typename... Args>
+	static constexpr void construct(Alloc& alloc, T* ptr, Args&&... args)
+	{
+		alloc.construct(ptr, std::forward<Args>(args)...);
+	}
+
+	template <typename T>
+	static constexpr void destroy(Alloc& alloc, T* ptr)
+	{
+		alloc.destroy(ptr);
+	}
+
+	static constexpr size_type max_size(const Alloc& alloc) noexcept
+	{
+		return alloc.max_size();
+	}
+};
 
 
 #endif // CLASSES_ALLOC_H
