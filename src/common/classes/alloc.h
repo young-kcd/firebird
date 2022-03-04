@@ -213,6 +213,8 @@ public:
 	// Get context pool for current thread of execution
 	static MemoryPool* getContextPool();
 
+	MemoryStats& getStatsGroup() noexcept;
+
 	// Set statistics group for pool. Usage counters will be decremented from
 	// previously set group and added to new
 	void setStatsGroup(MemoryStats& stats) noexcept;

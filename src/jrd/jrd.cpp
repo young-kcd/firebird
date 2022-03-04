@@ -134,6 +134,7 @@
 #include "../dsql/dsql.h"
 #include "../dsql/dsql_proto.h"
 #include "../dsql/DsqlBatch.h"
+#include "../dsql/DsqlStatementCache.h"
 
 #ifdef WIN_NT
 #include <process.h>
@@ -4714,13 +4715,9 @@ void JAttachment::transactRequest(CheckStatusWrapper* user_status, ITransaction*
 				CompilerScratch* csb = PAR_parse(tdbb, reinterpret_cast<const UCHAR*>(blr),
 					blr_length, false);
 
-				request = Statement::makeRequest(tdbb, csb, false);
-				request->getStatement()->verifyAccess(tdbb);
-
 				for (FB_SIZE_T i = 0; i < csb->csb_rpt.getCount(); i++)
 				{
-					const MessageNode* node = csb->csb_rpt[i].csb_message;
-					if (node)
+					if (const auto node = csb->csb_rpt[i].csb_message)
 					{
 						if (node->messageNumber == 0)
 							inMessage = node;
@@ -4728,6 +4725,9 @@ void JAttachment::transactRequest(CheckStatusWrapper* user_status, ITransaction*
 							outMessage = node;
 					}
 				}
+
+				request = Statement::makeRequest(tdbb, csb, false);
+				request->getStatement()->verifyAccess(tdbb);
 			}
 			catch (const Exception&)
 			{
@@ -7551,6 +7551,9 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 	attachment->att_replicator = nullptr;
 
+	if (attachment->att_dsql_instance)
+		attachment->att_dsql_instance->dbb_statement_cache->purge(tdbb);
+
 	while (attachment->att_repl_appliers.hasData())
 	{
 		AutoPtr<Applier> cleanupApplier(attachment->att_repl_appliers.pop());
@@ -8906,8 +8909,10 @@ void thread_db::setRequest(Request* val)
 
 SSHORT thread_db::getCharSet() const
 {
-	if (request && request->charSetId != CS_dynamic)
-		return request->charSetId;
+	USHORT charSetId;
+
+	if (request && (charSetId = request->getStatement()->charSetId) != CS_dynamic)
+		return charSetId;
 
 	return attachment->att_charset;
 }
