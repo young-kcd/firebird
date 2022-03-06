@@ -469,6 +469,10 @@ namespace Firebird
 		using size_type = size_t;
 		using pointer = T*;
 		using const_pointer = const T*;
+		using reference = T&;
+		using const_reference = const T&;
+		using void_pointer = void* ;
+		using const_void_pointer = const void*;
 		using difference_type = std::ptrdiff_t;
 		using is_always_equal = std::true_type;
 
@@ -511,10 +515,35 @@ namespace Firebird
 			return size_t(-1) / sizeof(T);
 		}
 
+		/* C++17
 		template <typename U, typename... Args>
 		constexpr void construct(U* ptr, Args&&... args)
 		{
+			if constexpr (std::is_constructible<U, MemoryPool&, Args...>::value)
+				new ((void*) ptr) U(pool, std::forward<Args>(args)...);
+			else
+				new ((void*) ptr) U(std::forward<Args>(args)...);
+		}
+		*/
+
+		template <
+			typename U,
+			typename... Args,
+			std::enable_if_t<std::is_constructible<U, MemoryPool&, Args...>::value, bool> = true
+		>
+		constexpr void construct(U* ptr, Args&&... args)
+		{
 			new ((void*) ptr) U(pool, std::forward<Args>(args)...);
+		}
+
+		template <
+			typename U,
+			typename... Args,
+			std::enable_if_t<!std::is_constructible<U, MemoryPool&, Args...>::value, bool> = true
+		>
+		constexpr void construct(U* ptr, Args&&... args)
+		{
+			new ((void*) ptr) U(std::forward<Args>(args)...);
 		}
 
 		template <typename U>
@@ -548,8 +577,8 @@ struct std::allocator_traits<Firebird::PoolAllocator<TAlloc>>
 	using value_type = typename Alloc::value_type;
 	using pointer = typename Alloc::pointer;
 	using const_pointer = typename Alloc::const_pointer;
-	using void_pointer = void*;
-	using const_void_pointer = const void*;
+	using void_pointer = typename Alloc::void_pointer;
+	using const_void_pointer = typename Alloc::const_void_pointer;
 	using size_type = typename Alloc::size_type;
 	using difference_type = typename Alloc::difference_type;
 	using reference = value_type&;
