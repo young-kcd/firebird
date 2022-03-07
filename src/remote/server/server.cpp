@@ -1715,6 +1715,10 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			}
 		}
 
+		// stop running requests if any
+		if (!(main_port->port_server_flags & SRVR_multi_client))
+			fb_shutdown(1000, fb_shutrsn_no_connection);
+
 		Worker::shutdown();
 
 		// All worker threads are stopped and will never run any more
@@ -4608,8 +4612,11 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 		{
 			if (!port->port_parent)
 			{
-				if (!Worker::isShuttingDown() && !(port->port_flags & (PORT_rdb_shutdown | PORT_detached)))
+				if (!Worker::isShuttingDown() && !(port->port_flags & (PORT_rdb_shutdown | PORT_detached)) &&
+					((port->port_server_flags & (SRVR_server | SRVR_multi_client)) != SRVR_server))
+				{
 					gds__log("SERVER/process_packet: broken port, server exiting");
+				}
 				port->disconnect(sendL, receive);
 				return false;
 			}

@@ -933,6 +933,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	rem_port*		(*port_request)(rem_port*, PACKET*);	// Request to establish secondary connection
 	bool			(*port_select_multi)(rem_port*, UCHAR*, SSHORT, SSHORT*, RemPortPtr&);	// get packet from active port
 	void			(*port_abort_aux_connection)(rem_port*);	// stop waiting for secondary connection
+	void			(*port_down)(rem_port*);					// shutdown connection immediately
 
 	enum rem_port_t {
 		INET,			// Internet (TCP/IP)
@@ -1170,6 +1171,7 @@ public:
 	rem_port*	request(PACKET* pckt);
 	bool		select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPortPtr& port);
 	void		abort_aux_connection();
+	void		down();
 
 	bool haveRecvData()
 	{

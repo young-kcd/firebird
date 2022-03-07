@@ -697,6 +697,7 @@ static rem_port* alloc_port(rem_port* parent,
 	port->port_connect = aux_connect;
 	port->port_request = aux_request;
 	port->port_buff_size = send_length;
+	port->port_down = nullptr;
 
 	port->port_send = xdrxnet_create(port, send_buffer, send_length, XDR_ENCODE);
 	port->port_receive = xdrxnet_create(port, receive_buffer, 0, XDR_DECODE);

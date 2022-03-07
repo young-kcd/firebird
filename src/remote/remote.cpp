@@ -697,6 +697,12 @@ rem_port* rem_port::request(PACKET* pckt)
 	return (*this->port_request)(this, pckt);
 }
 
+void rem_port::down()
+{
+	if (port_down)
+		port_down(this);
+}
+
 void rem_port::auxAcceptError(PACKET* packet)
 {
 	if (port_protocol >= PROTOCOL_VERSION13)

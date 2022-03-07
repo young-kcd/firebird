@@ -150,6 +150,9 @@ namespace {
 		cstring* ptr;
 		cstring oldValue;
 	};
+
+	GlobalPtr<SortedArray<rem_port*> > outPorts;
+	GlobalPtr<Mutex> outPortsMutex;
 }
 
 namespace Remote {
@@ -655,6 +658,18 @@ private:
 void RProvider::shutdown(CheckStatusWrapper* status, unsigned int /*timeout*/, const int /*reason*/)
 {
 	status->init();
+
+	// make OS abort all outgoing connections
+	MutexLockGuard g(outPortsMutex, FB_FUNCTION);
+	for (auto p = outPorts->begin(); p != outPorts->end(); ++p)
+	{
+		rem_port* port = *p;
+		if (port->port_async)
+			port->port_async->down();
+
+		port->port_flags |= PORT_disconnect;
+		port->down();
+	}
 }
 
 void RProvider::setDbCryptCallback(CheckStatusWrapper* status, ICryptKeyCallback* callback)
@@ -720,7 +735,7 @@ static void batch_gds_receive(rem_port*, struct rmtque *, USHORT);
 static void batch_dsql_fetch(rem_port*, struct rmtque *, USHORT);
 static void clear_queue(rem_port*);
 static void clear_stmt_que(rem_port*, Rsr*);
-static void disconnect(rem_port*);
+static void disconnect(rem_port*, bool rmRef = true);
 static void enqueue_receive(rem_port*, t_rmtque_fn, Rdb*, void*, Rrq::rrq_repeat*);
 static void dequeue_receive(rem_port*);
 static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM);
@@ -5545,9 +5560,12 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 	}
 	catch (const Exception&)
 	{
-		disconnect(port);
+		disconnect(port, false);
 		throw;
 	}
+
+	MutexLockGuard g(outPortsMutex, FB_FUNCTION);
+	outPorts->add(port);
 
 	return port;
 }
@@ -5904,7 +5922,7 @@ static void clear_queue(rem_port* port)
 }
 
 
-static void disconnect( rem_port* port)
+static void disconnect(rem_port* port, bool rmRef)
 {
 /**************************************
  *
@@ -5973,6 +5991,17 @@ static void disconnect( rem_port* port)
 	port->port_flags |= PORT_disconnect;
 	port->disconnect();
 	delete rdb;
+	port->port_context = nullptr;
+
+	// Remove from active ports
+
+	if (rmRef)
+	{
+		MutexLockGuard g(outPortsMutex, FB_FUNCTION);
+		FB_SIZE_T pos;
+		if (outPorts->find(port, pos))
+			outPorts->remove(pos);
+	}
 }
 
 
