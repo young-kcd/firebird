@@ -9006,7 +9006,6 @@ void thread_db::reschedule()
 	checkCancelState();
 
 	StableAttachmentPart::Sync* sync = this->getAttachment()->getStable()->getSync();
-	Database* dbb = this->getDatabase();
 
 	if (sync->hasContention())
 	{
@@ -9017,9 +9016,9 @@ void thread_db::reschedule()
 
 		while (sync->hasContention() && (sync->getLockCounter() == cnt))
 			Thread::sleep(1);
-	}
 
-	checkCancelState();
+		checkCancelState();
+	}
 
 	Monitoring::checkState(this);
 
