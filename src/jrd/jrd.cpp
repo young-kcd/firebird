@@ -9011,11 +9011,13 @@ void thread_db::reschedule()
 	{
 		FB_UINT64 cnt = sync->getLockCounter();
 
-		EngineCheckout cout(this, FB_FUNCTION);
-		Thread::yield();
+		{	// scope
+			EngineCheckout cout(this, FB_FUNCTION);
+			Thread::yield();
 
-		while (sync->hasContention() && (sync->getLockCounter() == cnt))
-			Thread::sleep(1);
+			while (sync->hasContention() && (sync->getLockCounter() == cnt))
+				Thread::sleep(1);
+		}
 
 		checkCancelState();
 	}
