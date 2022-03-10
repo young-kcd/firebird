@@ -519,7 +519,6 @@ static unsigned int procCount = 0;
 #endif // WIN_NT
 
 static void		disconnect(rem_port*);
-static void		down(rem_port*);
 static void		force_close(rem_port*);
 static int		cleanup_ports(const int, const int, void*);
 
@@ -1456,7 +1455,6 @@ static rem_port* alloc_port(rem_port* const parent, const USHORT flags)
 	port->port_request = aux_request;
 	port->port_buff_size = (USHORT) INET_remote_buffer;
 	port->port_async_receive = inet_async_receive;
-	port->port_down = down;
 	port->port_flags |= flags;
 
 	port->port_send = xdrinet_create(port,
@@ -1862,32 +1860,6 @@ static void force_close(rem_port* port)
 
 	if (port->port_state != rem_port::PENDING)
 		return;
-
-	port->port_state = rem_port::BROKEN;
-
-	if (port->port_handle != INVALID_SOCKET)
-	{
-		shutdown(port->port_handle, 2);
-		SOCLOSE(port->port_handle);
-	}
-}
-
-
-static void down(rem_port* port)
-{
-/**************************************
- *
- *	d o w n
- *
- **************************************
- *
- * Functional description
- *	Shutdown remote connection.
- *
- **************************************/
-
-	if (port->port_async)
-		down(port->port_async);
 
 	port->port_state = rem_port::BROKEN;
 
