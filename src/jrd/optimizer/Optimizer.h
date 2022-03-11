@@ -35,6 +35,8 @@
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
 #include "../common/classes/fb_string.h"
+#include "../dsql/BoolNodes.h"
+#include "../dsql/ExprNodes.h"
 #include "../jrd/RecordSourceNodes.h"
 #include "../jrd/exe.h"
 
@@ -55,6 +57,7 @@ const double DEFAULT_SELECTIVITY = 0.1;
 
 const double MINIMUM_CARDINALITY = 1.0;
 const double THRESHOLD_CARDINALITY = 5.0;
+const double DEFAULT_CARDINALITY = 1000.0;
 
 // Default depth of an index tree (including one leaf page),
 // also representing the minimal cost of the index scan.
@@ -333,6 +336,26 @@ public:
 	static Firebird::string getPlan(thread_db* tdbb, const Statement* statement, bool detailed)
 	{
 		return statement ? statement->getPlan(tdbb, detailed) : "";
+	}
+
+	static double getSelectivity(const BoolExprNode* node)
+	{
+		const auto cmpNode = nodeAs<ComparativeBoolNode>(node);
+
+		return (cmpNode && cmpNode->blrOp == blr_eql) ?
+			REDUCE_SELECTIVITY_FACTOR_EQUALITY :
+			REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
+	}
+
+	static void adjustSelectivity(double& selectivity, double factor, double cardinality)
+	{
+		if (cardinality)
+		{
+			const auto minSelectivity = 1 / cardinality;
+			const auto diffSelectivity = selectivity > minSelectivity ?
+				selectivity - minSelectivity : 0;
+			selectivity = minSelectivity + diffSelectivity * factor;
+		}
 	}
 
 	static RecordSource* compile(thread_db* tdbb,

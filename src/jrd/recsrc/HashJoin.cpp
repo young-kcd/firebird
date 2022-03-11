@@ -30,6 +30,7 @@
 #include "../jrd/evl_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/intl_proto.h"
+#include "../jrd/optimizer/Optimizer.h"
 
 #include "RecordSource.h"
 
@@ -214,6 +215,7 @@ HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, FB_SIZE_T count,
 	fb_assert(count >= 2);
 
 	m_impure = csb->allocImpure<Impure>();
+	m_cardinality = args[0]->getCardinality();
 
 	m_leader.source = args[0];
 	m_leader.keys = keys[0];
@@ -247,6 +249,8 @@ HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, FB_SIZE_T count,
 	{
 		RecordSource* const sub_rsb = args[i];
 		fb_assert(sub_rsb);
+
+		m_cardinality *= sub_rsb->getCardinality() * DEFAULT_SELECTIVITY;
 
 		SubStream sub;
 		sub.buffer = FB_NEW_POOL(csb->csb_pool) BufferedStream(csb, sub_rsb);
@@ -431,6 +435,7 @@ void HashJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigned leve
 	if (detailed)
 	{
 		plan += printIndent(++level) + "Hash Join (inner)";
+		printOptInfo(plan);
 
 		m_leader.source->print(tdbb, plan, true, level);
 

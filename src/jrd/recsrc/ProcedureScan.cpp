@@ -29,6 +29,7 @@
 #include "../jrd/vio_proto.h"
 #include "../jrd/trace/TraceManager.h"
 #include "../jrd/trace/TraceJrdHelpers.h"
+#include "../jrd/optimizer/Optimizer.h"
 
 #include "RecordSource.h"
 
@@ -46,6 +47,7 @@ ProcedureScan::ProcedureScan(CompilerScratch* csb, const string& alias, StreamTy
 	  m_procedure(procedure), m_sourceList(sourceList), m_targetList(targetList), m_message(message)
 {
 	m_impure = csb->allocImpure<Impure>();
+	m_cardinality = DEFAULT_CARDINALITY;
 
 	fb_assert(!sourceList == !targetList);
 
@@ -247,6 +249,7 @@ void ProcedureScan::print(thread_db* tdbb, string& plan, bool detailed, unsigned
 	{
 		plan += printIndent(++level) + "Procedure " +
 			printName(tdbb, m_procedure->getName().toString(), m_alias) + " Scan";
+		printOptInfo(plan);
 	}
 	else
 	{

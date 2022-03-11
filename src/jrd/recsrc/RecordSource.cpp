@@ -39,6 +39,10 @@
 using namespace Firebird;
 using namespace Jrd;
 
+#ifdef DEV_BUILD
+#define PRINT_OPT_INFO	// print optimizer info (cardinality, cost) in plans
+#endif
+
 
 // Record source class
 // -------------------
@@ -170,6 +174,16 @@ void RecordSource::printInversion(thread_db* tdbb, const InversionNode* inversio
 	default:
 		fb_assert(false);
 	}
+}
+
+void RecordSource::printOptInfo(string& plan) const
+{
+#ifdef PRINT_OPT_INFO
+	string info;
+	// Add 0.5 to convert double->int truncation into rounding
+	info.printf(" [rows: %" UQUADFORMAT "]", (FB_UINT64) (m_cardinality + 0.5));
+	plan += info;
+#endif
 }
 
 RecordSource::~RecordSource()

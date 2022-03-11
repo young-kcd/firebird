@@ -51,6 +51,7 @@ RecursiveStream::RecursiveStream(CompilerScratch* csb, StreamType stream, Stream
 	fb_assert(m_root && m_inner && m_rootMap && m_innerMap);
 
 	m_impure = csb->allocImpure<Impure>();
+	m_cardinality = root->getCardinality() * inner->getCardinality();
 	m_saveSize = csb->csb_impure - saveOffset;
 
 	m_innerStreams.resize(streamCount);
@@ -248,6 +249,8 @@ void RecursiveStream::print(thread_db* tdbb, string& plan, bool detailed, unsign
 	if (detailed)
 	{
 		plan += printIndent(++level) + "Recursion";
+		printOptInfo(plan);
+
 		m_root->print(tdbb, plan, true, level);
 		m_inner->print(tdbb, plan, true, level);
 	}

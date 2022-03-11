@@ -375,17 +375,18 @@ namespace
 	{
 		// Return the estimated cardinality for the given relation
 
-		if (relation->isVirtual())
-			return 100.0; // Just a dumb estimation
+		double cardinality = DEFAULT_CARDINALITY;
 
 		if (relation->rel_file)
-			return EXT_cardinality(tdbb, relation);
+			cardinality = EXT_cardinality(tdbb, relation);
+		else if (!relation->isVirtual())
+		{
+			MET_post_existence(tdbb, relation);
+			cardinality = DPM_cardinality(tdbb, relation, format);
+			MET_release_existence(tdbb, relation);
+		}
 
-		MET_post_existence(tdbb, relation);
-		const double cardinality = DPM_cardinality(tdbb, relation, format);
-		MET_release_existence(tdbb, relation);
-
-		return cardinality;
+		return MAX(cardinality, MINIMUM_CARDINALITY);
 	}
 
 	void markIndices(CompilerScratch::csb_repeat* tail, USHORT relationId)
@@ -1462,6 +1463,7 @@ RecordSource* Optimizer::applyLocalBoolean(const River* river)
 	river->activate(csb);
 
 	BoolExprNode* boolean = nullptr;
+	double selectivity = MAXIMUM_SELECTIVITY;
 
 	for (auto iter = getBaseConjuncts(); iter.hasData(); ++iter)
 	{
@@ -1471,11 +1473,14 @@ RecordSource* Optimizer::applyLocalBoolean(const River* river)
 		{
 			compose(getPool(), &boolean, iter);
 			iter |= CONJUNCT_USED;
+
+			if (!(iter & CONJUNCT_MATCHED))
+				selectivity *= getSelectivity(*iter);
 		}
 	}
 
 	const auto rsb = river->getRecordSource();
-	return boolean ? FB_NEW_POOL(getPool()) FilteredStream(csb, rsb, boolean) : rsb;
+	return boolean ? FB_NEW_POOL(getPool()) FilteredStream(csb, rsb, boolean, selectivity) : rsb;
 }
 
 
@@ -2503,6 +2508,7 @@ bool Optimizer::generateEquiJoin(RiverList& org_rivers)
 	// Pick up any boolean that may apply
 
 	BoolExprNode* boolean = nullptr;
+	double selectivity = MAXIMUM_SELECTIVITY;
 
 	for (auto iter = getBaseConjuncts(); iter.hasData(); ++iter)
 	{
@@ -2512,11 +2518,14 @@ bool Optimizer::generateEquiJoin(RiverList& org_rivers)
 		{
 			compose(getPool(), &boolean, iter);
 			iter |= CONJUNCT_USED;
+
+			if (!(iter & CONJUNCT_MATCHED))
+				selectivity *= getSelectivity(*iter);
 		}
 	}
 
 	if (boolean)
-		rsb = FB_NEW_POOL(getPool()) FilteredStream(csb, rsb, boolean);
+		rsb = FB_NEW_POOL(getPool()) FilteredStream(csb, rsb, boolean, selectivity);
 
 	const auto merged_river = FB_NEW_POOL(getPool()) River(csb, rsb, rivers_to_merge);
 
@@ -2706,6 +2715,7 @@ RecordSource* Optimizer::generateOuterJoin(RiverList& rivers,
 RecordSource* Optimizer::generateResidualBoolean(RecordSource* rsb)
 {
 	BoolExprNode* boolean = nullptr;
+	double selectivity = MAXIMUM_SELECTIVITY;
 
 	for (auto iter = getBaseConjuncts(); iter.hasData(); ++iter)
 	{
@@ -2713,10 +2723,13 @@ RecordSource* Optimizer::generateResidualBoolean(RecordSource* rsb)
 		{
 			compose(getPool(), &boolean, iter);
 			iter |= CONJUNCT_USED;
+
+			if (!(iter & CONJUNCT_MATCHED))
+				selectivity *= getSelectivity(*iter);
 		}
 	}
 
-	return boolean ? FB_NEW_POOL(getPool()) FilteredStream(csb, rsb, boolean) : rsb;
+	return boolean ? FB_NEW_POOL(getPool()) FilteredStream(csb, rsb, boolean, selectivity) : rsb;
 }
 
 
@@ -2748,6 +2761,7 @@ RecordSource* Optimizer::generateRetrieval(StreamType stream,
 	InversionNode* inversion = nullptr;
 	BoolExprNode* condition = nullptr;
 	Array<DbKeyRangeNode*> dbkeyRanges;
+	double scanSelectivity = MAXIMUM_SELECTIVITY;
 
 	if (relation->rel_file)
 	{
@@ -2801,6 +2815,7 @@ RecordSource* Optimizer::generateRetrieval(StreamType stream,
 			inversion = candidate->inversion;
 			condition = candidate->condition;
 			dbkeyRanges.assign(candidate->dbkeyRanges);
+			scanSelectivity = candidate->selectivity;
 
 			// Just for safety sake, this condition must be already checked
 			// inside OptimizerRetrieval::matchOnIndexes()
@@ -2853,6 +2868,7 @@ RecordSource* Optimizer::generateRetrieval(StreamType stream,
 	// it used. If a computable boolean didn't match against an index then
 	// mark the stream to denote unmatched booleans.
 	BoolExprNode* boolean = nullptr;
+	double filterSelectivity = MAXIMUM_SELECTIVITY;
 
 	for (auto iter = getConjuncts(innerFlag, outerFlag); iter.hasData(); ++iter)
 	{
@@ -2871,8 +2887,13 @@ RecordSource* Optimizer::generateRetrieval(StreamType stream,
 				compose(getPool(), &boolean, iter);
 				iter |= CONJUNCT_USED;
 
-				if (!outerFlag && !(iter & CONJUNCT_MATCHED))
-					tail->csb_flags |= csb_unmatched;
+				if (!(iter & CONJUNCT_MATCHED))
+				{
+					if (!outerFlag)
+						tail->csb_flags |= csb_unmatched;
+
+					filterSelectivity *= getSelectivity(*iter);
+				}
 			}
 		}
 	}
@@ -2884,13 +2905,15 @@ RecordSource* Optimizer::generateRetrieval(StreamType stream,
 			RecordSource* const rsb1 =
 				FB_NEW_POOL(getPool()) FullTableScan(csb, alias, stream, relation, dbkeyRanges);
 			RecordSource* const rsb2 =
-				FB_NEW_POOL(getPool()) BitmapTableScan(csb, alias, stream, relation, inversion);
+				FB_NEW_POOL(getPool()) BitmapTableScan(csb, alias, stream, relation,
+					inversion, scanSelectivity);
 
 			rsb = FB_NEW_POOL(getPool()) ConditionalStream(csb, rsb1, rsb2, condition);
 		}
 		else if (inversion)
 		{
-			rsb = FB_NEW_POOL(getPool()) BitmapTableScan(csb, alias, stream, relation, inversion);
+			rsb = FB_NEW_POOL(getPool()) BitmapTableScan(csb, alias, stream, relation,
+				inversion, scanSelectivity);
 		}
 		else
 		{
@@ -2901,7 +2924,7 @@ RecordSource* Optimizer::generateRetrieval(StreamType stream,
 		}
 	}
 
-	return boolean ? FB_NEW_POOL(getPool()) FilteredStream(csb, rsb, boolean) : rsb;
+	return boolean ? FB_NEW_POOL(getPool()) FilteredStream(csb, rsb, boolean, filterSelectivity) : rsb;
 }
 
 

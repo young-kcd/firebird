@@ -85,6 +85,11 @@ namespace Jrd
 			return true;
 		}
 
+		double getCardinality() const
+		{
+			return m_cardinality;
+		}
+
 	protected:
 		// Generic impure block
 		struct Impure
@@ -99,7 +104,7 @@ namespace Jrd
 		static const ULONG irsb_singular_processed = 16;
 
 		RecordSource()
-			: m_impure(0), m_recursive(false)
+			: m_impure(0), m_recursive(false), m_cardinality(0.0)
 		{}
 
 		static Firebird::string printName(thread_db* tdbb, const Firebird::string& name, bool quote = true);
@@ -110,12 +115,14 @@ namespace Jrd
 		static void printInversion(thread_db* tdbb, const InversionNode* inversion,
 								   Firebird::string& plan, bool detailed,
 								   unsigned level, bool navigation = false);
+		void printOptInfo(Firebird::string& plan) const;
 
 		static void saveRecord(thread_db* tdbb, record_param* rpb);
 		static void restoreRecord(thread_db* tdbb, record_param* rpb);
 
 		ULONG m_impure;
 		bool m_recursive;
+		double m_cardinality;
 	};
 
 
@@ -179,7 +186,8 @@ namespace Jrd
 
 	public:
 		BitmapTableScan(CompilerScratch* csb, const Firebird::string& alias,
-						StreamType stream, jrd_rel* relation, InversionNode* inversion);
+						StreamType stream, jrd_rel* relation,
+						InversionNode* inversion, double selectivity);
 
 		void open(thread_db* tdbb) const override;
 		void close(thread_db* tdbb) const override;
@@ -218,7 +226,8 @@ namespace Jrd
 	public:
 		IndexTableScan(CompilerScratch* csb, const Firebird::string& alias,
 					   StreamType stream, jrd_rel* relation,
-					   InversionNode* index, USHORT keyLength);
+					   InversionNode* index, USHORT keyLength,
+					   double selectivity);
 
 		void open(thread_db* tdbb) const override;
 		void close(thread_db* tdbb) const override;
@@ -473,7 +482,8 @@ namespace Jrd
 	class FilteredStream : public RecordSource
 	{
 	public:
-		FilteredStream(CompilerScratch* csb, RecordSource* next, BoolExprNode* boolean);
+		FilteredStream(CompilerScratch* csb, RecordSource* next,
+					   BoolExprNode* boolean, double selectivity);
 
 		void open(thread_db* tdbb) const override;
 		void close(thread_db* tdbb) const override;

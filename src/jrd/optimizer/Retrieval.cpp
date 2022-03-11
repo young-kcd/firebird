@@ -323,6 +323,8 @@ InversionCandidate* Retrieval::getInversion()
 		}
 	}
 
+	const auto cardinality = csb->csb_rpt[stream].csb_cardinality;
+
 	if (!invCandidate)
 	{
 		// No index will be used, thus create a dummy inversion candidate
@@ -340,29 +342,30 @@ InversionCandidate* Retrieval::getInversion()
 	else
 	{
 		// Add the records retrieval cost to the priorly calculated index scan cost
-		invCandidate->cost += csb->csb_rpt[stream].csb_cardinality * invCandidate->selectivity;
+		invCandidate->cost += cardinality * invCandidate->selectivity;
 	}
 
+	// Adjust the effective selectivity by treating computable but unmatched conjunctions
+	// as filters. But consider only those local to our stream.
+	// While being here, also mark matched conjuncts, if requested.
+	double selectivity = MAXIMUM_SELECTIVITY;
 	for (iter.rewind(); iter.hasData(); ++iter)
 	{
 		if (!(iter & Optimizer::CONJUNCT_USED))
 		{
 			const auto matched = invCandidate->matches.exist(iter);
 
-			// Adjust the effective selectivity by treating computable conjunctions as filters
-			if (iter->computable(csb, stream, true) && !matched)
-			{
-				const auto cmpNode = nodeAs<ComparativeBoolNode>(*iter);
-
-				const double factor = (cmpNode && cmpNode->blrOp == blr_eql) ?
-					REDUCE_SELECTIVITY_FACTOR_EQUALITY : REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
-				invCandidate->selectivity *= factor;
-			}
-
 			if (setConjunctionsMatched && matched)
 				iter |= Optimizer::CONJUNCT_MATCHED;
+			else if (!setConjunctionsMatched && !matched &&
+				iter->computable(csb, stream, true))
+			{
+				selectivity *= Optimizer::getSelectivity(*iter);
+			}
 		}
 	}
+
+	Optimizer::adjustSelectivity(invCandidate->selectivity, selectivity, cardinality);
 
 	// Add the streams where this stream is depending on
 	for (auto match : invCandidate->matches)
@@ -399,7 +402,8 @@ IndexTableScan* Retrieval::getNavigation()
 	InversionNode* const index_node = makeIndexScanNode(scratch);
 
 	return FB_NEW_POOL(getPool())
-		IndexTableScan(csb, getAlias(), stream, relation, index_node, key_length);
+		IndexTableScan(csb, getAlias(), stream, relation, index_node, key_length,
+					   navigationCandidate->selectivity);
 }
 
 void Retrieval::analyzeNavigation(const InversionCandidateList& inversions)
@@ -670,13 +674,10 @@ bool Retrieval::betterInversion(const InversionCandidate* inv1,
 
 		if (inv1->dependencies == inv2->dependencies)
 		{
-			const double cardinality =
-				MAX(csb->csb_rpt[stream].csb_cardinality, MINIMUM_CARDINALITY);
+			const double cardinality = csb->csb_rpt[stream].csb_cardinality;
 
-			const double cost1 =
-				inv1->cost + (inv1->selectivity * cardinality);
-			const double cost2 =
-				inv2->cost + (inv2->selectivity * cardinality);
+			const double cost1 = inv1->cost + (inv1->selectivity * cardinality);
+			const double cost2 = inv2->cost + (inv2->selectivity * cardinality);
 
 			// Do we have very similar costs?
 			double diffCost = 0;
@@ -894,12 +895,7 @@ void Retrieval::getInversionCandidates(InversionCandidateList& inversions,
 				double selectivity = scratch.selectivity;
 
 				if (selectivity <= 0)
-				{
-					if (unique && cardinality)
-						selectivity = 1 / cardinality;
-					else
-						selectivity = DEFAULT_SELECTIVITY;
-				}
+					selectivity = unique ? 1 / cardinality : DEFAULT_SELECTIVITY;
 
 				const auto invCandidate = FB_NEW_POOL(getPool()) InversionCandidate(getPool());
 				invCandidate->unique = unique;
@@ -1101,8 +1097,7 @@ InversionCandidate* Retrieval::makeInversion(InversionCandidateList& inversions)
 	if (inversions.isEmpty() && !navigationCandidate)
 		return nullptr;
 
-	const double streamCardinality =
-		MAX(csb->csb_rpt[stream].csb_cardinality, MINIMUM_CARDINALITY);
+	const double streamCardinality = csb->csb_rpt[stream].csb_cardinality;
 
 	// Prepared statements could be optimized against an almost empty table
 	// and then cached (such as in the restore process), thus causing slowdown
@@ -1815,8 +1810,7 @@ InversionCandidate* Retrieval::matchDbKey(BoolExprNode* boolean) const
 
 	// If this is a dbkey for the appropriate stream, it's invertable
 
-	const double cardinality =
-		MAX(csb->csb_rpt[stream].csb_cardinality, MINIMUM_CARDINALITY);
+	const double cardinality = csb->csb_rpt[stream].csb_cardinality;
 
 	bool unique = false;
 	double selectivity = 0;

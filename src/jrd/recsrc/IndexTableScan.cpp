@@ -41,7 +41,8 @@ using namespace Jrd;
 
 IndexTableScan::IndexTableScan(CompilerScratch* csb, const string& alias,
 							   StreamType stream, jrd_rel* relation,
-							   InversionNode* index, USHORT length)
+							   InversionNode* index, USHORT length,
+							   double selectivity)
 	: RecordStream(csb, stream),
 	  m_alias(csb->csb_pool, alias), m_relation(relation), m_index(index),
 	  m_inversion(NULL), m_condition(NULL), m_length(length), m_offset(0)
@@ -57,6 +58,7 @@ IndexTableScan::IndexTableScan(CompilerScratch* csb, const string& alias,
 	size += sizeof(index_desc);
 
 	m_impure = csb->allocImpure(FB_ALIGNMENT, static_cast<ULONG>(size));
+	m_cardinality = csb->csb_rpt[stream].csb_cardinality * selectivity;
 }
 
 void IndexTableScan::open(thread_db* tdbb) const
@@ -308,6 +310,7 @@ void IndexTableScan::print(thread_db* tdbb, string& plan, bool detailed, unsigne
 		plan += printIndent(++level) + "Table " +
 			printName(tdbb, m_relation->rel_name.c_str(), m_alias) + " Access By ID";
 
+		printOptInfo(plan);
 		printInversion(tdbb, m_index, plan, true, level, true);
 
 		if (m_inversion)

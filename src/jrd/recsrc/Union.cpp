@@ -46,7 +46,10 @@ Union::Union(CompilerScratch* csb, StreamType stream,
 	m_args.resize(argCount);
 
 	for (FB_SIZE_T i = 0; i < argCount; i++)
+	{
 		m_args[i] = args[i];
+		m_cardinality += args[i]->getCardinality();
+	}
 
 	m_maps.resize(argCount);
 
@@ -169,6 +172,7 @@ void Union::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) 
 	if (detailed)
 	{
 		plan += printIndent(++level) + (m_args.getCount() == 1 ? "Materialize" : "Union");
+		printOptInfo(plan);
 
 		for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 			m_args[i]->print(tdbb, plan, true, level);
