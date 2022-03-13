@@ -1440,10 +1440,18 @@ DeclareLocalTableNode* DeclareLocalTableNode::pass2(thread_db* /*tdbb*/, Compile
 	return this;
 }
 
-const StmtNode* DeclareLocalTableNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
+const StmtNode* DeclareLocalTableNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
 	if (request->req_operation == Request::req_evaluate)
+	{
+		if (auto& recordBuffer = getImpure(tdbb, request, false)->recordBuffer)
+		{
+			delete recordBuffer;
+			recordBuffer = nullptr;
+		}
+
 		request->req_operation = Request::req_return;
+	}
 
 	return parentStmt;
 }

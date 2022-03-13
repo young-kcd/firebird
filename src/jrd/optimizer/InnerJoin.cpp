@@ -95,9 +95,7 @@ void InnerJoin::calculateStreamInfo()
 	for (auto innerStream : innerStreams)
 	{
 		streams.add(innerStream->stream);
-
-		const auto tail = &csb->csb_rpt[innerStream->stream];
-		tail->activate();
+		csb->csb_rpt[innerStream->stream].activate();
 
 		Retrieval retrieval(tdbb, optimizer, innerStream->stream, false, false, sort, true);
 		const auto candidate = retrieval.getInversion();
@@ -108,33 +106,59 @@ void InnerJoin::calculateStreamInfo()
 		innerStream->baseUnique = candidate->unique;
 		innerStream->baseNavigated = candidate->navigated;
 
-		tail->deactivate();
+		csb->csb_rpt[innerStream->stream].deactivate();
 	}
 
-	StreamStateHolder stateHolder(csb, streams);
-	stateHolder.activate();
+	// Collect dependencies between every pair of streams
 
-	// Collect stream inter-dependencies
-	for (const auto innerStream : innerStreams)
-		getIndexedRelationships(innerStream);
+	for (const auto baseStream : streams)
+	{
+		csb->csb_rpt[baseStream].activate();
+
+		for (const auto innerStream : innerStreams)
+		{
+			const StreamType testStream = innerStream->stream;
+
+			if (baseStream != testStream)
+			{
+				csb->csb_rpt[testStream].activate();
+				getIndexedRelationships(innerStream);
+				csb->csb_rpt[testStream].deactivate();
+			}
+		}
+
+		csb->csb_rpt[baseStream].deactivate();
+	}
+
+	// Collect more complex inter-dependencies (involving three and more streams), if any
+
+	if (streams.getCount() > 2)
+	{
+		StreamStateHolder stateHolder(csb, streams);
+		stateHolder.activate();
+
+		for (const auto innerStream : innerStreams)
+			getIndexedRelationships(innerStream);
+	}
 
 	// Unless PLAN is enforced, sort the streams based on independency and cost
 	if (!plan && (innerStreams.getCount() > 1))
 	{
-		auto compare = [] (const void* a, const void* b)
+		StreamInfoList tempStreams;
+
+		for (const auto innerStream : innerStreams)
 		{
-			const auto first = *static_cast<const StreamInfo* const*>(a);
-			const auto second = *static_cast<const StreamInfo* const*>(b);
+			FB_SIZE_T index = 0;
+			for (; index < tempStreams.getCount(); index++)
+			{
+				if (StreamInfo::cheaperThan(innerStream, tempStreams[index]))
+					break;
+			}
+			tempStreams.insert(index, innerStream);
+		}
 
-			if (StreamInfo::cheaperThan(first, second))
-				return -1;
-			if (StreamInfo::cheaperThan(second, first))
-				return 1;
-
-			return 0;
-		};
-
-		qsort(innerStreams.begin(), innerStreams.getCount(), sizeof(StreamInfo*), compare);
+		// Finally update the innerStreams with the sorted streams
+		innerStreams = tempStreams;
 	}
 }
 
@@ -289,7 +313,7 @@ void InnerJoin::findBestOrder(unsigned position,
 		streamFlags.add(innerStream->used);
 
 	// Compute delta and total estimate cost to fetch this stream
-	double position_cost, position_cardinality, new_cost = 0, new_cardinality = 0;
+	double position_cost = 0, position_cardinality = 0, new_cost = 0, new_cardinality = 0;
 
 	if (!plan)
 	{
@@ -422,6 +446,20 @@ void InnerJoin::getIndexedRelationships(StreamInfo* testStream)
 		if (baseStream->stream != testStream->stream &&
 			candidate->dependentFromStreams.exist(baseStream->stream))
 		{
+			// If the base stream already depends on the testing stream, don't store it again
+			bool found = false;
+			for (const auto& relationship : baseStream->indexedRelationships)
+			{
+				if (relationship.stream == testStream->stream)
+				{
+					found = true;
+					break;
+				}
+			}
+
+			if (found)
+				continue;
+
 			// If we could use more conjunctions on the testing stream
 			// with the base stream active as without the base stream
 			// then the test stream has a indexed relationship with the base stream.

@@ -423,6 +423,9 @@ Request* Statement::getRequest(thread_db* tdbb, USHORT level)
 // resources it used indirectly via procedures or triggers.
 void Statement::verifyAccess(thread_db* tdbb)
 {
+	if (flags & FLAG_INTERNAL)
+		return;
+
 	SET_TDBB(tdbb);
 
 	ExternalAccessList external;

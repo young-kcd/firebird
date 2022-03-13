@@ -1258,13 +1258,16 @@ namespace Why
 		void checkCursorOpened() const
 		{
 			if (!statement || !statement->cursor)
-				Arg::Gds(isc_dsql_cursor_not_open).raise();
+				(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
+					Arg::Gds(isc_dsql_cursor_err) <<
+					Arg::Gds(isc_dsql_cursor_not_open)).raise();
 		}
 
 		void checkCursorClosed() const
 		{
 			if (statement && statement->cursor)
-				Arg::Gds(isc_dsql_cursor_open_err).raise();
+				(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
+					Arg::Gds(isc_dsql_cursor_open_err)).raise();
 		}
 
 		IStatement* getInterface()

@@ -765,6 +765,8 @@ void EXE_release(thread_db* tdbb, Request* request)
 
 		request->req_attachment = NULL;
 	}
+
+	request->req_flags &= ~req_in_use;
 }
 
 

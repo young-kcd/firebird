@@ -431,7 +431,7 @@ public:
 		{
 			if (getUnloadDetector()->unloadStarted())
 			{
-				Arg::Gds(isc_shutdown).raise();
+				Arg::Gds(isc_att_shut_engine).raise();
 			}
 
 			IPluginBase* p = FB_NEW JProvider(factoryParameter);
@@ -1227,7 +1227,7 @@ static void		start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tr
 static void		rollback(thread_db*, jrd_tra*, const bool);
 static void		purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsigned flags = 0);
 static void		getUserInfo(UserId&, const DatabaseOptions&, const char*,
-	const RefPtr<const Config>*, bool, Mapping& mapping);
+	const RefPtr<const Config>*, bool, Mapping& mapping, bool);
 static void		waitForShutdown(Semaphore&);
 
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM);
@@ -1243,7 +1243,7 @@ TraceFailedConnection::TraceFailedConnection(const char* filename, const Databas
 {
 	Mapping mapping(Mapping::MAP_ERROR_HANDLER, NULL);
 	mapping.setAuthBlock(m_options->dpb_auth_block);
-	getUserInfo(m_id, *m_options, m_filename, NULL, false, mapping);
+	getUserInfo(m_id, *m_options, m_filename, NULL, false, mapping, false);
 }
 
 
@@ -1843,7 +1843,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				try
 				{
 					mapping.setDb(filename, expanded_name.c_str(), jAtt);
-					getUserInfo(userId, options, filename, &config, false, mapping);
+					getUserInfo(userId, options, filename, &config, false, mapping, options.dpb_reset_icu);
 				}
 				catch(const Exception&)
 				{
@@ -1855,7 +1855,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 			}
 
 			userId.makeRoleName(options.dpb_sql_dialect);
-			UserId::sclInit(tdbb, false, userId);
+			userId.sclInit(tdbb, false);
 
 			Monitoring::publishAttachment(tdbb);
 
@@ -1927,11 +1927,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				if (!allow_access)
 				{
 					// Note we throw exception here when entering full-shutdown mode
-					Arg::Gds v(isc_shutdown);
-					v << Arg::Str(org_filename);
-					if (attachment->att_user && attachment->att_user->testFlag(USR_mapdown))
-						v << Arg::Gds(isc_map_down);
-					ERR_post(v);
+					ERR_post(Arg::Gds(isc_shutdown) << org_filename);
 				}
 			}
 
@@ -1968,6 +1964,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 
 				// Can't allow garbage collection during database validation.
 
+				AutoSetRestoreFlag<ULONG> noCleanup(&attachment->att_flags, ATT_no_cleanup, true);
 				VIO_fini(tdbb);
 
 				if (!VAL_validate(tdbb, options.dpb_verify))
@@ -1978,6 +1975,10 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 			{
 				validateAccess(tdbb, attachment, USE_GFIX_UTILITY);
 				DFW_reset_icu(tdbb);
+
+				// force system privileges recheck for sysdba
+				fb_assert(attachment->att_user);	// set by UserId::sclInit()
+				attachment->att_user->setFlag(USR_newrole);
 			}
 
 			if (options.dpb_journal.hasData())
@@ -2738,7 +2739,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 
 			// Check for correct credentials supplied
 			mapping.setSecurityDbAlias(config->getSecurityDatabase(), nullptr);
-			getUserInfo(userId, options, filename, &config, true, mapping);
+			getUserInfo(userId, options, filename, &config, true, mapping, false);
 
 #ifdef WIN_NT
 			guardDbInit.enter();		// Required to correctly expand name of just created database
@@ -2934,7 +2935,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			INI_init(tdbb);
 			PAG_init(tdbb);
 
-			UserId::sclInit(tdbb, true, userId);
+			userId.sclInit(tdbb, true);
 
 			if (options.dpb_set_page_buffers)
 				dbb->dbb_page_buffers = options.dpb_page_buffers;
@@ -8305,7 +8306,7 @@ static VdnResult verifyDatabaseName(const PathName& name, FbStatusVector* status
 
  **/
 static void getUserInfo(UserId& user, const DatabaseOptions& options, const char* aliasName,
-	const RefPtr<const Config>* config, bool creating, Mapping& mapping)
+	const RefPtr<const Config>* config, bool creating, Mapping& mapping, bool icuReset)
 {
 	bool wheel = false;
 	int id = -1, group = -1;	// CVC: This var contained trash
@@ -8371,6 +8372,8 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options, const char
 	if (wheel)
 	{
 		name = DBA_USER_NAME;
+		if (icuReset)
+			user.setFlag(USR_sysdba);
 	}
 
 	if (name.length() > USERNAME_LENGTH)
@@ -8899,20 +8902,21 @@ void thread_db::reschedule()
 	checkCancelState();
 
 	StableAttachmentPart::Sync* sync = this->getAttachment()->getStable()->getSync();
-	Database* dbb = this->getDatabase();
 
 	if (sync->hasContention())
 	{
 		FB_UINT64 cnt = sync->getLockCounter();
 
-		EngineCheckout cout(this, FB_FUNCTION);
-		Thread::yield();
+		{	// scope
+			EngineCheckout cout(this, FB_FUNCTION);
+			Thread::yield();
 
-		while (sync->hasContention() && (sync->getLockCounter() == cnt))
-			Thread::sleep(1);
+			while (sync->hasContention() && (sync->getLockCounter() == cnt))
+				Thread::sleep(1);
+		}
+
+		checkCancelState();
 	}
-
-	checkCancelState();
 
 	Monitoring::checkState(this);
 
