@@ -1034,7 +1034,7 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 
 				if (iType >= idx_first_intl_string)
 				{
-					TextType* textType = INTL_texttype_lookup(tdbb, INTL_INDEX_TO_TEXT(iType));
+					auto textType = INTL_texttype_lookup(tdbb, INTL_INDEX_TO_TEXT(iType));
 
 					if (segment->scanType != segmentScanMissing && !(scratch.idx->idx_flags & idx_unique))
 					{
