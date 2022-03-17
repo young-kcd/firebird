@@ -1620,7 +1620,7 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 
 	USet* contractions = icu->usetOpen(1, 0);
 	// status not verified here.
-	icu->ucolGetContractionsAndExpansions(partialCollator, contractions, NULL, false, &status);
+	icu->ucolGetContractionsAndExpansions(partialCollator, contractions, nullptr, false, &status);
 
 	int contractionsCount = icu->usetGetItemCount(contractions);
 
@@ -1643,7 +1643,7 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 			for (int prefixLen = 1; prefixLen < len; ++prefixLen)
 			{
 				const Array<USHORT> str(reinterpret_cast<USHORT*>(strChars), prefixLen);
-				SortKeyArray* keySet = obj->contractionsPrefix.get(str);
+				auto keySet = obj->contractionsPrefix.get(str);
 
 				if (!keySet)
 				{
@@ -1667,7 +1667,7 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 
 	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 	{
-		SortKeyArray& keySet = accessor.current()->second;
+		auto& keySet = accessor.current()->second;
 
 		if (keySet.getCount() <= 1)
 			continue;
@@ -1682,8 +1682,8 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 			continue;
 		}
 
-		SortKeyArray::iterator firstKeyIt = keySet.begin();
-		SortKeyArray::iterator lastKeyIt = --keySet.end();
+		auto firstKeyIt = keySet.begin();
+		auto lastKeyIt = --keySet.end();
 
 		const UCHAR* firstKeyDataIt = firstKeyIt->begin();
 		const UCHAR* lastKeyDataIt = lastKeyIt->begin();
@@ -1706,7 +1706,7 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 		}
 		else
 		{
-			SortKeyArray::iterator secondKeyIt = ++keySet.begin();
+			auto secondKeyIt = ++keySet.begin();
 			const UCHAR* secondKeyDataIt = secondKeyIt->begin();
 			const UCHAR* secondKeyDataEnd = secondKeyIt->end();
 
@@ -1751,8 +1751,8 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 
 			keySet.clear();
 
-			for (ObjectsArray<Array<UCHAR> >::iterator ckIt = commonKeys.begin(); ckIt != commonKeys.end(); ++ckIt)
-				keySet.add(*ckIt);
+			for (auto ck : commonKeys)
+				keySet.add(ck);
 		}
 	}
 
@@ -1863,7 +1863,7 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 		{
 			for (int i = MIN(maxContractionsPrefixLength, srcLenLong); i > 0; --i)
 			{
-				SortKeyArray* keys = contractionsPrefix.get(Array<USHORT>(src + srcLenLong - i, i));
+				auto keys = contractionsPrefix.get(Array<USHORT>(src + srcLenLong - i, i));
 
 				if (keys)
 				{
@@ -1887,11 +1887,9 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 					else
 						prefixLen = 0;
 
-					for (SortKeyArray::const_iterator keyIt = keys->begin();
-						 keyIt != keys->end();
-						 ++keyIt)
+					for (const auto& keyIt : *keys)
 					{
-						const ULONG keyLen = prefixLen + keyIt->getCount();
+						const ULONG keyLen = prefixLen + keyIt.getCount();
 
 						if (keyLen > dstLen - 2 || keyLen > MAX_USHORT)
 							return INTL_BAD_KEY_LENGTH;
@@ -1902,7 +1900,7 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 						if (dst != dstStart)
 							memcpy(dst + 2, dstStart + 2, prefixLen);
 
-						memcpy(dst + 2 + prefixLen, keyIt->begin(), keyIt->getCount());
+						memcpy(dst + 2 + prefixLen, keyIt.begin(), keyIt.getCount());
 						dst += 2 + keyLen;
 						dstLen -= 2 + keyLen;
 					}

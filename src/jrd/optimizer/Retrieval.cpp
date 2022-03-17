@@ -761,7 +761,7 @@ void Retrieval::getInversionCandidates(InversionCandidateList& inversions,
 
 				if (iType >= idx_first_intl_string)
 				{
-					TextType* textType = INTL_texttype_lookup(tdbb, INTL_INDEX_TO_TEXT(iType));
+					auto textType = INTL_texttype_lookup(tdbb, INTL_INDEX_TO_TEXT(iType));
 
 					if (segment.scanType != segmentScanMissing && !(idx->idx_flags & idx_unique))
 					{
