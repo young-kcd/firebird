@@ -252,7 +252,9 @@ void BtrPageGCLock::disablePageGC(thread_db* tdbb, const PageNumber& page)
 
 void BtrPageGCLock::enablePageGC(thread_db* tdbb)
 {
-	LCK_release(tdbb, this);
+	fb_assert(lck_id);
+	if (lck_id)
+		LCK_release(tdbb, this);
 }
 
 bool BtrPageGCLock::isPageGCAllowed(thread_db* tdbb, const PageNumber& page)

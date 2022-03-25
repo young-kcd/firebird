@@ -240,6 +240,12 @@ public:
 	void disablePageGC(thread_db* tdbb, const PageNumber &page);
 	void enablePageGC(thread_db* tdbb);
 
+	// return true if lock is active
+	bool isActive() const
+	{
+		return lck_id != 0;
+	}
+
 	static bool isPageGCAllowed(thread_db* tdbb, const PageNumber& page);
 
 #ifdef DEBUG_LCK_LIST
