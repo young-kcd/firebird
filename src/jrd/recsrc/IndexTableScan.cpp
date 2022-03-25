@@ -106,10 +106,12 @@ void IndexTableScan::close(thread_db* tdbb) const
 		if (impure->irsb_nav_btr_gc_lock)
 		{
 #ifdef DEBUG_LCK_LIST
-			if (!impure->irsb_nav_page)
-				gds__log("DEBUG_LCK_LIST: irsb_nav_btr_gc_lock && !irsb_nav_page");
+			if (!impure->irsb_nav_page && impure->irsb_nav_btr_gc_lock->isActive())
+				gds__log("DEBUG_LCK_LIST: irsb_nav_btr_gc_lock->isActive() && !irsb_nav_page");
 #endif
-			impure->irsb_nav_btr_gc_lock->enablePageGC(tdbb);
+			if (impure->irsb_nav_btr_gc_lock->isActive())
+				impure->irsb_nav_btr_gc_lock->enablePageGC(tdbb);
+
 			delete impure->irsb_nav_btr_gc_lock;
 			impure->irsb_nav_btr_gc_lock = NULL;
 		}
@@ -133,7 +135,9 @@ void IndexTableScan::close(thread_db* tdbb) const
 	{
 		gds__log("DEBUG_LCK_LIST: irsb_nav_btr_gc_lock && !(irsb_flags & irsb_open)");
 
-		impure->irsb_nav_btr_gc_lock->enablePageGC(tdbb);
+		if (impure->irsb_nav_btr_gc_lock->isActive())
+			impure->irsb_nav_btr_gc_lock->enablePageGC(tdbb);
+
 		delete impure->irsb_nav_btr_gc_lock;
 		impure->irsb_nav_btr_gc_lock = NULL;
 		impure->irsb_nav_page = 0;
