@@ -271,7 +271,7 @@ void TraceManager::update_session(const TraceSession& session)
 				curr_user = attachment->getUserName().c_str();
 
 				if (session.ses_auth.hasData())
-				{ // scope
+				{
 					AutoSetRestoreFlag<ULONG> autoRestore(&attachment->att_flags, ATT_mapping, true);
 
 					Database* dbb = attachment->att_database;
@@ -284,31 +284,7 @@ void TraceManager::update_session(const TraceSession& session)
 					mapping.setDb(attachment->att_filename.c_str(), dbb->dbb_filename.c_str(),
 						attachment->getInterface());
 
-					class AttachmentUnlock
-					{
-					public:
-						AttachmentUnlock(Attachment* att, const char* from)
-							: m_from(from)
-						{
-							if (att && att->att_use_count)
-								m_ref = att->getStable();
-
-							if (m_ref)
-								m_ref->getSync()->leave();
-						}
-
-						~AttachmentUnlock()
-						{
-							if (m_ref)
-								m_ref->getSync()->enter(m_from);
-						}
-
-					private:
-						Firebird::RefPtr<StableAttachmentPart> m_ref;
-						const char* m_from;
-					};
-
-					AttachmentUnlock guard(attachment, FB_FUNCTION);
+					EngineCheckout guard(attachment, FB_FUNCTION);
 					mapResult = mapping.mapUser(s_user, t_role);
 				}
 			}
