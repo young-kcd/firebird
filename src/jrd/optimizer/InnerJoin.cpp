@@ -59,15 +59,16 @@ using namespace Jrd;
 
 InnerJoin::InnerJoin(thread_db* aTdbb, Optimizer* opt,
 					 const StreamList& streams,
-					 SortNode* sort_clause, bool hasPlan)
+					 SortNode** sortClause, bool hasPlan)
 	: PermanentStorage(*aTdbb->getDefaultPool()),
 	  tdbb(aTdbb),
 	  optimizer(opt),
 	  csb(opt->getCompilerScratch()),
-	  sort(sort_clause),
+	  sortPtr(sortClause),
 	  plan(hasPlan),
 	  innerStreams(getPool(), streams.getCount()),
-	  joinedStreams(getPool())
+	  joinedStreams(getPool()),
+	  bestStreams(getPool())
 {
 	joinedStreams.grow(streams.getCount());
 
@@ -91,6 +92,8 @@ void InnerJoin::calculateStreamInfo()
 #ifdef OPT_DEBUG_RETRIEVAL
 	optimizer->printf("Base stream info:\n");
 #endif
+
+	const auto sort = sortPtr ? *sortPtr : nullptr;
 
 	for (auto innerStream : innerStreams)
 	{
@@ -167,23 +170,25 @@ void InnerJoin::calculateStreamInfo()
 // Estimate the cost for the stream
 //
 
-void InnerJoin::estimateCost(StreamType stream,
+void InnerJoin::estimateCost(unsigned position,
+							 const StreamInfo* stream,
 							 double* cost,
-							 double* resulting_cardinality,
-							 bool start) const
+							 double* resultingCardinality) const
 {
+	const auto sort = (position == 0 && sortPtr) ? *sortPtr : nullptr;
+
 	// Create the optimizer retrieval generation class and calculate
 	// which indexes will be used and the total estimated selectivity will be returned
-	Retrieval retrieval(tdbb, optimizer, stream, false, false, (start ? sort : nullptr), true);
+	Retrieval retrieval(tdbb, optimizer, stream->stream, false, false, sort, true);
 	const auto candidate = retrieval.getInversion();
 
 	*cost = candidate->cost;
 
 	// Calculate cardinality
-	const auto tail = &csb->csb_rpt[stream];
+	const auto tail = &csb->csb_rpt[stream->stream];
 	const double cardinality = tail->csb_cardinality * candidate->selectivity;
 
-	*resulting_cardinality = MAX(cardinality, MINIMUM_CARDINALITY);
+	*resultingCardinality = MAX(cardinality, MINIMUM_CARDINALITY);
 }
 
 
@@ -193,7 +198,7 @@ void InnerJoin::estimateCost(StreamType stream,
 // Next loop through the remaining streams and find the best order.
 //
 
-bool InnerJoin::findJoinOrder(StreamList& bestStreams)
+bool InnerJoin::findJoinOrder()
 {
 	bestStreams.clear();
 	bestCount = 0;
@@ -298,7 +303,6 @@ void InnerJoin::findBestOrder(unsigned position,
 							  double cost,
 							  double cardinality)
 {
-	const bool start = (position == 0);
 	const auto tail = &csb->csb_rpt[stream->stream];
 
 	// Do some initializations
@@ -313,21 +317,21 @@ void InnerJoin::findBestOrder(unsigned position,
 		streamFlags.add(innerStream->used);
 
 	// Compute delta and total estimate cost to fetch this stream
-	double position_cost = 0, position_cardinality = 0, new_cost = 0, new_cardinality = 0;
+	double positionCost = 0, positionCardinality = 0, newCost = 0, newCardinality = 0;
 
 	if (!plan)
 	{
-		estimateCost(stream->stream, &position_cost, &position_cardinality, start);
-		new_cost = cost + cardinality * position_cost;
-		new_cardinality = position_cardinality * cardinality;
+		estimateCost(position, stream, &positionCost, &positionCardinality);
+		newCost = cost + cardinality * positionCost;
+		newCardinality = positionCardinality * cardinality;
 	}
 
 	// If the partial order is either longer than any previous partial order,
 	// or the same length and cheap, save order as "best"
-	if (position > bestCount || (position == bestCount && new_cost < bestCost))
+	if (position > bestCount || (position == bestCount && newCost < bestCost))
 	{
 		bestCount = position;
-		bestCost = new_cost;
+		bestCost = newCost;
 
 		const auto end = joinedStreams.begin() + position;
 		for (auto iter = joinedStreams.begin(); iter != end; ++iter)
@@ -353,10 +357,24 @@ void InnerJoin::findBestOrder(unsigned position,
 
 	// If we know a combination with all streams used and the
 	// current cost is higher as the one from the best we're done
-	if (bestCount == remainingStreams && bestCost < new_cost)
+	if (bestCount == remainingStreams && bestCost < newCost)
 		done = true;
 
-	if (!done && !plan)
+	if (plan)
+	{
+		// If a explicit PLAN was specific pick the next relation.
+		// The order in innerStreams is expected to be exactly the order as
+		// specified in the explicit PLAN.
+		for (auto nextStream : innerStreams)
+		{
+			if (!nextStream->used)
+			{
+				findBestOrder(position, nextStream, processList, newCost, newCardinality);
+				break;
+			}
+		}
+	}
+	else if (!done)
 	{
 		// Add these relations to the processing list
 		for (auto& relationship : stream->indexedRelationships)
@@ -395,22 +413,7 @@ void InnerJoin::findBestOrder(unsigned position,
 			auto relationStreamInfo = getStreamInfo(nextRelationship.stream);
 			if (!relationStreamInfo->used)
 			{
-				findBestOrder(position, relationStreamInfo, processList, new_cost, new_cardinality);
-				break;
-			}
-		}
-	}
-
-	if (plan)
-	{
-		// If a explicit PLAN was specific pick the next relation.
-		// The order in innerStreams is expected to be exactly the order as
-		// specified in the explicit PLAN.
-		for (auto nextStream : innerStreams)
-		{
-			if (!nextStream->used)
-			{
-				findBestOrder(position, nextStream, processList, new_cost, new_cardinality);
+				findBestOrder(position, relationStreamInfo, processList, newCost, newCardinality);
 				break;
 			}
 		}
@@ -420,6 +423,37 @@ void InnerJoin::findBestOrder(unsigned position,
 	tail->deactivate();
 	for (FB_SIZE_T i = 0; i < streamFlags.getCount(); i++)
 		innerStreams[i]->used = streamFlags[i];
+}
+
+
+//
+// Form streams into rivers (combinations of streams)
+//
+
+River* InnerJoin::formRiver()
+{
+	fb_assert(bestCount);
+	fb_assert(bestStreams.hasData());
+
+	if (bestStreams.getCount() != innerStreams.getCount())
+		sortPtr = nullptr;
+
+	HalfStaticArray<RecordSource*, OPT_STATIC_ITEMS> rsbs;
+
+	for (const auto stream : bestStreams)
+	{
+		const auto rsb = optimizer->generateRetrieval(stream, sortPtr, false, false);
+		rsbs.add(rsb);
+		sortPtr = nullptr;
+	}
+
+	const auto rsb = (rsbs.getCount() == 1) ? rsbs[0] :
+		FB_NEW_POOL(getPool()) NestedLoopJoin(csb, rsbs.getCount(), rsbs.begin());
+
+	// Allocate a river block and move the best order into it
+	const auto river = FB_NEW_POOL(getPool()) River(csb, rsb, nullptr, bestStreams);
+	river->deactivate(csb);
+	return river;
 }
 
 

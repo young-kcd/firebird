@@ -60,6 +60,8 @@ NestedLoopJoin::NestedLoopJoin(CompilerScratch* csb, RecordSource* outer, Record
 
 	m_args.add(outer);
 	m_args.add(inner);
+
+	m_cardinality = outer->getCardinality() * inner->getCardinality();
 }
 
 void NestedLoopJoin::open(thread_db* tdbb) const

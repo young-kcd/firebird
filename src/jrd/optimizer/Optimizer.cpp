@@ -2138,49 +2138,6 @@ void Optimizer::findDependentStreams(const StreamList& streams,
 
 
 //
-// Form streams into rivers (combinations of streams)
-//
-
-bool Optimizer::formRiver(unsigned streamCount,
-						  StreamList& streams,
-						  const StreamList& joinedStreams,
-						  RiverList& rivers,
-						  SortNode** sortClause)
-{
-	const auto count = joinedStreams.getCount();
-	fb_assert(count);
-
-	if (count != streamCount)
-		sortClause = nullptr;
-
-	HalfStaticArray<RecordSource*, OPT_STATIC_ITEMS> rsbs(count);
-
-	for (const auto stream : joinedStreams)
-	{
-		rsbs.add(generateRetrieval(stream, sortClause, false, false, nullptr));
-		sortClause = nullptr;
-
-		// Remove already consumed streams from remainingStreams
-		FB_SIZE_T pos;
-		if (streams.find(stream, pos))
-			streams.remove(pos);
-		else
-			fb_assert(false);
-	}
-
-	const auto rsb = (count == 1) ? rsbs[0] :
-		FB_NEW_POOL(getPool()) NestedLoopJoin(csb, count, rsbs.begin());
-
-	// Allocate a river block and move the best order into it
-	const auto river = FB_NEW_POOL(getPool()) River(csb, rsb, nullptr, joinedStreams);
-	river->deactivate(csb);
-	rivers.push(river);
-
-	return streams.hasData();
-}
-
-
-//
 // Form streams into rivers according to the user-specified plan
 //
 
@@ -2225,23 +2182,14 @@ void Optimizer::formRivers(const StreamList& streams,
 	// AB: Only form rivers when any retrieval node is seen, for
 	// example a MERGE on two JOINs will come with no retrievals
 	// at this point.
-	// CVC: Notice "plan_node" is pointing to the last element in the loop above.
-	// If the loop didn't execute, we had garbage in "planNode".
 
 	if (tempStreams.hasData())
 	{
-		const auto count = tempStreams.getCount();
-
 		InnerJoin innerJoin(tdbb, this, tempStreams,
-						 	(sortClause ? *sortClause : nullptr),
-							(planClause != nullptr));
+							sortClause, (planClause != nullptr));
 
-		StreamList joinedStreams;
-		while (innerJoin.findJoinOrder(joinedStreams))
-		{
-			if (!formRiver(count, tempStreams, joinedStreams, rivers, sortClause))
-				break;
-		}
+		while (innerJoin.findJoinOrder())
+			rivers.add(innerJoin.formRiver());
 	}
 }
 
@@ -2555,17 +2503,23 @@ void Optimizer::generateInnerJoin(StreamList& streams,
 		return;
 	}
 
-	const auto count = streams.getCount();
-
 	InnerJoin innerJoin(tdbb, this, streams,
-						(sortClause ? *sortClause : nullptr),
-						(planClause != nullptr));
+						sortClause, (planClause != nullptr));
 
-	StreamList joinedStreams;
-	while (innerJoin.findJoinOrder(joinedStreams))
+	while (innerJoin.findJoinOrder())
 	{
-		if (!formRiver(count, streams, joinedStreams, rivers, sortClause))
-			break;
+		const auto river = innerJoin.formRiver();
+		rivers.add(river);
+
+		// Remove already consumed streams from the source stream list
+		for (const auto stream : river->getStreams())
+		{
+			FB_SIZE_T pos;
+			if (streams.find(stream, pos))
+				streams.remove(pos);
+			else
+				fb_assert(false);
+		}
 	}
 }
 
@@ -2637,7 +2591,7 @@ RecordSource* Optimizer::generateOuterJoin(RiverList& rivers,
 			// AB: the sort clause for the inner stream of an OUTER JOIN
 			//	   should never be used for the index retrieval
 			stream_i.stream_rsb =
-				generateRetrieval(stream_i.stream_num, nullptr, false, true, nullptr);
+				generateRetrieval(stream_i.stream_num, nullptr, false, true);
 		}
 
 		// generate a parent boolean rsb for any remaining booleans that
@@ -2664,7 +2618,7 @@ RecordSource* Optimizer::generateOuterJoin(RiverList& rivers,
 	{
 		hasInnerRsb = false;
 		stream_i.stream_rsb =
-			generateRetrieval(stream_i.stream_num, nullptr, false, true, nullptr);
+			generateRetrieval(stream_i.stream_num, nullptr, false, true);
 	}
 
 	const auto innerRsb = generateResidualBoolean(stream_i.stream_rsb);
@@ -2695,7 +2649,7 @@ RecordSource* Optimizer::generateOuterJoin(RiverList& rivers,
 	if (!hasOuterRsb)
 	{
 		stream_o.stream_rsb =
-			generateRetrieval(stream_o.stream_num, nullptr, false, false, nullptr);
+			generateRetrieval(stream_o.stream_num, nullptr, false, false);
 	}
 
 	const auto outerRsb = generateResidualBoolean(stream_o.stream_rsb);

@@ -51,7 +51,15 @@ BaseAggWinStream<ThisType, NextType>::BaseAggWinStream(thread_db* tdbb, Compiler
 	fb_assert(m_next);
 
 	m_impure = csb->allocImpure<typename ThisType::Impure>();
-	m_cardinality = group ? next->getCardinality() * DEFAULT_SELECTIVITY : MINIMUM_CARDINALITY;
+
+	if (group)
+	{
+		m_cardinality = next->getCardinality();
+		for (auto count = group->getCount(); count; count--)
+			m_cardinality *= REDUCE_SELECTIVITY_FACTOR_EQUALITY;
+	}
+	else
+		m_cardinality = MINIMUM_CARDINALITY;
 }
 
 template <typename ThisType, typename NextType>

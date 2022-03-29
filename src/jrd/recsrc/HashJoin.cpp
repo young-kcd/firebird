@@ -250,7 +250,9 @@ HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, FB_SIZE_T count,
 		RecordSource* const sub_rsb = args[i];
 		fb_assert(sub_rsb);
 
-		m_cardinality *= sub_rsb->getCardinality() * DEFAULT_SELECTIVITY;
+		m_cardinality *= sub_rsb->getCardinality();
+		for (auto keyCount = keys[i]->getCount(); keyCount; keyCount--)
+			m_cardinality *= REDUCE_SELECTIVITY_FACTOR_EQUALITY;
 
 		SubStream sub;
 		sub.buffer = FB_NEW_POOL(csb->csb_pool) BufferedStream(csb, sub_rsb);

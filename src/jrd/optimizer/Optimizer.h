@@ -370,6 +370,11 @@ public:
 
 	void compileRelation(StreamType stream);
 	void generateAggregateDistincts(MapNode* map);
+	RecordSource* generateRetrieval(StreamType stream,
+									SortNode** sortClause,
+									bool outerFlag,
+									bool innerFlag,
+									BoolExprNode** returnBoolean = nullptr);
 	SortedStream* generateSort(const StreamList& streams,
 							   const StreamList* dbkeyStreams,
 							   RecordSource* rsb, SortNode* sort,
@@ -421,11 +426,6 @@ private:
 	void findDependentStreams(const StreamList& streams,
 							  StreamList& dependent_streams,
 							  StreamList& free_streams);
-	bool formRiver(unsigned streamCount,
-				   StreamList& streams,
-				   const StreamList& joinedStreams,
-				   RiverList& rivers,
-				   SortNode** sortClause);
 	void formRivers(const StreamList& streams,
 					RiverList& rivers,
 					SortNode** sortClause,
@@ -438,11 +438,6 @@ private:
 	RecordSource* generateOuterJoin(RiverList& rivers,
 								    SortNode** sortClause);
 	RecordSource* generateResidualBoolean(RecordSource* rsb);
-	RecordSource* generateRetrieval(StreamType stream,
-									SortNode** sortClause,
-									bool outerFlag,
-									bool innerFlag,
-									BoolExprNode** returnBoolean);
 	BoolExprNode* makeInferenceNode(BoolExprNode* boolean,
 									ValueExprNode* arg1,
 									ValueExprNode* arg2);
@@ -740,7 +735,7 @@ class InnerJoin : private Firebird::PermanentStorage
 public:
 	InnerJoin(thread_db* tdbb, Optimizer* opt,
 			  const StreamList& streams,
-			  SortNode* sort_clause, bool hasPlan);
+			  SortNode** sortClause, bool hasPlan);
 
 	~InnerJoin()
 	{
@@ -748,11 +743,12 @@ public:
 			delete innerStream;
 	}
 
-	bool findJoinOrder(StreamList& bestStreams);
+	bool findJoinOrder();
+	River* formRiver();
 
 protected:
 	void calculateStreamInfo();
-	void estimateCost(StreamType stream, double* cost, double* resulting_cardinality, bool start) const;
+	void estimateCost(unsigned position, const StreamInfo* stream, double* cost, double* resultingCardinality) const;
 	void findBestOrder(unsigned position, StreamInfo* stream,
 		IndexedRelationships& processList, double cost, double cardinality);
 	void getIndexedRelationships(StreamInfo* testStream);
@@ -769,7 +765,7 @@ private:
 	thread_db* const tdbb;
 	Optimizer* const optimizer;
 	CompilerScratch* const csb;
-	SortNode* const sort;
+	SortNode** sortPtr;
 	const bool plan;
 
 	unsigned remainingStreams = 0;
@@ -778,6 +774,7 @@ private:
 
 	StreamInfoList innerStreams;
 	JoinedStreamList joinedStreams;
+	StreamList bestStreams;
 };
 
 } // namespace Jrd

@@ -52,7 +52,9 @@ MergeJoin::MergeJoin(CompilerScratch* csb, FB_SIZE_T count,
 		fb_assert(args[i]);
 		m_args[i] = args[i];
 
-		m_cardinality *= args[i]->getCardinality() * DEFAULT_SELECTIVITY;
+		m_cardinality *= args[i]->getCardinality();
+		for (auto keyCount = keys[i]->getCount(); keyCount; keyCount--)
+			m_cardinality *= REDUCE_SELECTIVITY_FACTOR_EQUALITY;
 
 		fb_assert(keys[i]);
 		m_keys[i] = keys[i];
