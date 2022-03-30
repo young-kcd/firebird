@@ -156,12 +156,10 @@ class River
 {
 public:
 	River(CompilerScratch* csb, RecordSource* rsb, RecordSourceNode* node, const StreamList& streams)
-		: m_rsb(rsb), m_nodes(csb->csb_pool), m_streams(csb->csb_pool)
+		: m_rsb(rsb), m_nodes(csb->csb_pool), m_streams(csb->csb_pool, streams)
 	{
 		if (node)
 			m_nodes.add(node);
-
-		m_streams.assign(streams);
 	}
 
 	River(CompilerScratch* csb, RecordSource* rsb, RiverList& rivers)
@@ -410,6 +408,14 @@ public:
 		return (rse->flags & RseNode::FLAG_OPT_FIRST_ROWS) != 0;
 	}
 
+	bool getEquiJoinKeys(BoolExprNode* boolean,
+						 NestConst<ValueExprNode>* node1,
+						 NestConst<ValueExprNode>* node2,
+						 bool needCast = false);
+	bool getEquiJoinKeys(NestConst<ValueExprNode>& node1,
+						 NestConst<ValueExprNode>& node2,
+						 bool needCast = false);
+
 	Firebird::string makeAlias(StreamType stream);
 	void printf(const char* format, ...);
 
@@ -418,7 +424,7 @@ private:
 
 	RecordSource* compile(BoolExprNodeStack* parentStack);
 
-	RecordSource* applyLocalBoolean(const River* river);
+	RecordSource* applyLocalBoolean(RecordSource* rsb, const StreamList& streams);
 	void checkIndices();
 	void checkSorts();
 	unsigned decompose(BoolExprNode* boolNode, BoolExprNodeStack& stack);
