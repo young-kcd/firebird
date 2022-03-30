@@ -95,6 +95,10 @@ using namespace Firebird;
 #define OPT_DEBUG
 #endif
 
+#ifdef OPT_DEBUG_SYS_REQUESTS
+#define OPT_DEBUG
+#endif
+
 #ifdef OPT_DEBUG
 #define OPTIMIZER_DEBUG_FILE "opt_debug.out"
 #endif
@@ -2879,6 +2883,35 @@ bool Optimizer::getEquiJoinKeys(NestConst<ValueExprNode>& node1,
 
 
 //
+// Compose a table name (including alias, if specified) for the given stream
+//
+
+string Optimizer::getStreamName(StreamType stream)
+{
+	const auto tail = &csb->csb_rpt[stream];
+	const auto relation = tail->csb_relation;
+	const auto procedure = tail->csb_procedure;
+	const auto alias = tail->csb_alias;
+
+	string name;
+
+	if (relation)
+		name = relation->rel_name.c_str();
+	else if (procedure)
+		name = procedure->getName().toString();
+
+	if (alias && alias->hasData())
+	{
+		if (name.hasData())
+			name += " as ";
+		name += *alias;
+	}
+
+	return name;
+}
+
+
+//
 // Make an alias string suitable for printing as part of the plan.
 // For views, this means multiple aliases to distinguish the base table.
 //
@@ -3168,6 +3201,11 @@ ValueExprNode* Optimizer::optimizeLikeSimilar(ComparativeBoolNode* cmpNode)
 
 void Optimizer::printf(const char* format, ...)
 {
+#ifndef OPT_DEBUG_SYS_REQUESTS
+	if (csb->csb_g_flags & csb_internal)
+		return;
+#endif
+
 #ifdef OPT_DEBUG
 	if (!debugFile)
 		debugFile = os_utils::fopen(OPTIMIZER_DEBUG_FILE, "a");
@@ -3180,6 +3218,7 @@ void Optimizer::printf(const char* format, ...)
 	str.vprintf(format, arglist);
 	va_end(arglist);
 
-	fprintf(debugFile, str.c_str());
+	fprintf(debugFile, "%s", str.c_str());
+	fflush(debugFile);
 #endif
 }

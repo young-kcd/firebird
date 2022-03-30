@@ -31,6 +31,7 @@
 
 //#define OPT_DEBUG
 //#define OPT_DEBUG_RETRIEVAL
+//#define OPT_DEBUG_SYS_REQUESTS
 
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
@@ -416,6 +417,7 @@ public:
 						 NestConst<ValueExprNode>& node2,
 						 bool needCast = false);
 
+	Firebird::string getStreamName(StreamType stream);
 	Firebird::string makeAlias(StreamType stream);
 	void printf(const char* format, ...);
 

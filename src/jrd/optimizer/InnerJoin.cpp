@@ -265,10 +265,6 @@ bool InnerJoin::findJoinOrder()
 						break;
 					}
 				}
-#ifdef OPT_DEBUG
-				// Debug
-				printProcessList(indexedRelationships, innerStream->stream);
-#endif
 			}
 		}
 	}
@@ -343,7 +339,7 @@ void InnerJoin::findBestOrder(unsigned position,
 
 #ifdef OPT_DEBUG
 	// Debug information
-	printFoundOrder(position, position_cost, position_cardinality, new_cost, new_cardinality);
+	printFoundOrder(position, positionCost, positionCardinality, newCost, newCardinality);
 #endif
 
 	// Mark this stream as "used" in the sense that it is already included
@@ -467,7 +463,9 @@ River* InnerJoin::formRiver()
 void InnerJoin::getIndexedRelationships(StreamInfo* testStream)
 {
 #ifdef OPT_DEBUG_RETRIEVAL
-	optimizer->printf("Dependencies for stream %u:\n", testStream->stream);
+	const auto name = optimizer->getStreamName(testStream->stream);
+	optimizer->printf("Dependencies for stream %u (%s):\n",
+					  testStream->stream, name.c_str());
 #endif
 
 	const auto tail = &csb->csb_rpt[testStream->stream];
@@ -533,15 +531,21 @@ InnerJoin::StreamInfo* InnerJoin::getStreamInfo(StreamType stream)
 // Dump finally selected stream order
 void InnerJoin::printBestOrder() const
 {
-	optimizer->printf(" best order, streams: ");
-	auto iter = joinedStreams.begin();
-	const auto end = iter + bestCount;
-	for (; iter < end; iter++)
+	if (bestStreams.isEmpty())
+		return;
+
+	optimizer->printf("  best order, streams:");
+
+	const auto end = bestStreams.end();
+	for (auto iter = bestStreams.begin(); iter != end; iter++)
 	{
-		optimizer->printf("%u", iter->bestStream);
+		const auto name = optimizer->getStreamName(*iter);
+		optimizer->printf(" %u (%s)", *iter, name.c_str());
+
 		if (iter != end - 1)
-			optimizer->printf(", ");
+			optimizer->printf(",");
 	}
+
 	optimizer->printf("\n");
 }
 
@@ -552,51 +556,53 @@ void InnerJoin::printFoundOrder(StreamType position,
 								double cost,
 								double cardinality) const
 {
-	optimizer->printf("  position %2.2u:", position);
-	optimizer->printf(" pos. cardinality (%10.2f), pos. cost (%10.2f)", positionCardinality, positionCost);
-	optimizer->printf(" cardinality (%10.2f), cost (%10.2f)", cardinality, cost);
-	optimizer->printf(", streams: ");
+	for (auto i = position - 1; i > 0; i--)
+		optimizer->printf("  ");
+
+	optimizer->printf("  #%2.2u, streams:", position);
+
 	auto iter = joinedStreams.begin();
 	const auto end = iter + position;
 	for (; iter < end; iter++)
 	{
-		optimizer->printf("%u", iter->number);
-		if (iter != end - 1)
-			optimizer->printf(", ");
-	}
-	optimizer->printf("\n");
-}
+		const auto name = optimizer->getStreamName(iter->number);
+		optimizer->printf(" %u (%s)", iter->number, name.c_str());
 
-// Dump the processlist to a debug file
-void InnerJoin::printProcessList(const IndexedRelationships& processList,
-								 StreamType stream) const
-{
-	optimizer->printf("   base stream %u, relationships: stream (cost)", stream);
-	const auto end = processList.end();
-	for (auto iter = processList.begin(); iter != end; iter++)
-	{
-		optimizer->printf("%u (%1.2f)", iter->stream, iter->cost);
 		if (iter != end - 1)
-			optimizer->printf(", ");
+			optimizer->printf(",");
 	}
+
+	optimizer->printf("\n");
+
+	for (auto i = position - 1; i > 0; i--)
+		optimizer->printf("  ");
+
+	optimizer->printf("       position cardinality (%10.2f), position cost (%10.2f),", positionCardinality, positionCost);
+	optimizer->printf(" cardinality (%10.2f), cost (%10.2f)", cardinality, cost);
+
 	optimizer->printf("\n");
 }
 
 // Dump finally selected stream order
 void InnerJoin::printStartOrder() const
 {
-	optimizer->printf("Start join order, stream (baseCost): ");
+	optimizer->printf("Start join order, streams:");
+
 	const auto end = innerStreams.end();
 	for (auto iter = innerStreams.begin(); iter != end; iter++)
 	{
 		const auto innerStream = *iter;
 		if (!innerStream->used)
 		{
-			optimizer->printf("%u (%1.2f)", innerStream->stream, innerStream->baseCost);
+			const auto name = optimizer->getStreamName(innerStream->stream);
+			optimizer->printf(" %u (%s) base cost (%1.2f)",
+							  innerStream->stream, name.c_str(), innerStream->baseCost);
+
 			if (iter != end - 1)
-				optimizer->printf(", ");
+				optimizer->printf(",");
 		}
 	}
+
 	optimizer->printf("\n");
 }
 #endif

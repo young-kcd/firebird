@@ -2179,22 +2179,32 @@ bool Retrieval::validateStarts(IndexScratch* indexScratch,
 #ifdef OPT_DEBUG_RETRIEVAL
 void Retrieval::printCandidate(const InversionCandidate* candidate) const
 {
-	optimizer->printf("     cost (%1.2f), selectivity (%1.10f), indexes (%d), matched (%d, %d)",
+	optimizer->printf("    cost (%1.2f), selectivity (%1.10f), indexes (%d), matched (%d, %d)",
 		candidate->cost, candidate->selectivity, candidate->indexes, candidate->matchedSegments,
 		candidate->nonFullMatchedSegments);
+
 	if (candidate->unique)
 		optimizer->printf(", unique");
+
 	if (candidate->dependentFromStreams.hasData())
 	{
-		optimizer->printf(", dependent from streams: ");
+		optimizer->printf(", dependent from streams:");
+
 		const auto end = candidate->dependentFromStreams.end();
 		for (auto iter = candidate->dependentFromStreams.begin(); iter != end; iter++)
 		{
-			optimizer->printf("%u", *iter);
+			const auto name = optimizer->getStreamName(*iter);
+
+			if (name.hasData())
+				optimizer->printf(" %u (%s)", *iter, name.c_str());
+			else
+				optimizer->printf(" %u", *iter);
+
 			if (iter != end - 1)
-				optimizer->printf(", ");
+				optimizer->printf(",");
 		}
 	}
+
 	optimizer->printf("\n");
 }
 
@@ -2203,12 +2213,9 @@ void Retrieval::printCandidates(const InversionCandidateList& inversions) const
 	if (inversions.getCount() < 2)
 		return;
 
-	const auto tail = &csb->csb_rpt[stream];
-
-	string relName(tail->csb_relation->rel_name.c_str());
-	if (tail->csb_alias)
-	relName += " as " + *tail->csb_alias;
-	optimizer->printf("    retrieval candidates for stream %u (%s):\n", stream, relName.c_str());
+	const auto name = optimizer->getStreamName(stream);
+	optimizer->printf("  retrieval candidates for stream %u (%s):\n",
+					  stream, name.c_str());
 
 	for (const auto candidate : inversions)
 		printCandidate(candidate);
@@ -2219,12 +2226,9 @@ void Retrieval::printFinalCandidate(const InversionCandidate* candidate) const
 	if (!candidate)
 		return;
 
-	const auto tail = &csb->csb_rpt[stream];
-
-	string relName(tail->csb_relation->rel_name.c_str());
-	if (tail->csb_alias)
-		relName += " as " + *tail->csb_alias;
-	optimizer->printf("    final candidate for stream %u (%s):\n", stream, relName.c_str());
+	const auto name = optimizer->getStreamName(stream);
+	optimizer->printf("  final candidate for stream %u (%s):\n",
+					  stream, name.c_str());
 
 	printCandidate(candidate);
 }
