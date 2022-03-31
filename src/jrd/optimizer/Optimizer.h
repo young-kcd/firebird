@@ -426,7 +426,9 @@ private:
 
 	RecordSource* compile(BoolExprNodeStack* parentStack);
 
-	RecordSource* applyLocalBoolean(RecordSource* rsb, const StreamList& streams);
+	RecordSource* applyLocalBoolean(RecordSource* rsb,
+									const StreamList& streams,
+									ConjunctIterator& iter);
 	void checkIndices();
 	void checkSorts();
 	unsigned decompose(BoolExprNode* boolNode, BoolExprNodeStack& stack);

@@ -780,10 +780,12 @@ RecordSource* Optimizer::compile(BoolExprNodeStack* parentStack)
 			{
 				subStreams.join(localStreams);
 				outerStreams.join(localStreams);
-			}
 
-			// Apply local booleans, if any
-			rsb = applyLocalBoolean(rsb, localStreams);
+				// Apply local booleans, if any. Note that it's done
+				// only for inner joins and outer streams of left joins.
+				auto iter = getConjuncts(false, !isInnerJoin());
+				rsb = applyLocalBoolean(rsb, localStreams, iter);
+			}
 
 			const auto river = FB_NEW_POOL(getPool()) River(csb, rsb, node, localStreams);
 			river->deactivate(csb);
@@ -1462,7 +1464,9 @@ SortedStream* Optimizer::generateSort(const StreamList& streams,
 // Find conjuncts local to the given river and compose an appropriate filter
 //
 
-RecordSource* Optimizer::applyLocalBoolean(RecordSource* rsb, const StreamList& streams)
+RecordSource* Optimizer::applyLocalBoolean(RecordSource* rsb,
+										   const StreamList& streams,
+										   ConjunctIterator& iter)
 {
 	StreamStateHolder globalHolder(csb);
 	globalHolder.deactivate();
@@ -1473,7 +1477,7 @@ RecordSource* Optimizer::applyLocalBoolean(RecordSource* rsb, const StreamList& 
 	BoolExprNode* boolean = nullptr;
 	double selectivity = MAXIMUM_SELECTIVITY;
 
-	for (auto iter = getBaseConjuncts(); iter.hasData(); ++iter)
+	for (iter.rewind(); iter.hasData(); ++iter)
 	{
 		if (!(iter & CONJUNCT_USED) &&
 			!(iter->nodFlags & ExprNode::FLAG_RESIDUAL) &&
@@ -2233,7 +2237,8 @@ bool Optimizer::generateEquiJoin(RiverList& orgRivers)
 
 	ValueExprNode** last_class = classes;
 
-	for (auto iter = getBaseConjuncts(); iter.hasData(); ++iter)
+	auto iter = getBaseConjuncts();
+	for (; iter.hasData(); ++iter)
 	{
 		if (iter & CONJUNCT_USED)
 			continue;
@@ -2412,7 +2417,7 @@ bool Optimizer::generateEquiJoin(RiverList& orgRivers)
 	}
 
 	// Pick up any boolean that may apply
-	rsb = applyLocalBoolean(rsb, streams);
+	rsb = applyLocalBoolean(rsb, streams, iter);
 
 	const auto finalRiver = FB_NEW_POOL(getPool()) River(csb, rsb, rivers);
 	orgRivers.insert(lowestPosition, finalRiver);
