@@ -541,13 +541,8 @@ namespace
 			NestConst<ValueExprNode>* to_ptr = to_clause->expressions.begin();
 			for (const auto to_end = to_ptr + count; to_ptr != to_end; ++to_ptr)
 			{
-				const auto fromField = nodeAs<FieldNode>(*from_ptr);
-				const auto toField = nodeAs<FieldNode>(*to_ptr);
-
 				if ((map && mapEqual(*to_ptr, *from_ptr, map)) ||
-					(!map && fromField && toField &&
-						fromField->fieldStream == toField->fieldStream &&
-						fromField->fieldId == toField->fieldId))
+					(!map && fieldEqual(*to_ptr, *from_ptr)))
 				{
 					ValueExprNode* swap = *to_swap;
 					*to_swap = *to_ptr;
@@ -1646,12 +1641,10 @@ void Optimizer::checkSorts()
 		bool equal = true;
 		for (unsigned i = 0; i < sortCount; i++)
 		{
-			const auto sortField = nodeAs<FieldNode>(sort->expressions[i]);
-			const auto projectField = nodeAs<FieldNode>(project->expressions[i]);
+			const auto sortNode = sort->expressions[i];
+			const auto projectNode = project->expressions[i];
 
-			if (!sortField || !projectField ||
-				sortField->fieldStream != projectField->fieldStream ||
-				sortField->fieldId != projectField->fieldId)
+			if (!fieldEqual(sortNode, projectNode))
 			{
 				equal = false;
 				break;
