@@ -1191,7 +1191,7 @@ namespace Jrd
 	public:
 		Union(CompilerScratch* csb, StreamType stream,
 			  FB_SIZE_T argCount, RecordSource* const* args, NestConst<MapNode>* maps,
-			  FB_SIZE_T streamCount, const StreamType* streams);
+			  const StreamList& streams);
 
 		void open(thread_db* tdbb) const override;
 		void close(thread_db* tdbb) const override;
@@ -1231,7 +1231,7 @@ namespace Jrd
 		RecursiveStream(CompilerScratch* csb, StreamType stream, StreamType mapStream,
 					    RecordSource* root, RecordSource* inner,
 					    const MapNode* rootMap, const MapNode* innerMap,
-					    FB_SIZE_T streamCount, const StreamType* innerStreams,
+					    const StreamList& innerStreams,
 					    ULONG saveOffset);
 
 		void open(thread_db* tdbb) const override;

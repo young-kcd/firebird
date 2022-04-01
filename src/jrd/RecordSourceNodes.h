@@ -489,9 +489,6 @@ public:
 
 	virtual RecordSource* compile(thread_db* tdbb, Optimizer* opt, bool innerSubStream);
 
-private:
-	ProcedureScan* generate(thread_db* tdbb, Optimizer* opt);
-
 public:
 	QualifiedName dsqlName;
 	Firebird::string alias;
@@ -574,9 +571,6 @@ public:
 private:
 	void genMap(DsqlCompilerScratch* dsqlScratch, UCHAR blrVerb, dsql_map* map);
 
-	RecordSource* generate(thread_db* tdbb, Optimizer* opt, BoolExprNodeStack* parentStack,
-		StreamType shellStream);
-
 public:
 	NestConst<ValueListNode> dsqlGroup;
 	NestConst<RseNode> dsqlRse;
@@ -636,10 +630,6 @@ public:
 		StreamType currentStream, SortedStreamList* streamList);
 
 	virtual RecordSource* compile(thread_db* tdbb, Optimizer* opt, bool innerSubStream);
-
-private:
-	RecordSource* generate(thread_db* tdbb, Optimizer* opt, const StreamType* streams,
-		FB_SIZE_T nstreams, BoolExprNodeStack* parentStack, StreamType shellStream);
 
 public:
 	RecSourceListNode* dsqlClauses;

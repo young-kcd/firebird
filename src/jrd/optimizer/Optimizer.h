@@ -324,6 +324,14 @@ public:
 		return ConjunctIterator(begin, end);
 	}
 
+	ConjunctIterator getParentConjuncts()
+	{
+		const auto begin = conjuncts.begin() + baseParentConjuncts;
+		const auto end = conjuncts.end();
+
+		return ConjunctIterator(begin, end);
+	}
+
 	ConjunctIterator getConjuncts(bool inner = false, bool outer = false)
 	{
 		const auto begin = conjuncts.begin() + (outer ? baseParentConjuncts : 0);
@@ -357,16 +365,14 @@ public:
 		}
 	}
 
-	static RecordSource* compile(thread_db* tdbb,
-								 CompilerScratch* csb,
-								 RseNode* rse,
-								 BoolExprNodeStack* parentStack = nullptr)
+	static RecordSource* compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse)
 	{
-		return Optimizer(tdbb, csb, rse).compile(parentStack);
+		return Optimizer(tdbb, csb, rse).compile(nullptr);
 	}
 
 	~Optimizer();
 
+	RecordSource* compile(RseNode* rse, BoolExprNodeStack* parentStack);
 	void compileRelation(StreamType stream);
 	void generateAggregateDistincts(MapNode* map);
 	RecordSource* generateRetrieval(StreamType stream,

@@ -596,6 +596,32 @@ Optimizer::~Optimizer()
 // Compile and optimize a record selection expression into a set of record source blocks
 //
 
+RecordSource* Optimizer::compile(RseNode* rse, BoolExprNodeStack* parentStack)
+{
+	Optimizer subOpt(tdbb, csb, rse);
+	const auto rsb = subOpt.compile(parentStack);
+
+	if (parentStack)
+	{
+		// If any parent conjunct was utilized, update our copy of its flags
+
+		for (auto subIter = subOpt.getParentConjuncts(); subIter.hasData(); ++subIter)
+		{
+			for (auto selfIter = getConjuncts(); selfIter.hasData(); ++selfIter)
+			{
+				if (*selfIter == *subIter)
+				{
+					fb_assert(!(selfIter & (CONJUNCT_USED | CONJUNCT_MATCHED)));
+					selfIter |= (subIter & (CONJUNCT_USED | CONJUNCT_MATCHED));
+					break;
+				}
+			}
+		}
+	}
+
+	return rsb;
+}
+
 RecordSource* Optimizer::compile(BoolExprNodeStack* parentStack)
 {
 	// If there is a boolean, there is some work to be done.  First,
@@ -611,16 +637,16 @@ RecordSource* Optimizer::compile(BoolExprNodeStack* parentStack)
 	SortNode* project = rse->rse_projection;
 	SortNode* aggregate = rse->rse_aggregate;
 
-	BoolExprNodeStack conjunct_stack;
-	unsigned conjunct_count = 0;
+	BoolExprNodeStack conjunctStack;
+	unsigned conjunctCount = 0;
 
 	// put any additional booleans on the conjunct stack, and see if we
 	// can generate additional booleans by associativity--this will help
 	// to utilize indices that we might not have noticed
 	if (rse->rse_boolean)
-		conjunct_count = decompose(rse->rse_boolean, conjunct_stack);
+		conjunctCount = decompose(rse->rse_boolean, conjunctStack);
 
-	conjunct_count += distributeEqualities(conjunct_stack, conjunct_count);
+	conjunctCount += distributeEqualities(conjunctStack, conjunctCount);
 
 	// AB: If we have limit our retrieval with FIRST / SKIP syntax then
 	// we may not deliver above conditions (from higher rse's) to this
@@ -629,8 +655,8 @@ RecordSource* Optimizer::compile(BoolExprNodeStack* parentStack)
 		parentStack = nullptr;
 
 	// Set base-point before the parent/distributed nodes begin.
-	const unsigned base_count = conjunct_count;
-	baseConjuncts = base_count;
+	const unsigned baseCount = conjunctCount;
+	baseConjuncts = baseCount;
 
 	// AB: Add parent conjunctions to conjunct_stack, keep in mind
 	// the outer-streams! For outer streams put missing (IS NULL)
@@ -646,13 +672,13 @@ RecordSource* Optimizer::compile(BoolExprNodeStack* parentStack)
 	// allowed = booleans that can never evaluate to NULL/Unknown or turn
 	//   NULL/Unknown into a True or False.
 
-	unsigned parent_count = 0, distributed_count = 0;
-	BoolExprNodeStack missing_stack;
+	unsigned parentCount = 0, distributedCount = 0;
+	BoolExprNodeStack missingStack;
 
 	if (parentStack)
 	{
 		for (BoolExprNodeStack::iterator iter(*parentStack);
-			 iter.hasData() && conjunct_count < MAX_CONJUNCTS; ++iter)
+			iter.hasData() && conjunctCount < MAX_CONJUNCTS; ++iter)
 		{
 			BoolExprNode* const node = iter.object();
 
@@ -661,30 +687,30 @@ RecordSource* Optimizer::compile(BoolExprNodeStack* parentStack)
 				// parent missing conjunctions shouldn't be
 				// distributed to FULL OUTER JOIN streams at all
 				if (!isFullJoin())
-					missing_stack.push(node);
+					missingStack.push(node);
 			}
 			else
 			{
-				conjunct_stack.push(node);
-				conjunct_count++;
-				parent_count++;
+				conjunctStack.push(node);
+				conjunctCount++;
+				parentCount++;
 			}
 		}
 
 		// We've now merged parent, try again to make more conjunctions.
-		distributed_count = distributeEqualities(conjunct_stack, conjunct_count);
-		conjunct_count += distributed_count;
+		distributedCount = distributeEqualities(conjunctStack, conjunctCount);
+		conjunctCount += distributedCount;
 	}
 
 	// The newly created conjunctions belong to the base conjunctions.
 	// After them are starting the parent conjunctions.
-	baseParentConjuncts = baseConjuncts + distributed_count;
+	baseParentConjuncts = baseConjuncts + distributedCount;
 
 	// Set base-point before the parent IS NULL nodes begin
-	baseMissingConjuncts = conjunct_count;
+	baseMissingConjuncts = conjunctCount;
 
 	// Check if size of optimizer block exceeded.
-	if (conjunct_count > MAX_CONJUNCTS)
+	if (conjunctCount > MAX_CONJUNCTS)
 	{
 		ERR_post(Arg::Gds(isc_optimizer_blk_exc));
 		// Msg442: size of optimizer block exceeded
@@ -693,29 +719,29 @@ RecordSource* Optimizer::compile(BoolExprNodeStack* parentStack)
 	// Put conjunctions in opt structure.
 	// Note that it's a stack and we get the nodes in reversed order from the stack.
 
-	conjuncts.grow(conjunct_count);
+	conjuncts.grow(conjunctCount);
 	int nodeBase = -1, j = -1;
 
-	for (unsigned i = conjunct_count; i > 0; i--, j--)
+	for (unsigned i = conjunctCount; i > 0; i--, j--)
 	{
-		BoolExprNode* const node = conjunct_stack.pop();
+		BoolExprNode* const node = conjunctStack.pop();
 
-		if (i == base_count)
+		if (i == baseCount)
 		{
 			// The base conjunctions
-			j = base_count - 1;
+			j = baseCount - 1;
 			nodeBase = 0;
 		}
-		else if (i == conjunct_count - distributed_count)
+		else if (i == conjunctCount - distributedCount)
 		{
 			// The parent conjunctions
-			j = parent_count - 1;
+			j = parentCount - 1;
 			nodeBase = baseParentConjuncts;
 		}
-		else if (i == conjunct_count)
+		else if (i == conjunctCount)
 		{
 			// The new conjunctions created by "distribution" from the stack
-			j = distributed_count - 1;
+			j = distributedCount - 1;
 			nodeBase = baseConjuncts;
 		}
 
@@ -724,14 +750,14 @@ RecordSource* Optimizer::compile(BoolExprNodeStack* parentStack)
 	}
 
 	// Put the parent missing nodes on the stack
-	for (BoolExprNodeStack::iterator iter(missing_stack);
-		 iter.hasData() && conjunct_count < MAX_CONJUNCTS; ++iter)
+	for (BoolExprNodeStack::iterator iter(missingStack);
+		 iter.hasData() && conjunctCount < MAX_CONJUNCTS; ++iter)
 	{
 		BoolExprNode* const node = iter.object();
 
-		conjuncts.grow(conjunct_count + 1);
-		conjuncts[conjunct_count].node = node;
-		conjunct_count++;
+		conjuncts.grow(conjunctCount + 1);
+		conjuncts[conjunctCount].node = node;
+		conjunctCount++;
 	}
 
 	// Clear the csb_active flag of all streams in the RseNode
