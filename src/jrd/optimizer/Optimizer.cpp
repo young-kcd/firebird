@@ -804,7 +804,7 @@ RecordSource* Optimizer::compile(BoolExprNodeStack* parentStack)
 
 				// Apply local booleans, if any. Note that it's done
 				// only for inner joins and outer streams of left joins.
-				auto iter = getConjuncts(false, !isInnerJoin());
+				auto iter = getConjuncts(!isInnerJoin(), false);
 				rsb = applyLocalBoolean(rsb, localStreams, iter);
 			}
 
@@ -2786,7 +2786,7 @@ RecordSource* Optimizer::generateRetrieval(StreamType stream,
 	BoolExprNode* boolean = nullptr;
 	double filterSelectivity = MAXIMUM_SELECTIVITY;
 
-	for (auto iter = getConjuncts(innerFlag, outerFlag); iter.hasData(); ++iter)
+	for (auto iter = getConjuncts(outerFlag, innerFlag); iter.hasData(); ++iter)
 	{
 		if (!(iter & CONJUNCT_USED) &&
 			!(iter->nodFlags & ExprNode::FLAG_RESIDUAL) &&

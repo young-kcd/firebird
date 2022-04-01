@@ -2969,7 +2969,7 @@ RecordSource* RseNode::compile(thread_db* tdbb, Optimizer* opt, bool innerSubStr
 			if (opt->isLeftJoin())
 			{
 				// Push all conjuncts except "missing" ones (e.g. IS NULL)
-				for (auto iter = opt->getConjuncts(true, false); iter.hasData(); ++iter)
+				for (auto iter = opt->getConjuncts(false, true); iter.hasData(); ++iter)
 					conjunctStack.push(iter);
 			}
 		}
@@ -2983,7 +2983,7 @@ RecordSource* RseNode::compile(thread_db* tdbb, Optimizer* opt, bool innerSubStr
 	}
 
 	// Push only parent conjuncts to the outer stream
-	for (auto iter = opt->getConjuncts(false, true); iter.hasData(); ++iter)
+	for (auto iter = opt->getConjuncts(true, false); iter.hasData(); ++iter)
 		conjunctStack.push(iter);
 
 	return opt->compile(this, &conjunctStack);

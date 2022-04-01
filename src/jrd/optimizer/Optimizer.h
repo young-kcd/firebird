@@ -332,7 +332,7 @@ public:
 		return ConjunctIterator(begin, end);
 	}
 
-	ConjunctIterator getConjuncts(bool inner = false, bool outer = false)
+	ConjunctIterator getConjuncts(bool outer = false, bool inner = false)
 	{
 		const auto begin = conjuncts.begin() + (outer ? baseParentConjuncts : 0);
 		const auto end = inner ? begin + baseMissingConjuncts : conjuncts.end();

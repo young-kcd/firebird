@@ -262,7 +262,7 @@ InversionCandidate* Retrieval::getInversion()
 	if (finalCandidate)
 		return finalCandidate;
 
-	auto iter = optimizer->getConjuncts(innerFlag, outerFlag);
+	auto iter = optimizer->getConjuncts(outerFlag, innerFlag);
 
 	InversionCandidate* invCandidate = nullptr;
 
