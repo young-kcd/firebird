@@ -2289,8 +2289,8 @@ bool Optimizer::generateEquiJoin(RiverList& orgRivers)
 				{
 					for (eq_class = classes; eq_class < last_class; eq_class += orgCount)
 					{
-						if (fieldEqual(node1, classes[i]) ||
-							fieldEqual(node2, classes[j]))
+						if (node1->sameAs(classes[i], false) ||
+							node2->sameAs(classes[j], false))
 						{
 							break;
 						}
