@@ -596,14 +596,16 @@ Optimizer::~Optimizer()
 // Compile and optimize a record selection expression into a set of record source blocks
 //
 
-RecordSource* Optimizer::compile(RseNode* rse, BoolExprNodeStack* parentStack)
+RecordSource* Optimizer::compile(RseNode* subRse, BoolExprNodeStack* parentStack)
 {
-	Optimizer subOpt(tdbb, csb, rse);
+	Optimizer subOpt(tdbb, csb, subRse);
 	const auto rsb = subOpt.compile(parentStack);
 
-	if (parentStack)
+	if (parentStack && subOpt.isInnerJoin())
 	{
-		// If any parent conjunct was utilized, update our copy of its flags
+		// If any parent conjunct was utilized, update our copy of its flags.
+		// Currently used for inner joins only, although could also be applied
+		// to conjuncts utilized for outer streams of outer joins.
 
 		for (auto subIter = subOpt.getParentConjuncts(); subIter.hasData(); ++subIter)
 		{

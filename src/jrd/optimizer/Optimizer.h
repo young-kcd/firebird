@@ -372,7 +372,7 @@ public:
 
 	~Optimizer();
 
-	RecordSource* compile(RseNode* rse, BoolExprNodeStack* parentStack);
+	RecordSource* compile(RseNode* subRse, BoolExprNodeStack* parentStack);
 	void compileRelation(StreamType stream);
 	void generateAggregateDistincts(MapNode* map);
 	RecordSource* generateRetrieval(StreamType stream,
