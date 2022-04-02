@@ -1092,6 +1092,8 @@ namespace Jrd
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
 		void nullRecords(thread_db* tdbb) const override;
 
+		static unsigned maxCapacity();
+
 	private:
 		ULONG computeHash(thread_db* tdbb, Request* request,
 						  const SubStream& sub, UCHAR* buffer) const;

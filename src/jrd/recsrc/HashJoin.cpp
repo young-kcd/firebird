@@ -45,6 +45,15 @@ using namespace Jrd;
 static const ULONG HASH_SIZE = 1009;
 static const ULONG BUCKET_PREALLOCATE_SIZE = 32;	// 256 bytes per slot
 
+unsigned HashJoin::maxCapacity()
+{
+	// Binary search across 1000 collisions is computationally similar to
+	// linear searc across 10 collisions. We use this number as a rough
+	// estimation of whether the lookup performance is likely to be acceptable.
+	return HASH_SIZE * 1000;
+}
+
+
 class HashJoin::HashTable : public PermanentStorage
 {
 	class CollisionList

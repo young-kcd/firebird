@@ -294,8 +294,8 @@ namespace
 		if (node1 == node2)
 			return true;
 
-		const FieldNode* fieldNode1 = nodeAs<FieldNode>(node1);
-		const FieldNode* fieldNode2 = nodeAs<FieldNode>(node2);
+		const auto fieldNode1 = nodeAs<FieldNode>(node1);
+		const auto fieldNode2 = nodeAs<FieldNode>(node2);
 
 		if (fieldNode1 && fieldNode2)
 		{
@@ -1654,7 +1654,6 @@ void Optimizer::checkSorts()
 				sort = rse->rse_sorted = nullptr;
 			}
 		}
-
 	}
 
 	// Examine the ORDER BY and DISTINCT clauses; if all the fields in the
@@ -2343,102 +2342,116 @@ bool Optimizer::generateEquiJoin(RiverList& orgRivers)
 	if (!riverCount)
 		return false;
 
-	HalfStaticArray<RecordSource*, OPT_STATIC_ITEMS> rsbs;
-	HalfStaticArray<NestValueArray*, OPT_STATIC_ITEMS> keys;
-
-	bool useMergeJoin = false;
-
-	// AB: Get the lowest river position from the rivers that are merged
+	// Prepare rivers for joining
 
 	StreamList streams;
 	RiverList rivers;
-	unsigned number = 0, lowestPosition = MAX_ULONG;
+	HalfStaticArray<NestValueArray*, OPT_STATIC_ITEMS> keys;
+	unsigned position = 0, maxCardinalityPosition = 0, lowestPosition = MAX_ULONG;
+	double maxCardinality1 = 0, maxCardinality2 = 0;
 
-	for (River** iter = orgRivers.begin(); iter < orgRivers.end(); number++)
+	for (auto iter = orgRivers.begin(); iter < orgRivers.end(); position++)
 	{
-		River* const river = *iter;
-
-		if (!(TEST_DEP_BIT(selected_rivers, number)))
+		if (!(TEST_DEP_BIT(selected_rivers, position)))
 		{
 			iter++;
 			continue;
 		}
 
-		if (number < lowestPosition)
-			lowestPosition = number;
+		const auto river = *iter;
+
+		// Get the lowest river position
+
+		if (position < lowestPosition)
+			lowestPosition = position;
+
+		// Find position of the river with maximum cardinality
+
+		const auto rsb = river->getRecordSource();
+		const auto cardinality = rsb->getCardinality();
+
+		if (cardinality > maxCardinality1)
+		{
+			maxCardinality2 = maxCardinality1;
+			maxCardinality1 = cardinality;
+			maxCardinalityPosition = rivers.getCount();
+		}
+		else if (cardinality > maxCardinality2)
+			maxCardinality2 = cardinality;
 
 		streams.join(river->getStreams());
 		rivers.add(river);
 		orgRivers.remove(iter);
 
-		auto rsb = river->getRecordSource();
+		// Collect keys to join on
 
-		// Collect RSBs and keys to join
+		keys.add(FB_NEW_POOL(getPool()) NestValueArray(getPool()));
 
-		const auto key = FB_NEW_POOL(getPool()) SortNode(getPool());
-
-		if (useMergeJoin)
-		{
-			ValueExprNode*** selected_class;
-
-			for (selected_class = selected_classes.begin();
-				 selected_class != selected_classes.end(); ++selected_class)
-			{
-				key->direction.add(ORDER_ASC);	// Ascending sort
-				key->nullOrder.add(NULLS_DEFAULT);	// Default nulls placement
-				key->expressions.add((*selected_class)[number]);
-			}
-
-			rsb = generateSort(river->getStreams(), nullptr, rsb, key, favorFirstRows(), false);
-		}
-		else
-		{
-			ValueExprNode*** selected_class;
-
-			for (selected_class = selected_classes.begin();
-				 selected_class != selected_classes.end(); ++selected_class)
-			{
-				key->expressions.add((*selected_class)[number]);
-			}
-		}
-
-		// It seems that rivers are already sorted by their cardinality.
-		// For a hash join, we need to choose the smallest ones as inner sub-streams,
-		// hence we reverse the order when storing them in the temporary arrays.
-
-		if (useMergeJoin)
-		{
-			rsbs.add(rsb);
-			keys.add(&key->expressions);
-		}
-		else
-		{
-			rsbs.insert(0, rsb);
-			keys.insert(0, &key->expressions);
-		}
+		for (const auto eq_class : selected_classes)
+			keys.back()->add(eq_class[position]);
 	}
 
-	fb_assert(rsbs.getCount() == keys.getCount());
+	const bool hashOverflow = (maxCardinality2 > HashJoin::maxCapacity());
+
+	// If any of to-be-hashed rivers is too large to be hashed efficiently,
+	// then prefer a merge join instead of a hash join.
+
+	const bool useMergeJoin = hashOverflow;
 
 	// Build a join stream
 
-	RecordSource* rsb = nullptr;
+	HalfStaticArray<RecordSource*, OPT_STATIC_ITEMS> rsbs;
+	RecordSource* finalRsb = nullptr;
 
 	if (useMergeJoin)
 	{
-		rsb = FB_NEW_POOL(getPool())
+		position = 0;
+		for (const auto river : rivers)
+		{
+			const auto sort = FB_NEW_POOL(getPool()) SortNode(getPool());
+
+			for (const auto key : *keys[position++])
+			{
+				fb_assert(river->isReferenced(key));
+
+				sort->direction.add(ORDER_ASC);	// ascending sort
+				sort->nullOrder.add(NULLS_DEFAULT);	// default nulls placement
+				sort->expressions.add(key);
+			}
+
+			const auto rsb = generateSort(river->getStreams(), nullptr,
+				river->getRecordSource(), sort, favorFirstRows(), false);
+
+			rsbs.add(rsb);
+		}
+
+		finalRsb = FB_NEW_POOL(getPool())
 			MergeJoin(csb, rsbs.getCount(), (SortedStream**) rsbs.begin(), keys.begin());
 	}
 	else
 	{
-		rsb = FB_NEW_POOL(getPool())
+		// Ensure that the largest river is placed at the first position.
+		// It's important for a hash join to be efficient.
+
+		const auto maxCardinalityRiver = rivers[maxCardinalityPosition];
+		rivers[maxCardinalityPosition] = rivers[0];
+		rivers[0] = maxCardinalityRiver;
+
+		const auto maxCardinalityKey = keys[maxCardinalityPosition];
+		keys[maxCardinalityPosition] = keys[0];
+		keys[0] = maxCardinalityKey;
+
+		for (const auto river : rivers)
+			rsbs.add(river->getRecordSource());
+
+		finalRsb = FB_NEW_POOL(getPool())
 			HashJoin(tdbb, csb, rsbs.getCount(), rsbs.begin(), keys.begin());
 	}
 
 	// Pick up any boolean that may apply
-	rsb = applyLocalBoolean(rsb, streams, iter);
+	finalRsb = applyLocalBoolean(finalRsb, streams, iter);
 
-	const auto finalRiver = FB_NEW_POOL(getPool()) River(csb, rsb, rivers);
+	const auto finalRiver = FB_NEW_POOL(getPool()) River(csb, finalRsb, rivers);
 	orgRivers.insert(lowestPosition, finalRiver);
 
 	return true;
