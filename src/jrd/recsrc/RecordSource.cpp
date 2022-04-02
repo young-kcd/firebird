@@ -39,9 +39,8 @@
 using namespace Firebird;
 using namespace Jrd;
 
-#ifdef DEV_BUILD
-#define PRINT_OPT_INFO	// print optimizer info (cardinality, cost) in plans
-#endif
+// Disabled so far, should be uncommented for debugging/testing
+//#define PRINT_OPT_INFO	// print optimizer info (cardinality, cost) in plans
 
 
 // Record source class
