@@ -546,12 +546,21 @@ namespace Jrd
 		public:
 			struct Item
 			{
-				void clear()
+				void reset(NestConst<ValueExprNode> _node, ULONG _flagOffset = 0)
 				{
 					desc.clear();
-					flagOffset = fieldId = 0;
-					stream = 0;
-					node = NULL;
+					stream = fieldId = 0;
+					node = _node;
+					flagOffset = _flagOffset;
+				}
+
+				void reset(StreamType _stream, SSHORT _fieldId, ULONG _flagOffset = 0)
+				{
+					desc.clear();
+					node = nullptr;
+					stream = _stream;
+					fieldId = _fieldId;
+					flagOffset = _flagOffset;
 				}
 
 				StreamType stream;			// stream for field id

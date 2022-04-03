@@ -1335,17 +1335,13 @@ SortedStream* Optimizer::generateSort(const StreamList& streams,
 		if (SortedStream::hasVolatileKey(desc) && !refetchFlag)
 			sort_key->skd_flags |= SKD_separate_data;
 
-		map_item->clear();
-		map_item->node = node;
-		map_item->flagOffset = prev_key->getSkdOffset();
+		map_item->reset(node, prev_key->getSkdOffset());
 		map_item->desc = *desc;
 		map_item->desc.dsc_address = (UCHAR*)(IPTR) sort_key->getSkdOffset();
 
 		prev_key = sort_key++;
 
-		FieldNode* fieldNode;
-
-		if ( (fieldNode = nodeAs<FieldNode>(node)) )
+		if (const auto fieldNode = nodeAs<FieldNode>(node))
 		{
 			map_item->stream = fieldNode->fieldStream;
 			map_item->fieldId = fieldNode->fieldId;
@@ -1368,10 +1364,7 @@ SortedStream* Optimizer::generateSort(const StreamList& streams,
 		if (item.desc->dsc_dtype >= dtype_aligned)
 			map_length = FB_ALIGN(map_length, type_alignments[item.desc->dsc_dtype]);
 
-		map_item->clear();
-		map_item->fieldId = (SSHORT) item.id;
-		map_item->stream = item.stream;
-		map_item->flagOffset = flag_offset++;
+		map_item->reset(item.stream, (SSHORT) item.id, flag_offset++);
 		map_item->desc = *item.desc;
 		map_item->desc.dsc_address = (UCHAR*)(IPTR) map_length;
 		map_length += item.desc->dsc_length;
@@ -1383,24 +1376,14 @@ SortedStream* Optimizer::generateSort(const StreamList& streams,
 	map_length = ROUNDUP(map_length, sizeof(SINT64));
 	for (const auto stream : streams)
 	{
-		map_item->clear();
-		map_item->fieldId = SortedStream::ID_DBKEY;
-		map_item->stream = stream;
-		dsc* desc = &map_item->desc;
-		desc->dsc_dtype = dtype_int64;
-		desc->dsc_length = sizeof(SINT64);
-		desc->dsc_address = (UCHAR*)(IPTR) map_length;
-		map_length += desc->dsc_length;
+		map_item->reset(stream, SortedStream::ID_DBKEY);
+		map_item->desc.makeInt64(0, (SINT64*)(IPTR) map_length);
+		map_length += map_item->desc.dsc_length;
 		map_item++;
 
-		map_item->clear();
-		map_item->fieldId = SortedStream::ID_TRANS;
-		map_item->stream = stream;
-		desc = &map_item->desc;
-		desc->dsc_dtype = dtype_int64;
-		desc->dsc_length = sizeof(SINT64);
-		desc->dsc_address = (UCHAR*)(IPTR) map_length;
-		map_length += desc->dsc_length;
+		map_item->reset(stream, SortedStream::ID_TRANS);
+		map_item->desc.makeInt64(0, (SINT64*)(IPTR) map_length);
+		map_length += map_item->desc.dsc_length;
 		map_item++;
 	}
 
@@ -1410,43 +1393,26 @@ SortedStream* Optimizer::generateSort(const StreamList& streams,
 
 		for (const auto stream : *dbkeyStreams)
 		{
-			map_item->clear();
-			map_item->fieldId = SortedStream::ID_DBKEY;
-			map_item->stream = stream;
-			dsc* desc = &map_item->desc;
-			desc->dsc_dtype = dtype_int64;
-			desc->dsc_length = sizeof(SINT64);
-			desc->dsc_address = (UCHAR*)(IPTR) map_length;
-			map_length += desc->dsc_length;
+			map_item->reset(stream, SortedStream::ID_DBKEY);
+			map_item->desc.makeInt64(0, (SINT64*)(IPTR) map_length);
+			map_length += map_item->desc.dsc_length;
 			map_item++;
 		}
 
 		for (const auto stream : *dbkeyStreams)
 		{
-			map_item->clear();
-			map_item->fieldId = SortedStream::ID_DBKEY_VALID;
-			map_item->stream = stream;
-			dsc* desc = &map_item->desc;
-			desc->dsc_dtype = dtype_text;
-			desc->dsc_ttype() = CS_BINARY;
-			desc->dsc_length = 1;
-			desc->dsc_address = (UCHAR*)(IPTR) map_length;
-			map_length += desc->dsc_length;
+			map_item->reset(stream, SortedStream::ID_DBKEY_VALID);
+			map_item->desc.makeText(1, CS_BINARY, (UCHAR*)(IPTR) map_length);
+			map_length += map_item->desc.dsc_length;
 			map_item++;
 		}
 	}
 
 	for (const auto stream : streams)
 	{
-		map_item->clear();
-		map_item->fieldId = SortedStream::ID_DBKEY_VALID;
-		map_item->stream = stream;
-		dsc* desc = &map_item->desc;
-		desc->dsc_dtype = dtype_text;
-		desc->dsc_ttype() = CS_BINARY;
-		desc->dsc_length = 1;
-		desc->dsc_address = (UCHAR*)(IPTR) map_length;
-		map_length += desc->dsc_length;
+		map_item->reset(stream, SortedStream::ID_DBKEY_VALID);
+		map_item->desc.makeText(1, CS_BINARY, (UCHAR*)(IPTR) map_length);
+		map_length += map_item->desc.dsc_length;
 		map_item++;
 	}
 
