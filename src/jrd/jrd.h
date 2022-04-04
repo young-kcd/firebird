@@ -1,4 +1,4 @@
-/*
+ /*
  *      PROGRAM:        JRD access method
  *      MODULE:         jrd.h
  *      DESCRIPTION:    Common descriptions
@@ -1100,7 +1100,7 @@ namespace Jrd {
 			if (att && att->att_use_count)
 			{
 				m_ref = att->getStable();
-				m_ref->getSync()->leave();
+				m_ref->getMutex()->leave();
 			}
 		}
 
