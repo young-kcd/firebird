@@ -1,4 +1,4 @@
- /*
+/*
  *      PROGRAM:        JRD access method
  *      MODULE:         jrd.h
  *      DESCRIPTION:    Common descriptions
