@@ -258,6 +258,7 @@ void TraceManager::update_session(const TraceSession& session)
 
 				try
 				{
+					EngineCheckout guard(attachment, FB_FUNCTION);
 					mapUser(s_user, t_role, NULL, NULL, session.ses_auth,
 						attachment->att_filename.c_str(), dbb->dbb_filename.c_str(),
 						dbb->dbb_config->getSecurityDatabase(),
