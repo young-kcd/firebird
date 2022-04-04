@@ -304,7 +304,6 @@ void InnerJoin::findBestOrder(unsigned position,
 	// Do some initializations
 	tail->activate();
 	joinedStreams[position].number = stream->stream;
-	position++;
 
 	// Save the various flag bits from the optimizer block to reset its
 	// state after each test
@@ -321,6 +320,8 @@ void InnerJoin::findBestOrder(unsigned position,
 		newCost = cost + cardinality * positionCost;
 		newCardinality = positionCardinality * cardinality;
 	}
+
+	position++;
 
 	// If the partial order is either longer than any previous partial order,
 	// or the same length and cheap, save order as "best"
