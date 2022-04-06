@@ -2620,15 +2620,16 @@ void MET_lookup_index_expression(thread_db* tdbb, jrd_rel* relation, index_desc*
 
 		{ // scope
 			Jrd::ContextPoolHolder context(tdbb, attachment->createPool());
+
 			idx->idx_expression = static_cast<ValueExprNode*>(MET_parse_blob(
 				tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb,
-				&idx->idx_expression_statement, false, false));
+				nullptr, false, false));
+
+			idx->idx_expression_statement = Statement::makeStatement(tdbb, csb, false,
+				&idx->idx_expression_desc);
 		} // end scope
 	}
 	END_FOR
-
-	if (csb)
-		idx->idx_expression->getDesc(tdbb, csb, &idx->idx_expression_desc);
 
 	delete csb;
 

@@ -2760,8 +2760,11 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 						{
 							idx.idx_expression = static_cast<ValueExprNode*>(MET_get_dependencies(
 								tdbb, relation, NULL, 0, NULL, &IDX.RDB$EXPRESSION_BLR,
-								&idx.idx_expression_statement, &csb, work->dfw_name, obj_expression_index, 0,
+								nullptr, &csb, work->dfw_name, obj_expression_index, 0,
 								transaction));
+
+							idx.idx_expression_statement = Statement::makeStatement(tdbb, csb, false,
+								&idx.idx_expression_desc);
 						}
 					} // end scope
 
@@ -2769,7 +2772,6 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 
 					idx.idx_count = 1;
 					idx.idx_flags |= idx_expressn;
-					idx.idx_expression->getDesc(tdbb, csb, &idx.idx_expression_desc);
 					idx.idx_rpt[0].idx_itype =
 						DFW_assign_index_type(tdbb, work->dfw_name,
 						idx.idx_expression_desc.dsc_dtype,

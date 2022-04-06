@@ -45,7 +45,7 @@ private:
 	Statement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb);
 
 public:
-	static Statement* makeStatement(thread_db* tdbb, CompilerScratch* csb, bool internalFlag);
+	static Statement* makeStatement(thread_db* tdbb, CompilerScratch* csb, bool internalFlag, dsc* exprDesc = nullptr);
 	static Request* makeRequest(thread_db* tdbb, CompilerScratch* csb, bool internalFlag);
 
 	StmtNumber getStatementId() const

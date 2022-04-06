@@ -226,7 +226,7 @@ Statement::Statement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 }
 
 // Turn a parsed scratch into a statement.
-Statement* Statement::makeStatement(thread_db* tdbb, CompilerScratch* csb, bool internalFlag)
+Statement* Statement::makeStatement(thread_db* tdbb, CompilerScratch* csb, bool internalFlag, dsc* exprDesc)
 {
 	DEV_BLKCHK(csb, type_csb);
 	SET_TDBB(tdbb);
@@ -305,6 +305,12 @@ Statement* Statement::makeStatement(thread_db* tdbb, CompilerScratch* csb, bool 
 		// Build the statement and the final request block.
 
 		const auto pool = tdbb->getDefaultPool();
+
+		if (exprDesc)
+		{
+			fb_assert(csb->csb_node->getKind() == DmlNode::KIND_VALUE);
+			static_cast<ValueExprNode*>(csb->csb_node)->getDesc(tdbb, csb, exprDesc);
+		}
 
 		statement = FB_NEW_POOL(*pool) Statement(tdbb, pool, csb);
 
