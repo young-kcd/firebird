@@ -304,13 +304,13 @@ Statement* Statement::makeStatement(thread_db* tdbb, CompilerScratch* csb, bool 
 
 		// Build the statement and the final request block.
 
-		const auto pool = tdbb->getDefaultPool();
-
 		if (exprDesc)
 		{
 			fb_assert(csb->csb_node->getKind() == DmlNode::KIND_VALUE);
 			static_cast<ValueExprNode*>(csb->csb_node)->getDesc(tdbb, csb, exprDesc);
 		}
+
+		const auto pool = tdbb->getDefaultPool();
 
 		statement = FB_NEW_POOL(*pool) Statement(tdbb, pool, csb);
 
