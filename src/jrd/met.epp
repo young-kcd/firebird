@@ -2621,12 +2621,10 @@ void MET_lookup_index_expression(thread_db* tdbb, jrd_rel* relation, index_desc*
 		{ // scope
 			Jrd::ContextPoolHolder context(tdbb, attachment->createPool());
 
-			idx->idx_expression = static_cast<ValueExprNode*>(MET_parse_blob(
-				tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb,
-				nullptr, false, false));
+			MET_parse_blob(tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb, nullptr, false, false);
 
-			idx->idx_expression_statement = Statement::makeStatement(tdbb, csb, false,
-				&idx->idx_expression_desc);
+			idx->idx_expression_statement = Statement::makeValueExpression(tdbb,
+				idx->idx_expression, idx->idx_expression_desc, csb, false);
 		} // end scope
 	}
 	END_FOR

@@ -24,6 +24,7 @@
 #include "../include/fb_blk.h"
 #include "../jrd/exe.h"
 #include "../jrd/EngineInterface.h"
+#include <functional>
 
 namespace Jrd {
 
@@ -45,7 +46,12 @@ private:
 	Statement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb);
 
 public:
-	static Statement* makeStatement(thread_db* tdbb, CompilerScratch* csb, bool internalFlag, dsc* exprDesc = nullptr);
+	static Statement* makeStatement(thread_db* tdbb, CompilerScratch* csb, bool internalFlag,
+		std::function<void ()> beforeCsbRelease = nullptr);
+
+	static Statement* makeValueExpression(thread_db* tdbb, ValueExprNode*& node, dsc& desc,
+		CompilerScratch* csb, bool internalFlag);
+
 	static Request* makeRequest(thread_db* tdbb, CompilerScratch* csb, bool internalFlag);
 
 	StmtNumber getStatementId() const

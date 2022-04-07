@@ -226,7 +226,8 @@ Statement::Statement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 }
 
 // Turn a parsed scratch into a statement.
-Statement* Statement::makeStatement(thread_db* tdbb, CompilerScratch* csb, bool internalFlag, dsc* exprDesc)
+Statement* Statement::makeStatement(thread_db* tdbb, CompilerScratch* csb, bool internalFlag,
+	std::function<void ()> beforeCsbRelease)
 {
 	DEV_BLKCHK(csb, type_csb);
 	SET_TDBB(tdbb);
@@ -302,16 +303,11 @@ Statement* Statement::makeStatement(thread_db* tdbb, CompilerScratch* csb, bool 
 		if (csb->csb_impure > MAX_REQUEST_SIZE)
 			IBERROR(226);			// msg 226 request size limit exceeded
 
+		if (beforeCsbRelease)
+			beforeCsbRelease();
+
 		// Build the statement and the final request block.
-
-		if (exprDesc)
-		{
-			fb_assert(csb->csb_node->getKind() == DmlNode::KIND_VALUE);
-			static_cast<ValueExprNode*>(csb->csb_node)->getDesc(tdbb, csb, exprDesc);
-		}
-
 		const auto pool = tdbb->getDefaultPool();
-
 		statement = FB_NEW_POOL(*pool) Statement(tdbb, pool, csb);
 
 		tdbb->setRequest(old_request);
@@ -341,6 +337,19 @@ Statement* Statement::makeStatement(thread_db* tdbb, CompilerScratch* csb, bool 
 	attachment->att_statements.add(statement);
 
 	return statement;
+}
+
+Statement* Statement::makeValueExpression(thread_db* tdbb, ValueExprNode*& node, dsc& desc,
+	CompilerScratch* csb, bool internalFlag)
+{
+	fb_assert(csb->csb_node->getKind() == DmlNode::KIND_VALUE);
+
+	return makeStatement(tdbb, csb, internalFlag,
+		[&]
+		{
+			node = static_cast<ValueExprNode*>(csb->csb_node);
+			node->getDesc(tdbb, csb, &desc);
+		});
 }
 
 // Turn a parsed scratch into an executable request.
