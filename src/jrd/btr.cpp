@@ -6140,7 +6140,7 @@ string print_key(thread_db* tdbb, jrd_rel* relation, index_desc* idx, Record* re
 		{
 			bool notNull = false;
 			const dsc* const desc = BTR_eval_expression(tdbb, idx, record, notNull);
-			value = DescPrinter(tdbb, notNull ? desc : NULL, MAX_KEY_STRING_LEN).get();
+			value = DescPrinter(tdbb, notNull ? desc : NULL, MAX_KEY_STRING_LEN, CS_METADATA).get();
 			key += "<expression> = " + value;
 		}
 		else
@@ -6159,7 +6159,7 @@ string print_key(thread_db* tdbb, jrd_rel* relation, index_desc* idx, Record* re
 
 				dsc desc;
 				const bool notNull = EVL_field(relation, record, field_id, &desc);
-				value = DescPrinter(tdbb, notNull ? &desc : NULL, MAX_KEY_STRING_LEN).get();
+				value = DescPrinter(tdbb, notNull ? &desc : NULL, MAX_KEY_STRING_LEN, CS_METADATA).get();
 				key += " = " + value;
 
 				if (i < idx->idx_count - 1)
