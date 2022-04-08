@@ -8115,7 +8115,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 
 	if (attachment && attachment->att_purge_tid == Thread::getId())
 	{
-		fb_assert(false); // recursive call - impossible ?
+//		fb_assert(false); // recursive call - impossible ?
 		return;
 	}
 
