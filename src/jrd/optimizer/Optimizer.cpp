@@ -613,7 +613,6 @@ RecordSource* Optimizer::compile(RseNode* subRse, BoolExprNodeStack* parentStack
 			{
 				if (*selfIter == *subIter)
 				{
-					fb_assert(!(selfIter & (CONJUNCT_USED | CONJUNCT_MATCHED)));
 					selfIter |= (subIter & (CONJUNCT_USED | CONJUNCT_MATCHED));
 					break;
 				}
