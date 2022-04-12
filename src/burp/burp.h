@@ -351,6 +351,8 @@ enum att_type {
 	att_index_description2,
 	att_index_expression_source,
 	att_index_expression_blr,
+	att_index_condition_source,
+	att_index_condition_blr,
 
 	// Data record
 
