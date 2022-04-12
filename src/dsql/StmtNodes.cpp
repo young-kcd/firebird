@@ -3234,6 +3234,12 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, Request* request) cons
 			Arg::Gds(isc_proc_pack_not_implemented) <<
 				Arg::Str(procedure->getName().identifier) << Arg::Str(procedure->getName().package));
 	}
+	else if (!procedure->isDefined())
+	{
+		status_exception::raise(
+			Arg::Gds(isc_prcnotdef) <<
+				Arg::Str(procedure->getName().toString()));
+	}
 
 	const_cast<jrd_prc*>(procedure.getObject())->checkReload(tdbb);
 

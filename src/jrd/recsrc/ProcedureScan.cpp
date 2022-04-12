@@ -63,6 +63,12 @@ void ProcedureScan::open(thread_db* tdbb) const
 			Arg::Gds(isc_proc_pack_not_implemented) <<
 				Arg::Str(m_procedure->getName().identifier) << Arg::Str(m_procedure->getName().package));
 	}
+	else if (!m_procedure->isDefined())
+	{
+		status_exception::raise(
+			Arg::Gds(isc_prcnotdef) <<
+				Arg::Str(m_procedure->getName().toString()));
+	}
 
 	const_cast<jrd_prc*>(m_procedure)->checkReload(tdbb);
 

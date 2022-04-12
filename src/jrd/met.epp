@@ -3401,6 +3401,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, USHORT id, bool noscan, USHORT flags)
 				procedure->invoker = attachment->getUserId(procedure->owner);
 
 			procedure->setImplemented(true);
+			procedure->setDefined(true);
 			procedure->getInputFields().resize(P.RDB$PROCEDURE_INPUTS);
 			procedure->getOutputFields().resize(P.RDB$PROCEDURE_OUTPUTS);
 			procedure->setDefaultCount(0);
@@ -3525,6 +3526,9 @@ jrd_prc* MET_procedure(thread_db* tdbb, USHORT id, bool noscan, USHORT flags)
 
 						dbb->dbb_extManager->makeProcedure(tdbb, csb, procedure, P.RDB$ENGINE_NAME,
 							(P.RDB$ENTRYPOINT.NULL ? "" : P.RDB$ENTRYPOINT), body.begin());
+
+						if (!procedure->getExternal())
+							procedure->setDefined(false);
 					}
 					else
 					{
@@ -3553,7 +3557,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, USHORT id, bool noscan, USHORT flags)
 					throw;
 				}
 
-				fb_assert(procedure->getStatement()->procedure == procedure);
+				fb_assert(!procedure->isDefined() || procedure->getStatement()->procedure == procedure);
 			}
 			else
 			{
