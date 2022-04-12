@@ -85,6 +85,8 @@ enum irq_type_t
 	irq_c_exp_index,		// create expression index
 	irq_l_exp_index,		// lookup expression index
 	irq_l_exp_index_blr,	// lookup expression index BLR
+	irq_c_cond_index,		// create condition index
+	irq_l_cond_index,		// lookup condition index
 
 	irq_l_rel_id,			// lookup relation id
 	irq_l_procedure,		// lookup procedure name

@@ -49,6 +49,9 @@ public:
 	static Statement* makeStatement(thread_db* tdbb, CompilerScratch* csb, bool internalFlag,
 		std::function<void ()> beforeCsbRelease = nullptr);
 
+	static Statement* makeBoolExpression(thread_db* tdbb, BoolExprNode*& node,
+		CompilerScratch* csb, bool internalFlag);
+
 	static Statement* makeValueExpression(thread_db* tdbb, ValueExprNode*& node, dsc& desc,
 		CompilerScratch* csb, bool internalFlag);
 

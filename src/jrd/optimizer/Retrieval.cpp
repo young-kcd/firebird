@@ -435,7 +435,7 @@ void Retrieval::analyzeNavigation(const InversionCandidateList& inversions)
 
 		// only a single-column ORDER BY clause can be mapped to
 		// an expression index
-		if (idx->idx_flags & idx_expressn)
+		if (idx->idx_flags & idx_expression)
 		{
 			if (sort->expressions.getCount() != 1)
 				continue;
@@ -498,7 +498,7 @@ void Retrieval::analyzeNavigation(const InversionCandidateList& inversions)
 
 			for (const auto node : nodes)
 			{
-				if (idx->idx_flags & idx_expressn)
+				if (idx->idx_flags & idx_expression)
 				{
 					if (!checkExpressionIndex(csb, idx, node, stream))
 						continue;
@@ -1477,7 +1477,7 @@ bool Retrieval::matchBoolean(IndexScratch* indexScratch,
 
 	const auto idx = indexScratch->index;
 
-	if (idx->idx_flags & idx_expressn)
+	if (idx->idx_flags & idx_expression)
 	{
 		// see if one side or the other is matchable to the index expression
 
@@ -1553,7 +1553,7 @@ bool Retrieval::matchBoolean(IndexScratch* indexScratch,
 
 	const auto fieldNode = nodeAs<FieldNode>(match);
 
-	if (!(idx->idx_flags & idx_expressn))
+	if (!(idx->idx_flags & idx_expression))
 		fb_assert(fieldNode);
 
 	const bool isDesc = (idx->idx_flags & idx_descending);
@@ -1565,7 +1565,7 @@ bool Retrieval::matchBoolean(IndexScratch* indexScratch,
 
 	for (unsigned i = 0; i < idx->idx_count; i++)
 	{
-		if (!(idx->idx_flags & idx_expressn) &&
+		if (!(idx->idx_flags & idx_expression) &&
 			fieldNode->fieldId != idx->idx_rpt[i].idx_field)
 		{
 			continue;
@@ -2106,7 +2106,7 @@ bool Retrieval::validateStarts(IndexScratch* indexScratch,
 
 	const auto idx = indexScratch->index;
 
-	if (idx->idx_flags & idx_expressn)
+	if (idx->idx_flags & idx_expression)
 	{
 		// AB: What if the expression contains a number/float etc.. and
 		// we use starting with against it? Is that allowed?

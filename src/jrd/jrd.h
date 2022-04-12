@@ -312,6 +312,8 @@ public:
 	ValueExprNode* idb_expression;			// node tree for index expression
 	Statement* idb_expression_statement;	// statement for index expression evaluation
 	dsc			idb_expression_desc;		// descriptor for expression result
+	BoolExprNode* idb_condition;			// node tree for index condition
+	Statement* idb_condition_statement;		// statement for index condition evaluation
 	Lock*		idb_lock;					// lock to synchronize changes to index
 	USHORT		idb_id;
 };

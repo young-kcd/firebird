@@ -339,6 +339,18 @@ Statement* Statement::makeStatement(thread_db* tdbb, CompilerScratch* csb, bool 
 	return statement;
 }
 
+Statement* Statement::makeBoolExpression(thread_db* tdbb, BoolExprNode*& node,
+	CompilerScratch* csb, bool internalFlag)
+{
+	fb_assert(csb->csb_node->getKind() == DmlNode::KIND_BOOLEAN);
+
+	return makeStatement(tdbb, csb, internalFlag,
+		[&]
+		{
+			node = static_cast<BoolExprNode*>(csb->csb_node);
+		});
+}
+
 Statement* Statement::makeValueExpression(thread_db* tdbb, ValueExprNode*& node, dsc& desc,
 	CompilerScratch* csb, bool internalFlag)
 {

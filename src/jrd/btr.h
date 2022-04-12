@@ -66,9 +66,11 @@ struct index_desc
 	vec<int>*	idx_foreign_primaries;		// ids for primary/unique indexes with partners
 	vec<int>*	idx_foreign_relations;		// ids for foreign key partner relations
 	vec<int>*	idx_foreign_indexes;		// ids for foreign key partner indexes
-	ValueExprNode* idx_expression;			// node tree for indexed expresssion
+	ValueExprNode* idx_expression;			// node tree for indexed expression
 	dsc		idx_expression_desc;			// descriptor for expression result
 	Statement* idx_expression_statement;	// stored statement for expression evaluation
+	BoolExprNode* idx_condition;			// node tree for index condition
+	Statement* idx_condition_statement;	// stored statement for index condition
 	// This structure should exactly match IRTD structure for current ODS
 	struct idx_repeat
 	{
@@ -114,7 +116,8 @@ const int idx_descending	= 2;
 const int idx_in_progress	= 4;
 const int idx_foreign		= 8;
 const int idx_primary		= 16;
-const int idx_expressn		= 32;
+const int idx_expression	= 32;
+const int idx_condition		= 64;
 
 // these flags are for idx_runtime_flags
 

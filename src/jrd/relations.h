@@ -99,6 +99,8 @@ RELATION(nam_indices, rel_indices, ODS_8_0, rel_persistent)
 	FIELD(f_idx_exp_blr, nam_exp_blr, fld_value, 1, ODS_8_0)
 	FIELD(f_idx_exp_source, nam_exp_source, fld_source, 1, ODS_8_0)
 	FIELD(f_idx_statistics, nam_statistics, fld_statistics, 1, ODS_8_0)
+	FIELD(f_idx_cond_blr, nam_cond_blr, fld_value, 1, ODS_13_1)
+	FIELD(f_idx_cond_source, nam_cond_source, fld_source, 1, ODS_13_1)
 END_RELATION
 
 // Relation 5 (RDB$RELATION_FIELDS)
