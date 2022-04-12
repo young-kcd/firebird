@@ -2925,6 +2925,7 @@ DmlNode* ExecProcedureNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 {
 	SET_TDBB(tdbb);
 
+	const auto blrStartPos = csb->csb_blr_reader.getPos();
 	jrd_prc* procedure = NULL;
 	QualifiedName name;
 
@@ -2957,6 +2958,25 @@ DmlNode* ExecProcedureNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 
 	if (!procedure)
 		PAR_error(csb, Arg::Gds(isc_prcnotdef) << Arg::Str(name.toString()));
+	else
+	{
+		if (procedure->isImplemented() && !procedure->isDefined())
+		{
+			if (tdbb->getAttachment()->isGbak() || (tdbb->tdbb_flags & TDBB_replicator))
+			{
+				PAR_warning(
+					Arg::Warning(isc_prcnotdef) << Arg::Str(name.toString()) <<
+					Arg::Warning(isc_modnotfound));
+			}
+			else
+			{
+				csb->csb_blr_reader.setPos(blrStartPos);
+				PAR_error(csb,
+					Arg::Gds(isc_prcnotdef) << Arg::Str(name.toString()) <<
+					Arg::Gds(isc_modnotfound));
+			}
+		}
+	}
 
 	ExecProcedureNode* node = FB_NEW_POOL(pool) ExecProcedureNode(pool);
 	node->procedure = procedure;
@@ -3237,8 +3257,8 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, Request* request) cons
 	else if (!procedure->isDefined())
 	{
 		status_exception::raise(
-			Arg::Gds(isc_prcnotdef) <<
-				Arg::Str(procedure->getName().toString()));
+			Arg::Gds(isc_prcnotdef) << Arg::Str(procedure->getName().toString()) <<
+			Arg::Gds(isc_modnotfound));
 	}
 
 	const_cast<jrd_prc*>(procedure.getObject())->checkReload(tdbb);
