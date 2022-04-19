@@ -559,18 +559,19 @@ static lck_owner_t get_owner_type(enum lck_t lock_type)
 	case LCK_tpc_init:
 	case LCK_tpc_block:
 	case LCK_repl_state:
+
+	case LCK_rel_exist:
+	case LCK_idx_exist:
+	case LCK_prc_exist:
+	case LCK_fun_exist:
+	case LCK_tt_exist:
 		owner_type = LCK_OWNER_database;
 		break;
 
 	case LCK_attachment:
-	case LCK_rel_exist:
 	case LCK_rel_partners:
 	case LCK_rel_rescan:
-	case LCK_idx_exist:
 	case LCK_expression:
-	case LCK_prc_exist:
-	case LCK_fun_exist:
-	case LCK_tt_exist:
 	case LCK_page_space:
 	case LCK_relation:
 	case LCK_tra:
@@ -1584,3 +1585,75 @@ Lock* Lock::detach()
 
 	return next;
 }
+
+/**************************************
+ *      Someone is trying to drop an object. If there
+ *      are outstanding interests in the existence of
+ *      that object then just mark as blocking and return.
+ *      Otherwise, mark the object as not locked
+ *      and release the existence lock.
+ *
+ **************************************/
+void ExistenceLock::blockingAst()
+{
+	AsyncContextHolder tdbb(lck->lck_dbb, FB_FUNCTION);
+
+	MutexLockGuard g(mutex, FB_FUNCTION);
+
+	unsigned fl = (flags |= unlocking);
+	if (fl & count == 0)
+	{
+		if (fl & locked)
+			LCK_release(tdbb, lck);
+		flags &= ~(locked | unlocking | blocking);
+	}
+	else
+	{
+		flags |= blocking;
+		flags &= ~unlocking;
+	}
+}
+
+void ExistenceLock::enter245(thread_db* tdbb)
+{
+	Firebird::MutexLockGuard g(mutex, FB_FUNCTION);
+
+	unsigned fl = flags;
+	fb_assert(fl & count > 0);
+
+	if (!(fl & locked))
+	{
+		LCK_lock(tdbb, lck, LCK_SR, LCK_WAIT);
+
+		if (object)
+		{
+			Arg::StatusVector v;
+			if (!object->checkObject(tdbb, v))
+			{
+				LCK_release(tdbb, lck);
+				ERR_post(v);
+			}
+		}
+
+		flags |= locked;
+	}
+}
+
+void ExistenceLock::leave245(thread_db* tdbb, bool force)
+{
+	Firebird::MutexLockGuard g(mutex, FB_FUNCTION);
+	unsigned fl = (flags |= unlocking);
+	fb_assert(fl & locked);
+
+	if (((fl & count == 0) && (fl & blocking)) | force)
+	{
+		fb_assert(fl & locked);
+		LCK_release(tdbb, lck);			// repost ??????????????
+		if (object)
+			object->afterUnlock(tdbb);
+		flags &= ~(locked | unlocking);
+	}
+	else
+		flags &= ~unlocking;
+}
+

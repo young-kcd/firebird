@@ -3056,13 +3056,9 @@ static void cleanup_index_creation(thread_db* tdbb, DeferredWork* work, jrd_tra*
 				}
 				else if (tree_exists)
 				{
-					IndexLock* const idx_lock = CMP_get_index_lock(tdbb, relation.unsafePointer(), work->dfw_id);
-
+					HazardPtr<IndexLock> idx_lock = relation->getIndexLock(tdbb, work->dfw_id);
 					if (idx_lock)
-					{
-						if (!--idx_lock->idl_count)
-							LCK_release(tdbb, idx_lock->idl_lock);
-					}
+						idx_lock->idl_lock.leave245(tdbb, true);
 				}
 			}
 
@@ -4532,7 +4528,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
  * Functional description
  *
  **************************************/
-	IndexLock* index = NULL;
+	HazardPtr<IndexLock> index;
 
 	SET_TDBB(tdbb);
 
@@ -4564,12 +4560,9 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 	switch (phase)
 	{
 	case 0:
-		index = CMP_get_index_lock(tdbb, relation.unsafePointer(), id);
+		index = relation->getIndexLock(tdbb, id);
 		if (index)
-		{
-			if (!index->idl_count)
-				LCK_release(tdbb, index->idl_lock);
-		}
+			index->idl_lock.releaseLock(tdbb);
 		return false;
 
 	case 1:
@@ -4586,52 +4579,44 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 		// will remains 1 and will be decremented by IDX_delete_index at
 		// phase 4
 
-		index = CMP_get_index_lock(tdbb, relation.unsafePointer(), id);
+		index = relation->getIndexLock(tdbb, id);
 		if (index)
 		{
+			MutexLockGuard g(index->idl_lock.mutex, FB_FUNCTION);
+
 			// take into account lock probably used by temp index instance
-			bool temp_lock_released = false;
-			if (isTempIndex && (index->idl_count == 1))
+
+			if (isTempIndex && (index->idl_lock.getUseCount() == 1))
 			{
 				index_desc idx;
-				if (BTR_lookup(tdbb, relation.unsafePointer(), id, &idx, relPages))
+				if (BTR_lookup(tdbb, relation.getPointer(), id, &idx, relPages))
 				{
-					index->idl_count--;
-					LCK_release(tdbb, index->idl_lock);
-					temp_lock_released = true;
+					index->idl_lock.dec(tdbb);
+					index->idl_lock.leave245(tdbb);
 				}
 			}
 
 			// Try to clear trigger cache to release lock
-			if (index->idl_count)
+			if (index->idl_lock.getUseCount())
 				MetadataCache::clear_cache(tdbb);
 
 			if (!isTempIndex)
 			{
-				if (index->idl_count ||
-					!LCK_lock(tdbb, index->idl_lock, LCK_EX, transaction->getLockWait()))
+				if (!index->idl_lock.exLock(tdbb))
+					//!LCK_lock(tdbb, index->idl_lock, LCK_EX, transaction->getLockWait()))
 				{
-					// restore lock used by temp index instance
-					if (temp_lock_released)
-					{
-						LCK_lock(tdbb, index->idl_lock, LCK_SR, LCK_WAIT);
-						index->idl_count++;
-					}
-
 					raiseObjectInUseError("INDEX", arg->dfw_name);
 				}
-				index->idl_count++;
 			}
 		}
 
 		return true;
 
 	case 4:
-		index = CMP_get_index_lock(tdbb, relation.unsafePointer(), id);
+		index = relation->getIndexLock(tdbb, id);
 		if (isTempIndex && index)
-			index->idl_count++;
-		IDX_delete_index(tdbb, relation.unsafePointer(), id);
-
+			index->idl_lock.inc(tdbb);
+		IDX_delete_index(tdbb, relation.getPointer(), id);
 		if (isTempIndex)
 			return false;
 
@@ -4660,30 +4645,17 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 		if (index)
 		{
-			/* in order for us to have gotten the lock in phase 3
-			* idl_count HAD to be 0, therefore after having incremented
-			* it for the exclusive lock it would have to be 1.
-			* IF now it is NOT 1 then someone else got a lock to
-			* the index and something is seriously wrong */
-			fb_assert(index->idl_count == 1);
-			if (!--index->idl_count)
+			if (index->idl_lock.hasExLock(tdbb))
 			{
 				// Release index existence lock and memory.
+				fb_assert(relation->rel_index_locks.load(tdbb, index->idl_id) == index);
 
-				for (IndexLock** ptr = &relation->rel_index_locks; *ptr; ptr = &(*ptr)->idl_next)
-				{
-					if (*ptr == index)
-					{
-						*ptr = index->idl_next;
-						break;
-					}
-				}
-				if (index->idl_lock)
-				{
-					LCK_release(tdbb, index->idl_lock);
-					delete index->idl_lock;
-				}
-				delete index;
+				HazardPtr<IndexLock> arrVal = index;
+				if (!relation->rel_index_locks.replace(tdbb, index->idl_id, arrVal, nullptr))
+					ERR_post(Arg::Gds(isc_random) << "Index block gone unexpestedly");
+				fb_assert(!arrVal);
+				index->idl_lock.releaseLock(tdbb);
+				index->delayedDelete(tdbb);
 
 				// Release index refresh lock and memory.
 
@@ -4784,7 +4756,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 
 		if (relation->rel_existence_lock && !(relation->rel_flags & REL_deleted))
 		{
-			LCK_convert(tdbb, relation->rel_existence_lock, LCK_SR, transaction->getLockWait());
+			relation->rel_existence_lock->unlock(tdbb);
 		}
 
 		if (relation->rel_flags & REL_deleting)
@@ -4825,6 +4797,12 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 		if (!relation)
 			return false;
 
+		if (!relation->rel_existence_lock)
+			ERR_post(Arg::Gds(isc_no_meta_update) <<
+					 Arg::Gds(isc_no_delete) << // Msg353: can not delete
+					 Arg::Gds(isc_table_name) << work->dfw_name <<
+					 Arg::Gds(isc_random) << "An attempt to delete system relation");
+
 		check_dependencies(tdbb, work->dfw_name.c_str(), NULL, NULL,
 			(relation->isView() ? obj_view : obj_relation), transaction);
 		return true;
@@ -4837,34 +4815,37 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 
 		// Let relation be deleted if only this transaction is using it
 
-		adjusted = false;
-		if (relation->rel_use_count == 1)
-		{
-			for (rsc = transaction->tra_resources.begin(); rsc < transaction->tra_resources.end();
-				rsc++)
+		{ // guardian scope
+			// ?????????? MutexLockGuard g(dbb->dbb_mdc->mdc_use_mutex, FB_FUNCTION);
+
+			adjusted = false;
+			if (relation->rel_existence_lock->getUseCount() == 1)
 			{
-				if (rsc->rsc_rel == relation)
+				for (auto rsc : transaction->tra_resources.getObjects(Resource::rsc_relation))
 				{
-					--relation->rel_use_count;
-					adjusted = true;
-					break;
+					if (rsc->rsc_rel == relation)
+					{
+						relation->rel_existence_lock->dec(tdbb);
+						adjusted = true;
+						break;
+					}
 				}
 			}
+
+			if (relation->rel_existence_lock->getUseCount())
+				MetadataCache::clear_cache(tdbb);
+
+			if (relation->rel_existence_lock->exLock(tdbb))
+				/////// ??????? !LCK_convert(tdbb, relation->rel_existence_lock, LCK_EX, transaction->getLockWait())))
+			{
+				if (adjusted)
+					relation->rel_existence_lock->inc(tdbb);
+
+				raiseRelationInUseError(relation);
+			}
+
+			fb_assert(relation->rel_existence_lock->getUseCount() == 0);
 		}
-
-		if (relation->rel_use_count)
-			MetadataCache::clear_cache(tdbb);
-
-		if (relation->rel_use_count || (relation->rel_existence_lock &&
-			!LCK_convert(tdbb, relation->rel_existence_lock, LCK_EX, transaction->getLockWait())))
-		{
-			if (adjusted)
-				++relation->rel_use_count;
-
-			raiseRelationInUseError(relation);
-		}
-
-		fb_assert(!relation->rel_use_count);
 
 		// Flag relation delete in progress so that active sweep or
 		// garbage collector threads working on relation can skip over it
@@ -4949,9 +4930,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 		END_FOR
 
 		// Release relation locks
-		if (relation->rel_existence_lock) {
-			LCK_release(tdbb, relation->rel_existence_lock);
-		}
+		relation->rel_existence_lock->releaseLock(tdbb);
 		if (relation->rel_partners_lock) {
 			LCK_release(tdbb, relation->rel_partners_lock);
 		}

@@ -31,6 +31,7 @@
 #define JRD_COLLATION_H
 
 #include "../common/TextType.h"
+#include "../jrd/HazardPtr.h"
 
 
 namespace Jrd {
@@ -38,10 +39,11 @@ namespace Jrd {
 class Lock;
 class BaseSubstringSimilarMatcher;
 
-class Collation : public TextType
+class Collation : public TextType, public HazardObject
 {
 public:
 	static Collation* createInstance(MemoryPool& pool, TTYPE_ID id, texttype* tt, USHORT attributes, CharSet* cs);
+	typedef const char* Key;
 
 protected:
 	Collation(TTYPE_ID id, texttype *a_tt, USHORT a_attributes, CharSet* a_cs)
@@ -81,6 +83,11 @@ public:
 	void destroy(thread_db* tdbb);
 	void incUseCount(thread_db* tdbb);
 	void decUseCount(thread_db* tdbb);
+
+	bool hasData()
+	{
+		return true;
+	}
 
 public:
 	int useCount;

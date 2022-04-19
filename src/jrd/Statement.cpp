@@ -89,7 +89,7 @@ Statement::Statement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 		accessList = csb->csb_access;
 		externalList = csb->csb_external;
 		mapFieldInfo.takeOwnership(csb->csb_map_field_info);
-		resources = csb->csb_resources; // Assign array contents
+		resources.transferResources(tdbb, csb->csb_resources);
 		impureSize = csb->csb_impure;
 
 		//if (csb->csb_g_flags & csb_blr_version4)
@@ -99,7 +99,7 @@ Statement::Statement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 		// Take out existence locks on resources used in statement. This is
 		// a little complicated since relation locks MUST be taken before
 		// index locks.
-
+/*	to be moved to transferResources()
 		for (Resource* resource = resources.begin(); resource != resources.end(); ++resource)
 		{
 			switch (resource->rsc_type)
@@ -153,7 +153,7 @@ Statement::Statement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 					BUGCHECK(219);		// msg 219 request of unknown resource
 			}
 		}
-
+*/
 		// make a vector of all used RSEs
 		fors = csb->csb_fors;
 
@@ -479,16 +479,16 @@ void Statement::verifyAccess(thread_db* tdbb)
 			switch (item->exa_action)
 			{
 				case ExternalAccess::exa_insert:
-					verifyTriggerAccess(tdbb, relation.unsafePointer(), relation->rel_pre_store, userName);
-					verifyTriggerAccess(tdbb, relation.unsafePointer(), relation->rel_post_store, userName);
+					verifyTriggerAccess(tdbb, relation, relation->rel_pre_store, userName);
+					verifyTriggerAccess(tdbb, relation, relation->rel_post_store, userName);
 					break;
 				case ExternalAccess::exa_update:
-					verifyTriggerAccess(tdbb, relation.unsafePointer(), relation->rel_pre_modify, userName);
-					verifyTriggerAccess(tdbb, relation.unsafePointer(), relation->rel_post_modify, userName);
+					verifyTriggerAccess(tdbb, relation, relation->rel_pre_modify, userName);
+					verifyTriggerAccess(tdbb, relation, relation->rel_post_modify, userName);
 					break;
 				case ExternalAccess::exa_delete:
-					verifyTriggerAccess(tdbb, relation.unsafePointer(), relation->rel_pre_erase, userName);
-					verifyTriggerAccess(tdbb, relation.unsafePointer(), relation->rel_post_erase, userName);
+					verifyTriggerAccess(tdbb, relation, relation->rel_pre_erase, userName);
+					verifyTriggerAccess(tdbb, relation, relation->rel_post_erase, userName);
 					break;
 				default:
 					fb_assert(false);
@@ -608,6 +608,9 @@ void Statement::release(thread_db* tdbb)
 
 	// Release existence locks on references.
 
+	resources.releaseResources(tdbb);
+
+/* move to releaseResources()
 	for (Resource* resource = resources.begin(); resource != resources.end(); ++resource)
 	{
 		switch (resource->rsc_type)
@@ -649,6 +652,7 @@ void Statement::release(thread_db* tdbb)
 				break;
 		}
 	}
+*/
 
 	for (Request** instance = requests.begin(); instance != requests.end(); ++instance)
 		EXE_release(tdbb, *instance);
@@ -683,7 +687,7 @@ string Statement::getPlan(thread_db* tdbb, bool detailed) const
 }
 
 // Check that we have enough rights to access all resources this list of triggers touches.
-void Statement::verifyTriggerAccess(thread_db* tdbb, jrd_rel* ownerRelation,
+void Statement::verifyTriggerAccess(thread_db* tdbb, const HazardPtr<jrd_rel>& ownerRelation,
 	TrigVector* triggers, MetaName userName)
 {
 	if (!triggers)

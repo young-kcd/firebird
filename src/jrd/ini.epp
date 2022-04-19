@@ -257,7 +257,8 @@ void INI_format(const char* owner, const char* charset)
 	{
 		if (relfld[RFLD_R_TYPE] == rel_persistent)
 		{
-			DPM_create_relation(tdbb, MetadataCache::findRelation(tdbb, relfld[RFLD_R_ID]).unsafePointer());
+			auto rel = MetadataCache::findRelation(tdbb, relfld[RFLD_R_ID]);
+			DPM_create_relation(tdbb, rel.getPointer());
 		}
 
 		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
@@ -949,7 +950,7 @@ static void add_index_set(thread_db* tdbb)
 	for (int n = 0; n < SYSTEM_INDEX_COUNT; n++)
 	{
 		const ini_idx_t* index = &indices[n];
-		HazardPtr<jrd_rel> relation = MetadataCache::findRelation(tdbb, index->ini_idx_relid);
+		auto relation = MetadataCache::findRelation(tdbb, index->ini_idx_relid);
 
 		MetaName indexName;
 		indexName.printf("RDB$INDEX_%d", index->ini_idx_index_id);
@@ -993,7 +994,7 @@ static void add_index_set(thread_db* tdbb)
 			idx.idx_flags = index->ini_idx_flags;
 			SelectivityList selectivity(*tdbb->getDefaultPool());
 
-			IDX_create_index(tdbb, relation.unsafePointer(), &idx, indexName.c_str(), NULL,
+			IDX_create_index(tdbb, relation.getPointer(), &idx, indexName.c_str(), NULL,
 				attachment->getSysTransaction(), selectivity);
 
 			X.RDB$INDEX_ID = idx.idx_id + 1;

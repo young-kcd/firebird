@@ -95,6 +95,11 @@ public:
 	BYTE getCanonicalWidth() const;
 	USHORT getFlags() const;
 
+	const char* c_name() const
+	{
+		return name.c_str();
+	}
+
 public:
 	Firebird::MetaString name;
 

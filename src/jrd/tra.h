@@ -278,8 +278,8 @@ public:
 	SavNumber tra_save_point_number;	// next save point number to use
 	ULONG tra_flags;
 	DeferredJob*	tra_deferred_job;	// work deferred to commit time
-	ResourceList tra_resources;			// resource existence list
-	Firebird::StringMap tra_context_vars; // Context variables for the transaction
+	PermanentResourceList tra_resources;	// resource existence list
+	Firebird::StringMap tra_context_vars;	// Context variables for the transaction
 	traRpbList* tra_rpblist;			// active record_param's of given transaction
 	UCHAR tra_use_count;				// use count for safe AST delivery
 	UCHAR tra_callback_count;			// callback count for 'execute statement'

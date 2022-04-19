@@ -527,7 +527,7 @@ void Applier::insertRecord(thread_db* tdbb, TraNumber traNum,
 	if (!rel)
 		raiseError("Table %s is not found", relName.c_str());
 
-	const auto relation = rel.unsafePointer();
+	const auto relation = rel.getPointer();
 	if (!(relation->rel_flags & REL_scanned))
 		MET_scan_relation(tdbb, relation);
 
@@ -662,7 +662,7 @@ void Applier::updateRecord(thread_db* tdbb, TraNumber traNum,
 	const auto rel = MetadataCache::lookup_relation(tdbb, relName);
 	if (!rel)
 		raiseError("Table %s is not found", relName.c_str());
-	const auto relation = rel.unsafePointer();
+	const auto relation = rel.getPointer();
 
 	if (!(relation->rel_flags & REL_scanned))
 		MET_scan_relation(tdbb, relation);
@@ -803,7 +803,7 @@ void Applier::deleteRecord(thread_db* tdbb, TraNumber traNum,
 	const auto rel = MetadataCache::lookup_relation(tdbb, relName);
 	if (!rel)
 		raiseError("Table %s is not found", relName.c_str());
-	const auto relation = rel.unsafePointer();
+	const auto relation = rel.getPointer();
 
 	if (!(relation->rel_flags & REL_scanned))
 		MET_scan_relation(tdbb, relation);
@@ -1180,10 +1180,9 @@ void Applier::doInsert(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 					{
 						const auto blob = current->bli_blob_object;
 						fb_assert(blob);
-						blob->blb_relation = relation;
 						blob->blb_sub_type = desc.getBlobSubType();
 						blob->blb_charset = desc.getCharSet();
-						blobId->set_permanent(relation->rel_id, DPM_store_blob(tdbb, blob, record));
+						blobId->set_permanent(relation->rel_id, DPM_store_blob(tdbb, blob, relation, record));
 						current->bli_materialized = true;
 						current->bli_blob_id = *blobId;
 						transaction->tra_blobs->fastRemove();
@@ -1276,10 +1275,9 @@ void Applier::doUpdate(thread_db* tdbb, record_param* orgRpb, record_param* newR
 						{
 							const auto blob = current->bli_blob_object;
 							fb_assert(blob);
-							blob->blb_relation = relation;
 							blob->blb_sub_type = desc.getBlobSubType();
 							blob->blb_charset = desc.getCharSet();
-							dstBlobId->set_permanent(relation->rel_id, DPM_store_blob(tdbb, blob, newRecord));
+							dstBlobId->set_permanent(relation->rel_id, DPM_store_blob(tdbb, blob, relation, newRecord));
 							current->bli_materialized = true;
 							current->bli_blob_id = *dstBlobId;
 							transaction->tra_blobs->fastRemove();

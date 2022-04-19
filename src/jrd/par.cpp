@@ -97,6 +97,9 @@ namespace
 				m_csb->csb_g_flags |= flags;
 			}
 
+			if (relation)
+				m_csb->csb_resources.checkResource(Resource::rsc_relation, relation);
+
 			// If there is a request ptr, this is a trigger.  Set up contexts 0 and 1 for
 			// the target relation
 
@@ -538,7 +541,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, dsc* desc, ItemInfo* item
 			{
 				CompilerScratch::Dependency dependency(obj_relation);
 				HazardPtr<jrd_rel> rel = MetadataCache::lookup_relation(tdbb, *relationName);
-				dependency.relation = rel.unsafePointer();		// !!!!!!!!!!!!!!!!!!!!
+				dependency.relation = csb->csb_resources.registerResource(tdbb, Resource::rsc_relation, rel, rel->rel_id);
 				dependency.subName = fieldName;
 				csb->csb_dependencies.push(dependency);
 			}

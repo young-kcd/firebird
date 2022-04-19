@@ -389,4 +389,42 @@ void jrd_prc::clearCache(thread_db* tdbb)
 }
 
 
+void Routine::adjust_dependencies()
+{
+	if (intUseCount == -1)
+	{
+		// Already processed
+		return;
+	}
+
+	intUseCount = -1; // Mark as undeletable
+
+	if (getStatement())
+	{
+		// Loop over procedures from resource list of request
+		for (auto resource : getStatement()->resources.getObjects(Resource::rsc_procedure))
+		{
+			auto routine = resource->rsc_routine;
+
+			if (routine->intUseCount == routine->useCount)
+			{
+				// Mark it and all dependent procedures as undeletable
+				routine->adjust_dependencies();
+			}
+		}
+
+		for (auto resource : getStatement()->resources.getObjects(Resource::rsc_function))
+		{
+			auto routine = resource->rsc_routine;
+
+			if (routine->intUseCount == routine->useCount)
+			{
+				// Mark it and all dependent functions as undeletable
+				routine->adjust_dependencies();
+			}
+		}
+	}
+}
+
+
 }	// namespace Jrd

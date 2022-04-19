@@ -24,6 +24,8 @@
 #ifndef JRD_MET_H
 #define JRD_MET_H
 
+#include "../jrd/HazardPtr.h"
+
 #include "../jrd/Relation.h"
 #include "../jrd/Function.h"
 
@@ -31,7 +33,7 @@
 #include "../jrd/irq.h"
 #include "../jrd/drq.h"
 
-#include "../jrd/HazardPtr.h"
+#include "../jrd/Collation.h"
 
 // Record types for record summary blob records
 
@@ -138,9 +140,11 @@ const int TRIGGER_COMBINED_MAX	= 128;
 #include "../jrd/obj.h"
 #include "../dsql/sym.h"
 
-class CharSetContainer;
+struct SubtypeInfo;
 
 namespace Jrd {
+
+class CharSetContainer;
 
 // Procedure block
 
@@ -235,8 +239,61 @@ enum IndexStatus
 	MET_object_unknown
 };
 
+class CharSet;
+
+class CharSetContainer : public HazardObject
+{
+public:
+	typedef const char* Key;
+
+	CharSetContainer(MemoryPool& p, USHORT cs_id, const SubtypeInfo* info);
+
+	void release(thread_db* tdbb)
+	{
+		for (auto coll : charset_collations)
+		{
+			if (coll)
+				coll->release(tdbb);
+		}
+	}
+
+	void destroy(thread_db* tdbb)
+	{
+		cs->destroy();
+		for (auto coll : charset_collations)
+		{
+			if (coll)
+				coll->destroy(tdbb);
+		}
+	}
+
+	CharSet* getCharSet() { return cs; }
+
+	HazardPtr<Collation> lookupCollation(thread_db* tdbb, USHORT tt_id);
+	void unloadCollation(thread_db* tdbb, USHORT tt_id);
+
+	CsConvert lookupConverter(thread_db* tdbb, CHARSET_ID to_cs);
+
+	static HazardPtr<CharSetContainer> lookupCharset(thread_db* tdbb, USHORT ttype);
+	static Lock* createCollationLock(thread_db* tdbb, USHORT ttype, void* object = NULL);
+
+	bool hasData()
+	{
+		return true;
+	}
+
+private:
+	static bool lookupInternalCharSet(USHORT id, SubtypeInfo* info);
+
+private:
+	HazardArray<Collation> charset_collations;
+	CharSet* cs;
+};
+
 class MetadataCache : public Firebird::PermanentStorage
 {
+	friend class CharSetContainer;
+
 	class Generator : public HazardObject
 	{
 	public:
@@ -379,19 +436,19 @@ public:
 		mdc_generators.store(tdbb, id, genObj);
 	}
 
-	CharSetContainer* getCharSet(USHORT id)
+	HazardPtr<CharSetContainer> getCharSet(thread_db* tdbb, USHORT id)
 	{
-		if (id >= mdc_charsets.getCount())
-			return nullptr;
-		return mdc_charsets[id];
+		HazardPtr<CharSetContainer> rc;
+		mdc_charsets.load(tdbb, id, rc);
+		return rc;
 	}
 
-	void setCharSet(USHORT id, CharSetContainer* cs)
+	void setCharSet(thread_db* tdbb, USHORT id, CharSetContainer* cs)
 	{
-		if (id >= mdc_charsets.getCount())
-			mdc_charsets.grow(id + 10);
+		if (id >= mdc_charsets.getCount(tdbb))
+			mdc_charsets.grow(tdbb, id + 10);
 
-		mdc_charsets[id] = cs;
+		mdc_charsets.store(tdbb, id, cs);
 	}
 
 	// former met_proto.h
@@ -416,16 +473,20 @@ public:
 	static HazardPtr<jrd_prc> findProcedure(thread_db* tdbb, USHORT id, bool noscan, USHORT flags);
     static HazardPtr<jrd_rel> findRelation(thread_db* tdbb, USHORT id);
 	static bool get_char_coll_subtype(thread_db* tdbb, USHORT* id, const UCHAR* name, USHORT length);
-	static bool resolve_charset_and_collation(thread_db* tdbb, USHORT* id,
+	bool resolve_charset_and_collation(thread_db* tdbb, USHORT* id,
 											  const UCHAR* charset, const UCHAR* collation);
 	static DSqlCacheItem* get_dsql_cache_item(thread_db* tdbb, sym_type type, const QualifiedName& name);
 	static void dsql_cache_release(thread_db* tdbb, sym_type type, const MetaName& name, const MetaName& package = "");
 	static bool dsql_cache_use(thread_db* tdbb, sym_type type, const MetaName& name, const MetaName& package = "");
 	// end of met_proto.h
+	static bool checkRelation(thread_db* tdbb, jrd_rel* relation);
 
 private:
-	HazardArray<jrd_rel>			mdc_relations;			// relations
-	HazardArray<jrd_prc>			mdc_procedures;			// scanned procedures
+	static void inc_int_use_count(Statement* statement);
+	static void inc_int_use_count(TrigVector* vector);
+
+	HazardArray<jrd_rel>			mdc_relations;
+	HazardArray<jrd_prc>			mdc_procedures;
 	TrigVectorPtr					mdc_triggers[DB_TRIGGER_MAX];
 	TrigVectorPtr					mdc_ddl_triggers;
 	HazardArray<Function>			mdc_functions;			// User defined functions
@@ -434,11 +495,14 @@ private:
 	Firebird::Array<Statement*>	mdc_internal;				// internal statements
 	Firebird::Array<Statement*>	mdc_dyn_req;				// internal dyn statements
 
-	Firebird::Array<CharSetContainer*>	mdc_charsets;		// intl character set descriptions
+	HazardArray<CharSetContainer>	mdc_charsets;			// intl character set descriptions
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
-		MetaName, USHORT> > > mdc_charset_ids;	// Character set ids
+		MetaName, USHORT> > > mdc_charset_ids;				// Character set ids
 
-	Firebird::Mutex mdc_db_triggers_mutex;					// Also used for load DDL triggers
+public:
+	Firebird::Mutex mdc_db_triggers_mutex,					// Also used for load DDL triggers
+					mdc_use_mutex,							// Everything related with use counters
+					mdc_charset_mutex;						// Protects mdc_charset_ids
 };
 
 } // namespace Jrd

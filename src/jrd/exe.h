@@ -38,6 +38,7 @@
 #include "../jrd/MetaName.h"
 #include "../common/classes/fb_pair.h"
 #include "../common/classes/NestConst.h"
+#include "../common/classes/Bits.h"
 
 #include "iberror.h"
 
@@ -52,6 +53,8 @@
 #include "../common/classes/BlrReader.h"
 #include "../dsql/Nodes.h"
 #include "../dsql/Visitors.h"
+
+#include "../jrd/Resource.h"
 
 // This macro enables DSQL tracing code
 //#define CMP_DEBUG
@@ -137,47 +140,243 @@ struct impure_agg_sort
 };
 
 
-// Request resources
+// Resources lists
 
-struct Resource
+
+class ResourceList
 {
-	enum rsc_s
-	{
-		rsc_relation,
-		rsc_procedure,
-		rsc_index,
-		rsc_collation,
-		rsc_function
-	};
+public:
+	typedef Firebird::SortedArray<Resource, Firebird::EmptyStorage<Resource>,
+		Resource, Firebird::DefaultKeyValue<Resource>, Resource> InternalResourceList;
 
-	rsc_s		rsc_type;
-	USHORT		rsc_id;			// Id of the resource
-	jrd_rel*	rsc_rel;		// Relation block
-	Routine*	rsc_routine;	// Routine block
-	Collation*	rsc_coll;		// Collation block
+	ResourceList(MemoryPool& p)
+		: list(p)
+	{ }
 
-	static bool greaterThan(const Resource& i1, const Resource& i2)
+	template <typename T>
+	void checkResource(Jrd::Resource::rsc_s type, T* object, USHORT id = 0)
 	{
-		// A few places of the engine depend on fact that rsc_type
-		// is the first field in ResourceList ordering
-		if (i1.rsc_type != i2.rsc_type)
-			return i1.rsc_type > i2.rsc_type;
-		if (i1.rsc_type == rsc_index)
-		{
-			// Sort by relation ID for now
-			if (i1.rsc_rel->rel_id != i2.rsc_rel->rel_id)
-				return i1.rsc_rel->rel_id > i2.rsc_rel->rel_id;
-		}
-		return i1.rsc_id > i2.rsc_id;
+		Resource r(type, type == Resource::rsc_index ? id : object->getId(), object);
+		if (!list.exist(r))
+			raiseNotRegistered(type, object->c_name());
 	}
 
-	Resource(rsc_s type, USHORT id, jrd_rel* rel, Routine* routine, Collation* coll)
-		: rsc_type(type), rsc_id(id), rsc_rel(rel), rsc_routine(routine), rsc_coll(coll)
-	{ }
+protected:
+	InternalResourceList list;
+
+	void raiseNotRegistered [[noreturn]] (Resource::rsc_s type, const char* name);
 };
 
-typedef Firebird::SortedArray<Resource, Firebird::EmptyStorage<Resource>,
-	Resource, Firebird::DefaultKeyValue<Resource>, Resource> ResourceList;
+class PermanentResourceList;
+
+class HazardResourceList : public ResourceList
+{
+	friend class PermanentResourceList;
+
+public:
+	HazardResourceList(MemoryPool& p)
+		: ResourceList(p), hazardFlag(true)
+	{ }
+
+	~HazardResourceList()
+	{
+		dehazardPointers(nullptr);
+	}
+
+	template <typename T>
+	T* registerResource(thread_db* tdbb, Resource::rsc_s type, const HazardPtr<T>& object, USHORT id)
+	{
+		fb_assert(type != Resource::rsc_index);
+
+		T* ptr = object.getPointer();
+		Resource r(type, id, ptr);
+		FB_SIZE_T pos;
+		if (!list.find(r, pos))
+		{
+			list.insert(pos, r);
+			HazardPtr<T>::getHazardDelayed(tdbb)->add(ptr);
+		}
+
+		return ptr;
+	}
+
+	template <typename T>
+	void postResource(thread_db* tdbb, Resource::rsc_s type, T* ptr, USHORT id)
+	{
+		Resource r(type, id, ptr);
+		FB_SIZE_T pos;
+
+		if (type == Resource::rsc_index)
+		{
+			Resource r1 = r;
+			r1.rsc_id = r1.rsc_rel->rel_id;
+			r1.rsc_type = Resource::rsc_relation;
+
+			if (!list.find(r1, pos))
+				raiseNotRegistered(type, ptr->c_name());
+
+			if (!list.find(r, pos))
+				list.insert(pos, r);
+		}
+
+		else if (!list.find(r, pos))
+			raiseNotRegistered(type, ptr->c_name());
+
+		list[pos].rsc_state = Resource::State::Posted;
+	}
+
+	template <typename T>
+	void checkResource(Jrd::Resource::rsc_s type, T* object, USHORT id = 0)
+	{
+		Resource r(type, type == Resource::rsc_index ? id : object->getId(), object);
+		if (!list.exist(r))
+			raiseNotRegistered(type, object->c_name());
+	}
+
+private:
+	InternalResourceList list;
+	bool hazardFlag;
+
+	void raiseNotRegistered [[noreturn]] (Resource::rsc_s type, const char* name);
+	void dehazardPointers(thread_db* tdbb);
+};
+
+class PermanentResourceList : public ResourceList
+{
+public:
+	PermanentResourceList(MemoryPool& p)
+		: ResourceList(p)
+	{ }
+
+	typedef Firebird::Bits<Resource::rsc_MAX> ResourceTypes;
+	typedef Firebird::HalfStaticArray<FB_SIZE_T, 128> NewResources;
+
+	void transferResources(thread_db* tdbb, PermanentResourceList& from, ResourceTypes rt, NewResources& nr);
+	void transferResources(thread_db* tdbb, const HazardResourceList& from);
+
+	void postResource(Resource::rsc_s type, const jrd_rel* resource, USHORT id);
+	void releaseResources(thread_db* tdbb);
+
+	void inc_int_use_count();
+	void zero_int_use_count();
+	void markUndeletable();
+
+	Resource* get(FB_SIZE_T n)
+	{
+		return &list[n];
+	}
+
+	Resource* getPointer(Resource::rsc_s type)
+	{
+		FB_SIZE_T pos;
+		Resource temp(type);
+		list.find(temp, pos);
+		return &list[pos];
+	}
+
+	Resource* getPointer(bool last)
+	{
+		return last ? list.end() : list.begin();
+	}
+
+	class iterator
+	{
+	public:
+		Resource* operator*()
+		{
+			return get();
+		}
+
+		Resource* operator->()
+		{
+			return get();
+		}
+
+		iterator& operator++()
+		{
+			++index;
+			return *this;
+		}
+
+		iterator& operator--()
+		{
+			--index;
+			return *this;
+		}
+
+		bool operator==(const iterator& itr) const
+		{
+			return index == itr.index;
+		}
+
+		bool operator!=(const iterator& itr) const
+		{
+			return index != itr.index;
+		}
+
+	private:
+		void* operator new(size_t);
+		void* operator new[](size_t);
+
+	public:
+		iterator(PermanentResourceList* a, Resource::rsc_s type)
+			: index(a->getPointer(type))
+		{ }
+
+		iterator(PermanentResourceList* a, bool last)
+			: index(a->getPointer(last))
+		{ }
+
+		Resource* get()
+		{
+			return index;
+		}
+
+	private:
+		Resource* index;
+	};
+
+	iterator begin()
+	{
+		return iterator(this, false);
+	}
+
+	iterator end()
+	{
+		return iterator(this, true);
+	}
+
+	class Range
+	{
+	public:
+		Range(Resource::rsc_s r, PermanentResourceList* l)
+			: list(l), start(r)
+		{ }
+
+		iterator begin() const
+		{
+			return iterator(list, start);
+		}
+
+		iterator end() const
+		{
+			return iterator(list, Resource::next(start));
+		}
+
+	private:
+		PermanentResourceList* list;
+		Resource::rsc_s start;
+	};
+
+	Range getObjects(Resource::rsc_s type)
+	{
+		return Range(type, this);
+	}
+
+private:
+	void transferList(thread_db* tdbb, const InternalResourceList& from, Resource::State resetState,
+		ResourceTypes rt, NewResources* nr, HazardResourceList* hazardList);
+};
 
 // Access items
 // In case we start to use MetaName with required pool parameter,
@@ -511,7 +710,7 @@ public:
 	ExternalAccessList csb_external;			// Access to outside procedures/triggers to be checked
 	AccessItemList	csb_access;					// Access items to be checked
 	vec<DeclareVariableNode*>*	csb_variables;	// Vector of variables, if any
-	ResourceList	csb_resources;				// Resources (relations and indexes)
+	HazardResourceList	csb_resources;			// Resources (relations and indexes)
 	Firebird::Array<Dependency>	csb_dependencies;	// objects that this statement depends upon			/// !!!!!!!!!!!!!!!!!
 	Firebird::Array<const RecordSource*> csb_fors;	// record sources
 	Firebird::Array<const DeclareLocalTableNode*> csb_localTables;	// local tables

@@ -42,7 +42,6 @@ Jrd::Statement* CMP_compile(Jrd::thread_db* tdbb, const UCHAR* blr, ULONG blrLen
 Jrd::Request* CMP_compile_request(Jrd::thread_db*, const UCHAR* blr, ULONG blrLength, bool internalFlag);
 Jrd::CompilerScratch::csb_repeat* CMP_csb_element(Jrd::CompilerScratch*, StreamType element);
 const Jrd::Format* CMP_format(Jrd::thread_db*, Jrd::CompilerScratch*, StreamType);
-Jrd::IndexLock* CMP_get_index_lock(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
 Jrd::Request* CMP_make_request(Jrd::thread_db*, Jrd::CompilerScratch*, bool);
 Jrd::ItemInfo* CMP_pass2_validation(Jrd::thread_db*, Jrd::CompilerScratch*, const Jrd::Item&);
 
@@ -51,7 +50,6 @@ void CMP_post_access(Jrd::thread_db*, Jrd::CompilerScratch*, const Jrd::MetaName
 					 const Jrd::MetaName& = "");
 
 void CMP_post_procedure_access(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_prc*);
-void CMP_post_resource(Jrd::ResourceList*, void*, Jrd::Resource::rsc_s, USHORT);
 Jrd::RecordSource* CMP_post_rse(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::RseNode*);
 void CMP_release(Jrd::thread_db*, Jrd::Request*);
 

@@ -382,9 +382,8 @@ namespace
 		if (relation->rel_file)
 			return EXT_cardinality(tdbb, relation);
 
-		MetadataCache::post_existence(tdbb, relation);
+		ExistenceGuard g(tdbb, relation->rel_existence_lock);
 		const double cardinality = DPM_cardinality(tdbb, relation, format);
-		MET_release_existence(tdbb, relation);
 
 		return cardinality;
 	}
@@ -3044,9 +3043,9 @@ ValueExprNode* Optimizer::optimizeLikeSimilar(ComparativeBoolNode* cmpNode)
 		return nullptr;
 	}
 
-	TextType* matchTextType = INTL_texttype_lookup(tdbb, INTL_TTYPE(&matchDesc));
+	HazardPtr<TextType> matchTextType = INTL_texttype_lookup(tdbb, INTL_TTYPE(&matchDesc));
 	CharSet* matchCharset = matchTextType->getCharSet();
-	TextType* patternTextType = INTL_texttype_lookup(tdbb, INTL_TTYPE(patternDesc));
+	HazardPtr<TextType> patternTextType = INTL_texttype_lookup(tdbb, INTL_TTYPE(patternDesc));
 	CharSet* patternCharset = patternTextType->getCharSet();
 
 	if (cmpNode->blrOp == blr_like)

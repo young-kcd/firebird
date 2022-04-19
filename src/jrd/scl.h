@@ -26,6 +26,7 @@
 
 #include "../jrd/MetaName.h"
 #include "../common/classes/tree.h"
+#include "../common/classes/Bits.h"
 #include "../common/security.h"
 #include "../jrd/obj.h"
 #include "../jrd/SystemPrivileges.h"
@@ -99,107 +100,7 @@ const USHORT USR_sysdba		= 4;		// User detected as SYSDBA
 class UserId
 {
 public:
-	// Arbitrary size bitmask
-	template <unsigned N>
-	class Bits
-	{
-		static const unsigned shift = 3;
-		static const unsigned bitmask = (1 << shift) - 1;
-
-		static const unsigned L = (N >> shift) + (N & bitmask ? 1 : 0);
-
-	public:
-		static const unsigned BYTES_COUNT = L;
-
-		Bits()
-		{
-			clearAll();
-		}
-
-		Bits(const Bits& b)
-		{
-			assign(b);
-		}
-
-		Bits& operator=(const Bits& b)
-		{
-			assign(b);
-			return *this;
-		}
-
-		Bits& set(unsigned i)
-		{
-			fb_assert(i < N);
-			if (i < N)
-				data[index(i)] |= mask(i);
-			return *this;
-		}
-
-		Bits& setAll()
-		{
-			memset(data, ~0, sizeof data);
-			return *this;
-		}
-
-		Bits& clear(unsigned i)
-		{
-			fb_assert(i < N);
-			if (i < N)
-				data[index(i)] &= ~mask(i);
-			return *this;
-		}
-
-		Bits& clearAll()
-		{
-			memset(data, 0, sizeof data);
-			return *this;
-		}
-
-		bool test(unsigned int i) const
-		{
-			fb_assert(i < N);
-			if (i >= N)
-				return false;
-			return data[index(i)] & mask(i);
-		}
-
-		void load(const void* from)
-		{
-			memcpy(data, from, sizeof data);
-		}
-
-		void store(void* to) const
-		{
-			memcpy(to, data, sizeof data);
-		}
-
-		Bits& operator|=(const Bits& b)
-		{
-			for (unsigned n = 0; n < L; ++n)
-				data[n] |= b.data[n];
-			return *this;
-		}
-
-	private:
-		UCHAR data[L];
-
-		void assign(const Bits& b)
-		{
-			memcpy(data, b.data, sizeof data);
-		}
-
-		static unsigned index(unsigned i)
-		{
-			return i >> shift;
-		}
-
-		static UCHAR mask(unsigned i)
-		{
-			return 1U << (i & bitmask);
-		}
-	};
-
-	typedef Bits<maxSystemPrivilege> Privileges;
+	typedef Firebird::Bits<maxSystemPrivilege> Privileges;
 
 private:
 	Firebird::MetaString	usr_user_name;		// User name

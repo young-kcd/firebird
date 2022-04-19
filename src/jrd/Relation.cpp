@@ -32,8 +32,14 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/vio_debug.h"
+#include "../jrd/ext_proto.h"
+#include "../common/StatusArg.h"
+
+// Pick up relation ids
+#include "../jrd/ini.h"
 
 using namespace Jrd;
+using namespace Firebird;
 
 /// jrd_rel
 
@@ -582,6 +588,22 @@ void jrd_rel::GCExclusive::release()
 	LCK_release(m_tdbb, m_lock);
 }
 
+bool jrd_rel::checkObject(thread_db* tdbb, Arg::StatusVector& error)
+{
+	bool rc = MetadataCache::checkRelation(tdbb, this);
+	if (!rc)
+		error << Arg::Gds(isc_relnotdef) << Arg::Str(rel_name);
+	return rc;
+}
+
+void jrd_rel::afterUnlock(thread_db* tdbb)
+{
+	// release trigger requests
+	releaseTriggers(tdbb, false);
+
+	// close external file
+	EXT_fini(this, true);
+}
 
 /// RelationPages
 
@@ -610,4 +632,40 @@ HazardPtr<Trigger> TrigVector::add(thread_db* tdbb, Trigger* trig)
 	FB_SIZE_T id = addCount.fetch_add(1);
 	return store(tdbb, id, trig);
 }
+
+HazardPtr<IndexLock> jrd_rel::getIndexLock(thread_db* tdbb, USHORT id)
+{
+/**************************************
+ *
+ *	C M P _ g e t _ i n d e x _ l o c k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get index lock block for index.  If one doesn't exist,
+ *	make one.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
+
+	HazardPtr<IndexLock> indexLock;
+	if (rel_id < (USHORT) rel_MAX)
+		return indexLock;
+
+	if (rel_index_locks.load(tdbb, id, indexLock))
+		return indexLock;
+
+	IndexLock* index = FB_NEW_POOL(*rel_pool) IndexLock(*rel_pool, tdbb, this, id);
+	if (!rel_index_locks.replace(tdbb, id, indexLock, index))
+		delete index;
+
+	return indexLock;
+}
+
+IndexLock::IndexLock(MemoryPool& p, thread_db* tdbb, jrd_rel* rel, USHORT id)
+	: idl_relation(rel),
+	  idl_id(id),
+	  idl_lock(p, tdbb, LCK_idx_exist, (rel->rel_id << 16) | id, rel)
+{ }
 

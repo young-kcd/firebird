@@ -66,7 +66,7 @@ public:
 	Firebird::string getPlan(thread_db* tdbb, bool detailed) const;
 
 private:
-	static void verifyTriggerAccess(thread_db* tdbb, jrd_rel* ownerRelation, TrigVector* triggers,
+	static void verifyTriggerAccess(thread_db* tdbb, const HazardPtr<jrd_rel>& ownerRelation, TrigVector* triggers,
 		MetaName userName);
 	static void triggersExternalAccess(thread_db* tdbb, ExternalAccessList& list, TrigVector* tvec, const MetaName &user);
 
@@ -82,7 +82,7 @@ public:
 	Firebird::Array<Request*> requests;	// vector of requests
 	ExternalAccessList externalList;	// Access to procedures/triggers to be checked
 	AccessItemList accessList;			// Access items to be checked
-	ResourceList resources;				// Resources (relations and indices)
+	PermanentResourceList resources;	// Resources (relations and indices)
 	const jrd_prc* procedure;			// procedure, if any
 	const Function* function;			// function, if any
 	MetaName triggerName;		// name of request (trigger), if any

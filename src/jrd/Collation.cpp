@@ -1148,6 +1148,8 @@ void Collation::destroy(thread_db* tdbb)
 
 	delete existenceLock;
 	existenceLock = NULL;
+
+	this->delayedDelete(tdbb);
 }
 
 void Collation::incUseCount(thread_db* /*tdbb*/)

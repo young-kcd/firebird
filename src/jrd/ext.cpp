@@ -577,7 +577,7 @@ void EXT_store(thread_db* tdbb, record_param* rpb)
 }
 
 
-void EXT_tra_attach(ExternalFile* file, jrd_tra*)
+void EXT_tra_attach(ExternalFile* file, jrd_tra*) noexcept
 {
 /**************************************
  *
@@ -594,7 +594,7 @@ void EXT_tra_attach(ExternalFile* file, jrd_tra*)
 	file->ext_tra_cnt++;
 }
 
-void EXT_tra_detach(ExternalFile* file, jrd_tra*)
+void EXT_tra_detach(ExternalFile* file, jrd_tra*) noexcept
 {
 /**************************************
  *

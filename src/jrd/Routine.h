@@ -102,6 +102,7 @@ namespace Jrd
 
 		const QualifiedName& getName() const { return name; }
 		void setName(const QualifiedName& value) { name = value; }
+		const char* c_name() const { return name.c_str(); }
 
 		const MetaName& getSecurityName() const { return securityName; }
 		void setSecurityName(const MetaName& value) { securityName = value; }
@@ -160,6 +161,8 @@ namespace Jrd
 		virtual void releaseExternal()
 		{
 		}
+
+		void adjust_dependencies();
 
 	public:
 		virtual int getObjectType() const = 0;

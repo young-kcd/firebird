@@ -37,7 +37,8 @@ class QualifiedName
 public:
 	QualifiedName(MemoryPool& p, const MetaName& aIdentifier, const MetaName& aPackage)
 		: identifier(p, aIdentifier),
-		  package(p, aPackage)
+		  package(p, aPackage),
+		  tmp(p)
 	{
 	}
 
@@ -49,7 +50,8 @@ public:
 
 	QualifiedName(MemoryPool& p, const MetaName& aIdentifier)
 		: identifier(p, aIdentifier),
-		  package(p)
+		  package(p),
+		  tmp(p)
 	{
 	}
 
@@ -60,7 +62,8 @@ public:
 
 	explicit QualifiedName(MemoryPool& p)
 		: identifier(p),
-		  package(p)
+		  package(p),
+		  tmp(p)
 	{
 	}
 
@@ -70,7 +73,8 @@ public:
 
 	QualifiedName(MemoryPool& p, const QualifiedName& src)
 		: identifier(p, src.identifier),
-		  package(p, src.package)
+		  package(p, src.package),
+		  tmp(p)
 	{
 	}
 
@@ -96,21 +100,31 @@ public:
 	}
 
 public:
-	Firebird::string toString() const
+	Firebird::string& toString() const
 	{
-		Firebird::string s;
+		if (tmp.hasData())
+			return tmp;
+
 		if (package.hasData())
 		{
-			s = package.c_str();
-			s.append(".");
+			tmp = package.c_str();
+			tmp += '.';
 		}
-		s.append(identifier.c_str());
-		return s;
+		tmp += identifier.c_str();
+
+		return tmp;
+	}
+
+	const char* c_str() const
+	{
+		return toString().c_str();
 	}
 
 public:
 	MetaName identifier;
 	MetaName package;
+
+	mutable Firebird::string tmp;
 };
 
 } // namespace Jrd

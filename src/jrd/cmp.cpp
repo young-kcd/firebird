@@ -277,52 +277,6 @@ const Format* CMP_format(thread_db* tdbb, CompilerScratch* csb, StreamType strea
 }
 
 
-IndexLock* CMP_get_index_lock(thread_db* tdbb, jrd_rel* relation, USHORT id)
-{
-/**************************************
- *
- *	C M P _ g e t _ i n d e x _ l o c k
- *
- **************************************
- *
- * Functional description
- *	Get index lock block for index.  If one doesn't exist,
- *	make one.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-
-	DEV_BLKCHK(relation, type_rel);
-
-	if (relation->rel_id < (USHORT) rel_MAX) {
-		return NULL;
-	}
-
-	// for to find an existing block
-
-	for (IndexLock* index = relation->rel_index_locks; index; index = index->idl_next)
-	{
-		if (index->idl_id == id) {
-			return index;
-		}
-	}
-
-	IndexLock* index = FB_NEW_POOL(*relation->rel_pool) IndexLock();
-	index->idl_next = relation->rel_index_locks;
-	relation->rel_index_locks = index;
-	index->idl_relation = relation;
-	index->idl_id = id;
-	index->idl_count = 0;
-
-	Lock* lock = FB_NEW_RPT(*relation->rel_pool, 0) Lock(tdbb, sizeof(SLONG), LCK_idx_exist);
-	index->idl_lock = lock;
-	lock->setKey((relation->rel_id << 16) | id);
-
-	return index;
-}
-
-
 void CMP_post_access(thread_db* tdbb,
 					 CompilerScratch* csb,
 					 const MetaName& security_name,
@@ -363,7 +317,7 @@ void CMP_post_access(thread_db* tdbb,
 }
 
 
-void CMP_post_resource(	ResourceList* rsc_ptr, void* obj, Resource::rsc_s type, USHORT id)
+/*void CMP_post_resource(	ResourceList* rsc_ptr, void* obj, Resource::rsc_s type, USHORT id)
 {
 /**************************************
  *
@@ -374,7 +328,7 @@ void CMP_post_resource(	ResourceList* rsc_ptr, void* obj, Resource::rsc_s type, 
  * Functional description
  *	Post a resource usage to the compiler scratch block.
  *
- **************************************/
+ **************************************
 	// Initialize resource block
 	Resource resource(type, id, NULL, NULL, NULL);
 	switch (type)
@@ -400,7 +354,7 @@ void CMP_post_resource(	ResourceList* rsc_ptr, void* obj, Resource::rsc_s type, 
 	if (!rsc_ptr->find(resource, pos))
 		rsc_ptr->insert(pos, resource);
 }
-
+*/
 
 void CMP_release(thread_db* tdbb, Request* request)
 {

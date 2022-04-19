@@ -561,6 +561,7 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 	// Find relation either by id or by name
 	string* aliasString = NULL;
 	MetaName name;
+	HazardPtr<jrd_rel> rel;
 
 	switch (blrOp)
 	{
@@ -575,7 +576,8 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 				csb->csb_blr_reader.getString(*aliasString);
 			}
 
-			if (!(node->relation = MetadataCache::lookup_relation_id(tdbb, id, false).unsafePointer()))
+			rel = MetadataCache::lookup_relation_id(tdbb, id, false);
+			if (!rel)
 				name.printf("id %d", id);
 			break;
 		}
@@ -591,7 +593,7 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 				csb->csb_blr_reader.getString(*aliasString);
 			}
 
-			node->relation = MetadataCache::lookup_relation(tdbb, name).unsafePointer();
+			rel = MetadataCache::lookup_relation(tdbb, name);
 			break;
 		}
 
@@ -599,8 +601,12 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 			fb_assert(false);
 	}
 
-	if (!node->relation)
+	if (!rel)
 		PAR_error(csb, Arg::Gds(isc_relnotdef) << Arg::Str(name), false);
+
+	// Store relation in CSB resources and after it - in the node
+
+	node->relation = csb->csb_resources.registerResource(tdbb, Resource::rsc_relation, rel, rel->rel_id);
 
 	// if an alias was passed, store with the relation
 
@@ -745,7 +751,7 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 	const StreamType viewStream = csb->csb_view_stream;
 
 	jrd_rel* relationView = relation;
-	CMP_post_resource(&csb->csb_resources, relationView, Resource::rsc_relation, relationView->rel_id);
+	csb->csb_resources.postResource(tdbb, Resource::rsc_relation, relationView, relationView->rel_id);
 	view = parentView;
 
 	CompilerScratch::csb_repeat* const element = CMP_csb_element(csb, stream);
@@ -892,6 +898,7 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 	jrd_prc* procedure = NULL;
 	string* aliasString = NULL;
 	QualifiedName name;
+	HazardPtr<jrd_prc> proc;
 
 	switch (blrOp)
 	{
@@ -906,7 +913,11 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 				csb->csb_blr_reader.getString(*aliasString);
 			}
 
-			if (!(procedure = MetadataCache::lookup_procedure_id(tdbb, pid, false, false, 0).unsafePointer()))
+			proc = MetadataCache::lookup_procedure_id(tdbb, pid, false, false, 0);
+			if (proc)
+				procedure = csb->csb_resources.registerResource(tdbb, Resource::rsc_procedure, proc, proc->getId());
+
+			if (!procedure)
 				name.identifier.printf("id %d", pid);
 			break;
 		}
@@ -944,8 +955,11 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 				}
 			}
 			else
-				procedure = MetadataCache::lookup_procedure(tdbb, name, false).unsafePointer();
-
+			{
+				HazardPtr<jrd_prc> proc = MetadataCache::lookup_procedure(tdbb, name, false);
+				if (proc)
+					procedure = csb->csb_resources.registerResource(tdbb, Resource::rsc_procedure, proc, proc->getId());
+			}
 			break;
 
 		default:
@@ -1133,7 +1147,8 @@ ProcedureSourceNode* ProcedureSourceNode::copy(thread_db* tdbb, NodeCopier& copi
 		newSource->procedure = procedure;
 	else
 	{
-		newSource->procedure = MetadataCache::lookup_procedure_id(tdbb, procedureId, false, false, 0).unsafePointer();
+		auto proc = MetadataCache::lookup_procedure_id(tdbb, procedureId, false, false, 0);
+		newSource->procedure = copier.csb->csb_resources.registerResource(tdbb, Resource::rsc_procedure, proc, proc->getId());
 		if (!newSource->procedure)
 		{
 			string name;
@@ -1193,7 +1208,7 @@ void ProcedureSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, Rse
 	if (!isSubRoutine)
 	{
 		CMP_post_procedure_access(tdbb, csb, procedure);
-		CMP_post_resource(&csb->csb_resources, procedure, Resource::rsc_procedure, procedureId);
+		csb->csb_resources.postResource(tdbb, Resource::rsc_procedure, procedure, procedureId);
 	}
 
 	jrd_rel* const parentView = csb->csb_view;

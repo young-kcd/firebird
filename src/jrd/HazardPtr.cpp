@@ -186,3 +186,14 @@ HazardDelayedDelete::HazardPointers* HazardDelayedDelete::getHazardPointers()
 	// as long as we access our own hazard pointers single relaxed load is OK
 	return hazardPointers.writeAccessor();
 }
+
+bool CacheObject::checkObject(thread_db*, Arg::StatusVector&)
+{
+	return true;
+}
+
+void CacheObject::afterUnlock(thread_db* tdbb)
+{
+	// do nothing
+}
+

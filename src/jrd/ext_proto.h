@@ -43,7 +43,7 @@ void	EXT_modify(Jrd::record_param*, Jrd::record_param*, Jrd::jrd_tra*);
 void	EXT_open(Jrd::Database*, Jrd::ExternalFile*);
 void	EXT_store(Jrd::thread_db*, Jrd::record_param*);
 
-void EXT_tra_attach(Jrd::ExternalFile*, Jrd::jrd_tra*);
-void EXT_tra_detach(Jrd::ExternalFile*, Jrd::jrd_tra*);
+void EXT_tra_attach(Jrd::ExternalFile*, Jrd::jrd_tra*) noexcept;
+void EXT_tra_detach(Jrd::ExternalFile*, Jrd::jrd_tra*) noexcept;
 
 #endif // JRD_EXT_PROTO_H

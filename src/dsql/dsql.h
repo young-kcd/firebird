@@ -527,12 +527,12 @@ public:
 		return *this;
 	}
 
-	Firebird::string getObjectName() const
+	const char* getObjectName() const
 	{
 		if (ctx_relation)
 			return ctx_relation->rel_name.c_str();
 		if (ctx_procedure)
-			return ctx_procedure->prc_name.toString();
+			return ctx_procedure->prc_name.c_str();
 		return "";
 	}
 

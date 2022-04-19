@@ -139,50 +139,7 @@ static INTL_BOOL lookup_texttype(texttype* tt, const SubtypeInfo* info);
 static GlobalPtr<Mutex> createCollationMtx;
 
 // Classes and structures used internally to this file and intl implementation
-class CharSetContainer
-{
-public:
-	CharSetContainer(MemoryPool& p, USHORT cs_id, const SubtypeInfo* info);
-
-	void release(thread_db* tdbb)
-	{
-		for (FB_SIZE_T i = 0; i < charset_collations.getCount(); i++)
-		{
-			if (charset_collations[i])
-				charset_collations[i]->release(tdbb);
-		}
-	}
-
-	void destroy(thread_db* tdbb)
-	{
-		cs->destroy();
-		for (FB_SIZE_T i = 0; i < charset_collations.getCount(); i++)
-		{
-			if (charset_collations[i])
-				charset_collations[i]->destroy(tdbb);
-		}
-	}
-
-	CharSet* getCharSet() { return cs; }
-
-	Collation* lookupCollation(thread_db* tdbb, USHORT tt_id);
-	void unloadCollation(thread_db* tdbb, USHORT tt_id);
-
-	CsConvert lookupConverter(thread_db* tdbb, CHARSET_ID to_cs);
-
-	static CharSetContainer* lookupCharset(thread_db* tdbb, USHORT ttype);
-	static Lock* createCollationLock(thread_db* tdbb, USHORT ttype, void* object = NULL);
-
-private:
-	static bool lookupInternalCharSet(USHORT id, SubtypeInfo* info);
-
-private:
-	Firebird::Array<Collation*> charset_collations;
-	CharSet* cs;
-};
-
-
-CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
+HazardPtr<CharSetContainer> CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
 {
 /**************************************
  *
@@ -212,7 +169,7 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
 	if (id == CS_dynamic)
 		id = tdbb->getCharSet();
 
-	CharSetContainer* cs = dbb->dbb_mdc->getCharSet(id);
+	HazardPtr<CharSetContainer> cs = dbb->dbb_mdc->getCharSet(tdbb, id);
 
 	// allocate a new character set object if we couldn't find one.
 	if (!cs)
@@ -221,8 +178,9 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
 
 		if (lookupInternalCharSet(id, &info) || MET_get_char_coll_subtype_info(tdbb, id, &info))
 		{
-			cs = FB_NEW_POOL(*dbb->dbb_permanent) CharSetContainer(*dbb->dbb_permanent, id, &info);
-			dbb->dbb_mdc->setCharSet(id, cs);
+			CharSetContainer* csc = FB_NEW_POOL(*dbb->dbb_permanent) CharSetContainer(*dbb->dbb_permanent, id, &info);
+			dbb->dbb_mdc->setCharSet(tdbb, id, csc);
+			cs = dbb->dbb_mdc->getCharSet(tdbb, id);
 		}
 		else
 			ERR_post(Arg::Gds(isc_text_subtype) << Arg::Num(ttype));
@@ -330,38 +288,28 @@ CsConvert CharSetContainer::lookupConverter(thread_db* tdbb, CHARSET_ID toCsId)
 	return CsConvert(cs->getStruct(), toCs->getStruct());
 }
 
-Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
+HazardPtr<Collation> CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 {
 	const USHORT id = TTYPE_TO_COLLATION(tt_id);
 
-	if (id < charset_collations.getCount() && charset_collations[id] != NULL)
+	HazardPtr<Collation> coll;
+	if (charset_collations.load(tdbb, id, coll))
 	{
-		if (!charset_collations[id]->obsolete)
-			return charset_collations[id];
+		if (!coll->obsolete)
+			return coll;
 	}
 
 	CheckoutLockGuard guard(tdbb, createCollationMtx, FB_FUNCTION); // do we need it ?
 
-	Collation* to_delete = NULL;
-
-	if (id < charset_collations.getCount() && charset_collations[id] != NULL)
+	HazardPtr<Collation> to_delete;
+	if (charset_collations.load(tdbb, id, coll))
 	{
-		if (charset_collations[id]->obsolete)
-		{
-			// if obsolete collation is not used delete it immediately,
-			// else wait until all references are released
-			if (charset_collations[id]->useCount == 0)
-			{
-				charset_collations[id]->destroy(tdbb);
-				delete charset_collations[id];
-			}
-			else
-				to_delete = charset_collations[id];
+		if (!coll->obsolete)
+			return coll;
 
-			charset_collations[id] = NULL;
-		}
-		else
-			return charset_collations[id];
+		to_delete = coll;
+		bool rc = charset_collations.replace(tdbb, id, coll, nullptr);
+		fb_assert(rc);
 	}
 
 	SubtypeInfo info;
@@ -393,8 +341,8 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 															  Arg::Str(info.charsetName));
 		}
 
-		if (charset_collations.getCount() <= id)
-			charset_collations.grow(id + 1);
+		if (charset_collations.getCount(tdbb) <= id)
+			charset_collations.grow(tdbb, id + 1);
 
 		fb_assert((tt->texttype_canonical_width == 0 && tt->texttype_fn_canonical == NULL) ||
 				  (tt->texttype_canonical_width != 0 && tt->texttype_fn_canonical != NULL));
@@ -411,28 +359,32 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 			}
 		}
 
-		charset_collations[id] = Collation::createInstance(*att->att_pool, tt_id, tt, info.attributes, charset);
-		charset_collations[id]->name = info.collationName;
+		Collation* coll = Collation::createInstance(*att->att_pool, tt_id, tt, info.attributes, charset);
+		coll->name = info.collationName;
 
 		// we don't need a lock in the charset
 		if (id != 0)
 		{
-			Lock* lock = charset_collations[id]->existenceLock =
-				CharSetContainer::createCollationLock(tdbb, tt_id, charset_collations[id]);
+			coll->existenceLock = CharSetContainer::createCollationLock(tdbb, tt_id, coll);
 
-			fb_assert(charset_collations[id]->useCount == 0);
-			fb_assert(!charset_collations[id]->obsolete);
+			fb_assert(coll->useCount == 0);
+			fb_assert(!coll->obsolete);
+		}
 
-			LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
+		charset_collations.store(tdbb, id, coll);
+
+		if (id != 0)
+		{
+			LCK_lock(tdbb, coll->existenceLock, LCK_SR, LCK_WAIT);
 
 			// as we just obtained SR lock for new collation instance
 			// we could safely delete obsolete instance
 			if (to_delete)
-			{
 				to_delete->destroy(tdbb);
-				delete to_delete;
-			}
 		}
+		//
+		// We did not delete "to_delete" when id == 0. Why??????????????????
+		//
 	}
 	else
 	{
@@ -440,13 +392,12 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 		{
 			LCK_lock(tdbb, to_delete->existenceLock, LCK_SR, LCK_WAIT);
 			to_delete->destroy(tdbb);
-			delete to_delete;
 		}
 
 		ERR_post(Arg::Gds(isc_text_subtype) << Arg::Num(tt_id));
 	}
 
-	return charset_collations[id];
+	return coll;
 }
 
 
@@ -455,32 +406,33 @@ void CharSetContainer::unloadCollation(thread_db* tdbb, USHORT tt_id)
 	const USHORT id = TTYPE_TO_COLLATION(tt_id);
 	fb_assert(id != 0);
 
-	if (id < charset_collations.getCount() && charset_collations[id] != NULL)
+	HazardPtr<Collation> coll;
+	if (charset_collations.load(tdbb, id, coll))
 	{
-		if (charset_collations[id]->useCount != 0)
+		MutexLockGuard g(tdbb->getDatabase()->dbb_mdc->mdc_use_mutex, FB_FUNCTION);
+
+		if (coll->useCount != 0)
 		{
 			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_obj_in_use) << Arg::Str(charset_collations[id]->name));
+					 Arg::Gds(isc_obj_in_use) << Arg::Str(coll->name));
 		}
 
-		fb_assert(charset_collations[id]->existenceLock);
+		fb_assert(coll->existenceLock);
 
-		if (!charset_collations[id]->obsolete)
+		if (!coll->obsolete)
 		{
-			LCK_convert(tdbb, charset_collations[id]->existenceLock, LCK_EX, LCK_WAIT);
-			charset_collations[id]->obsolete = true;
-			LCK_release(tdbb, charset_collations[id]->existenceLock);
+			LCK_convert(tdbb, coll->existenceLock, LCK_EX, LCK_WAIT);
+			coll->obsolete = true;
+			LCK_release(tdbb, coll->existenceLock);
 		}
 	}
 	else
 	{
 		// signal other processes collation is gone
-		Lock* lock = CharSetContainer::createCollationLock(tdbb, tt_id);
+		AutoPtr<Lock> lock(CharSetContainer::createCollationLock(tdbb, tt_id));
 
 		LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
 		LCK_release(tdbb, lock);
-
-		delete lock;
 	}
 }
 
@@ -495,22 +447,23 @@ static INTL_BOOL lookup_texttype(texttype* tt, const SubtypeInfo* info)
 
 void Jrd::MetadataCache::releaseIntlObjects(thread_db* tdbb)
 {
-	for (FB_SIZE_T i = 0; i < mdc_charsets.getCount(); i++)
+	for (auto cs : mdc_charsets)
 	{
-		if (mdc_charsets[i])
-			mdc_charsets[i]->release(tdbb);
+		if (cs)
+			cs->release(tdbb);
 	}
 }
 
 
 void Jrd::MetadataCache::destroyIntlObjects(thread_db* tdbb)
 {
-	for (FB_SIZE_T i = 0; i < mdc_charsets.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < mdc_charsets.getCount(tdbb); i++)
 	{
-		if (mdc_charsets[i])
+		HazardPtr<CharSetContainer> cs;
+		if (mdc_charsets.load(tdbb, i, cs))
 		{
-			mdc_charsets[i]->destroy(tdbb);
-			mdc_charsets[i] = NULL;
+			cs->destroy(tdbb);
+			mdc_charsets.store(tdbb, i, nullptr);
 		}
 	}
 }
@@ -654,7 +607,7 @@ int INTL_compare(thread_db* tdbb, const dsc* pText1, const dsc* pText2, ErrorFun
 		}
 	}
 
-	TextType* obj = INTL_texttype_lookup(tdbb, compare_type);
+	HazardPtr<TextType> obj = INTL_texttype_lookup(tdbb, compare_type);
 
 	return obj->compare(length1, p1, length2, p2);
 }
@@ -770,7 +723,7 @@ CsConvert INTL_convert_lookup(thread_db* tdbb, CHARSET_ID to_cs, CHARSET_ID from
 	fb_assert(from_cs != CS_dynamic);
 	fb_assert(to_cs != CS_dynamic);
 
-	CharSetContainer* charset = CharSetContainer::lookupCharset(tdbb, from_cs);
+	HazardPtr<CharSetContainer> charset = CharSetContainer::lookupCharset(tdbb, from_cs);
 
 	return charset->lookupConverter(tdbb, to_cs);
 }
@@ -1053,7 +1006,7 @@ USHORT INTL_key_length(thread_db* tdbb, USHORT idxType, USHORT iLength)
 		key_length = iLength;
 	else
 	{
-		TextType* obj = INTL_texttype_lookup(tdbb, ttype);
+		HazardPtr<TextType> obj = INTL_texttype_lookup(tdbb, ttype);
 		key_length = obj->key_length(iLength);
 	}
 
@@ -1091,12 +1044,12 @@ CharSet* INTL_charset_lookup(thread_db* tdbb, USHORT parm1)
  *      <never>         - if error
  *
  **************************************/
-	CharSetContainer *cs = CharSetContainer::lookupCharset(tdbb, parm1);
-	return cs->getCharSet();
+	HazardPtr<CharSetContainer> csc = CharSetContainer::lookupCharset(tdbb, parm1);
+	return csc->getCharSet();
 }
 
 
-Collation* INTL_texttype_lookup(thread_db* tdbb, USHORT parm1)
+HazardPtr<Collation> INTL_texttype_lookup(thread_db* tdbb, USHORT parm1)
 {
 /**************************************
  *
@@ -1123,7 +1076,7 @@ Collation* INTL_texttype_lookup(thread_db* tdbb, USHORT parm1)
 	if (parm1 == ttype_dynamic)
 		parm1 = MAP_CHARSET_TO_TTYPE(tdbb->getCharSet());
 
-	CharSetContainer* csc = CharSetContainer::lookupCharset(tdbb, parm1);
+	HazardPtr<CharSetContainer> csc = CharSetContainer::lookupCharset(tdbb, parm1);
 
 	return csc->lookupCollation(tdbb, parm1);
 }
@@ -1143,7 +1096,7 @@ void INTL_texttype_unload(thread_db* tdbb, USHORT ttype)
  **************************************/
 	SET_TDBB(tdbb);
 
-	CharSetContainer* csc = CharSetContainer::lookupCharset(tdbb, ttype);
+	HazardPtr<CharSetContainer> csc = CharSetContainer::lookupCharset(tdbb, ttype);
 	if (csc)
 		csc->unloadCollation(tdbb, ttype);
 }
@@ -1281,7 +1234,7 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 		outlen = (dest - pByte->dsc_address);
 		break;
 	default:
-		TextType* obj = INTL_texttype_lookup(tdbb, ttype);
+		HazardPtr<Collation> obj = INTL_texttype_lookup(tdbb, ttype);
 		outlen = obj->string_to_key(len, src, pByte->dsc_length, dest, key_type);
 		break;
 	}

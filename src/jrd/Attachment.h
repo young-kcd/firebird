@@ -62,8 +62,6 @@ namespace Replication
 	class TableMatcher;
 }
 
-class CharSetContainer;
-
 namespace Jrd
 {
 	class thread_db;

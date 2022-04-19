@@ -33,6 +33,8 @@
 #endif
 
 #include "../jrd/Attachment.h"
+#include "../jrd/Resource.h"
+#include "../common/classes/auto.h"
 
 namespace Jrd {
 
@@ -169,6 +171,177 @@ public:
 	{
 		lck_key.key_long = value;
 	}
+};
+
+} // namespace Jrd
+
+void	LCK_assert(Jrd::thread_db*, Jrd::Lock*);
+bool	LCK_cancel_wait(Jrd::Attachment*);
+bool	LCK_convert(Jrd::thread_db*, Jrd::Lock*, USHORT, SSHORT);
+bool	LCK_convert_opt(Jrd::thread_db*, Jrd::Lock*, USHORT);
+void	LCK_downgrade(Jrd::thread_db*, Jrd::Lock*);
+void	LCK_fini(Jrd::thread_db*, Jrd::lck_owner_t);
+void	LCK_init(Jrd::thread_db*, Jrd::lck_owner_t);
+bool	LCK_lock(Jrd::thread_db*, Jrd::Lock*, USHORT, SSHORT);
+bool	LCK_lock_opt(Jrd::thread_db*, Jrd::Lock*, USHORT, SSHORT);
+LOCK_DATA_T LCK_query_data(Jrd::thread_db*, Jrd::lck_t, USHORT);
+LOCK_DATA_T LCK_read_data(Jrd::thread_db*, Jrd::Lock*);
+void	LCK_release(Jrd::thread_db*, Jrd::Lock*);
+void	LCK_re_post(Jrd::thread_db*, Jrd::Lock*);
+void	LCK_write_data(Jrd::thread_db*, Jrd::Lock*, LOCK_DATA_T);
+
+
+namespace Jrd {
+
+	//	fb_assert(tdbb->getDatabase()->dbb_mdc->mdc_use_mutex.locked());
+	//	fb_assert(!tdbb->getAttachment()->isSystem());
+
+class ExistenceLock
+{
+public:
+	ExistenceLock(MemoryPool& p, thread_db* tdbb, lck_t type, SLONG key, CacheObject* obj)
+		: lck(FB_NEW_RPT(p, 0) Lock(tdbb, sizeof(SLONG), type, this, ast)),
+		  flags(0),
+		  object(obj)
+	{
+		lck->setKey(key);
+	}
+
+	Resource::State inc(thread_db* tdbb)
+	{
+		unsigned fl = ++flags;
+		fb_assert(!(fl & countChk));
+
+		return (fl & locked) && !(fl & unlocking) ? Resource::State::Locked : Resource::State::Counted;
+	}
+
+	// make sure we have SH existence lock
+	void enter245(thread_db* tdbb);
+
+	Resource::State dec(thread_db* tdbb)
+	{
+		unsigned fl = --flags;
+		fb_assert(((fl + 1) & count) > 0);
+
+		return (fl & count == 0) && (fl & blocking) ? Resource::State::Unlocking : Resource::State::Posted;
+	}
+
+	// release shared lock if needed (or unconditionally when forced set)
+	void leave245(thread_db* tdbb, bool force = false);
+
+	unsigned getUseCount()
+	{
+		return flags & count;
+	}
+
+	bool exLock(thread_db* tdbb);							// Take exclusive lock
+	bool hasExLock(thread_db* tdbb);						// Is object locked exclusively?
+	void unlock(thread_db* tdbb);							// Release exclusive lock
+			// LCK_convert(tdbb, relation->rel_existence_lock, LCK_SR, transaction->getLockWait());
+	void releaseLock(thread_db* tdbb);						// Release all locks
+
+private:
+	static int ast(void* self)
+	{
+		reinterpret_cast<ExistenceLock*>(self)->blockingAst();
+		return 0;
+	}
+
+	void blockingAst();
+
+public:
+	Firebird::Mutex mutex;
+
+private:
+	Firebird::AutoPtr<Lock> lck;
+	std::atomic<unsigned> flags;
+	CacheObject* object;
+
+	static const unsigned count =		0x00FFFFFF;
+	static const unsigned countChk =	0x01000000;
+	static const unsigned exclusive =	0x04000000;
+	static const unsigned unlocking =	0x20000000;
+	static const unsigned locked =		0x40000000;
+	static const unsigned blocking =	0x80000000;
+};
+
+class ExistenceGuard
+{
+public:
+	ExistenceGuard(thread_db* t, ExistenceLock& l)
+		: tdbb(t), lck(&l)
+	{
+		init();
+	}
+
+	ExistenceGuard(thread_db* t, ExistenceLock* l)
+		: tdbb(t), lck(l)
+	{
+		init();
+	}
+
+	~ExistenceGuard()
+	{
+		if (lck && (lck->dec(tdbb) == Resource::State::Unlocking))
+			lck->leave245(tdbb);
+	}
+
+private:
+	thread_db* tdbb;
+	ExistenceLock* lck;
+
+	void init()
+	{
+		if (lck && lck->inc(tdbb) != Resource::State::Locked)
+			lck->enter245(tdbb);
+	}
+};
+
+class AutoLock
+{
+public:
+	explicit AutoLock(thread_db* tdbb, Lock* lck = NULL)
+		: m_tdbb(tdbb),
+		  m_lock(lck)
+	{
+	}
+
+	~AutoLock()
+	{
+		release();
+	}
+
+	void release()
+	{
+		if (m_lock)
+		{
+			if (m_lock->lck_id)
+				LCK_release(m_tdbb, m_lock);
+			delete m_lock;
+			m_lock = NULL;
+		}
+	}
+
+	Lock* operator-> ()
+	{
+		return m_lock;
+	}
+
+	operator Lock* ()
+	{
+		return m_lock;
+	}
+
+	Lock* operator= (Lock* lck)
+	{
+		release();
+		m_lock = lck;
+		return m_lock;
+	}
+
+private:
+	thread_db* m_tdbb;
+	Lock* m_lock;
 };
 
 } // namespace Jrd

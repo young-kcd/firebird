@@ -1627,11 +1627,9 @@ void Validation::walk_database()
 			VAL_debug_level = 2;
 #endif
 		HazardPtr<jrd_rel> relation = mdc->getRelation(vdr_tdbb, i);
+		ExistenceGuard g(vdr_tdbb, relation->rel_existence_lock);
 
-		if (relation && relation->rel_flags & REL_check_existence)
-			relation = MetadataCache::lookup_relation_id(vdr_tdbb, i, false);
-
-		if (relation)
+		if (MetadataCache::checkRelation(vdr_tdbb, relation.getPointer()))
 		{
 			// Can't validate system relations online as they could be modified
 			// by system transaction which not acquires relation locks
@@ -1660,7 +1658,7 @@ void Validation::walk_database()
 			output("%s\n", relName.c_str());
 
 			int errs = vdr_errors;
-			walk_relation(relation.unsafePointer());
+			walk_relation(relation.getPointer());
 			errs = vdr_errors - errs;
 
 			if (!errs)

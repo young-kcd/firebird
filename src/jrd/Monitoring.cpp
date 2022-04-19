@@ -653,7 +653,7 @@ RecordBuffer* SnapshotData::allocBuffer(thread_db* tdbb, MemoryPool& pool, int r
 	MET_scan_relation(tdbb, relation);
 	fb_assert(relation->isVirtual());
 
-	const Format* const format = MET_current(tdbb, relation.unsafePointer());
+	const Format* const format = MET_current(tdbb, relation.getPointer());
 	fb_assert(format);
 
 	RecordBuffer* const buffer = FB_NEW_POOL(pool) RecordBuffer(pool, format);

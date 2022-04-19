@@ -327,13 +327,37 @@ struct frgn
 	vec<int>* frgn_indexes;
 };
 
+
+// Index lock block
+
+class IndexLock : public CacheObject
+{
+public:
+	typedef USHORT Key;
+
+	IndexLock(MemoryPool& p, thread_db* tdbb, jrd_rel* rel, USHORT id);
+
+	~IndexLock()
+	{
+		fb_assert(idl_lock.getUseCount() == 0);
+	}
+
+	jrd_rel*			idl_relation;	// Parent relation
+	USHORT				idl_id;			// Index id
+	ExistenceLock		idl_lock;		// Lock block
+
+	bool hasData() { return true; }
+};
+
+
 // Relation block; one is created for each relation referenced
 // in the database, though it is not really filled out until
 // the relation is scanned
 
-class jrd_rel : public HazardObject
+class jrd_rel : public CacheObject
 {
 	typedef Firebird::HalfStaticArray<Record*, 4> GCRecordList;
+	typedef HazardArray<IndexLock, 2> IndexLockList;
 
 public:
 	typedef MetaName Key;
@@ -358,24 +382,24 @@ public:
 
 	GCRecordList	rel_gc_records;		// records for garbage collection
 
-	USHORT		rel_use_count;			// requests compiled with relation
 	USHORT		rel_sweep_count;		// sweep and/or garbage collector threads active
 	SSHORT		rel_scan_count;			// concurrent sequential scan count
 
-	Lock*		rel_existence_lock;		// existence lock, if any
+	Firebird::AutoPtr<ExistenceLock>	rel_existence_lock;		// existence lock, if any
 	Lock*		rel_partners_lock;		// partners lock
 	Lock*		rel_rescan_lock;		// lock forcing relation to be scanned
 	Lock*		rel_gc_lock;			// garbage collection lock
-	IndexLock*	rel_index_locks;		// index existence locks
-	IndexBlock*	rel_index_blocks;		// index blocks for caching index info
-	TrigVectorPtr	rel_pre_erase; 			// Pre-operation erase trigger
-	TrigVectorPtr	rel_post_erase;			// Post-operation erase trigger
-	TrigVectorPtr	rel_pre_modify;			// Pre-operation modify trigger
-	TrigVectorPtr	rel_post_modify;		// Post-operation modify trigger
-	TrigVectorPtr	rel_pre_store;			// Pre-operation store trigger
-	TrigVectorPtr	rel_post_store;			// Post-operation store trigger
-	prim		rel_primary_dpnds;		// foreign dependencies on this relation's primary key
-	frgn		rel_foreign_refs;		// foreign references to other relations' primary keys
+	IndexLockList	rel_index_locks;	// index existence locks
+	//Firebird::Mutex	rel_mtx_il;			// controls addition & removal of elements
+	IndexBlock*		rel_index_blocks;	// index blocks for caching index info
+	TrigVectorPtr	rel_pre_erase; 		// Pre-operation erase trigger
+	TrigVectorPtr	rel_post_erase;		// Post-operation erase trigger
+	TrigVectorPtr	rel_pre_modify;		// Pre-operation modify trigger
+	TrigVectorPtr	rel_post_modify;	// Post-operation modify trigger
+	TrigVectorPtr	rel_pre_store;		// Pre-operation store trigger
+	TrigVectorPtr	rel_post_store;		// Post-operation store trigger
+	prim			rel_primary_dpnds;	// foreign dependencies on this relation's primary key
+	frgn			rel_foreign_refs;	// foreign references to other relations' primary keys
 	Nullable<bool>	rel_ss_definer;
 
 	TriState	rel_repl_state;			// replication state
@@ -399,6 +423,16 @@ public:
 	RelationPages* getBasePages()
 	{
 		return &rel_pages_base;
+	}
+
+	const char* c_name()
+	{
+		return rel_name.c_str();
+	}
+
+	USHORT getId()
+	{
+		return rel_id;
 	}
 
 	bool	delPages(thread_db* tdbb, TraNumber tran = MAX_TRA_NUMBER, RelationPages* aPages = NULL);
@@ -432,6 +466,9 @@ public:
 
 	void fillPagesSnapshot(RelPagesSnapshot&, const bool AttachmentOnly = false);
 
+	bool checkObject(thread_db* tdbb, Firebird::Arg::StatusVector&);
+	void afterUnlock(thread_db* tdbb);
+
 private:
 	typedef Firebird::SortedArray<
 				RelationPages*,
@@ -458,6 +495,8 @@ public:
 
 	void downgradeGCLock(thread_db* tdbb);
 	bool acquireGCLock(thread_db* tdbb, int wait);
+
+	HazardPtr<IndexLock> getIndexLock(thread_db* tdbb, USHORT id);
 
 	// This guard is used by regular code to prevent online validation while
 	// dead- or back- versions is removed from disk.
@@ -525,8 +564,8 @@ const ULONG REL_gc_lockneed				= 0x80000;	// gc lock should be acquired
 inline jrd_rel::jrd_rel(MemoryPool& p)
 	: rel_pool(&p), rel_flags(REL_gc_lockneed),
 	  rel_name(p), rel_owner_name(p), rel_security_name(p),
-	  rel_view_contexts(p), rel_gc_records(p), rel_ss_definer(false),
-	  rel_pages_base(p)
+	  rel_view_contexts(p), rel_gc_records(p), rel_index_locks(p),
+	  rel_ss_definer(false), rel_pages_base(p)
 {
 }
 

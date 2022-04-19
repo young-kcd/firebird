@@ -47,7 +47,7 @@ void	TRA_init(Jrd::Attachment*);
 void	TRA_invalidate(Jrd::thread_db* tdbb, ULONG);
 void	TRA_link_cursor(Jrd::jrd_tra*, Jrd::DsqlCursor*);
 void	TRA_unlink_cursor(Jrd::jrd_tra*, Jrd::DsqlCursor*);
-void	TRA_post_resources(Jrd::thread_db* tdbb, Jrd::jrd_tra*, Jrd::ResourceList&);
+void	TRA_post_resources(Jrd::thread_db* tdbb, Jrd::jrd_tra*, Jrd::PermanentResourceList&);
 bool	TRA_is_active(Jrd::thread_db*, TraNumber);
 void	TRA_prepare(Jrd::thread_db* tdbb, Jrd::jrd_tra*, USHORT, const UCHAR*);
 Jrd::jrd_tra*	TRA_reconnect(Jrd::thread_db* tdbb, const UCHAR*, USHORT);

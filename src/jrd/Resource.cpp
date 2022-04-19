@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		lck_proto.h
- *	DESCRIPTION:	Prototype header file for lck.cpp
+ *	MODULE:		Resource.cpp
+ *	DESCRIPTION:	Resource used by request / transaction
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -19,13 +19,25 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2001.07.28: Added rse_skip to class RecordSelExpr to support LIMIT.
+ * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
+ *                            exception handling in SPs/triggers,
+ *                            implemented ROWS_AFFECTED system variable
+ * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
+ * 2002.10.29 Nickolay Samofatov: Added support for savepoints
+ * Adriano dos Santos Fernandes
  */
 
-#ifndef JRD_LCK_PROTO_H
-#define JRD_LCK_PROTO_H
 
-#include "../jrd/lck.h"
+#include "firebird.h"
+#include "../jrd/Resource.h"
+#include "../jrd/Relation.h"
 
-// --- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+using namespace Jrd;
 
-#endif // JRD_LCK_PROTO_H
+USHORT Resource::relId() const
+{
+	return rsc_rel ? rsc_rel->rel_id : 0;
+}
+

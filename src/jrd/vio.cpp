@@ -1721,8 +1721,8 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 					HazardPtr<jrd_rel> partner;
 					index_desc idx;
 
-					if ((BTR_lookup(tdbb, r2.unsafePointer(), id - 1, &idx, r2->getBasePages())) &&
-						MET_lookup_partner(tdbb, r2.unsafePointer(), &idx, index_name.nullStr()) &&
+					if ((BTR_lookup(tdbb, r2.getPointer(), id - 1, &idx, r2->getBasePages())) &&
+						MET_lookup_partner(tdbb, r2.getPointer(), &idx, index_name.nullStr()) &&
 						(partner = MetadataCache::lookup_relation_id(tdbb, idx.idx_primary_relation, false)) )
 					{
 						DFW_post_work_arg(transaction, work, 0, partner->rel_id,
@@ -3903,13 +3903,13 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 	// hvlad: restore tdbb->transaction since it can be used later
 	tdbb->setTransaction(transaction);
 
+	HazardPtr<jrd_rel> relation;
+	//???????????????????? vec<jrd_rel*>* vector = NULL;
+
 	record_param rpb;
 	rpb.rpb_record = NULL;
 	rpb.rpb_stream_flags = RPB_s_no_data | RPB_s_sweeper;
 	rpb.getWindow(tdbb).win_flags = WIN_large_scan;
-
-	HazardPtr<jrd_rel> relation;
-	vec<jrd_rel*>* vector = NULL;
 
 	GarbageCollector* gc = dbb->dbb_garbage_collector;
 	bool ret = true;
@@ -3934,11 +3934,11 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 					break;
 				}
 
-				rpb.rpb_relation = relation.unsafePointer();
+				rpb.rpb_relation = relation.getPointer();
 				rpb.rpb_number.setValue(BOF_NUMBER);
 				rpb.rpb_org_scans = relation->rel_scan_count++;
 
-				traceSweep->beginSweepRelation(relation.unsafePointer());
+				traceSweep->beginSweepRelation(relation);
 
 				if (gc) {
 					gc->sweptRelation(transaction->tra_oldest_active, relation->rel_id);
@@ -3958,7 +3958,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 						cache->updateActiveSnapshots(tdbb, &attachment->att_active_snapshots);
 				}
 
-				traceSweep->endSweepRelation(relation.unsafePointer());
+				traceSweep->endSweepRelation();
 
 				--relation->rel_scan_count;
 			}
@@ -4779,6 +4779,7 @@ void Database::garbage_collector(Database* dbb)
 		BackgroundContextHolder tdbb(dbb, attachment, &status_vector, FB_FUNCTION);
 		tdbb->markAsSweeper();
 
+		HazardPtr<jrd_rel> relation;
 		record_param rpb;
 		rpb.getWindow(tdbb).win_flags = WIN_garbage_collector;
 		rpb.rpb_stream_flags = RPB_s_no_data | RPB_s_sweeper;
@@ -4841,7 +4842,7 @@ void Database::garbage_collector(Database* dbb)
 				if ((dbb->dbb_flags & DBB_gc_pending) &&
 					(gc_bitmap = gc->getPages(dbb->dbb_oldest_snapshot, relID)))
 				{
-					HazardPtr<jrd_rel> relation = MetadataCache::lookup_relation_id(tdbb, relID, false);
+					relation = MetadataCache::lookup_relation_id(tdbb, relID, false);
 					if (!relation || (relation->rel_flags & (REL_deleted | REL_deleting)))
 					{
 						delete gc_bitmap;
@@ -4855,7 +4856,7 @@ void Database::garbage_collector(Database* dbb)
 						if (!gcGuard.gcEnabled())
 							continue;
 
-						rpb.rpb_relation = relation.unsafePointer();
+						rpb.rpb_relation = relation.getPointer();
 
 						while (gc_bitmap->getFirst())
 						{

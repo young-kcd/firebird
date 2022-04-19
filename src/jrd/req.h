@@ -534,19 +534,6 @@ const ULONG req_reserved		= 0x800L;		// Request reserved for client
 const ULONG req_update_conflict	= 0x1000L;		// We need to restart request due to update conflict
 const ULONG req_restart_ready	= 0x2000L;		// Request is ready to restart in case of update conflict
 
-
-// Index lock block
-
-class IndexLock : public pool_alloc<type_idl>
-{
-public:
-	IndexLock*	idl_next;		// Next index lock block for relation
-	Lock*		idl_lock;		// Lock block
-	jrd_rel*	idl_relation;	// Parent relation
-	USHORT		idl_id;			// Index id
-	USHORT		idl_count;		// Use count
-};
-
 } //namespace Jrd
 
 #endif // JRD_REQ_H

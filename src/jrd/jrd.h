@@ -935,6 +935,7 @@ namespace Jrd {
 
 		Firebird::Sync m_sync;
 	};
-}
+
+} // namespace Jrd
 
 #endif // JRD_JRD_H

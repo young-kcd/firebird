@@ -123,7 +123,7 @@ namespace Jrd {
 			: HazardBase(copy),
 			  hazardPointer(nullptr)
 		{
-			reset(copy.unsafePointer());
+			reset(copy.getPointer());
 		}
 
 		template <class T2>
@@ -131,7 +131,7 @@ namespace Jrd {
 			: HazardBase(move),
 			  hazardPointer(nullptr)
 		{
-			hazardPointer = move.unsafePointer();
+			hazardPointer = move.getPointer();
 		}
 
 		~HazardPtr()
@@ -139,9 +139,14 @@ namespace Jrd {
 			reset(nullptr);
 		}
 
-		T* unsafePointer() const
+		T* unsafePointer() const		// to be removed
 		{
-			return get();
+			return getPointer();
+		}
+
+		T* getPointer() const
+		{
+			return hazardPointer;
 		}
 
 		void set(const std::atomic<T*>& from)
@@ -151,14 +156,14 @@ namespace Jrd {
 			{
 				reset(v);
 				v = from.load(std::memory_order_acquire);
-			} while (get() != v);
+			} while (hazardPointer != v);
 		}
 
 		// atomically replaces 'where' with 'newVal', using *this as old value for comparison
 		// always sets *this to actual data from 'where'
 		bool replace(std::atomic<T*>* where, T* newVal)
 		{
-			T* val = get();
+			T* val = hazardPointer;
 			bool rc = where->compare_exchange_strong(val, newVal,
 				std::memory_order_release, std::memory_order_acquire);
 			reset(rc ? newVal : val);
@@ -179,7 +184,13 @@ namespace Jrd {
 		{
 			return hazardPointer;
 		}
-
+/*
+		template <typename R>
+		R& operator->*(R T::*mem)
+		{
+			return (this->hazardPointer)->*mem;
+		}
+ */
 		bool operator!() const
 		{
 			return hazardPointer == nullptr;
@@ -223,7 +234,7 @@ namespace Jrd {
 		template <class T2>
 		HazardPtr& operator=(const HazardPtr<T2>& copyAssign)
 		{
-			reset(copyAssign.unsafePointer(), &copyAssign);
+			reset(copyAssign.getPointer(), &copyAssign);
 			return *this;
 		}
 
@@ -233,7 +244,7 @@ namespace Jrd {
 			if (hazardPointer)
 				 remove(hazardPointer);
 			HazardBase::operator=(moveAssign);
-			hazardPointer = moveAssign.unsafePointer();
+			hazardPointer = moveAssign.getPointer();
 			return *this;
 		}
 
@@ -252,11 +263,6 @@ namespace Jrd {
 			}
 		}
 
-		T* get() const
-		{
-			return hazardPointer;
-		}
-
 		T* hazardPointer;
 	};
 
@@ -269,12 +275,18 @@ namespace Jrd {
 	template <typename T, typename T2>
 	bool operator==(const T* v1, const HazardPtr<T2> v2)
 	{
-		return v1 == v2.unsafePointer();
+		return v1 == v2.getPointer();
+	}
+
+	template <typename T>
+	bool operator!=(const T* v1, const HazardPtr<T> v2)
+	{
+		return v2 != v1;
 	}
 
 
 	// Shared read here means that any thread can read from vector using HP.
-	// It can be modified only in single thread, caller must take care modifying thread is single.
+	// It can be modified only in single thread, and it's caller's responsibility that modifying thread is single.
 
 	template <typename T, FB_SIZE_T CAP, bool GC_ENABLED = true>
 	class SharedReadVector : public Firebird::PermanentStorage
@@ -446,14 +458,10 @@ namespace Jrd {
 	}
 
 
-	template <class Object>
+	template <class Object, unsigned SUBARRAY_SHIFT = 8>
 	class HazardArray : public Firebird::PermanentStorage
 	{
-	public:
-		typedef typename Object::Key Key;
-
 	private:
-		static const unsigned SUBARRAY_SHIFT = 8;
 		static const unsigned SUBARRAY_SIZE = 1 << SUBARRAY_SHIFT;
 		static const unsigned SUBARRAY_MASK = SUBARRAY_SIZE - 1;
 
@@ -466,7 +474,7 @@ namespace Jrd {
 			  m_objects(getPool())
 		{}
 
-		SLONG lookup(thread_db* tdbb, const Key& key, HazardPtr<Object>* object = nullptr) const
+		SLONG lookup(thread_db* tdbb, const typename Object::Key& key, HazardPtr<Object>* object = nullptr) const
 		{
 			auto a = m_objects.readAccessor(tdbb);
 			for (FB_SIZE_T i = 0; i < a->getCount(); ++i)
@@ -564,7 +572,7 @@ namespace Jrd {
 
 		void store(thread_db* tdbb, FB_SIZE_T id, const HazardPtr<Object>& val)
 		{
-			store(tdbb, id, val.unsafePointer());
+			store(tdbb, id, val.getPointer());
 		}
 
 		template <class DDS>
@@ -583,6 +591,14 @@ namespace Jrd {
 			}
 
 			return false;
+		}
+
+		template <class DDS>
+		HazardPtr<Object> load(DDS* par, FB_SIZE_T id) const
+		{
+			HazardPtr<Object> val;
+			load(par, id, val);
+			return val;
 		}
 
 		class iterator
@@ -660,6 +676,13 @@ namespace Jrd {
 	private:
 		SharedReadVector<ArrayElement, 4> m_objects;
 		Firebird::Mutex objectsGrowMutex;
+	};
+
+	class CacheObject : public HazardObject
+	{
+	public:
+		virtual bool checkObject(thread_db* tdbb, Firebird::Arg::StatusVector&);
+		virtual void afterUnlock(thread_db* tdbb);
 	};
 
 } // namespace Jrd

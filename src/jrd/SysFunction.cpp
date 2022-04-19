@@ -5667,7 +5667,7 @@ dsc* evlPosition(thread_db* tdbb, const SysFunction* function, const NestValueAr
 
 	// we'll use the collation from the second string
 	const USHORT ttype = value2->getTextType();
-	TextType* tt = INTL_texttype_lookup(tdbb, ttype);
+	HazardPtr<TextType> tt = INTL_texttype_lookup(tdbb, ttype);
 	CharSet* cs = tt->getCharSet();
 	const UCHAR canonicalWidth = tt->getCanonicalWidth();
 
@@ -5851,7 +5851,7 @@ dsc* evlReplace(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	}
 
 	const USHORT ttype = values[0]->getTextType();
-	TextType* tt = INTL_texttype_lookup(tdbb, ttype);
+	HazardPtr<TextType> tt = INTL_texttype_lookup(tdbb, ttype);
 	CharSet* cs = tt->getCharSet();
 	const UCHAR canonicalWidth = tt->getCanonicalWidth();
 

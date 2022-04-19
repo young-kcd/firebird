@@ -533,7 +533,7 @@ void Retrieval::analyzeNavigation(const InversionCandidateList& inversions)
 
 				if (DTYPE_IS_TEXT(desc.dsc_dtype) && desc.dsc_ttype() > ttype_last_internal)
 				{
-					const TextType* const tt = INTL_texttype_lookup(tdbb, desc.dsc_ttype());
+					auto tt = INTL_texttype_lookup(tdbb, desc.dsc_ttype());
 
 					if (idx->idx_flags & idx_unique)
 					{
@@ -762,7 +762,7 @@ void Retrieval::getInversionCandidates(InversionCandidateList& inversions,
 
 					if (iType >= idx_first_intl_string)
 					{
-						TextType* textType = INTL_texttype_lookup(tdbb, INTL_INDEX_TO_TEXT(iType));
+						auto textType = INTL_texttype_lookup(tdbb, INTL_INDEX_TO_TEXT(iType));
 
 						if (textType->getFlags() & TEXTTYPE_SEPARATE_UNIQUE)
 						{
@@ -966,11 +966,12 @@ InversionNode* Retrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 
 	// Check whether this is during a compile or during a SET INDEX operation
 	if (csb)
-		CMP_post_resource(&csb->csb_resources, relation, Resource::rsc_index, idx->idx_id);
+		csb->csb_resources.postResource(tdbb, Resource::rsc_index, relation, idx->idx_id);
 	else
 	{
-		CMP_post_resource(&tdbb->getRequest()->getStatement()->resources, relation,
-			Resource::rsc_index, idx->idx_id);
+		auto& resources = tdbb->getRequest()->getStatement()->resources;
+		resources.checkResource(Resource::rsc_relation, relation);
+		resources.postResource(Resource::rsc_index, relation, idx->idx_id);
 	}
 
 	// For external requests, determine index name (to be reported in plans)

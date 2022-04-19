@@ -1635,3 +1635,194 @@ void AutoRequest::release()
 		request = NULL;
 	}
 }
+
+void HazardResourceList::dehazardPointers(thread_db* tdbb)
+{
+	if (hazardFlag)
+	{
+		// deregister hazard pointers
+		HazardDelayedDelete* hazardDelayed = HazardBase::getHazardDelayed(tdbb);
+
+		for (auto r : list)
+		{
+			void* hazardPointer = nullptr;
+
+			switch (r.rsc_type)
+			{
+			case Resource::rsc_relation:
+				hazardPointer = r.rsc_rel;
+				break;
+
+			case Resource::rsc_index:
+				break;
+
+			case Resource::rsc_procedure:
+			case Resource::rsc_function:
+				hazardPointer = r.rsc_routine;
+				break;
+
+			case Resource::rsc_collation:
+				hazardPointer = r.rsc_coll;
+				break;
+			}
+
+			if (hazardPointer)
+				hazardDelayed->remove(hazardPointer);
+		}
+
+		hazardFlag = false;
+	}
+}
+
+void PermanentResourceList::transferList(thread_db* tdbb, const InternalResourceList& from,
+	Resource::State resetState, ResourceTypes rt, NewResources* nr, HazardResourceList* hazardList)
+{
+	// Copy needed resources
+	FB_SIZE_T pos = 0;
+	for (auto src : from)
+	{
+		if (src.rsc_state == Resource::State::Registered)	// registered but never posted
+			continue;
+
+		if (!rt.test(src.rsc_type))	// skip some types of resources
+			continue;
+
+		while (pos < list.getCount() && src > list[pos])
+			++pos;
+		list.insert(pos, src);
+		nr->push(pos);
+
+		if (resetState != Resource::State::Locked)			// The strongest state
+			list[pos].rsc_state = resetState;
+
+		++pos;							// minor performance optimization
+	}
+
+	// Increase use counters
+	NewResources toLock;
+	{ // scope
+		//MutexEnsureUnlock g(tdbb->getDatabase()->dbb_mdc->mdc_use_mutex, FB_FUNCTION);
+		MutexLockGuard g(tdbb->getDatabase()->dbb_mdc->mdc_use_mutex, FB_FUNCTION);
+		//bool useMutexLocked = false;
+
+		for (auto n : *nr)
+		{
+			Resource& r = list[n];
+			if (r.rsc_state != Resource::State::Posted)	// use count was already increased
+				continue;
+/*
+			// First take care about locking
+			switch (r.rsc_type)
+			{
+			case Resource::rsc_procedure:
+			case Resource::rsc_function:
+				if (!useMutexLocked)
+				{
+					g.enter();
+					useMutexLocked = true;
+				}
+				break;
+
+			default:
+				if (useMutexLocked)
+				{
+					g.leave();
+					useMutexLocked = false;
+				}
+				break;
+			}
+
+			// Next increment counter
+ */			switch (r.rsc_type)
+			{
+			case Resource::rsc_relation:
+				{
+					ExistenceLock* lock = r.rsc_rel->rel_existence_lock;
+					r.rsc_state = lock ? lock->inc(tdbb) : Resource::State::Locked;
+					break;
+				}
+
+			case Resource::rsc_index:
+				{
+					HazardPtr<IndexLock> index = r.rsc_rel->getIndexLock(tdbb, r.rsc_id);
+					r.rsc_state = index ? index->idl_lock.inc(tdbb) : Resource::State::Locked;
+					break;
+				}
+
+			case Resource::rsc_procedure:
+			case Resource::rsc_function:
+				{
+					Routine* routine = r.rsc_routine;
+					routine->addRef();
+
+#ifdef DEBUG_PROCS
+					string buffer;
+					buffer.printf(
+						"Called from Statement::makeRequest:\n\t Incrementing use count of %s\n",
+						routine->getName()->toString().c_str());
+					JRD_print_procedure_info(tdbb, buffer.c_str());
+#endif
+
+					break;
+				}
+
+			case Resource::rsc_collation:
+				{
+					Collation* coll = r.rsc_coll;
+					coll->incUseCount(tdbb);
+					break;
+				}
+
+			default:
+				BUGCHECK(219);		// msg 219 request of unknown resource
+			}
+
+			if (r.rsc_state != Resource::State::Locked)
+				toLock.push(n);
+		}
+	}
+
+	if (hazardList)
+		hazardList->dehazardPointers(tdbb);
+
+	// Now lock not yet locked objects
+	for (auto n : toLock)
+	{
+		Resource& r = list[n];
+
+		if (r.rsc_state != Resource::State::Counted)	// use count was already increased
+			continue;
+
+		ExistenceLock* lock = nullptr;
+
+		switch (r.rsc_type)
+		{
+		case Resource::rsc_relation:
+			lock = r.rsc_rel->rel_existence_lock;
+			break;
+
+		case Resource::rsc_index:
+			lock = &r.rsc_rel->getIndexLock(tdbb, r.rsc_id)->idl_lock;
+			break;
+
+		case Resource::rsc_procedure:
+		case Resource::rsc_function:
+			{
+				Routine* routine = r.rsc_routine;		//!!!!!!!!!!!!!!!!!!!
+
+				break;
+			}
+
+		case Resource::rsc_collation:
+			{
+				Collation* coll = r.rsc_coll;
+
+				break;
+			}
+		}
+
+		if (lock)
+			lock->enter245(tdbb);
+		r.rsc_state = Resource::State::Locked;
+	}
+}

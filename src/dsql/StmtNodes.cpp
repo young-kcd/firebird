@@ -2926,14 +2926,15 @@ DmlNode* ExecProcedureNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 {
 	SET_TDBB(tdbb);
 
-	HazardPtr<jrd_prc> proc;
 	jrd_prc* procedure = NULL;
+	HazardPtr<jrd_prc> proc;
 	QualifiedName name;
 
 	if (blrOp == blr_exec_pid)
 	{
 		const USHORT pid = csb->csb_blr_reader.getWord();
-		if (!(proc = MetadataCache::lookup_procedure_id(tdbb, pid, false, false, 0)))
+		proc = MetadataCache::lookup_procedure_id(tdbb, pid, false, false, 0);
+		if (!proc)
 			name.identifier.printf("id %d", pid);
 	}
 	else
@@ -2958,7 +2959,7 @@ DmlNode* ExecProcedureNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 	}
 
 	if (proc && !procedure)
-		procedure = proc.unsafePointer();
+		procedure = csb->csb_resources.registerResource(tdbb, Resource::rsc_procedure, proc, proc->getId());
 
 	if (!procedure)
 		PAR_error(csb, Arg::Gds(isc_prcnotdef) << Arg::Str(name.toString()));
@@ -3183,7 +3184,7 @@ ExecProcedureNode* ExecProcedureNode::pass1(thread_db* tdbb, CompilerScratch* cs
 	{
 		// Post access to procedure.
 		CMP_post_procedure_access(tdbb, csb, procedure);
-		CMP_post_resource(&csb->csb_resources, procedure, Resource::rsc_procedure, procedure->getId());
+		csb->csb_resources.postResource(tdbb, Resource::rsc_procedure, procedure.getObject(), procedure->getId());
 	}
 
 	doPass1(tdbb, csb, inputSources.getAddress());
@@ -7806,7 +7807,7 @@ bool StoreNode::pass1Store(thread_db* tdbb, CompilerScratch* csb, StoreNode* nod
 
 		if (!relSource)
 		{
-			CMP_post_resource(&csb->csb_resources, relation, Resource::rsc_relation, relation->rel_id);
+			csb->csb_resources.postResource(tdbb, Resource::rsc_relation, relation, relation->rel_id);
 
 			if (!relation->rel_view_rse)
 			{
@@ -7827,7 +7828,7 @@ bool StoreNode::pass1Store(thread_db* tdbb, CompilerScratch* csb, StoreNode* nod
 		{
 			// ASF: This code is responsible to make view's WITH CHECK OPTION to work as constraints.
 
-			CMP_post_resource(&csb->csb_resources, relation, Resource::rsc_relation, relation->rel_id);
+			csb->csb_resources.postResource(tdbb, Resource::rsc_relation, relation, relation->rel_id);
 
 			// Set up the new target stream.
 
@@ -10855,7 +10856,9 @@ static void preprocessAssignments(thread_db* tdbb, CompilerScratch* csb,
 					}
 					else if (relation->rel_view_rse && fld->fld_source_rel_field.first.hasData())
 					{
-						relation = MetadataCache::lookup_relation(tdbb, fld->fld_source_rel_field.first).unsafePointer();
+						HazardPtr<jrd_rel> rel = MetadataCache::lookup_relation(tdbb, fld->fld_source_rel_field.first);
+						relation = rel ? csb->csb_resources.registerResource(tdbb,
+							Resource::rsc_relation, rel, rel->rel_id) : nullptr;
 
 						fb_assert(relation);
 						if (!relation)

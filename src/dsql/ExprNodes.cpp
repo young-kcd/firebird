@@ -3534,8 +3534,9 @@ ValueExprNode* CastNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	// Are we using a collation?
 	if (TTYPE_TO_COLLATION(ttype) != 0)
 	{
-		CMP_post_resource(&csb->csb_resources, INTL_texttype_lookup(tdbb, ttype),
-			Resource::rsc_collation, ttype);
+		Collation* collation = csb->csb_resources.registerResource(tdbb, Resource::rsc_collation,
+			INTL_texttype_lookup(tdbb, ttype), ttype);
+		csb->csb_resources.postResource(tdbb, Resource::rsc_collation, collation, ttype);
 	}
 
 	return this;
@@ -4837,7 +4838,8 @@ DmlNode* DefaultNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	if (csb->csb_g_flags & csb_get_dependencies)
 	{
 		CompilerScratch::Dependency dependency(obj_relation);
-		dependency.relation = MetadataCache::lookup_relation(tdbb, relationName).unsafePointer();
+		auto rel = MetadataCache::lookup_relation(tdbb, relationName);
+		dependency.relation = csb->csb_resources.registerResource(tdbb, Resource::rsc_relation, rel, rel->rel_id);
 		dependency.subName = FB_NEW_POOL(pool) MetaName(fieldName);
 		csb->csb_dependencies.push(dependency);
 	}
@@ -4846,11 +4848,11 @@ DmlNode* DefaultNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 	while (true)
 	{
-		HazardPtr<jrd_rel> relation = MetadataCache::lookup_relation(tdbb, relationName);
+		auto relation = MetadataCache::lookup_relation(tdbb, relationName);
 
 		if (relation && relation->rel_fields)
 		{
-			int fieldId = MET_lookup_field(tdbb, relation.unsafePointer(), fieldName);
+			int fieldId = MET_lookup_field(tdbb, relation.getPointer(), fieldName);
 
 			if (fieldId >= 0)
 			{
@@ -6579,7 +6581,8 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		try
 		{
 			ThreadStatusGuard local_status(tdbb);
-			collation = INTL_texttype_lookup(tdbb, ttype);
+			collation = csb->csb_resources.registerResource(tdbb, Resource::rsc_collation,
+				INTL_texttype_lookup(tdbb, ttype), ttype);
 		}
 		catch (Exception&)
 		{
@@ -6590,7 +6593,7 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		}
 
 		if (collation)
-			CMP_post_resource(&csb->csb_resources, collation, Resource::rsc_collation, ttype);
+			csb->csb_resources.postResource(tdbb, Resource::rsc_collation, collation, ttype);
 	}
 
 	// if this is a modify or store, check REFERENCES access to any foreign keys
@@ -10691,9 +10694,10 @@ dsc* StrCaseNode::execute(thread_db* tdbb, Request* request) const
 	if (request->req_flags & req_null)
 		return NULL;
 
-	TextType* textType = INTL_texttype_lookup(tdbb, value->getTextType());
+	HazardPtr<Collation> textType = INTL_texttype_lookup(tdbb, value->getTextType());
 	CharSet* charSet = textType->getCharSet();
-	auto intlFunction = (blrOp == blr_lowcase ? &TextType::str_to_lower : &TextType::str_to_upper);
+//	auto intlFunction = (blrOp == blr_lowcase ? &TextType::str_to_lower : &TextType::str_to_upper);
+	auto intlFunction = (blrOp == blr_lowcase ? &Collation::str_to_lower : &Collation::str_to_upper);
 
 	if (value->isBlob())
 	{
@@ -10723,7 +10727,7 @@ dsc* StrCaseNode::execute(thread_db* tdbb, Request* request) const
 
 			if (len)
 			{
-				len = (textType->*intlFunction)(len, buffer.begin(), buffer.getCapacity(), buffer.begin());
+				len = (textType.getPointer()->*intlFunction)(len, buffer.begin(), buffer.getCapacity(), buffer.begin());
 				newBlob->BLB_put_data(tdbb, buffer.begin(), len);
 			}
 		}
@@ -10745,7 +10749,7 @@ dsc* StrCaseNode::execute(thread_db* tdbb, Request* request) const
 		desc.setTextType(ttype);
 		EVL_make_value(tdbb, &desc, impure);
 
-		len = (textType->*intlFunction)(len, ptr, desc.dsc_length, impure->vlu_desc.dsc_address);
+		len = (textType.getPointer()->*intlFunction)(len, ptr, desc.dsc_length, impure->vlu_desc.dsc_address);
 
 		if (len == INTL_BAD_STR_LENGTH)
 			status_exception::raise(Arg::Gds(isc_arith_except));
@@ -11999,7 +12003,7 @@ dsc* SubstringSimilarNode::execute(thread_db* tdbb, Request* request) const
 		return NULL;
 
 	USHORT textType = exprDesc->getTextType();
-	Collation* collation = INTL_texttype_lookup(tdbb, textType);
+	HazardPtr<Collation> collation = INTL_texttype_lookup(tdbb, textType);
 	CharSet* charSet = collation->getCharSet();
 
 	MoveBuffer exprBuffer;
@@ -12561,7 +12565,7 @@ dsc* TrimNode::execute(thread_db* tdbb, Request* request) const
 		return NULL;
 
 	USHORT ttype = INTL_TEXT_TYPE(*valueDesc);
-	TextType* tt = INTL_texttype_lookup(tdbb, ttype);
+	HazardPtr<Collation> tt = INTL_texttype_lookup(tdbb, ttype);
 	CharSet* cs = tt->getCharSet();
 
 	const UCHAR* charactersAddress;
@@ -12757,8 +12761,9 @@ DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	HazardPtr<Function> func;
 	if (!node->function)
 	{
-		func = Function::lookup(tdbb, name, false);			// !!!!!!!!!!!!!!!!!!! resource
-		node->function = func.unsafePointer();
+		func = Function::lookup(tdbb, name, false);
+		if (func)
+			node->function = csb->csb_resources.registerResource(tdbb, Resource::rsc_function, func, func->getId());
 	}
 
 	Function* function = node->function;
@@ -12883,8 +12888,8 @@ ValueExprNode* UdfCallNode::copy(thread_db* tdbb, NodeCopier& copier) const
 		node->function = function;
 	else
 	{
-		HazardPtr<Function> func = Function::lookup(tdbb, name, false);	// !!!!!!!!!!!!!!!!!!! resource
-		node->function = func.unsafePointer();
+		HazardPtr<Function> func = Function::lookup(tdbb, name, false);
+		node->function = copier.csb->csb_resources.registerResource(tdbb, Resource::rsc_function, func, func->getId());
 	}
 	return node;
 }
@@ -12944,7 +12949,7 @@ ValueExprNode* UdfCallNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 				csb->csb_external.insert(idx, temp);
 		}
 
-		CMP_post_resource(&csb->csb_resources, function, Resource::rsc_function, function->getId());
+		csb->csb_resources.postResource(tdbb, Resource::rsc_function, function.getObject(), function->getId());
 	}
 
 	return this;

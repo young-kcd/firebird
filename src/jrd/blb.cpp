@@ -1201,13 +1201,12 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc,
 		break;
 	}
 
-	blob->blb_relation = relation;
 	blob->blb_sub_type = to_desc->getBlobSubType();
 	blob->blb_charset = to_desc->getCharSet();
 #ifdef CHECK_BLOB_FIELD_ACCESS_FOR_SELECT
 	blob->blb_fld_id = fieldId;
 #endif
-	destination->set_permanent(relation->rel_id, DPM_store_blob(tdbb, blob, record));
+	destination->set_permanent(relation->rel_id, DPM_store_blob(tdbb, blob, relation, record));
 	// This is the only place in the engine where blobs are materialized
 	// If new places appear code below should transform to common sub-routine
 	if (materialized_blob)
@@ -1390,18 +1389,17 @@ blb* blb::open2(thread_db* tdbb,
 		// know about the relation, the blob id has got to be invalid
 		// anyway.
 
-		blob->blb_relation = tdbb->getDatabase()->dbb_mdc->
-			getRelation(tdbb, blobId.bid_internal.bid_relation_id).unsafePointer();
-		if (!blob->blb_relation)
+		HazardPtr<jrd_rel> relation = dbb->dbb_mdc->getRelation(tdbb, blobId.bid_internal.bid_relation_id);
+		if (!relation)
 				ERR_post(Arg::Gds(isc_bad_segstr_id));
 
-		blob->blb_pg_space_id = blob->blb_relation->getPages(tdbb)->rel_pg_space_id;
-		DPM_get_blob(tdbb, blob, blobId.get_permanent_number(), false, 0);
+		blob->blb_pg_space_id = relation->getPages(tdbb)->rel_pg_space_id;
+		DPM_get_blob(tdbb, blob, relation.getPointer(), blobId.get_permanent_number(), false, 0);
 
 #ifdef CHECK_BLOB_FIELD_ACCESS_FOR_SELECT
-		if (!blob->blb_relation->isSystem() && blob->blb_fld_id < blob->blb_relation->rel_fields->count())
+		if (!relation->isSystem() && blob->blb_fld_id < relation->rel_fields->count())
 		{
-			jrd_fld* fld = (*blob->blb_relation->rel_fields)[blob->blb_fld_id];
+			jrd_fld* fld = (*relation->rel_fields)[blob->blb_fld_id];
 			transaction->checkBlob(tdbb, &blobId, fld, true);
 		}
 #endif
@@ -1699,7 +1697,7 @@ void blb::put_slice(thread_db*	tdbb,
 
 	SSHORT	n;
 	if (info.sdl_info_field.length()) {
-	    n = MET_lookup_field(tdbb, relation.unsafePointer(), info.sdl_info_field);
+	    n = MET_lookup_field(tdbb, relation.getPointer(), info.sdl_info_field);
 	}
 	else {
 		n = info.sdl_info_fid;
@@ -2223,9 +2221,8 @@ void blb::delete_blob_id(thread_db* tdbb, const bid* blob_id, ULONG prior_page, 
 	// Fetch blob
 
 	blb* blob = allocate_blob(tdbb, attachment->getSysTransaction());
-	blob->blb_relation = relation;
 	blob->blb_pg_space_id = relation->getPages(tdbb)->rel_pg_space_id;
-	prior_page = DPM_get_blob(tdbb, blob, blob_id->get_permanent_number(), true, prior_page);
+	prior_page = DPM_get_blob(tdbb, blob, relation, blob_id->get_permanent_number(), true, prior_page);
 
 	if (!(blob->blb_flags & BLB_damaged))
 		blob->delete_blob(tdbb, prior_page);

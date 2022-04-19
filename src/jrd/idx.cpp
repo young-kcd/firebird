@@ -140,18 +140,20 @@ void IDX_check_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view, jrd_
 			if (!MET_lookup_partner(tdbb, relation, &idx, 0))
 				continue;
 
-			Jrd::HazardPtr<Jrd::jrd_rel> referenced_relation = MetadataCache::findRelation(tdbb, idx.idx_primary_relation);
+			auto referenced = MetadataCache::findRelation(tdbb, idx.idx_primary_relation);
+			auto referenced_relation = csb->csb_resources.registerResource(tdbb, Resource::rsc_relation,
+				referenced, idx.idx_primary_relation);
 			MET_scan_relation(tdbb, referenced_relation);
 			const USHORT index_id = idx.idx_primary_index;
 
 			// get the description of the primary key index
 
-			referenced_window.win_page = get_root_page(tdbb, referenced_relation.unsafePointer());
+			referenced_window.win_page = get_root_page(tdbb, referenced_relation);
 			referenced_window.win_flags = 0;
 			index_root_page* referenced_root =
 				(index_root_page*) CCH_FETCH(tdbb, &referenced_window, LCK_read, pag_root);
 			index_desc referenced_idx;
-			if (!BTR_description(tdbb, referenced_relation.unsafePointer(), referenced_root,
+			if (!BTR_description(tdbb, referenced_relation, referenced_root,
 								 &referenced_idx, index_id))
 			{
 				CCH_RELEASE(tdbb, &referenced_window);
@@ -164,7 +166,7 @@ void IDX_check_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view, jrd_
 			for (USHORT i = 0; i < referenced_idx.idx_count; i++, idx_desc++)
 			{
 				const jrd_fld* referenced_field =
-					MET_get_field(referenced_relation.unsafePointer(), idx_desc->idx_field);
+					MET_get_field(referenced_relation, idx_desc->idx_field);
 				CMP_post_access(tdbb, csb,
 								referenced_relation->rel_security_name,
 								(view ? view->rel_id : 0),
@@ -427,7 +429,7 @@ void IDX_create_index(thread_db* tdbb,
 				if (isForeign && key.key_nulls == 0)
 				{
 					result = check_partner_index(tdbb, relation, record, transaction, idx,
-												 partner_relation.unsafePointer(), partner_index_id);
+												 partner_relation.getPointer(), partner_index_id);
 				}
 			}
 
@@ -542,13 +544,9 @@ void IDX_create_index(thread_db* tdbb,
 
 	if ((relation->rel_flags & REL_temp_conn) && (relation->getPages(tdbb)->rel_instance_id != 0))
 	{
-		IndexLock* idx_lock = CMP_get_index_lock(tdbb, relation, idx->idx_id);
+		HazardPtr<IndexLock> idx_lock = relation->getIndexLock(tdbb, idx->idx_id);
 		if (idx_lock)
-		{
-			++idx_lock->idl_count;
-			if (idx_lock->idl_count == 1)
-				LCK_lock(tdbb, idx_lock->idl_lock, LCK_SR, LCK_WAIT);
-		}
+			idx_lock->idl_lock.enter245(tdbb);
 	}
 }
 
@@ -615,13 +613,9 @@ void IDX_delete_index(thread_db* tdbb, jrd_rel* relation, USHORT id)
 	if ((relation->rel_flags & REL_temp_conn) && (relation->getPages(tdbb)->rel_instance_id != 0) &&
 		tree_exists)
 	{
-		IndexLock* idx_lock = CMP_get_index_lock(tdbb, relation, id);
+		HazardPtr<IndexLock> idx_lock = relation->getIndexLock(tdbb, id);
 		if (idx_lock)
-		{
-			if (!--idx_lock->idl_count) {
-				LCK_release(tdbb, idx_lock->idl_lock);
-			}
-		}
+			idx_lock->idl_lock.leave245(tdbb);
 	}
 }
 
@@ -655,13 +649,9 @@ void IDX_delete_indices(thread_db* tdbb, jrd_rel* relation, RelationPages* relPa
 
 		if (is_temp && tree_exists)
 		{
-			IndexLock* idx_lock = CMP_get_index_lock(tdbb, relation, i);
+			HazardPtr<IndexLock> idx_lock = relation->getIndexLock(tdbb, i);
 			if (idx_lock)
-			{
-				if (!--idx_lock->idl_count) {
-					LCK_release(tdbb, idx_lock->idl_lock);
-				}
-			}
+				idx_lock->idl_lock.releaseLock(tdbb);
 		}
 	}
 
@@ -1300,7 +1290,7 @@ static idx_e check_foreign_key(thread_db* tdbb,
 		partner_relation = MetadataCache::findRelation(tdbb, idx->idx_primary_relation);
 		index_id = idx->idx_primary_index;
 		result = check_partner_index(tdbb, relation, record, transaction, idx,
-									 partner_relation.unsafePointer(), index_id);
+									 partner_relation.getPointer(), index_id);
 	}
 	else if (idx->idx_flags & (idx_primary | idx_unique))
 	{
@@ -1316,7 +1306,7 @@ static idx_e check_foreign_key(thread_db* tdbb,
 
 			if ((relation->rel_flags & REL_temp_conn) && (partner_relation->rel_flags & REL_temp_tran))
 			{
-				jrd_rel::RelPagesSnapshot pagesSnapshot(tdbb, partner_relation.unsafePointer());
+				jrd_rel::RelPagesSnapshot pagesSnapshot(tdbb, partner_relation.getPointer());
 				partner_relation->fillPagesSnapshot(pagesSnapshot, true);
 
 				for (FB_SIZE_T i = 0; i < pagesSnapshot.getCount(); i++)
@@ -1324,7 +1314,7 @@ static idx_e check_foreign_key(thread_db* tdbb,
 					RelationPages* partnerPages = pagesSnapshot[i];
 					tdbb->tdbb_temp_traid = partnerPages->rel_instance_id;
 					if ( (result = check_partner_index(tdbb, relation, record,
-								transaction, idx, partner_relation.unsafePointer(), index_id)) )
+								transaction, idx, partner_relation.getPointer(), index_id)) )
 					{
 						break;
 					}
@@ -1337,7 +1327,7 @@ static idx_e check_foreign_key(thread_db* tdbb,
 			else
 			{
 				if ( (result = check_partner_index(tdbb, relation, record,
-							transaction, idx, partner_relation.unsafePointer(), index_id)) )
+							transaction, idx, partner_relation.getPointer(), index_id)) )
 				{
 					break;
 				}
@@ -1350,7 +1340,7 @@ static idx_e check_foreign_key(thread_db* tdbb,
 		if (idx->idx_flags & idx_foreign)
 			context.setErrorLocation(relation, idx->idx_id);
 		else
-			context.setErrorLocation(partner_relation.unsafePointer(), index_id);
+			context.setErrorLocation(partner_relation.getPointer(), index_id);
 	}
 
 	return result;
@@ -1405,7 +1395,7 @@ static idx_e check_partner_index(thread_db* tdbb,
 		{
 			if (idx_desc->idx_itype >= idx_first_intl_string)
 			{
-				TextType* textType = INTL_texttype_lookup(tdbb, INTL_INDEX_TO_TEXT(idx_desc->idx_itype));
+				HazardPtr<TextType> textType = INTL_texttype_lookup(tdbb, INTL_INDEX_TO_TEXT(idx_desc->idx_itype));
 
 				if (textType->getFlags() & TEXTTYPE_SEPARATE_UNIQUE)
 				{

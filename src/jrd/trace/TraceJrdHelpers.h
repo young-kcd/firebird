@@ -507,8 +507,8 @@ public:
 		m_sweep_info.update(header);
 	}
 
-	void beginSweepRelation(jrd_rel* relation);
-	void endSweepRelation(jrd_rel* relation);
+	void beginSweepRelation(const HazardPtr<jrd_rel>& relation);
+	void endSweepRelation();
 
 	void finish()
 	{

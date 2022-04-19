@@ -1523,6 +1523,7 @@ bool DPM_get(thread_db* tdbb, record_param* rpb, SSHORT lock_type)
 
 ULONG DPM_get_blob(thread_db* tdbb,
 				   blb* blob,
+				   jrd_rel* relation,
 				   RecordNumber record_number, bool delete_flag, ULONG prior_page)
 {
 /**************************************
@@ -1545,11 +1546,10 @@ ULONG DPM_get_blob(thread_db* tdbb,
 	CHECK_DBB(dbb);
 
 	record_param rpb;
-	rpb.rpb_relation = blob->blb_relation;
+	rpb.rpb_relation = relation;
 	rpb.getWindow(tdbb).win_flags = WIN_secondary;
 
 #ifdef VIO_DEBUG
-	jrd_rel* relation = blob->blb_relation;
 	VIO_trace(DEBUG_READS,
 		"DPM_get_blob (rel_id %u, blob, record_number %" QUADFORMAT
 		"d, delete_flag %d, prior_page %" ULONGFORMAT")\n",
@@ -1566,8 +1566,8 @@ ULONG DPM_get_blob(thread_db* tdbb,
 	// record doesn't exist, or the record isn't a blob, give up and
 	// let somebody else complain.
 
-	pointer_page* ppage = get_pointer_page(tdbb, blob->blb_relation,
-		blob->blb_relation->getPages(tdbb), &rpb.getWindow(tdbb), pp_sequence, LCK_read);
+	pointer_page* ppage = get_pointer_page(tdbb, relation,
+		relation->getPages(tdbb), &rpb.getWindow(tdbb), pp_sequence, LCK_read);
 	if (!ppage)
 	{
 		blob->blb_flags |= BLB_damaged;
@@ -1638,7 +1638,7 @@ ULONG DPM_get_blob(thread_db* tdbb,
 
 		// We've been asked (nicely) to delete the blob.  So do so.
 
-		rpb.rpb_relation = blob->blb_relation;
+		rpb.rpb_relation = relation;
 		rpb.rpb_page = rpb.getWindow(tdbb).win_page.getPageNum();
 		rpb.rpb_line = line;
 		DPM_delete(tdbb, &rpb, prior_page);
@@ -2158,7 +2158,7 @@ void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, const Jrd:
 }
 
 
-RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
+RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, jrd_rel* relation, Record* record)
 {
 /**************************************
  *
@@ -2175,7 +2175,6 @@ RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
-	jrd_rel* relation = blob->blb_relation;
 	VIO_trace(DEBUG_WRITES,
 		"DPM_store_blob (rel_id %u, blob, record)\n",
 		relation->rel_id);
@@ -2195,7 +2194,7 @@ RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 	record_param rpb;
 	//rpb.getWindow(tdbb).win_flags = 0; redundant.
 
-	rpb.rpb_relation = blob->blb_relation;
+	rpb.rpb_relation = relation;
 	rpb.rpb_transaction_nr = tdbb->getTransaction()->tra_number;
 
 	blh* header = (blh*) locate_space(tdbb, &rpb, (SSHORT) (BLH_SIZE + length),

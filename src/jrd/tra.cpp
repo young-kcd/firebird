@@ -94,7 +94,7 @@ static TraNumber bump_transaction_id(thread_db*, WIN*);
 static header_page* bump_transaction_id(thread_db*, WIN*, bool);
 #endif
 static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, int state);
-static void expand_view_lock(thread_db* tdbb, jrd_tra*, jrd_rel*, UCHAR lock_type,
+static void expand_view_lock(thread_db* tdbb, jrd_tra*, HazardPtr<jrd_rel>&, UCHAR lock_type,
 	const char* option_name, RelationLockTypeMap& lockmap, const int level);
 static tx_inv_page* fetch_inventory_page(thread_db*, WIN* window, ULONG sequence, USHORT lock_level);
 static const char* get_lockname_v3(const UCHAR lock);
@@ -941,7 +941,7 @@ void TRA_update_counters(thread_db* tdbb, Database* dbb)
 }
 
 
-void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& resources)
+void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, PermanentResourceList& resources)
 {
 /**************************************
  *
@@ -959,45 +959,33 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& res
 
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 
-	for (Resource* rsc = resources.begin(); rsc < resources.end(); rsc++)
+	PermanentResourceList::ResourceTypes b;
+	b.set(Resource::rsc_relation);
+	b.set(Resource::rsc_procedure);
+	b.set(Resource::rsc_function);
+	b.set(Resource::rsc_collation);
+	PermanentResourceList::NewResources newRsc;
+	transaction->tra_resources.transferResources(tdbb, resources, b, newRsc);
+
+	if (!newRsc.hasData())
+		return;
+
+	MutexLockGuard g(tdbb->getDatabase()->dbb_mdc->mdc_use_mutex, FB_FUNCTION);
+
+	for (auto n : newRsc)
 	{
-		if (rsc->rsc_type == Resource::rsc_relation ||
-			rsc->rsc_type == Resource::rsc_procedure ||
-			rsc->rsc_type == Resource::rsc_function ||
-			rsc->rsc_type == Resource::rsc_collation)
+		Resource* rsc = transaction->tra_resources.get(n);
+		switch (rsc->rsc_type)
 		{
-			FB_SIZE_T i;
-			if (!transaction->tra_resources.find(*rsc, i))
-			{
-				transaction->tra_resources.insert(i, *rsc);
-				switch (rsc->rsc_type)
-				{
-				case Resource::rsc_relation:
-					MetadataCache::post_existence(tdbb, rsc->rsc_rel);
-					if (rsc->rsc_rel->rel_file) {
-						EXT_tra_attach(rsc->rsc_rel->rel_file, transaction);
-					}
-					break;
-				case Resource::rsc_procedure:
-				case Resource::rsc_function:
-					rsc->rsc_routine->addRef();
-#ifdef DEBUG_PROCS
-					{
-						char buffer[256];
-						sprintf(buffer,
-								"Called from TRA_post_resources():\n\t Incrementing use count of %s\n",
-								rsc->rsc_routine->prc_name->c_str());
-						JRD_print_procedure_info(tdbb, buffer);
-					}
-#endif
-					break;
-				case Resource::rsc_collation:
-					rsc->rsc_coll->incUseCount(tdbb);
-					break;
-				default:   // shut up compiler warning
-					break;
-				}
+		case Resource::rsc_relation:
+			if (rsc->rsc_rel->rel_file) {
+				EXT_tra_attach(rsc->rsc_rel->rel_file, transaction);
 			}
+			rsc->rsc_state = Resource::State::Extra;
+			break;
+
+		default:   // shut up compiler warning
+			break;
 		}
 	}
 }
@@ -1242,30 +1230,19 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
 			TRA_detach_request(transaction->tra_requests);
 	}
 
-	// Release interest in relation/procedure existence for transaction
-
-	for (Resource* rsc = transaction->tra_resources.begin();
-		rsc < transaction->tra_resources.end(); rsc++)
+	// Care about used external files
+	for (auto rsc : transaction->tra_resources.getObjects(Resource::rsc_relation))
 	{
-		switch (rsc->rsc_type)
+		if (rsc->rsc_state == Resource::State::Extra)
 		{
-		case Resource::rsc_relation:
-			MET_release_existence(tdbb, rsc->rsc_rel);
-			if (rsc->rsc_rel->rel_file) {
+			if (rsc->rsc_rel->rel_file)
 				EXT_tra_detach(rsc->rsc_rel->rel_file, transaction);
-			}
-			break;
-		case Resource::rsc_procedure:
-		case Resource::rsc_function:
-			rsc->rsc_routine->release(tdbb);
-			break;
-		case Resource::rsc_collation:
-			rsc->rsc_coll->decUseCount(tdbb);
-			break;
-		default:
-			fb_assert(false);
+			rsc->rsc_state = Resource::State::Locked;
 		}
 	}
+
+	// Release interest in relation/procedure existence for transaction
+	transaction->tra_resources.releaseResources(tdbb);
 
 	release_temp_tables(tdbb, transaction);
 
@@ -2143,7 +2120,7 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN* window, bool dontW
 #endif
 
 
-static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, HazardPtr<jrd_rel>& rel,
+static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, HazardPtr<jrd_rel>& relation,
 	UCHAR lock_type, const char* option_name, RelationLockTypeMap& lockmap, const int level)
 {
 /**************************************
@@ -2166,7 +2143,6 @@ static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, HazardPtr<jr
 				 Arg::Gds(isc_tpb_reserv_max_recursion) << Arg::Num(30));
 	}
 
-	jrd_rel* relation = rel.unsafePointer();
 	const char* const relation_name = relation->rel_name.c_str();
 
 	// LCK_none < LCK_SR < LCK_PR < LCK_SW < LCK_EX
@@ -2242,7 +2218,7 @@ static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, HazardPtr<jr
 	}
 
 	// set up the lock on the relation/view
-	Lock* lock = RLCK_transaction_relation_lock(tdbb, transaction, relation);
+	Lock* lock = RLCK_transaction_relation_lock(tdbb, transaction, relation.unsafePointer());
 	lock->lck_logical = lock_type;
 
 	if (!found)
@@ -4051,15 +4027,15 @@ void jrd_tra::checkBlob(thread_db* tdbb, const bid* blob_id, jrd_fld* fld, bool 
 		!tra_fetched_blobs.locate(*blob_id))
 	{
 		MetadataCache* mdc = tra_attachment->att_database->dbb_mdc;
-		HazardPtr<jrd_rel> blb_relation = mdc->getRelation(tdbb, rel_id);
+		HazardPtr<jrd_rel> blobRelation = mdc->getRelation(tdbb, rel_id);
 
-		if (blb_relation)
+		if (blobRelation)
 		{
 			const MetaName security_name = fld ?
-				fld->fld_security_name : blb_relation->rel_security_name;
+				fld->fld_security_name : blobRelation->rel_security_name;
 
 			if (security_name.isEmpty())
-				MET_scan_relation(tdbb, blb_relation);
+				MET_scan_relation(tdbb, blobRelation);
 
 			SecurityClass* s_class = SCL_get_class(tdbb, security_name.c_str());
 
@@ -4077,12 +4053,12 @@ void jrd_tra::checkBlob(thread_db* tdbb, const bid* blob_id, jrd_fld* fld, bool 
 					if (fld)
 					{
 						SCL_check_access(tdbb, s_class, 0, 0, SCL_select, obj_column,
-							false, fld->fld_name, blb_relation->rel_name);
+							false, fld->fld_name, blobRelation->rel_name);
 					}
 					else
 					{
 						SCL_check_access(tdbb, s_class, 0, 0, SCL_select, obj_relations,
-							false, blb_relation->rel_name);
+							false, blobRelation->rel_name);
 					}
 
 					s_class->scl_blb_access = SecurityClass::BA_SUCCESS;
@@ -4112,7 +4088,7 @@ void jrd_tra::checkBlob(thread_db* tdbb, const bid* blob_id, jrd_fld* fld, bool 
 				{
 					ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("SELECT") <<
 						(fld ? Arg::Str("COLUMN") : Arg::Str("TABLE")) <<
-						(fld ? Arg::Str(fld->fld_name) : Arg::Str(blb_relation->rel_name)));
+						(fld ? Arg::Str(fld->fld_name) : Arg::Str(blobRelation->rel_name)));
 				}
 				else
 					tra_fetched_blobs.add(*blob_id);
@@ -4174,7 +4150,7 @@ TraceSweepEvent::~TraceSweepEvent()
 }
 
 
-void TraceSweepEvent::beginSweepRelation(jrd_rel* relation)
+void TraceSweepEvent::beginSweepRelation(const HazardPtr<jrd_rel>& relation)
 {
 	if (!m_need_trace)
 		return;
@@ -4190,7 +4166,7 @@ void TraceSweepEvent::beginSweepRelation(jrd_rel* relation)
 }
 
 
-void TraceSweepEvent::endSweepRelation(jrd_rel* relation)
+void TraceSweepEvent::endSweepRelation()
 {
 	if (!m_need_trace)
 		return;
