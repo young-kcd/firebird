@@ -56,10 +56,12 @@ USHORT		INTL_string_to_key(Jrd::thread_db*, USHORT, const dsc*, dsc*, USHORT);
 
 // Built-in charsets/texttypes interface
 INTL_BOOL INTL_builtin_lookup_charset(charset* cs, const ASCII* charset_name, const ASCII* config_info);
-INTL_BOOL INTL_builtin_lookup_texttype(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
-									   USHORT attributes, const UCHAR* specific_attributes,
-									   ULONG specific_attributes_length, INTL_BOOL ignore_attributes,
-									   const ASCII* config_info);
+INTL_BOOL INTL_builtin_lookup_texttype_status(
+	char* status_buffer, ULONG status_buffer_length,
+	texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
+	USHORT attributes, const UCHAR* specific_attributes,
+	ULONG specific_attributes_length, INTL_BOOL ignore_attributes,
+	const ASCII* config_info);
 ULONG INTL_builtin_setup_attributes(const ASCII* textTypeName, const ASCII* charSetName,
 	const ASCII* configInfo, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst);
 

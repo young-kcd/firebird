@@ -354,6 +354,20 @@ typedef INTL_BOOL (*pfn_INTL_lookup_texttype) (
 	const ASCII* config_info
 );
 
+/* typedef for texttype lookup entry-point - with status buffer */
+typedef INTL_BOOL (*pfn_INTL_lookup_texttype_with_status) (
+	char* status_buffer,
+	ULONG status_buffer_length,
+	texttype* tt,
+	const ASCII* texttype_name,
+	const ASCII* charset_name,
+	USHORT attributes,
+	const UCHAR* specific_attributes,
+	ULONG specific_attributes_length,
+	INTL_BOOL ignore_attributes,
+	const ASCII* config_info
+);
+
 /* typedef for charset lookup entry-point */
 typedef INTL_BOOL (*pfn_INTL_lookup_charset) (
 	charset* cs,
@@ -379,6 +393,7 @@ typedef ULONG (*pfn_INTL_setup_attributes) (
 
 
 #define TEXTTYPE_ENTRYPOINT					LD_lookup_texttype
+#define TEXTTYPE_WITH_STATUS_ENTRYPOINT			LD_lookup_texttype_with_status
 #define CHARSET_ENTRYPOINT					LD_lookup_charset
 #define INTL_VERSION_ENTRYPOINT				LD_version
 #define INTL_SETUP_ATTRIBUTES_ENTRYPOINT	LD_setup_attributes

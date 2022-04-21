@@ -92,22 +92,24 @@ public:
 		// System-wide ICU have no version number at entries names
 		if (!majorVersion)
 		{
+			fb_assert(false);	// ASF: I don't think this code path is correct.
+
 			if (module->findSymbol(NULL, name, ptr))
 				return;
 		}
 		else
 		{
 			// ICU has several schemas for entries names
-			const char* patterns[] =
+			const char* const patterns[] =
 			{
-				"%s_%d", "%s_%d_%d", "%s_%d%d", "%s", NULL
+				"%s_%d", "%s_%d_%d", "%s_%d%d", "%s"
 			};
 
 			string symbol;
 
-			for (const char** p = patterns; *p; ++p)
+			for (auto pattern : patterns)
 			{
-				symbol.printf(*p, name, majorVersion, minorVersion);
+				symbol.printf(pattern, name, majorVersion, minorVersion);
 				if (module->findSymbol(NULL, symbol, ptr))
 					return;
 			}
@@ -323,6 +325,7 @@ private:
 		getEntryPoint("ucnv_open", module, ucnv_open);
 		getEntryPoint("ucnv_close", module, ucnv_close);
 		getEntryPoint("ucnv_fromUChars", module, ucnv_fromUChars);
+		getEntryPoint("u_getVersion", module, u_getVersion);
 		getEntryPoint("u_tolower", module, u_tolower);
 		getEntryPoint("u_toupper", module, u_toupper);
 		getEntryPoint("u_strCompare", module, u_strCompare);
@@ -381,8 +384,11 @@ public:
 
 		if (o)
 		{
-			o->vMajor = majorVersion;
-			o->vMinor = minorVersion;
+			UVersionInfo versionInfo;
+			o->u_getVersion(versionInfo);
+
+			o->vMajor = versionInfo[0];
+			o->vMinor = versionInfo[1];
 		}
 
 		return o;
@@ -509,15 +515,15 @@ static ModuleLoader::Module* formatAndLoad(const char* templateName,
 	else
 	{
 		// ICU has several schemas for placing version into file name
-		const char* patterns[] =
+		const char* const patterns[] =
 		{
-			"%d_%d", "%d%d", NULL
+			"%d_%d", "%d.%d", "%d%d"
 		};
 
 		PathName s, filename;
-		for (const char** p = patterns; *p; ++p)
+		for (auto pattern : patterns)
 		{
-			s.printf(*p, majorVersion, minorVersion);
+			s.printf(pattern, majorVersion, minorVersion);
 			filename.printf(templateName, s.c_str());
 
 			module = ModuleLoader::fixAndLoadModule(NULL, filename);
@@ -1171,7 +1177,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const string& icuVersion, const string& c
 	getVersions(configInfo, versions);
 
 	if (versions.isEmpty())
-		gds__log("No versions");
+		gds__log("No ICU versions specified");
 
 	string version = icuVersion.isEmpty() ? versions[0] : icuVersion;
 	if (version == "default")
@@ -1298,6 +1304,13 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const string& icuVersion, const string& c
 }
 
 
+void UnicodeUtil::getICUVersion(ICU* icu, int& majorVersion, int& minorVersion)
+{
+	majorVersion = icu->majorVersion;
+	minorVersion = icu->minorVersion;
+}
+
+
 UnicodeUtil::ConversionICU& UnicodeUtil::getConversionICU()
 {
 	if (convIcu)
@@ -1411,13 +1424,13 @@ string UnicodeUtil::getDefaultIcuVersion()
 }
 
 
-bool UnicodeUtil::getCollVersion(const Firebird::string& icuVersion,
+UnicodeUtil::ICU* UnicodeUtil::getCollVersion(const Firebird::string& icuVersion,
 	const Firebird::string& configInfo, Firebird::string& collVersion)
 {
 	ICU* icu = loadICU(icuVersion, configInfo);
 
 	if (!icu)
-		return false;
+		return nullptr;
 
 	char version[U_MAX_VERSION_STRING_LENGTH];
 	icu->uVersionToString(icu->collVersion, version);
@@ -1427,7 +1440,7 @@ bool UnicodeUtil::getCollVersion(const Firebird::string& icuVersion,
 	else
 		collVersion = version;
 
-	return true;
+	return icu;
 }
 
 UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
@@ -1502,12 +1515,11 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 
 	tt->texttype_pad_option = (attributes & TEXTTYPE_ATTR_PAD_SPACE) ? true : false;
 
-	ICU* icu = loadICU(collVersion, locale, configInfo);
-	if (!icu)
-	{
-		gds__log("loadICU failed");
-		return NULL;
-	}
+	string icuVersion;
+	if (specificAttributes.get(IntlUtil::convertAsciiToUtf16("ICU-VERSION"), icuVersion))
+		icuVersion = IntlUtil::convertUtf16ToAscii(icuVersion, &error);
+
+	const auto icu = loadICU(icuVersion, collVersion, locale, configInfo);
 
 	UErrorCode status = U_ZERO_ERROR;
 	HalfStaticArray<UChar, BUFFER_TINY> rulesBuffer;
@@ -2000,8 +2012,8 @@ ULONG UnicodeUtil::Utf16Collation::canonical(ULONG srcLen, const USHORT* src, UL
 
 
 UnicodeUtil::ICU* UnicodeUtil::Utf16Collation::loadICU(
-	const Firebird::string& collVersion, const Firebird::string& locale,
-	const Firebird::string& configInfo)
+	const string& icuVersion, const string& collVersion,
+	const string& locale, const string& configInfo)
 {
 	ObjectsArray<string> versions;
 	getVersions(configInfo, versions);
@@ -2044,7 +2056,13 @@ UnicodeUtil::ICU* UnicodeUtil::Utf16Collation::loadICU(
 		return icu;
 	}
 
-	return NULL;
+	string errorMsg;
+	errorMsg.printf(
+		"An ICU library with collation version %s is required but was not found. "
+		"You may try to install ICU version %s, used to register the collation in this database "
+		"or look for 'gfix -icu' in Firebird documentation.",
+		collVersion.c_str(), icuVersion.c_str());
+	(Arg::Gds(isc_random) << errorMsg).raise();
 }
 
 

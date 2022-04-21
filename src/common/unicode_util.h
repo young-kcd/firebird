@@ -58,6 +58,7 @@ public:
 											  const UChar *src, int32_t srcLength,
 											  UErrorCode *pErrorCode);
 
+		void (U_EXPORT2* u_getVersion) (UVersionInfo versionArray);
 		UChar32 (U_EXPORT2* u_tolower) (UChar32 c);
 		UChar32 (U_EXPORT2* u_toupper) (UChar32 c);
 		int32_t (U_EXPORT2* u_strCompare) (const UChar* s1, int32_t length1,
@@ -177,7 +178,8 @@ public:
 
 	static ConversionICU& getConversionICU();
 	static ICU* loadICU(const Firebird::string& icuVersion, const Firebird::string& configInfo);
-	static bool getCollVersion(const Firebird::string& icuVersion,
+	static void getICUVersion(ICU* icu, int& majorVersion, int& minorVersion);
+	static ICU* getCollVersion(const Firebird::string& icuVersion,
 		const Firebird::string& configInfo, Firebird::string& collVersion);
 
 	class Utf16Collation
@@ -241,8 +243,8 @@ public:
 					ArrayComparator<USHORT>
 				> ContractionsPrefixMap;
 
-		static ICU* loadICU(const Firebird::string& collVersion, const Firebird::string& locale,
-			const Firebird::string& configInfo);
+		static ICU* loadICU(const Firebird::string& icuVersion, const Firebird::string& collVersion,
+			const Firebird::string& locale, const Firebird::string& configInfo);
 
 		void normalize(ULONG* strLen, const USHORT** str, bool forNumericSort,
 			Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / 2>& buffer) const;
