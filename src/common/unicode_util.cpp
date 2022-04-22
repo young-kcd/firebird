@@ -2062,7 +2062,7 @@ UnicodeUtil::ICU* UnicodeUtil::Utf16Collation::loadICU(
 	{
 		errorMsg.printf(
 			"An ICU library with collation version %s is required but was not found. "
-			"You may try to install another ICU version which this collation version "
+			"You may try to install another ICU version with this collation version "
 			"or look for 'gfix -icu' in Firebird documentation.",
 			collVersion.c_str());
 	}
