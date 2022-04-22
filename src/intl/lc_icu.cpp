@@ -100,10 +100,10 @@ static bool texttype_unicode_init(texttype* tt,
 	memcpy(specificAttributesBuffer.getBuffer(specificAttributesLength),
 		specificAttributes, specificAttributesLength);
 
-	// ASF: Don't free "cs". It'will be used in the collation.
 	auto ret = Firebird::IntlUtil::initUnicodeCollation(tt, cs, name,
 		attributes, specificAttributesBuffer, configInfo);
 
+	// ASF: Don't free "cs". It'will be used in the collation.
 	cs.release();
 
 	return ret;
