@@ -393,7 +393,7 @@ typedef ULONG (*pfn_INTL_setup_attributes) (
 
 
 #define TEXTTYPE_ENTRYPOINT					LD_lookup_texttype
-#define TEXTTYPE_WITH_STATUS_ENTRYPOINT			LD_lookup_texttype_with_status
+#define TEXTTYPE_WITH_STATUS_ENTRYPOINT		LD_lookup_texttype_with_status
 #define CHARSET_ENTRYPOINT					LD_lookup_charset
 #define INTL_VERSION_ENTRYPOINT				LD_version
 #define INTL_SETUP_ATTRIBUTES_ENTRYPOINT	LD_setup_attributes
