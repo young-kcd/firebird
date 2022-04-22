@@ -2057,11 +2057,24 @@ UnicodeUtil::ICU* UnicodeUtil::Utf16Collation::loadICU(
 	}
 
 	string errorMsg;
-	errorMsg.printf(
-		"An ICU library with collation version %s is required but was not found. "
-		"You may try to install ICU version %s, used to register the collation in this database "
-		"or look for 'gfix -icu' in Firebird documentation.",
-		collVersion.c_str(), icuVersion.c_str());
+
+	if (icuVersion.isEmpty())
+	{
+		errorMsg.printf(
+			"An ICU library with collation version %s is required but was not found. "
+			"You may try to install another ICU version which this collation version "
+			"or look for 'gfix -icu' in Firebird documentation.",
+			collVersion.c_str());
+	}
+	else
+	{
+		errorMsg.printf(
+			"An ICU library with collation version %s is required but was not found. "
+			"You may try to install ICU version %s, used to register the collation in this database "
+			"or look for 'gfix -icu' in Firebird documentation.",
+			collVersion.c_str(), icuVersion.c_str());
+	}
+
 	(Arg::Gds(isc_random) << errorMsg).raise();
 }
 
