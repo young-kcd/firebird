@@ -43,7 +43,7 @@ namespace Jrd {
 class jrd_rel;
 class jrd_tra;
 template <typename T> class vec;
-class JrdStatement;
+class Statement;
 struct temporary_key;
 class jrd_tra;
 class BtrPageGCLock;
@@ -66,7 +66,7 @@ struct index_desc
 	vec<int>*	idx_foreign_indexes;		// ids for foreign key partner indexes
 	ValueExprNode* idx_expression;			// node tree for indexed expresssion
 	dsc		idx_expression_desc;			// descriptor for expression result
-	JrdStatement* idx_expression_statement;	// stored statement for expression evaluation
+	Statement* idx_expression_statement;	// stored statement for expression evaluation
 	// This structure should exactly match IRTD structure for current ODS
 	struct idx_repeat
 	{
@@ -76,11 +76,7 @@ struct index_desc
 	} idx_rpt[MAX_INDEX_SEGMENTS];
 };
 
-struct IndexDescAlloc : public pool_alloc_rpt<index_desc>
-{
-	index_desc items[1];
-};
-
+typedef Firebird::HalfStaticArray<index_desc, 16> IndexDescList;
 
 const USHORT idx_invalid = USHORT(~0);		// Applies to idx_id as special value
 
@@ -154,6 +150,7 @@ struct temporary_key
 	UCHAR key_flags;
 	USHORT key_nulls;	// bitmap of encountered null segments,
 						// USHORT is enough to store MAX_INDEX_SEGMENTS bits
+	Firebird::AutoPtr<temporary_key> key_next;	// next key (INTL_KEY_MULTI_STARTING)
 };
 
 
@@ -227,6 +224,7 @@ const int irb_ignore_null_value_key  = 8;	// if lower bound is specified and upp
 const int irb_descending	= 16;			// Base index uses descending order
 const int irb_exclude_lower	= 32;			// exclude lower bound keys while scanning index
 const int irb_exclude_upper	= 64;			// exclude upper bound keys while scanning index
+const int irb_multi_starting	= 128;		// Use INTL_KEY_MULTI_STARTING
 
 typedef Firebird::HalfStaticArray<float, 4> SelectivityList;
 
@@ -242,6 +240,12 @@ public:
 	void disablePageGC(thread_db* tdbb, const PageNumber &page);
 	void enablePageGC(thread_db* tdbb);
 
+	// return true if lock is active
+	bool isActive() const
+	{
+		return lck_id != 0;
+	}
+
 	static bool isPageGCAllowed(thread_db* tdbb, const PageNumber& page);
 
 #ifdef DEBUG_LCK_LIST
@@ -250,7 +254,7 @@ public:
 	{
 	}
 
-	static bool checkPool(const Lock* lock, Firebird::MemoryPool* pool) 
+	static bool checkPool(const Lock* lock, Firebird::MemoryPool* pool)
 	{
 		if (!pool || !lock)
 			return false;

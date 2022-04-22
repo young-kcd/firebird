@@ -43,11 +43,12 @@ FullOuterJoin::FullOuterJoin(CompilerScratch* csb, RecordSource* arg1, RecordSou
 	fb_assert(m_arg1 && m_arg2);
 
 	m_impure = csb->allocImpure<Impure>();
+	m_cardinality = arg1->getCardinality() + arg2->getCardinality();
 }
 
 void FullOuterJoin::open(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open | irsb_first;
@@ -57,7 +58,7 @@ void FullOuterJoin::open(thread_db* tdbb) const
 
 void FullOuterJoin::close(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 
 	invalidateRecords(request);
 
@@ -78,7 +79,7 @@ bool FullOuterJoin::getRecord(thread_db* tdbb) const
 {
 	JRD_reschedule(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
@@ -141,7 +142,7 @@ void FullOuterJoin::findUsedStreams(StreamList& streams, bool expandAll) const
 	m_arg2->findUsedStreams(streams, expandAll);
 }
 
-void FullOuterJoin::invalidateRecords(jrd_req* request) const
+void FullOuterJoin::invalidateRecords(Request* request) const
 {
 	m_arg1->invalidateRecords(request);
 	m_arg2->invalidateRecords(request);

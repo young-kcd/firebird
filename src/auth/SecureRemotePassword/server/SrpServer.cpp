@@ -244,7 +244,7 @@ private:
 };
 
 
-template <class SHA> class SrpServerImpl FB_FINAL : public SrpServer
+template <class SHA> class SrpServerImpl final : public SrpServer
 {
 public:
 	explicit SrpServerImpl<SHA>(IPluginConfig* ipc)

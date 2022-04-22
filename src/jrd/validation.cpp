@@ -550,7 +550,6 @@ VI. ADDITIONAL NOTES
 #include "../jrd/btr.h"
 #include "../jrd/btn.h"
 #include "../jrd/cch.h"
-#include "../jrd/rse.h"
 #include "../jrd/tra.h"
 #include "../jrd/svc.h"
 #include "../jrd/btr_proto.h"
@@ -725,6 +724,7 @@ static int validate(Firebird::UtilSvc* svc)
 	{
 		dpb.insertString(isc_dpb_trusted_auth, userName);
 	}
+	dpb.insertTag(isc_dpb_no_garbage_collect);
 
 	PathName expandedFilename;
 	if (expandDatabaseName(dbName, expandedFilename, NULL))

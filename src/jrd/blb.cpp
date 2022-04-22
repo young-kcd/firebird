@@ -345,13 +345,13 @@ blb* blb::create2(thread_db* tdbb,
 
 	// Bind non-user blob to the request
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 	if (!userBlob && request)
 	{
 		transaction->tra_blobs->locate(blob->blb_temp_id);
 		BlobIndex* current = &transaction->tra_blobs->current();
 
-		jrd_req* blob_request = request;
+		Request* blob_request = request;
 		while (blob_request->req_caller)
 			blob_request = blob_request->req_caller;
 
@@ -1052,7 +1052,7 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc,
 		return;
 	}
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	if (relation->isVirtual()) {
 		ERR_post(Arg::Gds(isc_read_only));
@@ -1138,7 +1138,7 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc,
 					{
 						// Walk through call stack looking if our BLOB is
 						// owned by somebody from our call chain
-						jrd_req* temp_req = request;
+						Request* temp_req = request;
 						do {
 							if (blobIndex->bli_request == temp_req)
 								break;
@@ -1224,7 +1224,7 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc,
 		blobIndex->bli_materialized = true;
 		blobIndex->bli_blob_id = *destination;
 		// Assign temporary BLOB ownership to top-level request if it is not assigned yet
-		jrd_req* own_request;
+		Request* own_request;
 		if (blobIndex->bli_request) {
 			own_request = blobIndex->bli_request;
 		}
@@ -2081,7 +2081,7 @@ blb* blb::copy_blob(thread_db* tdbb, const bid* source, bid* destination,
  **************************************/
 	SET_TDBB(tdbb);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 	jrd_tra* transaction = request ? request->req_transaction : tdbb->getTransaction();
 	blb* input = open2(tdbb, transaction, source, bpb_length, bpb);
 	blb* output = create(tdbb, transaction, destination);
@@ -2532,7 +2532,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 			status_exception::raise(Arg::Gds(isc_malformed_string));
 	}
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 	jrd_tra* transaction = request ? request->req_transaction : tdbb->getTransaction();
 	transaction = transaction->getOuter();
 
@@ -2580,7 +2580,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 			if (current->bli_materialized)
 			{
 				// Delete BLOB from request owned blob list
-				jrd_req* blob_request = current->bli_request;
+				Request* blob_request = current->bli_request;
 				if (blob_request)
 				{
 					if (blob_request->req_blobs.locate(blob_temp_id)) {
@@ -2603,7 +2603,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 				// we may still bind lifetime of blob to current top level request.
 				if (!current->bli_request)
 				{
-					jrd_req* blob_request = request;
+					Request* blob_request = request;
 					while (blob_request->req_caller)
 						blob_request = blob_request->req_caller;
 
@@ -2641,7 +2641,7 @@ static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
 	else
 		blobAsText.dsc_ttype() = ttype_ascii;
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 	jrd_tra* transaction = request ? request->req_transaction : tdbb->getTransaction();
 	transaction = transaction->getOuter();
 
@@ -2678,7 +2678,7 @@ void blb::destroy(const bool purge_flag)
 	{
 		if (blb_transaction->tra_blobs->locate(blb_temp_id))
 		{
-			jrd_req* blob_request = blb_transaction->tra_blobs->current().bli_request;
+			Request* blob_request = blb_transaction->tra_blobs->current().bli_request;
 
 			if (blob_request)
 			{

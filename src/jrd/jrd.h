@@ -106,8 +106,8 @@ const unsigned MAX_CALLBACKS	= 50;
 class thread_db;
 class Attachment;
 class jrd_tra;
-class jrd_req;
-class JrdStatement;
+class Request;
+class Statement;
 class jrd_file;
 class Format;
 class BufferDesc;
@@ -136,7 +136,7 @@ class Trigger
 public:
 	Firebird::HalfStaticArray<UCHAR, 128> blr;			// BLR code
 	Firebird::HalfStaticArray<UCHAR, 128> debugInfo;	// Debug info
-	JrdStatement* statement;							// Compiled statement
+	Statement* statement;							// Compiled statement
 	bool		releaseInProgress;
 	bool		sysTrigger;
 	FB_UINT64	type;						// Trigger type
@@ -248,7 +248,7 @@ public:
 
 	virtual SLONG getSclType() const
 	{
-		return SCL_object_procedure;
+		return obj_procedures;
 	}
 
 	virtual void releaseFormat()
@@ -305,7 +305,7 @@ class IndexBlock : public pool_alloc<type_idb>
 public:
 	IndexBlock*	idb_next;
 	ValueExprNode* idb_expression;			// node tree for index expression
-	JrdStatement* idb_expression_statement;	// statement for index expression evaluation
+	Statement* idb_expression_statement;	// statement for index expression evaluation
 	dsc			idb_expression_desc;		// descriptor for expression result
 	Lock*		idb_lock;					// lock to synchronize changes to index
 	USHORT		idb_id;
@@ -369,7 +369,7 @@ const USHORT WIN_garbage_collect	= 8;	// scan left a page for garbage collector
 
 
 #ifdef USE_ITIMER
-class TimeoutTimer FB_FINAL :
+class TimeoutTimer final :
 	public Firebird::RefCntIface<Firebird::ITimerImpl<TimeoutTimer, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -506,7 +506,7 @@ private:
 	Database*	database;
 	Attachment*	attachment;
 	jrd_tra*	transaction;
-	jrd_req*	request;
+	Request*	request;
 	RuntimeStatistics *reqStat, *traStat, *attStat, *dbbStat;
 
 public:
@@ -591,17 +591,17 @@ public:
 
 	void setTransaction(jrd_tra* val);
 
-	jrd_req* getRequest()
+	Request* getRequest()
 	{
 		return request;
 	}
 
-	const jrd_req* getRequest() const
+	const Request* getRequest() const
 	{
 		return request;
 	}
 
-	void setRequest(jrd_req* val);
+	void setRequest(Request* val);
 
 	SSHORT getCharSet() const;
 
@@ -1090,6 +1090,18 @@ namespace Jrd {
 
 			if (m_ref.hasData())
 				m_ref->getSync()->leave();
+		}
+
+		EngineCheckout(Attachment* att, const char* from)
+			: m_tdbb(nullptr), m_from(from)
+		{
+			fb_assert(att);
+
+			if (att && att->att_use_count)
+			{
+				m_ref = att->getStable();
+				m_ref->getSync()->leave();
+			}
 		}
 
 		~EngineCheckout()

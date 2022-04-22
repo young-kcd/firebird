@@ -714,7 +714,7 @@ public:
 };
 
 // CryptKey implementation
-class InternalCryptKey FB_FINAL :
+class InternalCryptKey final :
 	public Firebird::VersionedIface<Firebird::ICryptKeyImpl<InternalCryptKey, Firebird::CheckStatusWrapper> >,
 	public Firebird::GlobalStorage
 {
@@ -816,7 +816,7 @@ typedef Firebird::GetPlugins<Firebird::IClient> AuthClientPlugins;
 
 // Representation of authentication data, visible for plugin
 // Transfered in format, depending upon type of the packet (phase of handshake)
-class RmtAuthBlock FB_FINAL :
+class RmtAuthBlock final :
 	public Firebird::VersionedIface<Firebird::IAuthBlockImpl<RmtAuthBlock, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -840,7 +840,7 @@ private:
 };
 
 
-class ClntAuthBlock FB_FINAL :
+class ClntAuthBlock final :
 	public Firebird::RefCntIface<Firebird::IClientBlockImpl<ClntAuthBlock, Firebird::CheckStatusWrapper> >
 {
 private:
@@ -857,7 +857,7 @@ private:
 	Firebird::AutoPtr<RmtAuthBlock> remAuthBlock;	//Authentication block if present
 	unsigned nextKey;							// First key to be analyzed
 
-	class ClientCrypt FB_FINAL :
+	class ClientCrypt final :
 		public Firebird::VersionedIface<Firebird::ICryptKeyCallbackImpl<ClientCrypt, Firebird::CheckStatusWrapper> >
 	{
 	public:
@@ -921,7 +921,7 @@ public:
 // Transfered from client data in format, suitable for plugins access
 typedef Firebird::GetPlugins<Firebird::IServer> AuthServerPlugins;
 
-class SrvAuthBlock FB_FINAL :
+class SrvAuthBlock final :
 	public Firebird::VersionedIface<Firebird::IServerBlockImpl<SrvAuthBlock, Firebird::CheckStatusWrapper> >,
 	public Firebird::GlobalStorage
 {
@@ -1042,7 +1042,6 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 
 	enum rem_port_t {
 		INET,			// Internet (TCP/IP)
-		PIPE,			// Windows NT named pipe connection
 		XNET			// Windows NT shared memory connection
 	}				port_type;
 	enum state_t {

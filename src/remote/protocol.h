@@ -94,10 +94,15 @@ const USHORT PROTOCOL_VERSION16 = (FB_PROTOCOL_FLAG | 16);
 const USHORT PROTOCOL_STMT_TOUT = PROTOCOL_VERSION16;
 
 // Protocol 17:
-//	- supports op_batch_sync, op_info_batch, op_fetch_scroll
+//	- supports op_batch_sync, op_info_batch
 
 const USHORT PROTOCOL_VERSION17 = (FB_PROTOCOL_FLAG | 17);
-const USHORT PROTOCOL_FETCH_SCROLL = PROTOCOL_VERSION17;
+
+// Protocol 18:
+//	- supports op_fetch_scroll
+
+const USHORT PROTOCOL_VERSION18 = (FB_PROTOCOL_FLAG | 18);
+const USHORT PROTOCOL_FETCH_SCROLL = PROTOCOL_VERSION18;
 
 // Architecture types
 

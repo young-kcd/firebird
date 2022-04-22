@@ -25,7 +25,6 @@
 #include "../jrd/btr.h"
 #include "../jrd/intl.h"
 #include "../jrd/req.h"
-#include "../jrd/rse.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dpm_proto.h"
 #include "../jrd/err_proto.h"
@@ -39,6 +38,9 @@
 
 using namespace Firebird;
 using namespace Jrd;
+
+// Disabled so far, should be uncommented for debugging/testing
+//#define PRINT_OPT_INFO	// print optimizer info (cardinality, cost) in plans
 
 
 // Record source class
@@ -173,6 +175,16 @@ void RecordSource::printInversion(thread_db* tdbb, const InversionNode* inversio
 	}
 }
 
+void RecordSource::printOptInfo(string& plan) const
+{
+#ifdef PRINT_OPT_INFO
+	string info;
+	// Add 0.5 to convert double->int truncation into rounding
+	info.printf(" [rows: %" UQUADFORMAT "]", (FB_UINT64) (m_cardinality + 0.5));
+	plan += info;
+#endif
+}
+
 RecordSource::~RecordSource()
 {
 }
@@ -189,7 +201,7 @@ RecordStream::RecordStream(CompilerScratch* csb, StreamType stream, const Format
 
 bool RecordStream::refetchRecord(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	jrd_tra* const transaction = request->req_transaction;
 
 	record_param* const rpb = &request->req_rpb[m_stream];
@@ -208,7 +220,7 @@ bool RecordStream::refetchRecord(thread_db* tdbb) const
 
 bool RecordStream::lockRecord(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	jrd_tra* const transaction = request->req_transaction;
 
 	record_param* const rpb = &request->req_rpb[m_stream];
@@ -232,7 +244,7 @@ void RecordStream::findUsedStreams(StreamList& streams, bool /*expandAll*/) cons
 		streams.add(m_stream);
 }
 
-void RecordStream::invalidateRecords(jrd_req* request) const
+void RecordStream::invalidateRecords(Request* request) const
 {
 	record_param* const rpb = &request->req_rpb[m_stream];
 	rpb->rpb_number.setValid(false);
@@ -240,7 +252,7 @@ void RecordStream::invalidateRecords(jrd_req* request) const
 
 void RecordStream::nullRecords(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	record_param* const rpb = &request->req_rpb[m_stream];
 
 	rpb->rpb_number.setValid(false);

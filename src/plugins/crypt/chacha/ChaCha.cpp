@@ -89,7 +89,7 @@ private:
 
 
 template <unsigned IV_SIZE>
-class ChaCha FB_FINAL : public StdPlugin<IWireCryptPluginImpl<ChaCha<IV_SIZE>, CheckStatusWrapper> >
+class ChaCha final : public StdPlugin<IWireCryptPluginImpl<ChaCha<IV_SIZE>, CheckStatusWrapper> >
 {
 public:
 	explicit ChaCha(IPluginConfig*)
@@ -189,7 +189,7 @@ SimpleFactory<ChaCha<8> > factory64;
 
 } // anonymous namespace
 
-extern "C" void FB_EXPORTED FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
+extern "C" FB_DLL_EXPORT void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
 	CachedMasterInterface::set(master);
 	PluginManagerInterfacePtr()->registerPluginFactory(IPluginManager::TYPE_WIRE_CRYPT, "ChaCha", &factory);

@@ -53,7 +53,7 @@ struct PluginLogWriterHeader : public Firebird::MemoryHeader
 {
 };
 
-class PluginLogWriter FB_FINAL :
+class PluginLogWriter final :
 	public Firebird::RefCntIface<Firebird::ITraceLogWriterImpl<PluginLogWriter, Firebird::CheckStatusWrapper> >,
 	public Firebird::IpcObject
 {

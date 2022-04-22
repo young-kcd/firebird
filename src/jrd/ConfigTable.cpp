@@ -88,7 +88,7 @@ RecordBuffer* ConfigTable::getRecords(thread_db* tdbb, jrd_rel* relation)
 
 void ConfigTableScan::close(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	delete impure->table;
@@ -112,7 +112,7 @@ bool ConfigTableScan::retrieveRecord(thread_db* tdbb, jrd_rel* relation,
 
 RecordBuffer* ConfigTableScan::getRecords(thread_db* tdbb, jrd_rel* relation) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!impure->table)

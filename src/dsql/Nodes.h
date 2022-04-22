@@ -42,7 +42,7 @@ class Node;
 class NodePrinter;
 class ExprNode;
 class NodeRefsHolder;
-class OptimizerBlk;
+class Optimizer;
 class OptimizerRetrieval;
 class RecordSource;
 class RseNode;
@@ -52,7 +52,7 @@ class ValueExprNode;
 
 
 // Must be less then MAX_SSHORT. Not used for static arrays.
-const int MAX_CONJUNCTS	= 32000;
+const unsigned MAX_CONJUNCTS = 32000;
 
 // New: MAX_STREAMS should be a multiple of BITS_PER_LONG (32 and hard to believe it will change)
 
@@ -64,7 +64,7 @@ const StreamType STREAM_MAP_LENGTH = MAX_STREAMS + 2;
 // New formula is simply MAX_STREAMS / BITS_PER_LONG
 const int OPT_STREAM_BITS = MAX_STREAMS / BITS_PER_LONG; // 128 with 4096 streams
 
-typedef Firebird::HalfStaticArray<StreamType, OPT_STATIC_ITEMS> StreamList;
+typedef Firebird::HalfStaticArray<StreamType, OPT_STATIC_STREAMS> StreamList;
 typedef Firebird::SortedArray<StreamType> SortedStreamList;
 
 typedef Firebird::Array<NestConst<ValueExprNode> > NestValueArray;
@@ -213,7 +213,7 @@ public:
 
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	{
-		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_DDL);
+		dsqlScratch->getDsqlStatement()->setType(DsqlStatement::TYPE_DDL);
 		return this;
 	}
 
@@ -283,7 +283,7 @@ public:
 		return this;
 	}
 
-	virtual void execute(thread_db* tdbb, dsql_req* request, jrd_tra** transaction) const = 0;
+	virtual void execute(thread_db* tdbb, DsqlRequest* request, jrd_tra** transaction) const = 0;
 };
 
 
@@ -300,12 +300,12 @@ public:
 	{
 		Node::dsqlPass(dsqlScratch);
 
-		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SESSION_MANAGEMENT);
+		dsqlScratch->getDsqlStatement()->setType(DsqlStatement::TYPE_SESSION_MANAGEMENT);
 
 		return this;
 	}
 
-	virtual void execute(thread_db* tdbb, dsql_req* request, jrd_tra** traHandle) const = 0;
+	virtual void execute(thread_db* tdbb, DsqlRequest* request, jrd_tra** traHandle) const = 0;
 };
 
 
@@ -539,8 +539,7 @@ public:
 	static const USHORT FLAG_DOUBLE		= 0x20;
 	static const USHORT FLAG_DATE		= 0x40;
 	static const USHORT FLAG_DECFLOAT	= 0x80;
-	static const USHORT FLAG_VALUE		= 0x100;	// Full value area required in impure space.
-	static const USHORT FLAG_INT128		= 0x200;
+	static const USHORT FLAG_INT128		= 0x100;
 
 	explicit ExprNode(Type aType, MemoryPool& pool)
 		: DmlNode(pool),
@@ -693,8 +692,8 @@ public:
 	virtual bool computable(CompilerScratch* csb, StreamType stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value = NULL);
 
-	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
-		SortedStreamList* streamList);
+	virtual void findDependentFromStreams(const CompilerScratch* csb,
+		StreamType currentStream, SortedStreamList* streamList);
 	virtual ExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const = 0;
@@ -747,7 +746,7 @@ public:
 	}
 
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) const = 0;
-	virtual bool execute(thread_db* tdbb, jrd_req* request) const = 0;
+	virtual bool execute(thread_db* tdbb, Request* request) const = 0;
 };
 
 class ValueExprNode : public ExprNode
@@ -829,7 +828,7 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc) = 0;
 
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const = 0;
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const = 0;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const = 0;
 
 public:
 	SCHAR nodScale;
@@ -886,7 +885,7 @@ public:
 		return NULL;
 	}
 
-	virtual dsc* execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
+	virtual dsc* execute(thread_db* /*tdbb*/, Request* /*request*/) const
 	{
 		fb_assert(false);
 		return NULL;
@@ -1044,19 +1043,19 @@ public:
 		return false;
 	}
 
-	virtual dsc* winPass(thread_db* /*tdbb*/, jrd_req* /*request*/, SlidingWindow* /*window*/) const
+	virtual dsc* winPass(thread_db* /*tdbb*/, Request* /*request*/, SlidingWindow* /*window*/) const
 	{
 		return NULL;
 	}
 
-	virtual void aggInit(thread_db* tdbb, jrd_req* request) const = 0;	// pure, but defined
-	virtual void aggFinish(thread_db* tdbb, jrd_req* request) const;
-	virtual bool aggPass(thread_db* tdbb, jrd_req* request) const;
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggInit(thread_db* tdbb, Request* request) const = 0;	// pure, but defined
+	virtual void aggFinish(thread_db* tdbb, Request* request) const;
+	virtual bool aggPass(thread_db* tdbb, Request* request) const;
+	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
 	virtual unsigned getCapabilities() const = 0;
-	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const = 0;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const = 0;
+	virtual void aggPass(thread_db* tdbb, Request* request, dsc* desc) const = 0;
+	virtual dsc* aggExecute(thread_db* tdbb, Request* request) const = 0;
 
 	virtual AggNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
@@ -1088,11 +1087,11 @@ public:
 	explicit WinFuncNode(MemoryPool& pool, const AggInfo& aAggInfo, ValueExprNode* aArg = NULL);
 
 public:
-	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
+	virtual void aggPass(thread_db* tdbb, Request* request, dsc* desc) const
 	{
 	}
 
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const
+	virtual dsc* aggExecute(thread_db* tdbb, Request* request) const
 	{
 		return NULL;
 	}
@@ -1190,7 +1189,7 @@ public:
 		streamList.add(getStream());
 	}
 
-	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream) = 0;
+	virtual RecordSource* compile(thread_db* tdbb, Optimizer* opt, bool innerSubStream) = 0;
 
 public:
 	dsql_ctx* dsqlContext;
@@ -1409,6 +1408,7 @@ public:
 		TYPE_MERGE_SEND,
 		TYPE_MESSAGE,
 		TYPE_MODIFY,
+		TYPE_OUTER_MAP,
 		TYPE_POST_EVENT,
 		TYPE_RECEIVE,
 		TYPE_RETURN,
@@ -1441,7 +1441,7 @@ public:
 
 	struct ExeState
 	{
-		ExeState(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
+		ExeState(thread_db* tdbb, Request* request, jrd_tra* transaction)
 			: savedTdbb(tdbb),
 			  oldPool(tdbb->getDefaultPool()),
 			  oldRequest(tdbb->getRequest()),
@@ -1467,7 +1467,7 @@ public:
 
 		thread_db* savedTdbb;
 		MemoryPool* oldPool;		// Save the old pool to restore on exit.
-		jrd_req* oldRequest;		// Save the old request to restore on exit.
+		Request* oldRequest;		// Save the old request to restore on exit.
 		jrd_tra* oldTransaction;	// Save the old transcation to restore on exit.
 		const StmtNode* topNode;
 		const StmtNode* prevNode;
@@ -1529,7 +1529,7 @@ public:
 		return NULL;
 	}
 
-	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const = 0;
+	virtual const StmtNode* execute(thread_db* tdbb, Request* request, ExeState* exeState) const = 0;
 
 public:
 	NestConst<StmtNode> parentStmt;
@@ -1567,7 +1567,7 @@ public:
 		return NULL;
 	}
 
-	const StmtNode* execute(thread_db* /*tdbb*/, jrd_req* /*request*/, ExeState* /*exeState*/) const
+	const StmtNode* execute(thread_db* /*tdbb*/, Request* /*request*/, ExeState* /*exeState*/) const
 	{
 		fb_assert(false);
 		return NULL;

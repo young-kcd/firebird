@@ -23,7 +23,6 @@
 #include "firebird.h"
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
-#include "../jrd/rse.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/ext_proto.h"
 #include "../jrd/met_proto.h"
@@ -43,12 +42,13 @@ ExternalTableScan::ExternalTableScan(CompilerScratch* csb, const string& alias,
 	: RecordStream(csb, stream), m_relation(relation), m_alias(csb->csb_pool, alias)
 {
 	m_impure = csb->allocImpure<Impure>();
+	m_cardinality = csb->csb_rpt[stream].csb_cardinality;
 }
 
 void ExternalTableScan::open(thread_db* tdbb) const
 {
 	Database* const dbb = tdbb->getDatabase();
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open;
@@ -66,7 +66,7 @@ void ExternalTableScan::open(thread_db* tdbb) const
 
 void ExternalTableScan::close(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 
 	invalidateRecords(request);
 
@@ -80,7 +80,7 @@ bool ExternalTableScan::getRecord(thread_db* tdbb) const
 {
 	JRD_reschedule(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	record_param* const rpb = &request->req_rpb[m_stream];
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
@@ -123,6 +123,7 @@ void ExternalTableScan::print(thread_db* tdbb, string& plan,
 	{
 		plan += printIndent(++level) + "Table " +
 			printName(tdbb, m_relation->rel_name.c_str(), m_alias) + " Full Scan";
+		printOptInfo(plan);
 	}
 	else
 	{

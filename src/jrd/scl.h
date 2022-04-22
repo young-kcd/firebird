@@ -94,8 +94,7 @@ const SecurityClass::flags_t SCL_MODIFY_ANY	= SCL_create | SCL_alter | SCL_contr
 
 const USHORT USR_mapdown	= 1;		// Mapping failed when getting context
 const USHORT USR_newrole	= 2;		// usr_granted_roles array needs refresh
-
-const USHORT USR_external	= USR_mapdown;
+const USHORT USR_sysdba		= 4;		// User detected as SYSDBA
 
 class UserId
 {
@@ -311,7 +310,7 @@ public:
 		return usr_privileges.test(sp);
 	}
 
-	static void sclInit(thread_db* tdbb, bool create, const UserId& tempId);
+	void sclInit(thread_db* tdbb, bool create);
 
 	void setUserName(const Firebird::MetaString& userName)
 	{
@@ -367,6 +366,13 @@ public:
 		return usr_granted_roles.exist(role);
 	}
 
+	const auto& getGrantedRoles(thread_db* tdbb) const
+	{
+		if (testFlag(USR_newrole))
+			findGrantedRoles(tdbb);
+		return usr_granted_roles;
+	}
+
 	void makeRoleName(const int dialect)
 	{
 		makeRoleName(usr_sql_role_name, dialect);
@@ -380,7 +386,7 @@ public:
 
 	void setFlag(USHORT mask)
 	{
-		usr_flags |= (mask & USR_external);
+		usr_flags |= mask;
 	}
 
 	static void makeRoleName(Firebird::MetaString& role, const int dialect);
@@ -389,24 +395,6 @@ private:
 	void findGrantedRoles(thread_db* tdbb) const;
 };
 
-// These numbers are arbitrary and only used at run-time. Can be changed if necessary at any moment.
-// We need to include here the new objects that accept ACLs.
-const SLONG SCL_object_database		= obj_database;
-const SLONG SCL_object_table		= obj_relations;
-const SLONG SCL_object_package		= obj_packages;
-const SLONG SCL_object_procedure	= obj_procedures;
-const SLONG SCL_object_function		= obj_functions;
-const SLONG SCL_object_collation	= obj_collations;
-const SLONG SCL_object_exception	= obj_exceptions;
-const SLONG SCL_object_generator	= obj_generators;
-const SLONG SCL_object_charset		= obj_charsets;
-const SLONG SCL_object_domain		= obj_domains;
-const SLONG SCL_object_view			= obj_views;
-const SLONG SCL_object_role			= obj_roles;
-const SLONG SCL_object_filter		= obj_filters;
-// Please keep it with code more than other objects
-// - relations and procedures should be sorted before columns.
-const SLONG SCL_object_column		= obj_type_MAX + 1;
 
 } //namespace Jrd
 

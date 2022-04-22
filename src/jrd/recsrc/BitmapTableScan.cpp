@@ -37,18 +37,19 @@ using namespace Jrd;
 
 BitmapTableScan::BitmapTableScan(CompilerScratch* csb, const string& alias,
 								 StreamType stream, jrd_rel* relation,
-								 InversionNode* inversion)
+								 InversionNode* inversion, double selectivity)
 	: RecordStream(csb, stream),
 	  m_alias(csb->csb_pool, alias), m_relation(relation), m_inversion(inversion)
 {
 	fb_assert(m_inversion);
 
 	m_impure = csb->allocImpure<Impure>();
+	m_cardinality = csb->csb_rpt[stream].csb_cardinality * selectivity;
 }
 
 void BitmapTableScan::open(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open;
@@ -62,7 +63,7 @@ void BitmapTableScan::open(thread_db* tdbb) const
 
 void BitmapTableScan::close(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 
 	invalidateRecords(request);
 
@@ -84,7 +85,7 @@ bool BitmapTableScan::getRecord(thread_db* tdbb) const
 {
 	JRD_reschedule(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	record_param* const rpb = &request->req_rpb[m_stream];
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
@@ -129,6 +130,7 @@ void BitmapTableScan::print(thread_db* tdbb, string& plan,
 		plan += printIndent(++level) + "Table " +
 			printName(tdbb, m_relation->rel_name.c_str(), m_alias) + " Access By ID";
 
+		printOptInfo(plan);
 		printInversion(tdbb, m_inversion, plan, true, level);
 	}
 	else

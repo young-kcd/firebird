@@ -252,5 +252,6 @@ static const struct
 	{"dcl_local_table", dcl_local_table},
 	{"local_table_truncate", one_word},
 	{"local_table_id", local_table},
+	{"outer_map", outer_map},
 	{0, 0}
 };

@@ -85,6 +85,7 @@
 #include "../jrd/intl.h"
 #include "../intl/charsets.h"
 #include "../jrd/align.h"
+#include "../dsql/DsqlStatementCache.h"
 #include "../common/gdsassert.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/btr_proto.h"
@@ -983,7 +984,7 @@ namespace
 
 			if (routine && !blobId.isEmpty())
 			{
-				JrdStatement* statement = NULL;
+				Statement* statement = NULL;
 				// Nickolay Samofatov: allocate statement memory pool...
 				MemoryPool* new_pool = attachment->createPool();
 				// block is used to ensure MET_verify_cache
@@ -1477,6 +1478,9 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
 	}
 
 	SET_TDBB(tdbb);
+
+	tdbb->getAttachment()->att_dsql_instance->dbb_statement_cache->purgeAllAttachments(tdbb);
+
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 
 	/* Loop for as long as any of the deferred work routines says that it has
@@ -2754,10 +2758,12 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 
 						if (!IDX.RDB$EXPRESSION_BLR.NULL)
 						{
-							idx.idx_expression = static_cast<ValueExprNode*>(MET_get_dependencies(
-								tdbb, relation, NULL, 0, NULL, &IDX.RDB$EXPRESSION_BLR,
-								&idx.idx_expression_statement, &csb, work->dfw_name, obj_expression_index, 0,
-								transaction));
+							MET_get_dependencies(tdbb, relation, nullptr, 0, nullptr, &IDX.RDB$EXPRESSION_BLR,
+								nullptr, &csb, work->dfw_name, obj_expression_index, 0,
+								transaction);
+
+							idx.idx_expression_statement = Statement::makeValueExpression(tdbb,
+								idx.idx_expression, idx.idx_expression_desc, csb, false);
 						}
 					} // end scope
 
@@ -2765,7 +2771,6 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 
 					idx.idx_count = 1;
 					idx.idx_flags |= idx_expressn;
-					idx.idx_expression->getDesc(tdbb, csb, &idx.idx_expression_desc);
 					idx.idx_rpt[0].idx_itype =
 						DFW_assign_index_type(tdbb, work->dfw_name,
 						idx.idx_expression_desc.dsc_dtype,
@@ -2795,7 +2800,7 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 			SelectivityList selectivity(*tdbb->getDefaultPool());
 
 			jrd_tra* const current_transaction = tdbb->getTransaction();
-			jrd_req* const current_request = tdbb->getRequest();
+			Request* const current_request = tdbb->getRequest();
 
 			try
 			{
@@ -3998,6 +4003,7 @@ void DFW_reset_icu(thread_db* tdbb)
 			"join RDB$CHARACTER_SETS cs on coll.RDB$CHARACTER_SET_ID = cs.RDB$CHARACTER_SET_ID "
 			"where coll.RDB$SPECIFIC_ATTRIBUTES like '%COLL-VERSION=%' "
 			" and coalesce(ind.RDB$INDEX_INACTIVE, 0) = 0 "
+			" and coalesce(rel.RDB$RELATION_TYPE, 0) = 0 "		// rel_persistent
 			"group by ind.RDB$INDEX_NAME, rel.RDB$RELATION_ID, coll.RDB$BASE_COLLATION_NAME, "
 			" coll.RDB$COLLATION_NAME, cs.RDB$CHARACTER_SET_NAME, coll.RDB$SPECIFIC_ATTRIBUTES";
 
@@ -5433,7 +5439,7 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
 
 	if ((relation || (type & TRIGGER_TYPE_MASK) != TRIGGER_TYPE_DML) && !blob_id.isEmpty())
 	{
-		JrdStatement* statement = NULL;
+		Statement* statement = NULL;
 		// Nickolay Samofatov: allocate statement memory pool...
 		MemoryPool* new_pool = attachment->createPool();
 		USHORT par_flags;
@@ -5905,19 +5911,19 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 					if (notNull && !defaultValue->isEmpty())
 					{
 						Jrd::ContextPoolHolder context(tdbb, attachment->createPool());
-						JrdStatement* defaultStatement = NULL;
+						Statement* defaultStatement = NULL;
 						try
 						{
 							ValueExprNode* defaultNode = static_cast<ValueExprNode*>(MET_parse_blob(
 								tdbb, relation, defaultValue, NULL, &defaultStatement, false, false));
 
-							jrd_req* const defaultRequest = defaultStatement->findRequest(tdbb);
+							Request* const defaultRequest = defaultStatement->findRequest(tdbb);
 
 							// Attention: this is scoped to the end of this "try".
-							AutoSetRestore2<jrd_req*, thread_db> autoRequest(tdbb,
+							AutoSetRestore2<Request*, thread_db> autoRequest(tdbb,
 								&thread_db::getRequest, &thread_db::setRequest, defaultRequest);
 
-							TimeZoneUtil::validateGmtTimeStamp(defaultRequest->req_gmt_timestamp);
+							defaultRequest->validateTimeStamp();
 
 							TRA_attach_request(transaction, defaultRequest);
 							dsc* result = EVL_expr(tdbb, defaultRequest, defaultNode);

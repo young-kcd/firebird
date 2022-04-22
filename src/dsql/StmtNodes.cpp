@@ -34,7 +34,7 @@
 #include "../jrd/tra.h"
 #include "../jrd/Coercion.h"
 #include "../jrd/Function.h"
-#include "../jrd/Optimizer.h"
+#include "../jrd/optimizer/Optimizer.h"
 #include "../jrd/RecordSourceNodes.h"
 #include "../jrd/VirtualTable.h"
 #include "../jrd/extds/ExtDS.h"
@@ -72,8 +72,8 @@ namespace Jrd {
 
 template <typename T> static void dsqlExplodeFields(dsql_rel* relation, Array<NestConst<T> >& fields,
 	bool includeComputed);
-static dsql_par* dsqlFindDbKey(const dsql_req*, const RelationSourceNode*);
-static dsql_par* dsqlFindRecordVersion(const dsql_req*, const RelationSourceNode*);
+static dsql_par* dsqlFindDbKey(const DsqlDmlStatement*, const RelationSourceNode*);
+static dsql_par* dsqlFindRecordVersion(const DsqlDmlStatement*, const RelationSourceNode*);
 static void dsqlGenEofAssignment(DsqlCompilerScratch* dsqlScratch, SSHORT value);
 static void dsqlGenReturning(DsqlCompilerScratch* dsqlScratch, ReturningClause* returning,
 	Nullable<USHORT> localTableNumber);
@@ -111,7 +111,7 @@ static void preModifyEraseTriggers(thread_db* tdbb, TrigVector** trigs,
 	StmtNode::WhichTrigger whichTrig, record_param* rpb, record_param* rec, TriggerAction op);
 static void preprocessAssignments(thread_db* tdbb, CompilerScratch* csb,
 	StreamType stream, CompoundStmtNode* compoundNode, const Nullable<OverrideClause>* insertOverride);
-static void restartRequest(const jrd_req* request, jrd_tra* transaction);
+static void restartRequest(const Request* request, jrd_tra* transaction);
 static void validateExpressions(thread_db* tdbb, const Array<ValidateInfo>& validations);
 
 }	// namespace Jrd
@@ -382,12 +382,12 @@ AssignmentNode* AssignmentNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* AssignmentNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* AssignmentNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		EXE_assignment(tdbb, this);
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 	}
 
 	return parentStmt;
@@ -484,14 +484,14 @@ BlockNode* BlockNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+const StmtNode* BlockNode::execute(thread_db* tdbb, Request* request, ExeState* exeState) const
 {
 	jrd_tra* transaction = request->req_transaction;
 	SavNumber savNumber;
 
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
+		case Request::req_evaluate:
 			if (!(transaction->tra_flags & TRA_system))
 			{
 				const Savepoint* const savepoint = transaction->startSavepoint();
@@ -500,7 +500,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 			}
 			return action;
 
-		case jrd_req::req_unwind:
+		case Request::req_unwind:
 		{
 			if (request->req_flags & (req_leave | req_continue_loop))
 			{
@@ -574,7 +574,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 
 					if (testAndFixupError(tdbb, request, handlerNode->conditions))
 					{
-						request->req_operation = jrd_req::req_evaluate;
+						request->req_operation = Request::req_evaluate;
 						exeState->errorPending = false;
 
 						// On entering looper exeState->oldRequest etc. are saved.
@@ -649,7 +649,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 			return temp;
 		}
 
-		case jrd_req::req_return:
+		case Request::req_return:
 			if (!(transaction->tra_flags & TRA_system))
 			{
 				savNumber = *request->getImpure<SavNumber>(impureOffset);
@@ -673,7 +673,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 }
 
 // Test for match of current state with list of error conditions. Fix type and code of the exception.
-bool BlockNode::testAndFixupError(thread_db* tdbb, jrd_req* request, const ExceptionArray& conditions)
+bool BlockNode::testAndFixupError(thread_db* tdbb, Request* request, const ExceptionArray& conditions)
 {
 	if (tdbb->tdbb_flags & TDBB_sys_error)
 		return false;
@@ -841,13 +841,13 @@ CompoundStmtNode* CompoundStmtNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* CompoundStmtNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* CompoundStmtNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
 	const NestConst<StmtNode>* end = statements.end();
 
 	if (onlyAssignments)
 	{
-		if (request->req_operation == jrd_req::req_evaluate)
+		if (request->req_operation == Request::req_evaluate)
 		{
 			for (const NestConst<StmtNode>* i = statements.begin(); i != end; ++i)
 			{
@@ -862,7 +862,7 @@ const StmtNode* CompoundStmtNode::execute(thread_db* tdbb, jrd_req* request, Exe
 				EXE_assignment(tdbb, static_cast<const AssignmentNode*>(stmt));
 			}
 
-			request->req_operation = jrd_req::req_return;
+			request->req_operation = Request::req_return;
 		}
 
 		return parentStmt;
@@ -872,18 +872,18 @@ const StmtNode* CompoundStmtNode::execute(thread_db* tdbb, jrd_req* request, Exe
 
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
+		case Request::req_evaluate:
 			impure->sta_state = 0;
 			// fall into
 
-		case jrd_req::req_return:
-		case jrd_req::req_sync:
+		case Request::req_return:
+		case Request::req_sync:
 			if (impure->sta_state < statements.getCount())
 			{
-				request->req_operation = jrd_req::req_evaluate;
+				request->req_operation = Request::req_evaluate;
 				return statements[impure->sta_state++];
 			}
-			request->req_operation = jrd_req::req_return;
+			request->req_operation = Request::req_return;
 			// fall into
 
 		default:
@@ -938,11 +938,11 @@ void ContinueLeaveNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->appendUChar(labelNumber);
 }
 
-const StmtNode* ContinueLeaveNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* ContinueLeaveNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
-		request->req_operation = jrd_req::req_unwind;
+		request->req_operation = Request::req_unwind;
 		request->req_label = labelNumber;
 		request->req_flags |= (blrOp == blr_continue_loop ? req_continue_loop : req_leave);
 	}
@@ -1117,7 +1117,7 @@ CursorStmtNode* CursorStmtNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* CursorStmtNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* CursorStmtNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
 	fb_assert(cursorNumber < request->req_cursors.getCount());
 	const Cursor* const cursor = request->req_cursors[cursorNumber];
@@ -1126,18 +1126,18 @@ const StmtNode* CursorStmtNode::execute(thread_db* tdbb, jrd_req* request, ExeSt
 	switch (cursorOp)
 	{
 		case blr_cursor_open:
-			if (request->req_operation == jrd_req::req_evaluate)
+			if (request->req_operation == Request::req_evaluate)
 			{
 				cursor->open(tdbb);
-				request->req_operation = jrd_req::req_return;
+				request->req_operation = Request::req_return;
 			}
 			return parentStmt;
 
 		case blr_cursor_close:
-			if (request->req_operation == jrd_req::req_evaluate)
+			if (request->req_operation == Request::req_evaluate)
 			{
 				cursor->close(tdbb);
-				request->req_operation = jrd_req::req_return;
+				request->req_operation = Request::req_return;
 			}
 			return parentStmt;
 
@@ -1145,7 +1145,7 @@ const StmtNode* CursorStmtNode::execute(thread_db* tdbb, jrd_req* request, ExeSt
 		case blr_cursor_fetch_scroll:
 			switch (request->req_operation)
 			{
-				case jrd_req::req_evaluate:
+				case Request::req_evaluate:
 					if (cursor->isUpdateCounters())
 						request->req_records_affected.clear();
 
@@ -1187,11 +1187,11 @@ const StmtNode* CursorStmtNode::execute(thread_db* tdbb, jrd_req* request, ExeSt
 
 					if (fetched)
 					{
-						request->req_operation = jrd_req::req_evaluate;
+						request->req_operation = Request::req_evaluate;
 						return intoStmt;
 					}
 
-					request->req_operation = jrd_req::req_return;
+					request->req_operation = Request::req_return;
 
 				default:
 					return parentStmt;
@@ -1329,9 +1329,9 @@ DeclareCursorNode* DeclareCursorNode::pass2(thread_db* tdbb, CompilerScratch* cs
 	return this;
 }
 
-const StmtNode* DeclareCursorNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* DeclareCursorNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		// Set up the cursors array...
 		if (cursorNumber >= request->req_cursors.getCount())
@@ -1339,7 +1339,7 @@ const StmtNode* DeclareCursorNode::execute(thread_db* /*tdbb*/, jrd_req* request
 
 		// And store cursor there.
 		request->req_cursors[cursorNumber] = cursor;
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 	}
 
 	return parentStmt;
@@ -1439,15 +1439,23 @@ DeclareLocalTableNode* DeclareLocalTableNode::pass2(thread_db* /*tdbb*/, Compile
 	return this;
 }
 
-const StmtNode* DeclareLocalTableNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* DeclareLocalTableNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
-		request->req_operation = jrd_req::req_return;
+	if (request->req_operation == Request::req_evaluate)
+	{
+		if (auto& recordBuffer = getImpure(tdbb, request, false)->recordBuffer)
+		{
+			delete recordBuffer;
+			recordBuffer = nullptr;
+		}
+
+		request->req_operation = Request::req_return;
+	}
 
 	return parentStmt;
 }
 
-DeclareLocalTableNode::Impure* DeclareLocalTableNode::getImpure(thread_db* tdbb, jrd_req* request, bool createWhenDead) const
+DeclareLocalTableNode::Impure* DeclareLocalTableNode::getImpure(thread_db* tdbb, Request* request, bool createWhenDead) const
 {
 	const auto impure = request->getImpure<Impure>(impureOffset);
 
@@ -1697,7 +1705,7 @@ DeclareSubFuncNode* DeclareSubFuncNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	if (prevDecl)
 		dsqlScratch->putSubFunction(this, true);
 
-	DsqlCompiledStatement* statement = FB_NEW_POOL(pool) DsqlCompiledStatement(pool);
+	auto statement = FB_NEW_POOL(pool) DsqlDmlStatement(pool, dsqlScratch->getAttachment(), dsqlBlock);
 
 	if (dsqlScratch->clientDialect > SQL_DIALECT_V5)
 		statement->setBlrVersion(5);
@@ -1709,7 +1717,7 @@ DeclareSubFuncNode* DeclareSubFuncNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	statement->setReceiveMsg(message);
 	message->msg_number = 1;
 
-	statement->setType(DsqlCompiledStatement::TYPE_SELECT);
+	statement->setType(DsqlStatement::TYPE_SELECT);
 
 	blockScratch = FB_NEW_POOL(pool) DsqlCompilerScratch(pool,
 		dsqlScratch->getAttachment(), dsqlScratch->getTransaction(), statement, dsqlScratch);
@@ -1729,7 +1737,7 @@ void DeclareSubFuncNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	if (!dsqlBlock)	// forward decl
 		return;
 
-	GEN_request(blockScratch, dsqlBlock);
+	GEN_statement(blockScratch, dsqlBlock);
 
 	dsqlScratch->appendUChar(blr_subfunc_decl);
 	dsqlScratch->appendNullString(name.c_str());
@@ -1767,28 +1775,25 @@ void DeclareSubFuncNode::genParameters(DsqlCompilerScratch* dsqlScratch,
 	}
 }
 
-DeclareSubFuncNode* DeclareSubFuncNode::pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
+DeclareSubFuncNode* DeclareSubFuncNode::pass1(thread_db* tdbb, CompilerScratch* /*csb*/)
 {
-	return this;
-}
-
-DeclareSubFuncNode* DeclareSubFuncNode::pass2(thread_db* tdbb, CompilerScratch* /*csb*/)
-{
-	// scope needed here?
-	{	// scope
-		ContextPoolHolder context(tdbb, &subCsb->csb_pool);
-		PAR_blr(tdbb, NULL, blrStart, blrLength, NULL, &subCsb, NULL, false, 0);
-	}
+	ContextPoolHolder context(tdbb, &subCsb->csb_pool);
+	PAR_blr(tdbb, NULL, blrStart, blrLength, NULL, &subCsb, NULL, false, 0);
 
 	return this;
 }
 
-const StmtNode* DeclareSubFuncNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+DeclareSubFuncNode* DeclareSubFuncNode::pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
+{
+	return this;
+}
+
+const StmtNode* DeclareSubFuncNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
 	// Nothing to execute. This is the declaration node.
 
-	if (request->req_operation == jrd_req::req_evaluate)
-		request->req_operation = jrd_req::req_return;
+	if (request->req_operation == Request::req_evaluate)
+		request->req_operation = Request::req_return;
 
 	return parentStmt;
 }
@@ -2039,7 +2044,7 @@ DeclareSubProcNode* DeclareSubProcNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	if (prevDecl)
 		dsqlScratch->putSubProcedure(this, true);
 
-	DsqlCompiledStatement* statement = FB_NEW_POOL(pool) DsqlCompiledStatement(pool);
+	auto statement = FB_NEW_POOL(pool) DsqlDmlStatement(pool, dsqlScratch->getAttachment(), dsqlBlock);
 
 	if (dsqlScratch->clientDialect > SQL_DIALECT_V5)
 		statement->setBlrVersion(5);
@@ -2051,7 +2056,7 @@ DeclareSubProcNode* DeclareSubProcNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	statement->setReceiveMsg(message);
 	message->msg_number = 1;
 
-	statement->setType(DsqlCompiledStatement::TYPE_SELECT);
+	statement->setType(DsqlStatement::TYPE_SELECT);
 
 	blockScratch = FB_NEW_POOL(pool) DsqlCompilerScratch(pool,
 		dsqlScratch->getAttachment(), dsqlScratch->getTransaction(), statement, dsqlScratch);
@@ -2071,7 +2076,7 @@ void DeclareSubProcNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	if (!dsqlBlock)	// forward decl
 		return;
 
-	GEN_request(blockScratch, dsqlBlock);
+	GEN_statement(blockScratch, dsqlBlock);
 
 	dsqlScratch->appendUChar(blr_subproc_decl);
 	dsqlScratch->appendNullString(name.c_str());
@@ -2079,7 +2084,7 @@ void DeclareSubProcNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->appendUChar(SUB_ROUTINE_TYPE_PSQL);
 
 	dsqlScratch->appendUChar(
-		blockScratch->getStatement()->getFlags() & DsqlCompiledStatement::FLAG_SELECTABLE ? 1 : 0);
+		blockScratch->getDsqlStatement()->getFlags() & DsqlStatement::FLAG_SELECTABLE ? 1 : 0);
 
 	genParameters(dsqlScratch, dsqlBlock->parameters);
 	genParameters(dsqlScratch, dsqlBlock->returns);
@@ -2111,12 +2116,7 @@ void DeclareSubProcNode::genParameters(DsqlCompilerScratch* dsqlScratch,
 	}
 }
 
-DeclareSubProcNode* DeclareSubProcNode::pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
-{
-	return this;
-}
-
-DeclareSubProcNode* DeclareSubProcNode::pass2(thread_db* tdbb, CompilerScratch* /*csb*/)
+DeclareSubProcNode* DeclareSubProcNode::pass1(thread_db* tdbb, CompilerScratch* /*csb*/)
 {
 	ContextPoolHolder context(tdbb, &subCsb->csb_pool);
 	PAR_blr(tdbb, NULL, blrStart, blrLength, NULL, &subCsb, NULL, false, 0);
@@ -2124,12 +2124,17 @@ DeclareSubProcNode* DeclareSubProcNode::pass2(thread_db* tdbb, CompilerScratch* 
 	return this;
 }
 
-const StmtNode* DeclareSubProcNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+DeclareSubProcNode* DeclareSubProcNode::pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
+{
+	return this;
+}
+
+const StmtNode* DeclareSubProcNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
 	// Nothing to execute. This is the declaration node.
 
-	if (request->req_operation == jrd_req::req_evaluate)
-		request->req_operation = jrd_req::req_return;
+	if (request->req_operation == Request::req_evaluate)
+		request->req_operation = Request::req_return;
 
 	return parentStmt;
 }
@@ -2207,6 +2212,9 @@ DeclareVariableNode* DeclareVariableNode::pass1(thread_db* tdbb, CompilerScratch
 	fb_assert(!(*vector)[varId]);
 	(*vector)[varId] = this;
 
+	if (!csb->mainCsb && csb->csb_variables_used_in_subroutines.exist(varId))
+		usedInSubRoutines = true;
+
 	return this;
 }
 
@@ -2216,9 +2224,9 @@ DeclareVariableNode* DeclareVariableNode::pass2(thread_db* /*tdbb*/, CompilerScr
 	return this;
 }
 
-const StmtNode* DeclareVariableNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* DeclareVariableNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		impure_value* variable = request->getImpure<impure_value>(impureOffset);
 		variable->vlu_desc = varDesc;
@@ -2238,7 +2246,7 @@ const StmtNode* DeclareVariableNode::execute(thread_db* tdbb, jrd_req* request, 
 		else
 			variable->vlu_desc.dsc_address = (UCHAR*) &variable->vlu_misc;
 
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 	}
 
 	return parentStmt;
@@ -2290,8 +2298,8 @@ StmtNode* EraseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		return SavepointEncloseNode::make(dsqlScratch->getPool(), dsqlScratch, node);
 	}
 
-	dsqlScratch->getStatement()->setType(dsqlCursorName.hasData() ?
-		DsqlCompiledStatement::TYPE_DELETE_CURSOR : DsqlCompiledStatement::TYPE_DELETE);
+	dsqlScratch->getDsqlStatement()->setType(dsqlCursorName.hasData() ?
+		DsqlStatement::TYPE_DELETE_CURSOR : DsqlStatement::TYPE_DELETE);
 
 	// Generate record selection expression.
 
@@ -2377,7 +2385,7 @@ void EraseNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		else
 		{
 			dsqlScratch->appendUChar(blr_send);
-			dsqlScratch->appendUChar(dsqlScratch->getStatement()->getReceiveMsg()->msg_number);
+			dsqlScratch->appendUChar(dsqlScratch->getDsqlStatement()->getReceiveMsg()->msg_number);
 		}
 	}
 
@@ -2569,13 +2577,13 @@ EraseNode* EraseNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* EraseNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+const StmtNode* EraseNode::execute(thread_db* tdbb, Request* request, ExeState* exeState) const
 {
 	const StmtNode* retNode;
 
-	if (request->req_operation == jrd_req::req_unwind)
+	if (request->req_operation == Request::req_unwind)
 		retNode = parentStmt;
-	else if (request->req_operation == jrd_req::req_return && subStatement)
+	else if (request->req_operation == Request::req_return && subStatement)
 	{
 		if (!exeState->topNode)
 		{
@@ -2599,7 +2607,7 @@ const StmtNode* EraseNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 			exeState->whichEraseTrig = ALL_TRIGS;
 		}
 		else
-			request->req_operation = jrd_req::req_evaluate;
+			request->req_operation = Request::req_evaluate;
 	}
 	else
 	{
@@ -2614,7 +2622,7 @@ const StmtNode* EraseNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 }
 
 // Perform erase operation.
-const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const
+const StmtNode* EraseNode::erase(thread_db* tdbb, Request* request, WhichTrigger whichTrig) const
 {
 	jrd_tra* transaction = request->req_transaction;
 	record_param* rpb = &request->req_rpb[stream];
@@ -2622,7 +2630,7 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
+		case Request::req_evaluate:
 		{
 			if (!(marks & MARK_AVOID_COUNTERS))
 				request->req_records_affected.bumpModified(false);
@@ -2640,14 +2648,14 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 			return statement;
 		}
 
-		case jrd_req::req_return:
+		case Request::req_return:
 			break;
 
 		default:
 			return parentStmt;
 	}
 
-	request->req_operation = jrd_req::req_return;
+	request->req_operation = Request::req_return;
 	RLCK_reserve_relation(tdbb, transaction, relation, true);
 
 	if (rpb->rpb_runtime_flags & RPB_just_deleted)
@@ -2884,7 +2892,7 @@ ErrorHandlerNode* ErrorHandlerNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* ErrorHandlerNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* exeState) const
+const StmtNode* ErrorHandlerNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* exeState) const
 {
 	if ((request->req_flags & req_error_handler) && !exeState->errorPending)
 	{
@@ -2897,7 +2905,7 @@ const StmtNode* ErrorHandlerNode::execute(thread_db* /*tdbb*/, jrd_req* request,
 	const StmtNode* retNode = parentStmt;
 	retNode = retNode->parentStmt;
 
-	if (request->req_operation == jrd_req::req_unwind)
+	if (request->req_operation == Request::req_unwind)
 		retNode = retNode->parentStmt;
 
 	request->req_last_xcp.clear();
@@ -2917,6 +2925,7 @@ DmlNode* ExecProcedureNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 {
 	SET_TDBB(tdbb);
 
+	const auto blrStartPos = csb->csb_blr_reader.getPos();
 	jrd_prc* procedure = NULL;
 	QualifiedName name;
 
@@ -2949,6 +2958,25 @@ DmlNode* ExecProcedureNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 
 	if (!procedure)
 		PAR_error(csb, Arg::Gds(isc_prcnotdef) << Arg::Str(name.toString()));
+	else
+	{
+		if (procedure->isImplemented() && !procedure->isDefined())
+		{
+			if (tdbb->getAttachment()->isGbak() || (tdbb->tdbb_flags & TDBB_replicator))
+			{
+				PAR_warning(
+					Arg::Warning(isc_prcnotdef) << Arg::Str(name.toString()) <<
+					Arg::Warning(isc_modnotfound));
+			}
+			else
+			{
+				csb->csb_blr_reader.setPos(blrStartPos);
+				PAR_error(csb,
+					Arg::Gds(isc_prcnotdef) << Arg::Str(name.toString()) <<
+					Arg::Gds(isc_modnotfound));
+			}
+		}
+	}
 
 	ExecProcedureNode* node = FB_NEW_POOL(pool) ExecProcedureNode(pool);
 	node->procedure = procedure;
@@ -2990,7 +3018,7 @@ ExecProcedureNode* ExecProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	}
 
 	if (!dsqlScratch->isPsql())
-		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_EXEC_PROCEDURE);
+		dsqlScratch->getDsqlStatement()->setType(DsqlStatement::TYPE_EXEC_PROCEDURE);
 
 	ExecProcedureNode* node = FB_NEW_POOL(dsqlScratch->getPool()) ExecProcedureNode(dsqlScratch->getPool(), dsqlName);
 	node->dsqlProcedure = procedure;
@@ -3081,7 +3109,7 @@ ValueListNode* ExecProcedureNode::explodeOutputs(DsqlCompilerScratch* dsqlScratc
 		*ptr = paramNode;
 
 		dsql_par* parameter = paramNode->dsqlParameter = MAKE_parameter(
-			dsqlScratch->getStatement()->getReceiveMsg(), true, true, 0, NULL);
+			dsqlScratch->getDsqlStatement()->getReceiveMsg(), true, true, 0, NULL);
 		paramNode->dsqlParameterIndex = parameter->par_index;
 
 		DsqlDescMaker::fromField(&parameter->par_desc, field);
@@ -3112,9 +3140,9 @@ void ExecProcedureNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	const dsql_msg* message = NULL;
 
-	if (dsqlScratch->getStatement()->getType() == DsqlCompiledStatement::TYPE_EXEC_PROCEDURE)
+	if (dsqlScratch->getDsqlStatement()->getType() == DsqlStatement::TYPE_EXEC_PROCEDURE)
 	{
-		if ((message = dsqlScratch->getStatement()->getReceiveMsg()))
+		if ((message = dsqlScratch->getDsqlStatement()->getReceiveMsg()))
 		{
 			dsqlScratch->appendUChar(blr_begin);
 			dsqlScratch->appendUChar(blr_send);
@@ -3205,12 +3233,12 @@ ExecProcedureNode* ExecProcedureNode::pass2(thread_db* tdbb, CompilerScratch* cs
 	return this;
 }
 
-const StmtNode* ExecProcedureNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* ExecProcedureNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		executeProcedure(tdbb, request);
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 	}
 
 	return parentStmt;
@@ -3218,13 +3246,19 @@ const StmtNode* ExecProcedureNode::execute(thread_db* tdbb, jrd_req* request, Ex
 
 // Execute a stored procedure. Begin by assigning the input parameters.
 // End by assigning the output parameters.
-void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) const
+void ExecProcedureNode::executeProcedure(thread_db* tdbb, Request* request) const
 {
 	if (!procedure->isImplemented())
 	{
 		status_exception::raise(
 			Arg::Gds(isc_proc_pack_not_implemented) <<
 				Arg::Str(procedure->getName().identifier) << Arg::Str(procedure->getName().package));
+	}
+	else if (!procedure->isDefined())
+	{
+		status_exception::raise(
+			Arg::Gds(isc_prcnotdef) << Arg::Str(procedure->getName().toString()) <<
+			Arg::Gds(isc_modnotfound));
 	}
 
 	const_cast<jrd_prc*>(procedure.getObject())->checkReload(tdbb);
@@ -3275,7 +3309,7 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 	const SavNumber savNumber = transaction->tra_save_point ?
 		transaction->tra_save_point->getNumber() : 0;
 
-	jrd_req* procRequest = procedure->getStatement()->findRequest(tdbb);
+	Request* procRequest = procedure->getStatement()->findRequest(tdbb);
 
 	// trace procedure execution start
 	TraceProcExecute trace(tdbb, procRequest, request, inputTargets);
@@ -3288,7 +3322,7 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 			&tdbb->getAttachment()->att_original_timezone,
 			tdbb->getAttachment()->att_current_timezone);
 
-		procRequest->req_gmt_timestamp = request->req_gmt_timestamp;
+		procRequest->setGmtTimeStamp(request->getGmtTimeStamp());
 
 		EXE_start(tdbb, procRequest, transaction);
 
@@ -3754,12 +3788,12 @@ ExecStatementNode* ExecStatementNode::pass2(thread_db* tdbb, CompilerScratch* cs
 	return this;
 }
 
-const StmtNode* ExecStatementNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* ExecStatementNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
 	EDS::Statement** stmtPtr = request->getImpure<EDS::Statement*>(impureOffset);
 	EDS::Statement* stmt = *stmtPtr;
 
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		fb_assert(!*stmtPtr);
 
@@ -3798,10 +3832,10 @@ const StmtNode* ExecStatementNode::execute(thread_db* tdbb, jrd_req* request, Ex
 		else
 			stmt->execute(tdbb, tran, inpNames, inputs, excessInputs, outputs);
 
-		request->req_operation = jrd_req::req_return;
-	}  // jrd_req::req_evaluate
+		request->req_operation = Request::req_return;
+	}  // Request::req_evaluate
 
-	if (request->req_operation == jrd_req::req_return || request->req_operation == jrd_req::req_sync)
+	if (request->req_operation == Request::req_return || request->req_operation == Request::req_sync)
 	{
 		fb_assert(stmt);
 
@@ -3809,15 +3843,15 @@ const StmtNode* ExecStatementNode::execute(thread_db* tdbb, jrd_req* request, Ex
 		{
 			if (stmt->fetch(tdbb, outputs))
 			{
-				request->req_operation = jrd_req::req_evaluate;
+				request->req_operation = Request::req_evaluate;
 				return innerStmt;
 			}
 
-			request->req_operation = jrd_req::req_return;
+			request->req_operation = Request::req_return;
 		}
 	}
 
-	if (request->req_operation == jrd_req::req_unwind)
+	if (request->req_operation == Request::req_unwind)
 	{
 		const LabelNode* label = nodeAs<LabelNode>(parentStmt.getObject());
 
@@ -3825,7 +3859,7 @@ const StmtNode* ExecStatementNode::execute(thread_db* tdbb, jrd_req* request, Ex
 			(request->req_flags & req_continue_loop))
 		{
 			request->req_flags &= ~req_continue_loop;
-			request->req_operation = jrd_req::req_sync;
+			request->req_operation = Request::req_sync;
 			return this;
 		}
 	}
@@ -3836,7 +3870,7 @@ const StmtNode* ExecStatementNode::execute(thread_db* tdbb, jrd_req* request, Ex
 	return parentStmt;
 }
 
-void ExecStatementNode::getString(thread_db* tdbb, jrd_req* request, const ValueExprNode* node,
+void ExecStatementNode::getString(thread_db* tdbb, Request* request, const ValueExprNode* node,
 	string& str, bool useAttCS) const
 {
 	MoveBuffer buffer;
@@ -3925,23 +3959,23 @@ IfNode* IfNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* IfNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* IfNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		if (condition->execute(tdbb, request))
 		{
-			request->req_operation = jrd_req::req_evaluate;
+			request->req_operation = Request::req_evaluate;
 			return trueAction;
 		}
 
 		if (falseAction)
 		{
-			request->req_operation = jrd_req::req_evaluate;
+			request->req_operation = Request::req_evaluate;
 			return falseAction;
 		}
 
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 	}
 
 	return parentStmt;
@@ -4010,14 +4044,14 @@ InAutonomousTransactionNode* InAutonomousTransactionNode::pass2(thread_db* tdbb,
 	return this;
 }
 
-const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
 	Database* const dbb = tdbb->getDatabase();
 	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	Impure* const impure = request->getImpure<Impure>(impureOffset);
 
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		// Force unconditional reschedule. It prevents new transactions being
 		// started after an attachment or a database shutdown has been initiated.
@@ -4071,7 +4105,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 
 	switch (request->req_operation)
 	{
-	case jrd_req::req_return:
+	case Request::req_return:
 		if (!(attachment->att_flags & ATT_no_db_triggers))
 		{
 			// run ON TRANSACTION COMMIT triggers
@@ -4086,13 +4120,13 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 		}
 
 		{ // scope
-			AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
+			AutoSetRestore2<Request*, thread_db> autoNullifyRequest(
 				tdbb, &thread_db::getRequest, &thread_db::setRequest, NULL);
 			TRA_commit(tdbb, transaction, false);
 		} // end scope
 		break;
 
-	case jrd_req::req_unwind:
+	case Request::req_unwind:
 		if (request->req_flags & (req_leave | req_continue_loop))
 		{
 			try
@@ -4110,7 +4144,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 					transaction->releaseSavepoint(tdbb);
 				}
 
-				AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
+				AutoSetRestore2<Request*, thread_db> autoNullifyRequest(
 					tdbb, &thread_db::getRequest, &thread_db::setRequest, NULL);
 				TRA_commit(tdbb, transaction, false);
 			}
@@ -4140,7 +4174,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 
 			try
 			{
-				AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
+				AutoSetRestore2<Request*, thread_db> autoNullifyRequest(
 					tdbb, &thread_db::getRequest, &thread_db::setRequest, NULL);
 
 				TRA_rollback(tdbb, transaction, false, false);
@@ -4230,9 +4264,9 @@ InitVariableNode* InitVariableNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* InitVariableNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* InitVariableNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		if (varInfo)
 		{
@@ -4255,7 +4289,7 @@ const StmtNode* InitVariableNode::execute(thread_db* tdbb, jrd_req* request, Exe
 			}
 		}
 
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 	}
 
 	return parentStmt;
@@ -4267,12 +4301,12 @@ const StmtNode* InitVariableNode::execute(thread_db* tdbb, jrd_req* request, Exe
 
 ExecBlockNode* ExecBlockNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	DsqlCompiledStatement* const statement = dsqlScratch->getStatement();
+	DsqlStatement* const statement = dsqlScratch->getDsqlStatement();
 
 	if (returns.hasData())
-		statement->setType(DsqlCompiledStatement::TYPE_SELECT_BLOCK);
+		statement->setType(DsqlStatement::TYPE_SELECT_BLOCK);
 	else
-		statement->setType(DsqlCompiledStatement::TYPE_EXEC_BLOCK);
+		statement->setType(DsqlStatement::TYPE_EXEC_BLOCK);
 
 	dsqlScratch->flags |= DsqlCompilerScratch::FLAG_BLOCK;
 
@@ -4404,7 +4438,7 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		}
 	}
 
-	DsqlCompiledStatement* const statement = dsqlScratch->getStatement();
+	DsqlStatement* const statement = dsqlScratch->getDsqlStatement();
 
 	dsqlScratch->appendUChar(blr_begin);
 
@@ -4490,6 +4524,8 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->loopLevel = 0;
 
 	StmtNode* stmtNode = body->dsqlPass(dsqlScratch);
+
+	dsqlScratch->putOuterMaps();
 	GEN_hidden_variables(dsqlScratch);
 
 	dsqlScratch->appendUChar(blr_stall);
@@ -4501,9 +4537,9 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	stmtNode->genBlr(dsqlScratch);
 
 	if (returns.hasData())
-		statement->setType(DsqlCompiledStatement::TYPE_SELECT_BLOCK);
+		statement->setType(DsqlStatement::TYPE_SELECT_BLOCK);
 	else
-		statement->setType(DsqlCompiledStatement::TYPE_EXEC_BLOCK);
+		statement->setType(DsqlStatement::TYPE_EXEC_BLOCK);
 
 	dsqlScratch->appendUChar(blr_end);
 	dsqlScratch->genReturn(true);
@@ -4669,7 +4705,7 @@ ExceptionNode* ExceptionNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	if (exception)
 	{
 		CMP_post_access(tdbb, csb, exception->secName, 0,
-						SCL_usage, SCL_object_exception, exception->name);
+						SCL_usage, obj_exceptions, exception->name);
 	}
 
 	return this;
@@ -4682,9 +4718,9 @@ ExceptionNode* ExceptionNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* ExceptionNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* ExceptionNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		if (exception)
 		{
@@ -4701,7 +4737,7 @@ const StmtNode* ExceptionNode::execute(thread_db* tdbb, jrd_req* request, ExeSta
 		{
 			// PsqlException is undefined and there weren't any exceptions before,
 			// so just do nothing.
-			request->req_operation = jrd_req::req_return;
+			request->req_operation = Request::req_return;
 		}
 	}
 
@@ -4713,7 +4749,7 @@ void ExceptionNode::setError(thread_db* tdbb) const
 {
 	SET_TDBB(tdbb);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	if (!exception)
 	{
@@ -5070,7 +5106,7 @@ StmtNode* ForNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* ForNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
 	jrd_tra* transaction = request->req_transaction;
 	ImpureMerge* merge = request->getImpure<ImpureMerge>(impureOffset);
@@ -5078,7 +5114,7 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
+		case Request::req_evaluate:
 			// initialize impure values
 			impure->savepoint = 0;
 			impure->writeLockMode = false;
@@ -5100,13 +5136,13 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 
 			// fall into
 
-		case jrd_req::req_return:
+		case Request::req_return:
 			if (stall)
 				return stall;
 
 			// fall into
 
-		case jrd_req::req_sync:
+		case Request::req_sync:
 			{
 				if (hasLineColumn)
 				{
@@ -5117,7 +5153,7 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 				const bool fetched = cursor->fetchNext(tdbb);
 				if (withLock)
 				{
-					const jrd_req* top_request = request->req_snapshot.m_owner;
+					const Request* top_request = request->req_snapshot.m_owner;
 					if ((top_request) && (top_request->req_flags & req_update_conflict))
 						impure->writeLockMode = true;
 				}
@@ -5127,11 +5163,11 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 					if (impure->writeLockMode && withLock)
 					{
 						// Skip statement execution and fetch (and try to lock) next record.
-						request->req_operation = jrd_req::req_sync;
+						request->req_operation = Request::req_sync;
 						return this;
 					}
 
-					request->req_operation = jrd_req::req_evaluate;
+					request->req_operation = Request::req_evaluate;
 					return statement;
 				}
 			}
@@ -5139,7 +5175,7 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 			if (impure->writeLockMode)
 				restartRequest(request, transaction);
 
-			request->req_operation = jrd_req::req_return;
+			request->req_operation = Request::req_return;
 
 			if (impure->savepoint)
 			{
@@ -5155,7 +5191,7 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 
 		default:
 		{
-			if (request->req_operation == jrd_req::req_unwind)
+			if (request->req_operation == Request::req_unwind)
 			{
 				if (request->req_flags & (req_leave | req_continue_loop))
 				{
@@ -5167,7 +5203,7 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 						(request->req_flags & req_continue_loop))
 					{
 						request->req_flags &= ~req_continue_loop;
-						request->req_operation = jrd_req::req_sync;
+						request->req_operation = Request::req_sync;
 						return this;
 					}
 
@@ -5202,13 +5238,13 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 	return NULL;
 }
 
-bool ForNode::isWriteLockMode(jrd_req* request) const
+bool ForNode::isWriteLockMode(Request* request) const
 {
 	const Impure* impure = request->getImpure<Impure>(impureOffset);
 	return impure->writeLockMode;
 }
 
-void ForNode::setWriteLockMode(jrd_req* request) const
+void ForNode::setWriteLockMode(Request* request) const
 {
 	Impure* impure = request->getImpure<Impure>(impureOffset);
 	fb_assert(!impure->writeLockMode);
@@ -5216,7 +5252,7 @@ void ForNode::setWriteLockMode(jrd_req* request) const
 	impure->writeLockMode = true;
 }
 
-void ForNode::checkRecordUpdated(thread_db* tdbb, jrd_req* request, record_param* rpb) const
+void ForNode::checkRecordUpdated(thread_db* tdbb, Request* request, record_param* rpb) const
 {
 	jrd_rel* relation = rpb->rpb_relation;
 	if (!(marks & MARK_MERGE) || relation->isVirtual() || relation->rel_file || relation->rel_view_rse)
@@ -5231,7 +5267,7 @@ void ForNode::checkRecordUpdated(thread_db* tdbb, jrd_req* request, record_param
 		Arg::Gds(isc_merge_dup_update).raise();
 }
 
-void ForNode::setRecordUpdated(thread_db* tdbb, jrd_req* request, record_param* rpb) const
+void ForNode::setRecordUpdated(thread_db* tdbb, Request* request, record_param* rpb) const
 {
 	jrd_rel* relation = rpb->rpb_relation;
 	if (!(marks & MARK_MERGE) || relation->isVirtual() || relation->rel_file || relation->rel_view_rse)
@@ -5284,16 +5320,16 @@ HandlerNode* HandlerNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* HandlerNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* HandlerNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
+		case Request::req_evaluate:
 			return statement;
 
-		case jrd_req::req_unwind:
+		case Request::req_unwind:
 			if (!request->req_label)
-				request->req_operation = jrd_req::req_return;
+				request->req_operation = Request::req_return;
 
 		default:
 			return parentStmt;
@@ -5347,21 +5383,21 @@ LabelNode* LabelNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* LabelNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* LabelNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
+		case Request::req_evaluate:
 			return statement;
 
-		case jrd_req::req_unwind:
+		case Request::req_unwind:
 			fb_assert(!(request->req_flags & req_continue_loop));
 
 			if (request->req_label == labelNumber &&
 				(request->req_flags & (req_leave | req_error_handler)))
 			{
 				request->req_flags &= ~req_leave;
-				request->req_operation = jrd_req::req_return;
+				request->req_operation = Request::req_return;
 			}
 			// fall into
 
@@ -5473,16 +5509,16 @@ LoopNode* LoopNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* LoopNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* LoopNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
-		case jrd_req::req_return:
-			request->req_operation = jrd_req::req_evaluate;
+		case Request::req_evaluate:
+		case Request::req_return:
+			request->req_operation = Request::req_evaluate;
 			return statement;
 
-		case jrd_req::req_unwind:
+		case Request::req_unwind:
 		{
 			const LabelNode* label = nodeAs<LabelNode>(parentStmt.getObject());
 
@@ -5490,7 +5526,7 @@ const StmtNode* LoopNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeStat
 				(request->req_flags & req_continue_loop))
 			{
 				request->req_flags &= ~req_continue_loop;
-				request->req_operation = jrd_req::req_evaluate;
+				request->req_operation = Request::req_evaluate;
 				return statement;
 			}
 			// fall into
@@ -5966,9 +6002,9 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	if (!dsqlScratch->isPsql())
 	{
 		// Describe it as TYPE_RETURNING_CURSOR if RETURNING is present or as INSERT otherwise.
-		dsqlScratch->getStatement()->setType(returning ?
-			DsqlCompiledStatement::TYPE_RETURNING_CURSOR :
-			DsqlCompiledStatement::TYPE_INSERT);
+		dsqlScratch->getDsqlStatement()->setType(returning ?
+			DsqlStatement::TYPE_RETURNING_CURSOR :
+			DsqlStatement::TYPE_INSERT);
 	}
 
 	// Setup the main node.
@@ -6370,13 +6406,13 @@ MessageNode* MessageNode::pass2(thread_db* /*tdbb*/, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* MessageNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* MessageNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		USHORT* flags = request->getImpure<USHORT>(impureFlags);
 		memset(flags, 0, sizeof(USHORT) * format->fmt_count);
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 	}
 
 	return parentStmt;
@@ -6527,8 +6563,8 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 		return node;
 	}
 
-	dsqlScratch->getStatement()->setType(dsqlCursorName.hasData() ?
-		DsqlCompiledStatement::TYPE_UPDATE_CURSOR : DsqlCompiledStatement::TYPE_UPDATE);
+	dsqlScratch->getDsqlStatement()->setType(dsqlCursorName.hasData() ?
+		DsqlStatement::TYPE_UPDATE_CURSOR : DsqlStatement::TYPE_UPDATE);
 
 	doDsqlPass(dsqlScratch, node->dsqlRelation, relation, false);
 	dsql_ctx* mod_context = dsqlGetContext(node->dsqlRelation);
@@ -6654,7 +6690,7 @@ void ModifyNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		else
 		{
 			dsqlScratch->appendUChar(blr_send);
-			dsqlScratch->appendUChar(dsqlScratch->getStatement()->getReceiveMsg()->msg_number);
+			dsqlScratch->appendUChar(dsqlScratch->getDsqlStatement()->getReceiveMsg()->msg_number);
 		}
 	}
 
@@ -6888,15 +6924,15 @@ ModifyNode* ModifyNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* ModifyNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+const StmtNode* ModifyNode::execute(thread_db* tdbb, Request* request, ExeState* exeState) const
 {
 	impure_state* impure = request->getImpure<impure_state>(impureOffset);
 	const StmtNode* retNode;
 
-	if (request->req_operation == jrd_req::req_unwind)
+	if (request->req_operation == Request::req_unwind)
 		return parentStmt;
 
-	if (request->req_operation == jrd_req::req_return && !impure->sta_state && subMod)
+	if (request->req_operation == Request::req_return && !impure->sta_state && subMod)
 	{
 		if (!exeState->topNode)
 		{
@@ -6920,7 +6956,7 @@ const StmtNode* ModifyNode::execute(thread_db* tdbb, jrd_req* request, ExeState*
 			exeState->whichModTrig = ALL_TRIGS;
 		}
 		else
-			request->req_operation = jrd_req::req_evaluate;
+			request->req_operation = Request::req_evaluate;
 	}
 	else
 	{
@@ -6935,7 +6971,7 @@ const StmtNode* ModifyNode::execute(thread_db* tdbb, jrd_req* request, ExeState*
 }
 
 // Execute a MODIFY statement.
-const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const
+const StmtNode* ModifyNode::modify(thread_db* tdbb, Request* request, WhichTrigger whichTrig) const
 {
 	jrd_tra* transaction = request->req_transaction;
 	impure_state* impure = request->getImpure<impure_state>(impureOffset);
@@ -6947,24 +6983,24 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
+		case Request::req_evaluate:
 			if (!(marks & MARK_AVOID_COUNTERS))
 				request->req_records_affected.bumpModified(false);
 
 			if (impure->sta_state == 0 && forNode && forNode->isWriteLockMode(request))
-				request->req_operation = jrd_req::req_return;
+				request->req_operation = Request::req_return;
 				// fall thru
 			else
 				break;
 
-		case jrd_req::req_return:
+		case Request::req_return:
 			if (impure->sta_state == 1)
 			{
 				impure->sta_state = 0;
 				Record* orgRecord = orgRpb->rpb_record;
 				const Record* newRecord = newRpb->rpb_record;
 				orgRecord->copyDataFrom(newRecord, true);
-				request->req_operation = jrd_req::req_evaluate;
+				request->req_operation = Request::req_evaluate;
 				return statement;
 			}
 
@@ -7045,7 +7081,7 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 				if (statement2)
 				{
 					impure->sta_state = 2;
-					request->req_operation = jrd_req::req_evaluate;
+					request->req_operation = Request::req_evaluate;
 					return statement2;
 				}
 			}
@@ -7066,7 +7102,7 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 
 	if (orgRpb->rpb_runtime_flags & RPB_just_deleted)
 	{
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 		return parentStmt;
 	}
 
@@ -7088,7 +7124,7 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 
 	if (orgRpb->rpb_runtime_flags & RPB_undo_deleted)
 	{
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 		return parentStmt;
 	}
 
@@ -7127,6 +7163,104 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 	}
 
 	return statement;
+}
+
+
+//--------------------
+
+
+static RegisterNode<OuterMapNode> regOuterMapNode({blr_outer_map});
+
+DmlNode* OuterMapNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
+{
+	fb_assert(csb->mainCsb);
+	if (!csb->mainCsb)
+		PAR_error(csb, Arg::Gds(isc_random) << "Invalid blr_outer_map. Must be inside subroutine.");
+
+	const auto node = FB_NEW_POOL(pool) OuterMapNode(pool);
+
+	auto& blrReader = csb->csb_blr_reader;
+	UCHAR subCode;
+
+	while ((subCode = blrReader.getByte()) != blr_end)
+	{
+		switch (subCode)
+		{
+			case blr_outer_map_message:
+			{
+				const USHORT outerNumber = blrReader.getWord();
+				const USHORT innerNumber = blrReader.getWord();
+
+				csb->outerMessagesMap.put(innerNumber, outerNumber);
+
+				const auto outerMessage = CMP_csb_element(csb->mainCsb, outerNumber)->csb_message;
+				if (!outerMessage)
+				{
+					fb_assert(false);
+					PAR_error(csb, Arg::Gds(isc_random) <<
+						"Invalid blr_outer_map_message: outer message does not exist");
+				}
+
+				const auto tail = CMP_csb_element(csb, innerNumber);
+				if (tail->csb_message)
+				{
+					fb_assert(false);
+					PAR_error(csb, Arg::Gds(isc_random) <<
+						"Invalid blr_outer_map_message: inner message already exist");
+				}
+
+				tail->csb_message = outerMessage;
+
+				if (innerNumber > csb->csb_msg_number)
+					csb->csb_msg_number = innerNumber;
+
+				break;
+			}
+
+			case blr_outer_map_variable:
+			{
+				const USHORT outerNumber = blrReader.getWord();
+				const USHORT innerNumber = blrReader.getWord();
+
+				csb->mainCsb->csb_variables_used_in_subroutines.add(outerNumber);
+				csb->outerVarsMap.put(innerNumber, outerNumber);
+
+				auto& outerVariables = *csb->mainCsb->csb_variables;
+				if (outerNumber >= outerVariables.count() || !outerVariables[outerNumber])
+				{
+					fb_assert(false);
+					PAR_error(csb, Arg::Gds(isc_random) <<
+						"Invalid blr_outer_map_variable: outer variable does not exist");
+				}
+
+				auto& innerVariables = *(csb->csb_variables = vec<DeclareVariableNode*>::newVector(
+					*tdbb->getDefaultPool(), csb->csb_variables, innerNumber + 1));
+
+				if (innerVariables[innerNumber])
+				{
+					fb_assert(false);
+					PAR_error(csb, Arg::Gds(isc_random) <<
+						"Invalid blr_outer_map_variable: inner variable already exist");
+				}
+
+				innerVariables[innerNumber] = outerVariables[outerNumber];
+				break;
+			}
+
+			default:
+				PAR_error(csb, Arg::Gds(isc_random) << "Invalid blr_outer_map sub code");
+		}
+	}
+
+	return node;
+}
+
+const StmtNode* OuterMapNode::execute(thread_db* tdbb, Request* request, ExeState* exeState) const
+{
+	if (request->req_operation == Request::req_evaluate)
+		request->req_operation = Request::req_return;
+
+	return parentStmt;
 }
 
 
@@ -7195,9 +7329,9 @@ PostEventNode* PostEventNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* PostEventNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* PostEventNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		jrd_tra* transaction = request->req_transaction;
 
@@ -7212,7 +7346,7 @@ const StmtNode* PostEventNode::execute(thread_db* tdbb, jrd_req* request, ExeSta
 		if (transaction->tra_flags & TRA_autocommit)
 			transaction->tra_flags |= TRA_perform_autocommit;
 
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 	}
 
 	return parentStmt;
@@ -7273,23 +7407,23 @@ ReceiveNode* ReceiveNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 // Execute a RECEIVE statement. This can be entered either with "req_evaluate" (ordinary receive
 // statement) or "req_proceed" (select statement).
 // In the latter case, the statement isn't every formalled evaluated.
-const StmtNode* ReceiveNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* ReceiveNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
-		case jrd_req::req_return:
+		case Request::req_return:
 			if (!(request->req_batch_mode && batchFlag))
 				break;
 			// fall into
 
-		case jrd_req::req_evaluate:
-			request->req_operation = jrd_req::req_receive;
+		case Request::req_evaluate:
+			request->req_operation = Request::req_receive;
 			request->req_message = message;
 			request->req_flags |= req_stall;
 			return this;
 
-		case jrd_req::req_proceed:
-			request->req_operation = jrd_req::req_evaluate;
+		case Request::req_proceed:
+			request->req_operation = Request::req_evaluate;
 			return statement;
 
 		default:
@@ -7361,7 +7495,7 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch,
 {
 	DsqlContextStack::AutoRestore autoContext(*dsqlScratch->context);
 
-	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_INSERT);
+	dsqlScratch->getDsqlStatement()->setType(DsqlStatement::TYPE_INSERT);
 
 	const auto node = FB_NEW_POOL(dsqlScratch->getPool()) StoreNode(dsqlScratch->getPool());
 	node->overrideClause = overrideClause;
@@ -7571,7 +7705,7 @@ void StoreNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		else if (!(dsqlScratch->flags & DsqlCompilerScratch::FLAG_UPDATE_OR_INSERT))
 		{
 			dsqlScratch->appendUChar(blr_send);
-			dsqlScratch->appendUChar(dsqlScratch->getStatement()->getReceiveMsg()->msg_number);
+			dsqlScratch->appendUChar(dsqlScratch->getDsqlStatement()->getReceiveMsg()->msg_number);
 		}
 	}
 
@@ -7846,12 +7980,12 @@ StoreNode* StoreNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* StoreNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+const StmtNode* StoreNode::execute(thread_db* tdbb, Request* request, ExeState* exeState) const
 {
 	impure_state* impure = request->getImpure<impure_state>(impureOffset);
 	const StmtNode* retNode;
 
-	if (request->req_operation == jrd_req::req_return && !impure->sta_state && subStore)
+	if (request->req_operation == Request::req_return && !impure->sta_state && subStore)
 	{
 		if (!exeState->topNode)
 		{
@@ -7875,7 +8009,7 @@ const StmtNode* StoreNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 			exeState->whichStoTrig = ALL_TRIGS;
 		}
 		else
-			request->req_operation = jrd_req::req_evaluate;
+			request->req_operation = Request::req_evaluate;
 	}
 	else
 	{
@@ -7890,7 +8024,7 @@ const StmtNode* StoreNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 }
 
 // Execute a STORE statement.
-const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const
+const StmtNode* StoreNode::store(thread_db* tdbb, Request* request, WhichTrigger whichTrig) const
 {
 	jrd_tra* transaction = request->req_transaction;
 	impure_state* impure = request->getImpure<impure_state>(impureOffset);
@@ -7907,7 +8041,7 @@ const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger
 
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
+		case Request::req_evaluate:
 			if (!(marks & MARK_AVOID_COUNTERS))
 			{
 				if (!nodeIs<ForNode>(parentStmt))
@@ -7921,7 +8055,7 @@ const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger
 				RLCK_reserve_relation(tdbb, transaction, relation, true);
 			break;
 
-		case jrd_req::req_return:
+		case Request::req_return:
 			if (!impure->sta_state)
 			{
 				SavepointChangeMarker scMarker(transaction);
@@ -7979,7 +8113,7 @@ const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger
 				if (statement2)
 				{
 					impure->sta_state = 1;
-					request->req_operation = jrd_req::req_evaluate;
+					request->req_operation = Request::req_evaluate;
 					return statement2;
 				}
 			}
@@ -8064,8 +8198,8 @@ SelectNode* SelectNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	if (dsqlForUpdate)
 	{
-		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SELECT_UPD);
-		dsqlScratch->getStatement()->addFlags(DsqlCompiledStatement::FLAG_NO_BATCH);
+		dsqlScratch->getDsqlStatement()->setType(DsqlStatement::TYPE_SELECT_UPD);
+		dsqlScratch->getDsqlStatement()->addFlags(DsqlStatement::FLAG_NO_BATCH);
 	}
 	else
 	{
@@ -8077,8 +8211,8 @@ SelectNode* SelectNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 		if (rseNode->dsqlOrder || rseNode->dsqlDistinct)
 		{
-			dsqlScratch->getStatement()->setFlags(
-				dsqlScratch->getStatement()->getFlags() & ~DsqlCompiledStatement::FLAG_NO_BATCH);
+			dsqlScratch->getDsqlStatement()->setFlags(
+				dsqlScratch->getDsqlStatement()->getFlags() & ~DsqlStatement::FLAG_NO_BATCH);
 		}
 	}
 
@@ -8104,7 +8238,7 @@ void SelectNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	RseNode* const rse = nodeAs<RseNode>(dsqlRse);
 	fb_assert(rse);
 
-	DsqlCompiledStatement* const statement = dsqlScratch->getStatement();
+	DsqlStatement* const statement = dsqlScratch->getDsqlStatement();
 
 	// Set up parameter for things in the select list.
 	ValueListNode* list = rse->dsqlSelectList;
@@ -8265,13 +8399,13 @@ SelectNode* SelectNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 // EXE_send will then loop thru the sub-statements of select looking for the appropriate RECEIVE
 // statement. When (or if) it finds it, it will set it up the next statement to be executed.
 // The RECEIVE, then, will be entered with the operation "req_proceed".
-const StmtNode* SelectNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* SelectNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
+		case Request::req_evaluate:
 			request->req_message = this;
-			request->req_operation = jrd_req::req_receive;
+			request->req_operation = Request::req_receive;
 			request->req_flags |= req_stall;
 			return this;
 
@@ -8321,7 +8455,7 @@ SetGeneratorNode* SetGeneratorNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	doPass1(tdbb, csb, value.getAddress());
 
 	CMP_post_access(tdbb, csb, generator.secName, 0,
-					SCL_usage, SCL_object_generator, generator.name);
+					SCL_usage, obj_generators, generator.name);
 
 	return this;
 }
@@ -8332,9 +8466,9 @@ SetGeneratorNode* SetGeneratorNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* SetGeneratorNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* SetGeneratorNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		jrd_tra* const transaction = request->req_transaction;
 
@@ -8347,7 +8481,7 @@ const StmtNode* SetGeneratorNode::execute(thread_db* tdbb, jrd_req* request, Exe
 		DdlNode::executeDdlTrigger(tdbb, transaction, DdlNode::DTW_AFTER,
 			DDL_TRIGGER_ALTER_SEQUENCE, generator.name, NULL, *request->getStatement()->sqlText);
 
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 	}
 
 	return parentStmt;
@@ -8393,19 +8527,19 @@ StallNode* StallNode::pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 // Execute a stall statement. This is like a blr_receive, except that there is no need for a
 // gds__send () from the user (i.e. EXE_send () in the engine).
 // A gds__receive () will unblock the user.
-const StmtNode* StallNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* StallNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
-		case jrd_req::req_return:
+		case Request::req_evaluate:
+		case Request::req_return:
 			request->req_message = this;
-			request->req_operation = jrd_req::req_return;
+			request->req_operation = Request::req_return;
 			request->req_flags |= req_stall;
 			return this;
 
-		case jrd_req::req_proceed:
-			request->req_operation = jrd_req::req_return;
+		case Request::req_proceed:
+			request->req_operation = Request::req_return;
 			return parentStmt;
 
 		default:
@@ -8432,7 +8566,7 @@ DmlNode* SuspendNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 SuspendNode* SuspendNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	DsqlCompiledStatement* const statement = dsqlScratch->getStatement();
+	DsqlStatement* const statement = dsqlScratch->getDsqlStatement();
 
 	if (dsqlScratch->flags & (DsqlCompilerScratch::FLAG_TRIGGER | DsqlCompilerScratch::FLAG_FUNCTION))
 	{
@@ -8454,7 +8588,7 @@ SuspendNode* SuspendNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				  Arg::Gds(isc_dsql_unsupported_in_auto_trans) << Arg::Str("SUSPEND"));
 	}
 
-	statement->addFlags(DsqlCompiledStatement::FLAG_SELECTABLE);
+	statement->addFlags(DsqlStatement::FLAG_SELECTABLE);
 
 	return this;
 }
@@ -8487,11 +8621,11 @@ SuspendNode* SuspendNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 }
 
 // Execute a SEND statement.
-const StmtNode* SuspendNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* SuspendNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
-		case jrd_req::req_evaluate:
+		case Request::req_evaluate:
 		{
 			// ASF: If this is the send in the tail of a procedure and the procedure was called
 			// with a SELECT, don't run all the send statements. It may make validations fail when
@@ -8523,14 +8657,14 @@ const StmtNode* SuspendNode::execute(thread_db* tdbb, jrd_req* request, ExeState
 			// fall into
 		}
 
-		case jrd_req::req_return:
-			request->req_operation = jrd_req::req_send;
+		case Request::req_return:
+			request->req_operation = Request::req_send;
 			request->req_message = message;
 			request->req_flags |= req_stall;
 			return this;
 
-		case jrd_req::req_proceed:
-			request->req_operation = jrd_req::req_return;
+		case Request::req_proceed:
+			request->req_operation = Request::req_return;
 			return parentStmt;
 
 		default:
@@ -8651,11 +8785,11 @@ SavepointEncloseNode* SavepointEncloseNode::pass2(thread_db* tdbb, CompilerScrat
 	return this;
 }
 
-const StmtNode* SavepointEncloseNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* SavepointEncloseNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
 	const auto transaction = request->req_transaction;
 
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		if (!(transaction->tra_flags & TRA_system))
 		{
@@ -8666,7 +8800,7 @@ const StmtNode* SavepointEncloseNode::execute(thread_db* tdbb, jrd_req* request,
 		return statement;
 	}
 
-	if (request->req_operation == jrd_req::req_return)
+	if (request->req_operation == Request::req_return)
 	{
 		if (!(transaction->tra_flags & TRA_system))
 		{
@@ -8690,7 +8824,7 @@ const StmtNode* SavepointEncloseNode::execute(thread_db* tdbb, jrd_req* request,
 
 SetTransactionNode* SetTransactionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_START_TRANS);
+	dsqlScratch->getDsqlStatement()->setType(DsqlStatement::TYPE_START_TRANS);
 
 	// Generate tpb for set transaction. Use blr string of dsqlScratch.
 	// If a value is not specified, default is not stuffed, let the engine handle it.
@@ -8769,7 +8903,7 @@ SetTransactionNode* SetTransactionNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	return this;
 }
 
-void SetTransactionNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** transaction) const
+void SetTransactionNode::execute(thread_db* tdbb, DsqlRequest* request, jrd_tra** transaction) const
 {
 	JRD_start_transaction(tdbb, &request->req_transaction, request->req_dbb->dbb_attachment,
 		tpb.getCount(), tpb.begin());
@@ -8806,7 +8940,7 @@ void SetTransactionNode::genTableLock(DsqlCompilerScratch* dsqlScratch,
 //--------------------
 
 
-void SessionResetNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** traHandle) const
+void SessionResetNode::execute(thread_db* tdbb, DsqlRequest* request, jrd_tra** traHandle) const
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
@@ -8817,7 +8951,7 @@ void SessionResetNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** tra
 //--------------------
 
 
-void SetRoleNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** /*traHandle*/) const
+void SetRoleNode::execute(thread_db* tdbb, DsqlRequest* request, jrd_tra** /*traHandle*/) const
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
@@ -8848,7 +8982,7 @@ SetDebugOptionNode::SetDebugOptionNode(MemoryPool& pool, MetaName* aName, ExprNo
 {
 }
 
-void SetDebugOptionNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
+void SetDebugOptionNode::execute(thread_db* tdbb, DsqlRequest* /*request*/, jrd_tra** /*traHandle*/) const
 {
 	SET_TDBB(tdbb);
 	auto& debugOptions = tdbb->getAttachment()->getDebugOptions();
@@ -8884,7 +9018,7 @@ SetDecFloatRoundNode::SetDecFloatRoundNode(MemoryPool& pool, MetaName* name)
 	rndMode = mode->val;
 }
 
-void SetDecFloatRoundNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
+void SetDecFloatRoundNode::execute(thread_db* tdbb, DsqlRequest* /*request*/, jrd_tra** /*traHandle*/) const
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
@@ -8904,7 +9038,7 @@ void SetDecFloatTrapsNode::trap(MetaName* name)
 	traps |= trap->val;
 }
 
-void SetDecFloatTrapsNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
+void SetDecFloatTrapsNode::execute(thread_db* tdbb, DsqlRequest* /*request*/, jrd_tra** /*traHandle*/) const
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
@@ -8927,7 +9061,7 @@ SessionManagementNode* SetBindNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 }
 
 
-void SetBindNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
+void SetBindNode::execute(thread_db* tdbb, DsqlRequest* /*request*/, jrd_tra** /*traHandle*/) const
 {
 	SET_TDBB(tdbb);
 
@@ -8991,7 +9125,7 @@ string SetSessionNode::internalPrint(NodePrinter& printer) const
 	return "SetSessionNode";
 }
 
-void SetSessionNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** /*traHandle*/) const
+void SetSessionNode::execute(thread_db* tdbb, DsqlRequest* request, jrd_tra** /*traHandle*/) const
 {
 	Attachment* att = tdbb->getAttachment();
 
@@ -9011,7 +9145,7 @@ void SetSessionNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** /*tra
 //--------------------
 
 
-void SetTimeZoneNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** /*traHandle*/) const
+void SetTimeZoneNode::execute(thread_db* tdbb, DsqlRequest* request, jrd_tra** /*traHandle*/) const
 {
 	Attachment* const attachment = tdbb->getAttachment();
 
@@ -9060,9 +9194,9 @@ TruncateLocalTableNode* TruncateLocalTableNode::copy(thread_db* tdbb, NodeCopier
 	return node;
 }
 
-const StmtNode* TruncateLocalTableNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* TruncateLocalTableNode::execute(thread_db* tdbb, Request* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate)
+	if (request->req_operation == Request::req_evaluate)
 	{
 		const auto localTable = request->getStatement()->localTables[tableNumber];
 
@@ -9072,7 +9206,7 @@ const StmtNode* TruncateLocalTableNode::execute(thread_db* tdbb, jrd_req* reques
 			recordBuffer = nullptr;
 		}
 
-		request->req_operation = jrd_req::req_return;
+		request->req_operation = Request::req_return;
 	}
 
 	return parentStmt;
@@ -9263,9 +9397,9 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	node->modifyNode = nodeAs<ModifyNode>(node->modifyNode->internalDsqlPass(dsqlScratch, true));
 	fb_assert(node->modifyNode);
 
-	// If RETURNING is present, type is already DsqlCompiledStatement::TYPE_EXEC_PROCEDURE.
+	// If RETURNING is present, type is already DsqlStatement::TYPE_EXEC_PROCEDURE.
 	if (!returning)
-		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_INSERT);
+		dsqlScratch->getDsqlStatement()->setType(DsqlStatement::TYPE_INSERT);
 
 	return SavepointEncloseNode::make(dsqlScratch->getPool(), dsqlScratch, node);
 }
@@ -9338,20 +9472,20 @@ CommitRollbackNode* CommitRollbackNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	switch (command)
 	{
 		case CMD_COMMIT:
-			dsqlScratch->getStatement()->setType(retain ?
-				DsqlCompiledStatement::TYPE_COMMIT_RETAIN : DsqlCompiledStatement::TYPE_COMMIT);
+			dsqlScratch->getDsqlStatement()->setType(retain ?
+				DsqlStatement::TYPE_COMMIT_RETAIN : DsqlStatement::TYPE_COMMIT);
 			break;
 
 		case CMD_ROLLBACK:
-			dsqlScratch->getStatement()->setType(retain ?
-				DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN : DsqlCompiledStatement::TYPE_ROLLBACK);
+			dsqlScratch->getDsqlStatement()->setType(retain ?
+				DsqlStatement::TYPE_ROLLBACK_RETAIN : DsqlStatement::TYPE_ROLLBACK);
 			break;
 	}
 
 	return this;
 }
 
-void CommitRollbackNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** transaction) const
+void CommitRollbackNode::execute(thread_db* tdbb, DsqlRequest* request, jrd_tra** transaction) const
 {
 	if (retain)
 	{
@@ -9399,11 +9533,11 @@ Firebird::string UserSavepointNode::internalPrint(NodePrinter& printer) const
 
 UserSavepointNode* UserSavepointNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SAVEPOINT);
+	dsqlScratch->getDsqlStatement()->setType(DsqlStatement::TYPE_SAVEPOINT);
 	return this;
 }
 
-void UserSavepointNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** /*transaction*/) const
+void UserSavepointNode::execute(thread_db* tdbb, DsqlRequest* request, jrd_tra** /*transaction*/) const
 {
 	jrd_tra* const transaction = request->req_transaction;
 	fb_assert(!(transaction->tra_flags & TRA_system));
@@ -9510,12 +9644,11 @@ static void dsqlExplodeFields(dsql_rel* relation, Array<NestConst<T> >& fields, 
 }
 
 // Find dbkey for named relation in statement's saved dbkeys.
-static dsql_par* dsqlFindDbKey(const dsql_req* request, const RelationSourceNode* relation_name)
+static dsql_par* dsqlFindDbKey(const DsqlDmlStatement* statement, const RelationSourceNode* relation_name)
 {
-	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(relation_name, dsql_type_nod);
 
-	const dsql_msg* message = request->getStatement()->getReceiveMsg();
+	const dsql_msg* message = statement->getReceiveMsg();
 	dsql_par* candidate = NULL;
 	const MetaName& relName = relation_name->dsqlName;
 
@@ -9536,11 +9669,9 @@ static dsql_par* dsqlFindDbKey(const dsql_req* request, const RelationSourceNode
 }
 
 // Find record version for relation in statement's saved record version.
-static dsql_par* dsqlFindRecordVersion(const dsql_req* request, const RelationSourceNode* relation_name)
+static dsql_par* dsqlFindRecordVersion(const DsqlDmlStatement* statement, const RelationSourceNode* relation_name)
 {
-	DEV_BLKCHK(request, dsql_type_req);
-
-	const dsql_msg* message = request->getStatement()->getReceiveMsg();
+	const dsql_msg* message = statement->getReceiveMsg();
 	dsql_par* candidate = NULL;
 	const MetaName& relName = relation_name->dsqlName;
 
@@ -9569,7 +9700,7 @@ static void dsqlGenEofAssignment(DsqlCompilerScratch* dsqlScratch, SSHORT value)
 
 	dsqlScratch->appendUChar(blr_assignment);
 	LiteralNode::genConstant(dsqlScratch, &valueDesc, false);
-	GEN_parameter(dsqlScratch, dsqlScratch->getStatement()->getEof());
+	GEN_parameter(dsqlScratch, dsqlScratch->getDsqlStatement()->getEof());
 }
 
 static void dsqlGenReturning(DsqlCompilerScratch* dsqlScratch, ReturningClause* returning,
@@ -9637,7 +9768,7 @@ static void dsqlGenReturningLocalTableCursor(DsqlCompilerScratch* dsqlScratch, R
 	dsqlScratch->appendUChar(blr_end);
 
 	dsqlScratch->appendUChar(blr_send);
-	dsqlScratch->appendUChar(dsqlScratch->getStatement()->getReceiveMsg()->msg_number);
+	dsqlScratch->appendUChar(dsqlScratch->getDsqlStatement()->getReceiveMsg()->msg_number);
 
 	dsqlScratch->appendUChar(blr_begin);
 
@@ -9655,7 +9786,7 @@ static void dsqlGenReturningLocalTableCursor(DsqlCompilerScratch* dsqlScratch, R
 	dsqlScratch->appendUChar(blr_end);
 
 	dsqlScratch->appendUChar(blr_send);
-	dsqlScratch->appendUChar(dsqlScratch->getStatement()->getReceiveMsg()->msg_number);
+	dsqlScratch->appendUChar(dsqlScratch->getDsqlStatement()->getReceiveMsg()->msg_number);
 	dsqlGenEofAssignment(dsqlScratch, 0);
 }
 
@@ -9893,7 +10024,7 @@ static RseNode* dsqlPassCursorReference(DsqlCompilerScratch* dsqlScratch, const 
 
 	// Lookup parent dsqlScratch
 
-	dsql_req* const* const symbol = dsqlScratch->getAttachment()->dbb_cursors.get(cursor.c_str());
+	const auto* const symbol = dsqlScratch->getAttachment()->dbb_cursors.get(cursor.c_str());
 
 	if (!symbol)
 	{
@@ -9903,12 +10034,12 @@ static RseNode* dsqlPassCursorReference(DsqlCompilerScratch* dsqlScratch, const 
 				  Arg::Gds(isc_dsql_cursor_not_found) << cursor);
 	}
 
-	dsql_req* parent = *symbol;
+	auto parent = *symbol;
 
 	// Verify that the cursor is appropriate and updatable
 
-	dsql_par* source = dsqlFindDbKey(parent, relation_name);
-	dsql_par* rv_source = dsqlFindRecordVersion(parent, relation_name);
+	dsql_par* source = dsqlFindDbKey(parent->getDsqlStatement(), relation_name);
+	dsql_par* rv_source = dsqlFindRecordVersion(parent->getDsqlStatement(), relation_name);
 
 	if (!source || !rv_source)
 	{
@@ -9917,7 +10048,7 @@ static RseNode* dsqlPassCursorReference(DsqlCompilerScratch* dsqlScratch, const 
 				  Arg::Gds(isc_dsql_cursor_update_err) << cursor);
 	}
 
-	DsqlCompiledStatement* const statement = dsqlScratch->getStatement();
+	const auto statement = static_cast<DsqlDmlStatement*>(dsqlScratch->getDsqlStatement());
 
 	statement->setParentRequest(parent);
 	statement->setParentDbKey(source);
@@ -10164,7 +10295,7 @@ static ReturningClause* dsqlProcessReturning(DsqlCompilerScratch* dsqlScratch, d
 
 			for (auto& src : node->first->items)
 			{
-				auto parameter = MAKE_parameter(dsqlScratch->getStatement()->getReceiveMsg(),
+				auto parameter = MAKE_parameter(dsqlScratch->getDsqlStatement()->getReceiveMsg(),
 					true, true, 0, src);
 				parameter->par_node = src;
 				DsqlDescMaker::fromNode(dsqlScratch, &parameter->par_desc, src, true);
@@ -10181,8 +10312,8 @@ static ReturningClause* dsqlProcessReturning(DsqlCompilerScratch* dsqlScratch, d
 			if (!singleton)
 			{
 				// Set up parameter to handle EOF
-				auto parameter = MAKE_parameter(dsqlScratch->getStatement()->getReceiveMsg(), false, false, 0, nullptr);
-				dsqlScratch->getStatement()->setEof(parameter);
+				auto parameter = MAKE_parameter(dsqlScratch->getDsqlStatement()->getReceiveMsg(), false, false, 0, nullptr);
+				dsqlScratch->getDsqlStatement()->setEof(parameter);
 				parameter->par_desc.dsc_dtype = dtype_short;
 				parameter->par_desc.dsc_scale = 0;
 				parameter->par_desc.dsc_length = sizeof(SSHORT);
@@ -10192,8 +10323,8 @@ static ReturningClause* dsqlProcessReturning(DsqlCompilerScratch* dsqlScratch, d
 
 	if (!dsqlScratch->isPsql())
 	{
-		dsqlScratch->getStatement()->setType(singleton ?
-			DsqlCompiledStatement::TYPE_EXEC_PROCEDURE : DsqlCompiledStatement::TYPE_RETURNING_CURSOR);
+		dsqlScratch->getDsqlStatement()->setType(singleton ?
+			DsqlStatement::TYPE_EXEC_PROCEDURE : DsqlStatement::TYPE_RETURNING_CURSOR);
 	}
 
 	return node;
@@ -10528,7 +10659,7 @@ static RelationSourceNode* pass1Update(thread_db* tdbb, CompilerScratch* csb, jr
 	// unless this is an internal request, check access permission
 
 	CMP_post_access(tdbb, csb, relation->rel_security_name, (view ? view->rel_id : 0),
-		priv, SCL_object_table, relation->rel_name);
+		priv, obj_relations, relation->rel_name);
 
 	// ensure that the view is set for the input streams,
 	// so that access to views can be checked at the field level
@@ -10779,9 +10910,9 @@ static void preprocessAssignments(thread_db* tdbb, CompilerScratch* csb,
 	}
 }
 
-static void restartRequest(const jrd_req* request, jrd_tra* transaction)
+static void restartRequest(const Request* request, jrd_tra* transaction)
 {
-	const jrd_req* top_request = request->req_snapshot.m_owner;
+	const Request* top_request = request->req_snapshot.m_owner;
 	fb_assert(top_request);
 	fb_assert(top_request->req_flags & req_update_conflict);
 
@@ -10801,7 +10932,7 @@ static void validateExpressions(thread_db* tdbb, const Array<ValidateInfo>& vali
 
 	for (Array<ValidateInfo>::const_iterator i = validations.begin(); i != end; ++i)
 	{
-		jrd_req* request = tdbb->getRequest();
+		Request* request = tdbb->getRequest();
 
 		if (!i->boolean->execute(tdbb, request) && !(request->req_flags & req_null))
 		{

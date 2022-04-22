@@ -133,7 +133,7 @@ using namespace Firebird;
 static bool allSpaces(CharSet*, const BYTE*, ULONG, ULONG);
 static int blocking_ast_collation(void* ast_object);
 static void pad_spaces(thread_db*, CHARSET_ID, BYTE *, ULONG);
-static INTL_BOOL lookup_texttype(texttype* tt, const SubtypeInfo* info);
+static void lookup_texttype(texttype* tt, const SubtypeInfo* info);
 
 static GlobalPtr<Mutex> createCollationMtx;
 
@@ -387,15 +387,10 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 		}
 
 		Attachment* const att = tdbb->getAttachment();
-		texttype* tt = FB_NEW_POOL(*att->att_pool) texttype;
+		AutoPtr<texttype> tt(FB_NEW_POOL(*att->att_pool) texttype);
 		memset(tt, 0, sizeof(texttype));
 
-		if (!lookup_texttype(tt, &info))
-		{
-			delete tt;
-			ERR_post(Arg::Gds(isc_collation_not_installed) << Arg::Str(info.collationName) <<
-															  Arg::Str(info.charsetName));
-		}
+		lookup_texttype(tt, &info);
 
 		if (charset_collations.getCount() <= id)
 			charset_collations.grow(id + 1);
@@ -415,8 +410,11 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 			}
 		}
 
-		charset_collations[id] = Collation::createInstance(*att->att_pool, tt_id, tt, info.attributes, charset);
+		charset_collations[id] = Collation::createInstance(*att->att_pool, tt_id,
+			tt, info.attributes, charset);
 		charset_collations[id]->name = info.collationName;
+
+		tt.release();
 
 		// we don't need a lock in the charset
 		if (id != 0)
@@ -489,9 +487,9 @@ void CharSetContainer::unloadCollation(thread_db* tdbb, USHORT tt_id)
 }
 
 
-static INTL_BOOL lookup_texttype(texttype* tt, const SubtypeInfo* info)
+static void lookup_texttype(texttype* tt, const SubtypeInfo* info)
 {
-	return IntlManager::lookupCollation(info->baseCollationName.c_str(), info->charsetName.c_str(),
+	IntlManager::lookupCollation(info->baseCollationName.c_str(), info->charsetName.c_str(),
 		info->attributes, info->specificAttributes.begin(),
 		info->specificAttributes.getCount(), info->ignoreAttributes, tt);
 }
@@ -1170,12 +1168,19 @@ bool INTL_texttype_validate(Jrd::thread_db* tdbb, const SubtypeInfo* info)
 	texttype tt;
 	memset(&tt, 0, sizeof(tt));
 
-	bool ret = lookup_texttype(&tt, info);
+	try
+	{
+		lookup_texttype(&tt, info);
 
-	if (ret && tt.texttype_fn_destroy)
-		tt.texttype_fn_destroy(&tt);
+		if (tt.texttype_fn_destroy)
+			tt.texttype_fn_destroy(&tt);
 
-	return ret;
+		return true;
+	}
+	catch (const Exception&)
+	{
+		return false;
+	}
 }
 
 
@@ -1272,6 +1277,7 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 	case ttype_binary:
 	case ttype_ascii:
 	case ttype_none:
+		fb_assert(key_type != INTL_KEY_MULTI_STARTING);
 		while (len-- && destLen-- > 0)
 			*dest++ = *src++;
 		// strip off ending pad characters
@@ -1286,6 +1292,7 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 		break;
 	default:
 		TextType* obj = INTL_texttype_lookup(tdbb, ttype);
+		fb_assert(key_type != INTL_KEY_MULTI_STARTING || (obj->getFlags() & TEXTTYPE_MULTI_STARTING_KEY));
 		outlen = obj->string_to_key(len, src, pByte->dsc_length, dest, key_type);
 		break;
 	}

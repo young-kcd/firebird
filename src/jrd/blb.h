@@ -51,7 +51,7 @@ namespace Jrd
 class Attachment;
 class BlobControl;
 class jrd_rel;
-class jrd_req;
+class Request;
 class jrd_tra;
 class vcl;
 class thread_db;

@@ -65,9 +65,9 @@
 				type getParameterName() const;
 		   form, for world-wide (global) parameters
 				static type getParameterName();
-		   should be used. Also, for world-wide parameters, values of default 
+		   should be used. Also, for world-wide parameters, values of default
 		   config instance (see getDefaultConfig()) should be used.
-		5. Macros CONFIG_GET_GLOBAL_XXX and CONFIG_GET_PER_DB_XXX helps to 
+		5. Macros CONFIG_GET_GLOBAL_XXX and CONFIG_GET_PER_DB_XXX helps to
 		   declare and implement trivial getXXX functions and to enforce rule (4).
 **/
 
@@ -137,7 +137,6 @@ enum ConfigKey
 	KEY_DEADLOCK_TIMEOUT,
 	KEY_REMOTE_SERVICE_NAME,
 	KEY_REMOTE_SERVICE_PORT,
-	KEY_REMOTE_PIPE_NAME,
 	KEY_IPC_NAME,
 	KEY_MAX_UNFLUSHED_WRITES,
 	KEY_MAX_UNFLUSHED_WRITE_TIME,
@@ -177,6 +176,7 @@ enum ConfigKey
 	KEY_ENCRYPT_SECURITY_DATABASE,
 	KEY_STMT_TIMEOUT,
 	KEY_CONN_IDLE_TIMEOUT,
+	KEY_ON_DISCONNECT_TRIG_TIMEOUT,
 	KEY_CLIENT_BATCH_BUFFER,
 	KEY_OUTPUT_REDIRECTION_FILE,
 	KEY_EXT_CONN_POOL_SIZE,
@@ -189,6 +189,7 @@ enum ConfigKey
 	KEY_USE_FILESYSTEM_CACHE,
 	KEY_INLINE_SORT_THRESHOLD,
 	KEY_TEMP_PAGESPACE_DIR,
+	KEY_MAX_STATEMENT_CACHE_SIZE,
 	MAX_CONFIG_KEY		// keep it last
 };
 
@@ -232,7 +233,6 @@ constexpr ConfigEntry entries[MAX_CONFIG_KEY] =
 	{TYPE_INTEGER,	"DeadlockTimeout",			false,	10},		// seconds
 	{TYPE_STRING,	"RemoteServiceName",		false,	FB_SERVICE_NAME},
 	{TYPE_INTEGER,	"RemoteServicePort",		false,	0},
-	{TYPE_STRING,	"RemotePipeName",			false,	FB_PIPE_NAME},
 	{TYPE_STRING,	"IpcName",					false,	FB_IPC_NAME},
 #ifdef WIN_NT
 	{TYPE_INTEGER,	"MaxUnflushedWrites",		false,	100},
@@ -285,6 +285,7 @@ constexpr ConfigEntry entries[MAX_CONFIG_KEY] =
 	{TYPE_BOOLEAN,	"AllowEncryptedSecurityDatabase",	false,	false},
 	{TYPE_INTEGER,	"StatementTimeout",			false,	0},
 	{TYPE_INTEGER,	"ConnectionIdleTimeout",	false,	0},
+	{TYPE_INTEGER,	"OnDisconnectTriggerTimeout",	false,	180},
 	{TYPE_INTEGER,	"ClientBatchBuffer",		false,	128 * 1024},
 #ifdef DEV_BUILD
 	{TYPE_STRING,	"OutputRedirectionFile", 	true,	"-"},
@@ -304,7 +305,8 @@ constexpr ConfigEntry entries[MAX_CONFIG_KEY] =
 	{TYPE_STRING,	"DataTypeCompatibility",	false,	nullptr},
 	{TYPE_BOOLEAN,	"UseFileSystemCache",		false,	true},
 	{TYPE_INTEGER,	"InlineSortThreshold",		false,	1000},		// bytes
-	{TYPE_STRING,	"TempTableDirectory",		false,	""}
+	{TYPE_STRING,	"TempTableDirectory",		false,	""},
+	{TYPE_INTEGER,	"MaxStatementCacheSize",	false,	2 * 1048576}	// bytes
 };
 
 
@@ -434,7 +436,7 @@ public:
 
 
 	// CONFIG_GET_GLOBAL_XXX (CONFIG_GET_PER_DB_XXX) set of macros helps to
-	// create trivial static (non-static) getXXX functions. 
+	// create trivial static (non-static) getXXX functions.
 	// Correctness of declaration and implementation is enforced with help
 	// of entries[XXX].is_global.
 
@@ -522,9 +524,6 @@ public:
 	// Service port for INET
 	CONFIG_GET_PER_DB_KEY(unsigned short, getRemoteServicePort, KEY_REMOTE_SERVICE_PORT, getInt);
 
-	// Pipe name for WNET
-	CONFIG_GET_PER_DB_STR(getRemotePipeName, KEY_REMOTE_PIPE_NAME);
-
 	// Name for IPC-related objects
 	CONFIG_GET_PER_DB_STR(getIpcName, KEY_IPC_NAME);
 
@@ -606,6 +605,9 @@ public:
 	// set in minutes
 	CONFIG_GET_PER_DB_KEY(unsigned int, getConnIdleTimeout, KEY_CONN_IDLE_TIMEOUT, getInt);
 
+	// set in seconds
+	CONFIG_GET_PER_DB_KEY(unsigned int, getOnDisconnectTrigTimeout, KEY_ON_DISCONNECT_TRIG_TIMEOUT, getInt);
+
 	CONFIG_GET_PER_DB_KEY(unsigned int, getClientBatchBuffer, KEY_CLIENT_BATCH_BUFFER, getInt);
 
 	CONFIG_GET_GLOBAL_STR(getOutputRedirectionFile, KEY_OUTPUT_REDIRECTION_FILE);
@@ -629,10 +631,12 @@ public:
 	CONFIG_GET_PER_DB_KEY(ULONG, getInlineSortThreshold, KEY_INLINE_SORT_THRESHOLD, getInt);
 
 	CONFIG_GET_PER_DB_STR(getTempPageSpaceDirectory, KEY_TEMP_PAGESPACE_DIR);
+
+	CONFIG_GET_PER_DB_INT(getMaxStatementCacheSize, KEY_MAX_STATEMENT_CACHE_SIZE);
 };
 
 // Implementation of interface to access master configuration file
-class FirebirdConf FB_FINAL :
+class FirebirdConf final :
 	public RefCntIface<IFirebirdConfImpl<FirebirdConf, CheckStatusWrapper> >
 {
 public:

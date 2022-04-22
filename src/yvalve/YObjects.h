@@ -204,7 +204,7 @@ private:
 typedef AtomicYPtr<YAttachment> AtomicAttPtr;
 typedef AtomicYPtr<YTransaction> AtomicTraPtr;
 
-class YEvents FB_FINAL :
+class YEvents final :
 	public YHelper<YEvents, Firebird::IEventsImpl<YEvents, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -227,7 +227,7 @@ private:
 	Firebird::AtomicCounter destroyed;
 };
 
-class YRequest FB_FINAL :
+class YRequest final :
 	public YHelper<YRequest, Firebird::IRequestImpl<YRequest, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -257,7 +257,7 @@ public:
 	isc_req_handle* userHandle;
 };
 
-class YTransaction FB_FINAL :
+class YTransaction final :
 	public YHelper<YTransaction, Firebird::ITransactionImpl<YTransaction, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -313,7 +313,7 @@ private:
 
 typedef Firebird::RefPtr<Firebird::ITransaction> NextTransaction;
 
-class YBlob FB_FINAL :
+class YBlob final :
 	public YHelper<YBlob, Firebird::IBlobImpl<YBlob, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -341,7 +341,7 @@ public:
 	AtomicTraPtr transaction;
 };
 
-class YResultSet FB_FINAL :
+class YResultSet final :
 	public YHelper<YResultSet, Firebird::IResultSetImpl<YResultSet, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -376,7 +376,7 @@ public:
 	YStatement* statement;
 };
 
-class YBatch FB_FINAL :
+class YBatch final :
 	public YHelper<YBatch, Firebird::IBatchImpl<YBatch, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -408,7 +408,7 @@ public:
 };
 
 
-class YReplicator FB_FINAL :
+class YReplicator final :
 	public YHelper<YReplicator, Firebird::IReplicatorImpl<YReplicator, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -443,7 +443,7 @@ private:
 	bool input;
 };
 
-class YStatement FB_FINAL :
+class YStatement final :
 	public YHelper<YStatement, Firebird::IStatementImpl<YStatement, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -505,7 +505,7 @@ public:
 	Firebird::Mutex enterMutex;
 };
 
-class YAttachment FB_FINAL :
+class YAttachment final :
 	public YHelper<YAttachment, Firebird::IAttachmentImpl<YAttachment, Firebird::CheckStatusWrapper> >,
 	public EnterCount
 {
@@ -593,7 +593,7 @@ public:
 	Firebird::StatusHolder savedStatus;	// Do not use raise() method of this class in yValve.
 };
 
-class YService FB_FINAL :
+class YService final :
 	public YHelper<YService, Firebird::IServiceImpl<YService, Firebird::CheckStatusWrapper> >,
 	public EnterCount
 {
@@ -626,7 +626,7 @@ private:
 	bool utf8Connection;		// Client talks to us using UTF8, else - system default charset
 };
 
-class Dispatcher FB_FINAL :
+class Dispatcher final :
 	public Firebird::StdPlugin<Firebird::IProviderImpl<Dispatcher, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -655,7 +655,7 @@ private:
 	Firebird::ICryptKeyCallback* cryptCallback;
 };
 
-class UtilInterface FB_FINAL :
+class UtilInterface final :
 	public Firebird::AutoIface<Firebird::IUtilImpl<UtilInterface, Firebird::CheckStatusWrapper> >
 {
 	// IUtil implementation

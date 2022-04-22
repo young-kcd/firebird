@@ -26,6 +26,7 @@
 #include "../jrd/cmp_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/mov_proto.h"
+#include "../jrd/optimizer/Optimizer.h"
 
 #include "RecordSource.h"
 
@@ -42,11 +43,16 @@ FirstRowsStream::FirstRowsStream(CompilerScratch* csb, RecordSource* next, Value
 	fb_assert(m_next && m_value);
 
 	m_impure = csb->allocImpure<Impure>();
+
+	const auto valueConst = nodeAs<LiteralNode>(value);
+	const auto valueDesc = valueConst ? &valueConst->litDesc : nullptr;
+	m_cardinality = (valueDesc && valueDesc->dsc_dtype == dtype_long) ?
+		valueConst->getSlong() : DEFAULT_CARDINALITY;
 }
 
 void FirstRowsStream::open(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = 0;
@@ -67,7 +73,7 @@ void FirstRowsStream::open(thread_db* tdbb) const
 
 void FirstRowsStream::close(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 
 	invalidateRecords(request);
 
@@ -85,7 +91,7 @@ bool FirstRowsStream::getRecord(thread_db* tdbb) const
 {
 	JRD_reschedule(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
@@ -115,7 +121,10 @@ bool FirstRowsStream::lockRecord(thread_db* tdbb) const
 void FirstRowsStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
 {
 	if (detailed)
+	{
 		plan += printIndent(++level) + "First N Records";
+		printOptInfo(plan);
+	}
 
 	m_next->print(tdbb, plan, detailed, level);
 }
@@ -130,7 +139,7 @@ void FirstRowsStream::findUsedStreams(StreamList& streams, bool expandAll) const
 	m_next->findUsedStreams(streams, expandAll);
 }
 
-void FirstRowsStream::invalidateRecords(jrd_req* request) const
+void FirstRowsStream::invalidateRecords(Request* request) const
 {
 	m_next->invalidateRecords(request);
 }

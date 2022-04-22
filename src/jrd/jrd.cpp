@@ -63,7 +63,6 @@
 #include "../jrd/exe.h"
 #include "../jrd/extds/ExtDS.h"
 #include "../jrd/val.h"
-#include "../jrd/rse.h"
 #include "../jrd/intl.h"
 #include "../jrd/sbm.h"
 #include "../jrd/svc.h"
@@ -94,7 +93,6 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
-#include "../jrd/opt_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/par_proto.h"
 #include "../jrd/os/pio_proto.h"
@@ -136,6 +134,7 @@
 #include "../dsql/dsql.h"
 #include "../dsql/dsql_proto.h"
 #include "../dsql/DsqlBatch.h"
+#include "../dsql/DsqlStatementCache.h"
 
 #ifdef WIN_NT
 #include <process.h>
@@ -335,7 +334,7 @@ JResultSet::JResultSet(DsqlCursor* handle, JStatement* aStatement)
 {
 }
 
-JRequest::JRequest(JrdStatement* handle, StableAttachmentPart* sa)
+JRequest::JRequest(Statement* handle, StableAttachmentPart* sa)
 	: rq(handle), sAtt(sa)
 {
 }
@@ -345,7 +344,7 @@ JEvents::JEvents(int aId, StableAttachmentPart* sa, Firebird::IEventCallback* aC
 {
 }
 
-JStatement::JStatement(dsql_req* handle, StableAttachmentPart* sa, Firebird::Array<UCHAR>& meta)
+JStatement::JStatement(DsqlRequest* handle, StableAttachmentPart* sa, Firebird::Array<UCHAR>& meta)
 	: statement(handle), sAtt(sa), metadata(getPool(), this, sAtt)
 {
 	metadata.parse(meta.getCount(), meta.begin());
@@ -432,7 +431,7 @@ public:
 		{
 			if (getUnloadDetector()->unloadStarted())
 			{
-				Arg::Gds(isc_shutdown).raise();
+				Arg::Gds(isc_att_shut_engine).raise();
 			}
 
 			IPluginBase* p = FB_NEW JProvider(factoryParameter);
@@ -465,7 +464,7 @@ void registerEngine(IPluginManager* iPlugin)
 
 } // namespace Jrd
 
-extern "C" void FB_EXPORTED FB_PLUGIN_ENTRY_POINT(IMaster* master)
+extern "C" FB_DLL_EXPORT void FB_PLUGIN_ENTRY_POINT(IMaster* master)
 {
 	CachedMasterInterface::set(master);
 	registerEngine(PluginManagerInterfacePtr());
@@ -649,7 +648,7 @@ namespace
 		tdbb->setTransaction(transaction);
 	}
 
-	inline void validateHandle(thread_db* tdbb, JrdStatement* const statement)
+	inline void validateHandle(thread_db* tdbb, Statement* const statement)
 	{
 		if (!statement)
 			status_exception::raise(Arg::Gds(isc_bad_req_handle));
@@ -657,7 +656,7 @@ namespace
 		validateHandle(tdbb, statement->requests[0]->req_attachment);
 	}
 
-	inline void validateHandle(thread_db* tdbb, dsql_req* const statement)
+	inline void validateHandle(thread_db* tdbb, DsqlRequest* const statement)
 	{
 		if (!statement)
 			status_exception::raise(Arg::Gds(isc_bad_req_handle));
@@ -944,10 +943,10 @@ void Trigger::compile(thread_db* tdbb)
 			statement->triggerInvoker = att->getUserId(owner);
 
 		if (sysTrigger)
-			statement->flags |= JrdStatement::FLAG_SYS_TRIGGER;
+			statement->flags |= Statement::FLAG_SYS_TRIGGER;
 
 		if (flags & TRG_ignore_perm)
-			statement->flags |= JrdStatement::FLAG_IGNORE_PERM;
+			statement->flags |= Statement::FLAG_IGNORE_PERM;
 	}
 }
 
@@ -1085,6 +1084,7 @@ namespace Jrd
 		ULONG	dpb_remote_flags;
 		ReplicaMode	dpb_replica_mode;
 		bool	dpb_set_db_replica;
+		bool	dpb_clear_map;
 
 		// here begin compound objects
 		// for constructor to work properly dpb_user_name
@@ -1312,7 +1312,7 @@ static bool			drop_files(const jrd_file*);
 static void			find_intl_charset(thread_db*, Jrd::Attachment*, const DatabaseOptions*);
 static void			init_database_lock(thread_db*);
 static void			run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
-static jrd_req*		verify_request_synchronization(JrdStatement* statement, USHORT level);
+static Request*		verify_request_synchronization(Statement* statement, USHORT level);
 static void			purge_transactions(thread_db*, Jrd::Attachment*, const bool);
 static void			check_single_maintenance(thread_db* tdbb);
 
@@ -1332,7 +1332,7 @@ static void		start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tr
 static void		rollback(thread_db*, jrd_tra*, const bool);
 static void		purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsigned flags = 0);
 static void		getUserInfo(UserId&, const DatabaseOptions&, const char*,
-	const RefPtr<const Config>*, bool, Mapping& mapping);
+	const RefPtr<const Config>*, bool, Mapping& mapping, bool);
 static void		waitForShutdown(Semaphore&);
 
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM);
@@ -1348,7 +1348,7 @@ TraceFailedConnection::TraceFailedConnection(const char* filename, const Databas
 {
 	Mapping mapping(Mapping::MAP_ERROR_HANDLER, NULL);
 	mapping.setAuthBlock(m_options->dpb_auth_block);
-	getUserInfo(m_id, *m_options, m_filename, NULL, false, mapping);
+	getUserInfo(m_id, *m_options, m_filename, NULL, false, mapping, false);
 }
 
 
@@ -1358,7 +1358,7 @@ TraceFailedConnection::TraceFailedConnection(const char* filename, const Databas
 // do it here to prevent committing every record update
 // in a statement
 //
-static void check_autocommit(thread_db* tdbb, jrd_req* request)
+static void check_autocommit(thread_db* tdbb, Request* request)
 {
 	jrd_tra* const transaction = request->req_transaction;
 
@@ -1931,6 +1931,12 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				break;
 			}
 
+			// Clear old mapping cache data on request.
+			// Unfortunately have to do it w/o access rights check - to check access rights engine
+			// needs correct mapping which sometimes can't be guaranteed before cleaning cache.
+			if (options.dpb_clear_map)
+				Mapping::clearCache(dbb->dbb_filename.c_str(), Mapping::ALL_CACHE);
+
 			// Check for correct credentials supplied
 			UserId userId;
 
@@ -1942,7 +1948,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				try
 				{
 					mapping.setDb(filename, expanded_name.c_str(), jAtt);
-					getUserInfo(userId, options, filename, &config, false, mapping);
+					getUserInfo(userId, options, filename, &config, false, mapping, options.dpb_reset_icu);
 				}
 				catch(const Exception&)
 				{
@@ -1954,7 +1960,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 			}
 
 			userId.makeRoleName(options.dpb_sql_dialect);
-			UserId::sclInit(tdbb, false, userId);
+			userId.sclInit(tdbb, false);
 
 			Monitoring::publishAttachment(tdbb);
 
@@ -2026,11 +2032,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				if (!allow_access)
 				{
 					// Note we throw exception here when entering full-shutdown mode
-					Arg::Gds v(isc_shutdown);
-					v << Arg::Str(org_filename);
-					if (attachment->att_user && attachment->att_user->testFlag(USR_mapdown))
-						v << Arg::Gds(isc_map_down);
-					ERR_post(v);
+					ERR_post(Arg::Gds(isc_shutdown) << org_filename);
 				}
 			}
 
@@ -2067,6 +2069,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 
 				// Can't allow garbage collection during database validation.
 
+				AutoSetRestoreFlag<ULONG> noCleanup(&attachment->att_flags, ATT_no_cleanup, true);
 				VIO_fini(tdbb);
 
 				if (!VAL_validate(tdbb, options.dpb_verify))
@@ -2077,6 +2080,10 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 			{
 				validateAccess(tdbb, attachment, USE_GFIX_UTILITY);
 				DFW_reset_icu(tdbb);
+
+				// force system privileges recheck for sysdba
+				fb_assert(attachment->att_user);	// set by UserId::sclInit()
+				attachment->att_user->setFlag(USR_newrole);
 			}
 
 			if (options.dpb_journal.hasData())
@@ -2676,7 +2683,7 @@ JRequest* JAttachment::compileRequest(CheckStatusWrapper* user_status,
  * Functional description
  *
  **************************************/
-	JrdStatement* stmt = NULL;
+	Statement* stmt = NULL;
 
 	try
 	{
@@ -2686,11 +2693,14 @@ JRequest* JAttachment::compileRequest(CheckStatusWrapper* user_status,
 		TraceBlrCompile trace(tdbb, blr_length, blr);
 		try
 		{
-			jrd_req* request = NULL;
-			JRD_compile(tdbb, getHandle(), &request, blr_length, blr, RefStrPtr(), 0, NULL, false);
-			stmt = request->getStatement();
+			stmt = CMP_compile(tdbb, blr, blr_length, false, 0, nullptr);
 
-			trace.finish(request, ITracePlugin::RESULT_SUCCESS);
+			const auto attachment = tdbb->getAttachment();
+			const auto rootRequest = stmt->getRequest(tdbb, 0);
+			rootRequest->setAttachment(attachment);
+			attachment->att_requests.add(rootRequest);
+
+			trace.finish(stmt, ITracePlugin::RESULT_SUCCESS);
 		}
 		catch (const Exception& ex)
 		{
@@ -2833,7 +2843,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 
 			// Check for correct credentials supplied
 			mapping.setSecurityDbAlias(config->getSecurityDatabase(), nullptr);
-			getUserInfo(userId, options, filename, &config, true, mapping);
+			getUserInfo(userId, options, filename, &config, true, mapping, false);
 
 #ifdef WIN_NT
 			guardDbInit.enter();		// Required to correctly expand name of just created database
@@ -3029,7 +3039,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			INI_init(tdbb);
 			PAG_init(tdbb);
 
-			UserId::sclInit(tdbb, true, userId);
+			userId.sclInit(tdbb, true);
 
 			if (options.dpb_set_page_buffers)
 				dbb->dbb_page_buffers = options.dpb_page_buffers;
@@ -3047,6 +3057,9 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 				dbb->dbb_database_name = org_filename;
 			else
 				dbb->dbb_database_name = dbb->dbb_filename;
+
+			// Clear old mapping cache data (if present)
+			Mapping::clearCache(dbb->dbb_filename.c_str(), Mapping::ALL_CACHE);
 
 			// Initialize backup difference subsystem. This must be done before WAL and shadowing
 			// is enabled because nbackup it is a lower level subsystem
@@ -3300,15 +3313,15 @@ void JAttachment::freeEngineData(CheckStatusWrapper* user_status, bool forceFree
 
 			unsigned flags = PURGE_LINGER;
 
-			if (engineShutdown ||
+			if (engineShutdown)
+				flags |= PURGE_FORCE;
+
+			if (forceFree ||
 				(dbb->dbb_ast_flags & DBB_shutdown) ||
 				(attachment->att_flags & ATT_shutdown))
 			{
-				flags |= PURGE_FORCE;
-			}
-
-			if (forceFree)
 				flags |= PURGE_NOCHECK;
+			}
 
 			ISC_STATUS reason = 0;
 			if (!forceFree)
@@ -3869,7 +3882,7 @@ void JRequest::receive(CheckStatusWrapper* user_status, int level, unsigned int 
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 		check_database(tdbb);
 
-		jrd_req* request = verify_request_synchronization(getHandle(), level);
+		Request* request = verify_request_synchronization(getHandle(), level);
 
 		try
 		{
@@ -4006,7 +4019,7 @@ void JRequest::getInfo(CheckStatusWrapper* user_status, int level, unsigned int 
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 		check_database(tdbb);
 
-		jrd_req* request = verify_request_synchronization(getHandle(), level);
+		Request* request = verify_request_synchronization(getHandle(), level);
 
 		try
 		{
@@ -4209,7 +4222,7 @@ void JRequest::send(CheckStatusWrapper* user_status, int level, unsigned int msg
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 		check_database(tdbb);
 
-		jrd_req* request = verify_request_synchronization(getHandle(), level);
+		Request* request = verify_request_synchronization(getHandle(), level);
 
 		try
 		{
@@ -4436,7 +4449,7 @@ void JRequest::startAndSend(CheckStatusWrapper* user_status, ITransaction* tra, 
 		validateHandle(tdbb, transaction);
 		check_database(tdbb);
 
-		jrd_req* request = getHandle()->getRequest(tdbb, level);
+		Request* request = getHandle()->getRequest(tdbb, level);
 
 		try
 		{
@@ -4494,7 +4507,7 @@ void JRequest::start(CheckStatusWrapper* user_status, ITransaction* tra, int lev
 		validateHandle(tdbb, transaction);
 		check_database(tdbb);
 
-		jrd_req* request = getHandle()->getRequest(tdbb, level);
+		Request* request = getHandle()->getRequest(tdbb, level);
 
 		try
 		{
@@ -4692,7 +4705,7 @@ void JAttachment::transactRequest(CheckStatusWrapper* user_status, ITransaction*
 			const MessageNode* inMessage = NULL;
 			const MessageNode* outMessage = NULL;
 
-			jrd_req* request = NULL;
+			Request* request = NULL;
 			MemoryPool* new_pool = att->createPool();
 
 			try
@@ -4702,14 +4715,9 @@ void JAttachment::transactRequest(CheckStatusWrapper* user_status, ITransaction*
 				CompilerScratch* csb = PAR_parse(tdbb, reinterpret_cast<const UCHAR*>(blr),
 					blr_length, false);
 
-				request = JrdStatement::makeRequest(tdbb, csb, false);
-				request->getStatement()->verifyAccess(tdbb);
-
 				for (FB_SIZE_T i = 0; i < csb->csb_rpt.getCount(); i++)
 				{
-
-					const MessageNode* node = csb->csb_rpt[i].csb_message;
-					if (node)
+					if (const auto node = csb->csb_rpt[i].csb_message)
 					{
 						if (node->messageNumber == 0)
 							inMessage = node;
@@ -4717,6 +4725,9 @@ void JAttachment::transactRequest(CheckStatusWrapper* user_status, ITransaction*
 							outMessage = node;
 					}
 				}
+
+				request = Statement::makeRequest(tdbb, csb, false);
+				request->getStatement()->verifyAccess(tdbb);
 			}
 			catch (const Exception&)
 			{
@@ -4912,7 +4923,7 @@ void JRequest::unwind(CheckStatusWrapper* user_status, int level)
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 		check_database(tdbb);
 
-		jrd_req* request = verify_request_synchronization(getHandle(), level);
+		Request* request = verify_request_synchronization(getHandle(), level);
 
 		try
 		{
@@ -5056,7 +5067,7 @@ JResultSet* JStatement::openCursor(CheckStatusWrapper* user_status, ITransaction
 				}
 			}
 
-			DsqlCursor* const cursor = DSQL_open(tdbb, &tra, getHandle(),
+			const auto cursor = getHandle()->openCursor(tdbb, &tra,
 				inMetadata, static_cast<UCHAR*>(inBuffer), outMetadata, flags);
 
 			rs = FB_NEW JResultSet(cursor, this);
@@ -5560,7 +5571,7 @@ JStatement* JAttachment::prepare(CheckStatusWrapper* user_status, ITransaction* 
 			validateHandle(tdbb, tra);
 
 		check_database(tdbb);
-		dsql_req* statement = NULL;
+		DsqlRequest* statement = NULL;
 
 		try
 		{
@@ -5832,7 +5843,7 @@ void JResultSet::setDelayedOutputFormat(CheckStatusWrapper* user_status, Firebir
 
 		try
 		{
-			dsql_req* req = statement->getHandle();
+			DsqlRequest* req = statement->getHandle();
 			fb_assert(req);
 			req->setDelayedFormat(tdbb, outMetadata);
 		}
@@ -5892,7 +5903,7 @@ unsigned int JStatement::getTimeout(CheckStatusWrapper* user_status)
 
 		try
 		{
-			Jrd::dsql_req* req = getHandle();
+			Jrd::DsqlRequest* req = getHandle();
 			return req->getTimeout();
 		}
 		catch (const Exception& ex)
@@ -5922,7 +5933,7 @@ void JStatement::setTimeout(CheckStatusWrapper* user_status, unsigned int timeOu
 
 		try
 		{
-			Jrd::dsql_req* req = getHandle();
+			Jrd::DsqlRequest* req = getHandle();
 			req->setTimeout(timeOut);
 		}
 		catch (const Exception& ex)
@@ -5964,11 +5975,11 @@ JBatch* JStatement::createBatch(Firebird::CheckStatusWrapper* status, Firebird::
 				}
 			}
 
-			DsqlBatch* const b = DsqlBatch::open(tdbb, getHandle(), inMetadata, parLength, par);
+			const auto dsqlBatch = getHandle()->openBatch(tdbb, inMetadata, parLength, par);
 
-			batch = FB_NEW JBatch(b, this, inMetadata);
+			batch = FB_NEW JBatch(dsqlBatch, this, inMetadata);
 			batch->addRef();
-			b->setInterfacePtr(batch);
+			dsqlBatch->setInterfacePtr(batch);
 			tdbb->getAttachment()->registerBatch(batch);
 		}
 		catch (const Exception& ex)
@@ -7184,6 +7195,10 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			rdr.getString(dpb_decfloat_traps);
 			break;
 
+		case isc_dpb_clear_map:
+			dpb_clear_map = rdr.getBoolean();
+			break;
+
 		default:
 			break;
 		}
@@ -7563,6 +7578,9 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 		return;
 
 	attachment->att_replicator = nullptr;
+
+	if (attachment->att_dsql_instance)
+		attachment->att_dsql_instance->dbb_statement_cache->purge(tdbb);
 
 	while (attachment->att_repl_appliers.hasData())
 	{
@@ -8125,7 +8143,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 
 	if (attachment && attachment->att_purge_tid == Thread::getId())
 	{
-		fb_assert(false); // recursive call - impossible ?
+//		fb_assert(false); // recursive call - impossible ?
 		return;
 	}
 
@@ -8210,8 +8228,13 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 					transaction = TRA_start(tdbb, 0, NULL);
 					attachment->att_flags = save_flags;
 
+					// Allow cancelling while ON DISCONNECT triggers are running
+					tdbb->tdbb_flags &= ~TDBB_detaching;
+
 					// run ON DISCONNECT triggers
 					EXE_execute_db_triggers(tdbb, transaction, TRIGGER_DISCONNECT);
+
+					tdbb->tdbb_flags |= TDBB_detaching;
 
 					// and commit the transaction
 					TRA_commit(tdbb, transaction, false);
@@ -8219,6 +8242,18 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 				catch (const Exception& ex)
 				{
 					attachment->att_flags = save_flags;
+					tdbb->tdbb_flags |= TDBB_detaching;
+
+					if (attachment->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_ERROR))
+					{
+						FbLocalStatus status;
+						ex.stuffException(&status);
+
+						TraceConnectionImpl conn(attachment);
+						TraceStatusVectorImpl traceStatus(&status, TraceStatusVectorImpl::TS_ERRORS);
+
+						attachment->att_trace_manager->event_error(&conn, &traceStatus, FB_FUNCTION);
+					}
 
 					string s;
 					s.printf("Database: %s\n\tError at disconnect:", attachment->att_filename.c_str());
@@ -8349,7 +8384,7 @@ static void run_commit_triggers(thread_db* tdbb, jrd_tra* transaction)
 //
 // @param request The incoming, parent request to be replaced.
 // @param level The level of the sub-request we need to find.
-static jrd_req* verify_request_synchronization(JrdStatement* statement, USHORT level)
+static Request* verify_request_synchronization(Statement* statement, USHORT level)
 {
 	if (level)
 	{
@@ -8423,7 +8458,7 @@ static VdnResult verifyDatabaseName(const PathName& name, FbStatusVector* status
 
  **/
 static void getUserInfo(UserId& user, const DatabaseOptions& options, const char* aliasName,
-	const RefPtr<const Config>* config, bool creating, Mapping& mapping)
+	const RefPtr<const Config>* config, bool creating, Mapping& mapping, bool icuReset)
 {
 	bool wheel = false;
 	int id = -1, group = -1;	// CVC: This var contained trash
@@ -8489,6 +8524,8 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options, const char
 	if (wheel)
 	{
 		name = DBA_USER_NAME;
+		if (icuReset)
+			user.setFlag(USR_sysdba);
 	}
 
 	if (name.length() > USERNAME_LENGTH)
@@ -8611,7 +8648,7 @@ namespace
 				{
 					// purge attachment, rollback any open transactions
 					attachment->att_use_count++;
-					purge_attachment(tdbb, sAtt, PURGE_FORCE);
+					purge_attachment(tdbb, sAtt, engineShutdown ? PURGE_FORCE : PURGE_NOCHECK);
 				}
 				catch (const Exception& ex)
 				{
@@ -8909,7 +8946,7 @@ void thread_db::setTransaction(jrd_tra* val)
 	traStat = val ? &val->tra_stats : RuntimeStatistics::getDummy();
 }
 
-void thread_db::setRequest(jrd_req* val)
+void thread_db::setRequest(Request* val)
 {
 	request = val;
 	reqStat = val ? &val->req_stats : RuntimeStatistics::getDummy();
@@ -8917,8 +8954,10 @@ void thread_db::setRequest(jrd_req* val)
 
 SSHORT thread_db::getCharSet() const
 {
-	if (request && request->charSetId != CS_dynamic)
-		return request->charSetId;
+	USHORT charSetId;
+
+	if (request && (charSetId = request->getStatement()->charSetId) != CS_dynamic)
+		return charSetId;
 
 	return attachment->att_charset;
 }
@@ -8933,11 +8972,8 @@ ISC_STATUS thread_db::getCancelState(ISC_STATUS* secondary)
 	if (tdbb_flags & (TDBB_verb_cleanup | TDBB_dfw_cleanup | TDBB_detaching | TDBB_wait_cancel_disable))
 		return FB_SUCCESS;
 
-	if (attachment)
+	if (attachment && attachment->att_purge_tid != Thread::getId())
 	{
-		if (attachment->att_purge_tid == Thread::getId())
-			return FB_SUCCESS;
-
 		if (attachment->att_flags & ATT_shutdown)
 		{
 			if (database->dbb_ast_flags & DBB_shutdown)
@@ -8959,7 +8995,7 @@ ISC_STATUS thread_db::getCancelState(ISC_STATUS* secondary)
 			if ((!request ||
 					!(request->getStatement()->flags &
 						// temporary change to fix shutdown
-						(/*JrdStatement::FLAG_INTERNAL | */JrdStatement::FLAG_SYS_TRIGGER))) &&
+						(/*Statement::FLAG_INTERNAL | */Statement::FLAG_SYS_TRIGGER))) &&
 				(!transaction || !(transaction->tra_flags & TRA_system)))
 			{
 				return isc_cancelled;
@@ -9017,20 +9053,21 @@ void thread_db::reschedule()
 	checkCancelState();
 
 	StableAttachmentPart::Sync* sync = this->getAttachment()->getStable()->getSync();
-	Database* dbb = this->getDatabase();
 
 	if (sync->hasContention())
 	{
 		FB_UINT64 cnt = sync->getLockCounter();
 
-		EngineCheckout cout(this, FB_FUNCTION);
-		Thread::yield();
+		{	// scope
+			EngineCheckout cout(this, FB_FUNCTION);
+			Thread::yield();
 
-		while (sync->hasContention() && (sync->getLockCounter() == cnt))
-			Thread::sleep(1);
+			while (sync->hasContention() && (sync->getLockCounter() == cnt))
+				Thread::sleep(1);
+		}
+
+		checkCancelState();
 	}
-
-	checkCancelState();
 
 	Monitoring::checkState(this);
 
@@ -9098,7 +9135,7 @@ void JRD_autocommit_ddl(thread_db* tdbb, jrd_tra* transaction)
 }
 
 
-void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_length, void* msg)
+void JRD_receive(thread_db* tdbb, Request* request, USHORT msg_type, ULONG msg_length, void* msg)
 {
 /**************************************
  *
@@ -9122,7 +9159,7 @@ void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_l
 }
 
 
-void JRD_send(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_length, const void* msg)
+void JRD_send(thread_db* tdbb, Request* request, USHORT msg_type, ULONG msg_length, const void* msg)
 {
 /**************************************
  *
@@ -9146,7 +9183,7 @@ void JRD_send(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_leng
 }
 
 
-void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
+void JRD_start(Jrd::thread_db* tdbb, Request* request, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -9235,7 +9272,7 @@ void JRD_rollback_retaining(thread_db* tdbb, jrd_tra* transaction)
 }
 
 
-void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
+void JRD_start_and_send(thread_db* tdbb, Request* request, jrd_tra* transaction,
 	USHORT msg_type, ULONG msg_length, const void* msg)
 {
 /**************************************
@@ -9363,7 +9400,7 @@ void JRD_start_transaction(thread_db* tdbb, jrd_tra** transaction,
 }
 
 
-void JRD_unwind_request(thread_db* tdbb, jrd_req* request)
+void JRD_unwind_request(thread_db* tdbb, Request* request)
 {
 /**************************************
  *
@@ -9378,47 +9415,6 @@ void JRD_unwind_request(thread_db* tdbb, jrd_req* request)
  **************************************/
 	// Unwind request. This just tweaks some bits.
 	EXE_unwind(tdbb, request);
-}
-
-
-void JRD_compile(thread_db* tdbb,
-				 Jrd::Attachment* attachment,
-				 jrd_req** req_handle,
-				 ULONG blr_length,
-				 const UCHAR* blr,
-				 RefStrPtr ref_str,
-				 ULONG dbginfo_length,
-				 const UCHAR* dbginfo,
-				 bool isInternalRequest)
-{
-/**************************************
- *
- *	J R D _ c o m p i l e
- *
- **************************************
- *
- * Functional description
- *	Compile a request passing the SQL text and debug information.
- *
- **************************************/
-	if (*req_handle)
-		status_exception::raise(Arg::Gds(isc_bad_req_handle));
-
-	jrd_req* request = CMP_compile2(tdbb, blr, blr_length, isInternalRequest, dbginfo_length, dbginfo);
-	request->req_attachment = attachment;
-	attachment->att_requests.add(request);
-
-	JrdStatement* statement = request->getStatement();
-
-	if (ref_str)
-		statement->sqlText = ref_str;
-
-	fb_assert(statement->blr.isEmpty());
-
-	if (attachment->getDebugOptions().getDsqlKeepBlr())
-		statement->blr.insert(0, blr, blr_length);
-
-	*req_handle = request;
 }
 
 

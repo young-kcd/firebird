@@ -222,6 +222,8 @@ void TraceManager::update_sessions()
 	}
 
 	// add new sessions
+	new_needs = trace_needs;
+	trace_needs = 0;
 	while (newSessions.hasData())
 	{
 		TraceSession* s = newSessions.pop();
@@ -233,6 +235,10 @@ void TraceManager::update_sessions()
 	if (trace_sessions.getCount() == 0)
 	{
 		trace_needs = 0;
+	}
+	else
+	{
+		trace_needs = new_needs;
 	}
 }
 
@@ -265,7 +271,7 @@ void TraceManager::update_session(const TraceSession& session)
 				curr_user = attachment->getUserName().c_str();
 
 				if (session.ses_auth.hasData())
-				{ // scope
+				{
 					AutoSetRestoreFlag<ULONG> autoRestore(&attachment->att_flags, ATT_mapping, true);
 
 					Database* dbb = attachment->att_database;
@@ -277,6 +283,8 @@ void TraceManager::update_session(const TraceSession& session)
 					mapping.setSecurityDbAlias(dbb->dbb_config->getSecurityDatabase(), dbb->dbb_filename.c_str());
 					mapping.setDb(attachment->att_filename.c_str(), dbb->dbb_filename.c_str(),
 						attachment->getInterface());
+
+					EngineCheckout guard(attachment, FB_FUNCTION);
 					mapResult = mapping.mapUser(s_user, t_role);
 				}
 			}
@@ -344,7 +352,7 @@ void TraceManager::update_session(const TraceSession& session)
 			sesInfo.ses_id = session.ses_id;
 			trace_sessions.add(sesInfo);
 
-			trace_needs |= info->factory->trace_needs();
+			new_needs |= info->factory->trace_needs();
 		}
 		else if (status->getState() & IStatus::STATE_ERRORS)
 		{

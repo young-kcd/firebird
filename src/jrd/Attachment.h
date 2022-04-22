@@ -68,7 +68,7 @@ namespace Jrd
 	class thread_db;
 	class Database;
 	class jrd_tra;
-	class jrd_req;
+	class Request;
 	class Lock;
 	class jrd_file;
 	class Format;
@@ -94,7 +94,7 @@ namespace Jrd
 	class Trigger;
 	class TrigVector;
 	class Function;
-	class JrdStatement;
+	class Statement;
 	class Validation;
 	class Applier;
 
@@ -545,7 +545,8 @@ private:
 	StableAttachmentPart* att_stable;
 
 public:
-	Firebird::SortedArray<jrd_req*> att_requests;	// Requests belonging to attachment
+	Firebird::SortedArray<Statement*> att_statements;	// Statements belonging to attachment
+	Firebird::SortedArray<Request*> att_requests;	// Requests belonging to attachment
 	Lock*		att_id_lock;				// Attachment lock (if any)
 	AttNumber	att_attachment_id;			// Attachment ID
 	Lock*		att_cancel_lock;			// Lock to cancel the active request
@@ -619,12 +620,12 @@ public:
 	Firebird::Array<Function*>		att_functions;			// User defined functions
 	GeneratorFinder					att_generators;
 
-	Firebird::Array<JrdStatement*>	att_internal;			// internal statements
-	Firebird::Array<JrdStatement*>	att_dyn_req;			// internal dyn statements
+	Firebird::Array<Statement*>	att_internal;			// internal statements
+	Firebird::Array<Statement*>	att_dyn_req;			// internal dyn statements
 	Firebird::ICryptKeyCallback*	att_crypt_callback;		// callback for DB crypt
 	Firebird::DecimalStatus			att_dec_status;			// error handling and rounding
 
-	jrd_req* findSystemRequest(thread_db* tdbb, USHORT id, USHORT which);
+	Request* findSystemRequest(thread_db* tdbb, USHORT id, USHORT which);
 
 	Firebird::Array<CharSetContainer*>	att_charsets;		// intl character set descriptions
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<

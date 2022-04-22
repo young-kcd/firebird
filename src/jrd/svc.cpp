@@ -1972,7 +1972,7 @@ THREAD_ENTRY_DECLARE Service::run(THREAD_ENTRY_PARAM arg)
 
 		Thread::Handle thrHandle = svc->svc_thread;
 		svc->started();
-		svc->svc_sem_full.release();
+		svc->unblockQueryGet();
 		svc->finish(SVC_finished);
 
 		threadCollect->add(thrHandle);
@@ -2292,7 +2292,7 @@ void Service::enqueue(const UCHAR* s, ULONG len)
 {
 	if (checkForShutdown() || (svc_flags & SVC_detached))
 	{
-		svc_sem_full.release();
+		unblockQueryGet();
 		return;
 	}
 
@@ -2304,13 +2304,13 @@ void Service::enqueue(const UCHAR* s, ULONG len)
 		{
 			if (flagFirst)
 			{
-				svc_sem_full.release();
+				unblockQueryGet(true);
 				flagFirst = false;
 			}
 			svc_sem_empty.tryEnter(1, 0);
 			if (checkForShutdown() || (svc_flags & SVC_detached))
 			{
-				svc_sem_full.release();
+				unblockQueryGet();
 				return;
 			}
 		}
@@ -2332,6 +2332,13 @@ void Service::enqueue(const UCHAR* s, ULONG len)
 		s += cnt;
 		len -= cnt;
 	}
+	unblockQueryGet();
+}
+
+
+void Service::unblockQueryGet(bool over)
+{
+	svc_output_overflow = over;
 	svc_sem_full.release();
 }
 
@@ -2422,8 +2429,11 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 			buffer[(*return_length)++] = ch;
 		}
 
-		if (!(flags & GET_LINE))
+		if (svc_output_overflow || !(flags & GET_LINE))
+		{
+			svc_output_overflow = false;
 			svc_stdout_head = head;
+		}
 	}
 
 	if (flags & GET_LINE)
@@ -2522,7 +2532,7 @@ ULONG Service::getBytes(UCHAR* buffer, ULONG size)
 		svc_stdin_size_requested = size;
 		svc_stdin_buffer = buffer;
 		// Wakeup Service::query() if it waits for data from service
-		svc_sem_full.release();
+		unblockQueryGet();
 	}
 
 	// Wait for data from client
@@ -2562,7 +2572,7 @@ void Service::finish(USHORT flag)
 
 		if (svc_flags & SVC_finished)
 		{
-			svc_sem_full.release();
+			unblockQueryGet();
 		}
 		else
 		{
@@ -2897,7 +2907,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					spb.getString(s);
 
 					bool inStr = false;
-					for (FB_SIZE_T i = 0; i < s.length(); ++i)
+					for (FB_SIZE_T i = 0; i < s.length(); )
 					{
 						if (s[i] == SVC_TRMNTR)
 						{

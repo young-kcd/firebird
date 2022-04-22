@@ -126,24 +126,6 @@ InternalConnection::~InternalConnection()
 {
 }
 
-// Status helper
-class IntStatus : public Firebird::FbLocalStatus
-{
-public:
-	explicit IntStatus(FbStatusVector *p)
-		: FbLocalStatus(), v(p)
-	{}
-
-	~IntStatus()
-	{
-		if (v)
-			fb_utils::copyStatus(v, &(*this));
-	}
-
-private:
-	FbStatusVector *v;
-};
-
 void InternalConnection::attach(thread_db* tdbb)
 {
 	fb_assert(!m_attachment);
@@ -344,10 +326,9 @@ void InternalTransaction::doStart(FbStatusVector* status, thread_db* tdbb, Clump
 		JAttachment* att = m_IntConnection.getJrdAtt();
 
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
-		IntStatus s(status);
 
 		m_transaction.assignRefNoIncr(
-			att->startTransaction(&s, tpb.getBufferLength(), tpb.getBuffer()));
+			att->startTransaction(status, tpb.getBufferLength(), tpb.getBuffer()));
 
 		if (m_transaction)
 			m_transaction->getHandle()->tra_callback_count = localTran->tra_callback_count;
@@ -373,15 +354,13 @@ void InternalTransaction::doCommit(FbStatusVector* status, thread_db* tdbb, bool
 	}
 	else
 	{
-		IntStatus s(status);
-
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 		if (retain)
-			m_transaction->commitRetaining(&s);
+			m_transaction->commitRetaining(status);
 		else
 		{
-			m_transaction->commit(&s);
-			if (!(s->getState() & IStatus::STATE_ERRORS))
+			m_transaction->commit(status);
+			if (!(status->getState() & IStatus::STATE_ERRORS))
 				m_transaction.clear();
 		}
 	}
@@ -402,23 +381,40 @@ void InternalTransaction::doRollback(FbStatusVector* status, thread_db* tdbb, bo
 		if (!retain) {
 			m_transaction = NULL;	// release and nullify
 		}
+		return;
 	}
-	else
-	{
-		IntStatus s(status);
 
+	ISC_STATUS err = 0;
+	{
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 		if (retain)
-			m_transaction->rollbackRetaining(&s);
+			m_transaction->rollbackRetaining(status);
 		else
+			m_transaction->rollback(status);
+
+		if (status->getState() & IStatus::STATE_ERRORS)
+			err = status->getErrors()[1];
+
+		if (err == isc_cancelled)
 		{
-			m_transaction->rollback(&s);
-			if (!(s->getState() & IStatus::STATE_ERRORS))
-				m_transaction.clear();
+			FbLocalStatus temp;
+			JAttachment* jAtt = m_IntConnection.getJrdAtt();
+			jAtt->cancelOperation(&temp, fb_cancel_disable);
+
+			status->init();
+			if (retain)
+				m_transaction->rollbackRetaining(status);
+			else
+				m_transaction->rollback(status);
+
+			err = (status->getState() & IStatus::STATE_ERRORS) ?
+				status->getErrors()[1] : 0;
+
+			jAtt->cancelOperation(&temp, fb_cancel_enable);
 		}
 	}
 
-	if ((status->getErrors()[1] == isc_att_shutdown || status->getErrors()[1] == isc_shutdown) && !retain)
+	if ((!err || err == isc_att_shutdown || err == isc_shutdown) && !retain)
 	{
 		m_transaction.clear();
 		status->init();
@@ -463,8 +459,8 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 
 	if (m_callerPrivileges)
 	{
-		jrd_req* request = tdbb->getRequest();
-		JrdStatement* statement = request ? request->getStatement() : NULL;
+		Request* request = tdbb->getRequest();
+		auto statement = request ? request->getStatement() : NULL;
 		CallerName callerName;
 		const Routine* routine;
 
@@ -508,13 +504,13 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 	if (status->getState() & IStatus::STATE_ERRORS)
 		raise(&status, tdbb, "JAttachment::prepare", &sql);
 
-	const DsqlCompiledStatement* statement = m_request->getHandle()->getStatement();
+	const auto dsqlStatement = m_request->getHandle()->getDsqlStatement();
 
-	if (statement->getSendMsg())
+	if (dsqlStatement->getSendMsg())
 	{
 		try
 		{
-			PreparedStatement::parseDsqlMessage(statement->getSendMsg(), m_inDescs,
+			PreparedStatement::parseDsqlMessage(dsqlStatement->getSendMsg(), m_inDescs,
 				m_inMetadata, m_in_buffer);
 			m_inputs = m_inMetadata->getCount();
 		}
@@ -526,11 +522,11 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 	else
 		m_inputs = 0;
 
-	if (statement->getReceiveMsg())
+	if (dsqlStatement->getReceiveMsg())
 	{
 		try
 		{
-			PreparedStatement::parseDsqlMessage(statement->getReceiveMsg(), m_outDescs,
+			PreparedStatement::parseDsqlMessage(dsqlStatement->getReceiveMsg(), m_outDescs,
 				m_outMetadata, m_out_buffer);
 			m_outputs = m_outMetadata->getCount();
 		}
@@ -544,35 +540,35 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 
 	m_stmt_selectable = false;
 
-	switch (statement->getType())
+	switch (dsqlStatement->getType())
 	{
-	case DsqlCompiledStatement::TYPE_SELECT:
-	case DsqlCompiledStatement::TYPE_RETURNING_CURSOR:
-	case DsqlCompiledStatement::TYPE_SELECT_UPD:
-	case DsqlCompiledStatement::TYPE_SELECT_BLOCK:
+	case DsqlStatement::TYPE_SELECT:
+	case DsqlStatement::TYPE_RETURNING_CURSOR:
+	case DsqlStatement::TYPE_SELECT_UPD:
+	case DsqlStatement::TYPE_SELECT_BLOCK:
 		m_stmt_selectable = true;
 		break;
 
-	case DsqlCompiledStatement::TYPE_START_TRANS:
-	case DsqlCompiledStatement::TYPE_COMMIT:
-	case DsqlCompiledStatement::TYPE_ROLLBACK:
-	case DsqlCompiledStatement::TYPE_COMMIT_RETAIN:
-	case DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN:
-	case DsqlCompiledStatement::TYPE_CREATE_DB:
+	case DsqlStatement::TYPE_START_TRANS:
+	case DsqlStatement::TYPE_COMMIT:
+	case DsqlStatement::TYPE_ROLLBACK:
+	case DsqlStatement::TYPE_COMMIT_RETAIN:
+	case DsqlStatement::TYPE_ROLLBACK_RETAIN:
+	case DsqlStatement::TYPE_CREATE_DB:
 		Arg::Gds(isc_eds_expl_tran_ctrl).copyTo(&status);
 		raise(&status, tdbb, "JAttachment::prepare", &sql);
 		break;
 
-	case DsqlCompiledStatement::TYPE_INSERT:
-	case DsqlCompiledStatement::TYPE_DELETE:
-	case DsqlCompiledStatement::TYPE_UPDATE:
-	case DsqlCompiledStatement::TYPE_UPDATE_CURSOR:
-	case DsqlCompiledStatement::TYPE_DELETE_CURSOR:
-	case DsqlCompiledStatement::TYPE_DDL:
-	case DsqlCompiledStatement::TYPE_EXEC_PROCEDURE:
-	case DsqlCompiledStatement::TYPE_SET_GENERATOR:
-	case DsqlCompiledStatement::TYPE_SAVEPOINT:
-	case DsqlCompiledStatement::TYPE_EXEC_BLOCK:
+	case DsqlStatement::TYPE_INSERT:
+	case DsqlStatement::TYPE_DELETE:
+	case DsqlStatement::TYPE_UPDATE:
+	case DsqlStatement::TYPE_UPDATE_CURSOR:
+	case DsqlStatement::TYPE_DELETE_CURSOR:
+	case DsqlStatement::TYPE_DDL:
+	case DsqlStatement::TYPE_EXEC_PROCEDURE:
+	case DsqlStatement::TYPE_SET_GENERATOR:
+	case DsqlStatement::TYPE_SAVEPOINT:
+	case DsqlStatement::TYPE_EXEC_BLOCK:
 		break;
 	}
 }

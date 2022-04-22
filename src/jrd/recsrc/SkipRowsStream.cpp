@@ -42,11 +42,12 @@ SkipRowsStream::SkipRowsStream(CompilerScratch* csb, RecordSource* next, ValueEx
 	fb_assert(m_next && m_value);
 
 	m_impure = csb->allocImpure<Impure>();
+	m_cardinality = next->getCardinality();
 }
 
 void SkipRowsStream::open(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open;
@@ -66,7 +67,7 @@ void SkipRowsStream::open(thread_db* tdbb) const
 
 void SkipRowsStream::close(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 
 	invalidateRecords(request);
 
@@ -84,7 +85,7 @@ bool SkipRowsStream::getRecord(thread_db* tdbb) const
 {
 	JRD_reschedule(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
@@ -116,7 +117,10 @@ bool SkipRowsStream::lockRecord(thread_db* tdbb) const
 void SkipRowsStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
 {
 	if (detailed)
+	{
 		plan += printIndent(++level) + "Skip N Records";
+		printOptInfo(plan);
+	}
 
 	m_next->print(tdbb, plan, detailed, level);
 }
@@ -131,7 +135,7 @@ void SkipRowsStream::findUsedStreams(StreamList& streams, bool expandAll) const
 	m_next->findUsedStreams(streams, expandAll);
 }
 
-void SkipRowsStream::invalidateRecords(jrd_req* request) const
+void SkipRowsStream::invalidateRecords(Request* request) const
 {
 	m_next->invalidateRecords(request);
 }

@@ -45,7 +45,6 @@
 #include "../jrd/exe.h"
 #include "../jrd/scl.h"
 #include "../jrd/lck.h"
-#include "../jrd/rse.h"
 #include "../jrd/cch.h"
 #include "../common/gdsassert.h"
 #include "../jrd/btr_proto.h"
@@ -168,11 +167,11 @@ void IDX_check_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view, jrd_
 				CMP_post_access(tdbb, csb,
 								referenced_relation->rel_security_name,
 								(view ? view->rel_id : 0),
-								SCL_references, SCL_object_table,
+								SCL_references, obj_relations,
 								referenced_relation->rel_name);
 				CMP_post_access(tdbb, csb,
 								referenced_field->fld_security_name, 0,
-								SCL_references, SCL_object_column,
+								SCL_references, obj_column,
 								referenced_field->fld_name, referenced_relation->rel_name);
 			}
 
@@ -406,7 +405,8 @@ void IDX_create_index(thread_db* tdbb,
 		{
 			Record* record = stack.pop();
 
-			result = BTR_key(tdbb, relation, record, idx, &key, false);
+			result = BTR_key(tdbb, relation, record, idx, &key,
+				((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT));
 
 			if (result == idx_e_ok)
 			{
@@ -749,7 +749,9 @@ void IDX_garbage_collect(thread_db* tdbb, record_param* rpb, RecordStack& going,
 			{
 				Record* const rec1 = stack1.object();
 
-				idx_e result = BTR_key(tdbb, rpb->rpb_relation, rec1, &idx, &key1, false);
+				idx_e result = BTR_key(tdbb, rpb->rpb_relation, rec1, &idx, &key1,
+					((idx.idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT));
+
 				if (result != idx_e_ok)
 				{
 					if (result == idx_e_conversion)
@@ -766,7 +768,9 @@ void IDX_garbage_collect(thread_db* tdbb, record_param* rpb, RecordStack& going,
 				{
 					Record* const rec2 = stack2.object();
 
-					result = BTR_key(tdbb, rpb->rpb_relation, rec2, &idx, &key2, false);
+					result = BTR_key(tdbb, rpb->rpb_relation, rec2, &idx, &key2,
+						((idx.idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT));
+
 					if (result != idx_e_ok)
 					{
 						if (result == idx_e_conversion)
@@ -789,7 +793,9 @@ void IDX_garbage_collect(thread_db* tdbb, record_param* rpb, RecordStack& going,
 				{
 					Record* const rec3 = stack3.object();
 
-					result = BTR_key(tdbb, rpb->rpb_relation, rec3, &idx, &key2, false);
+					result = BTR_key(tdbb, rpb->rpb_relation, rec3, &idx, &key2,
+						((idx.idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT));
+
 					if (result != idx_e_ok)
 					{
 						if (result == idx_e_conversion)
@@ -861,14 +867,16 @@ void IDX_modify(thread_db* tdbb,
 		idx_e error_code;
 
 		if ((error_code = BTR_key(tdbb, new_rpb->rpb_relation,
-				new_rpb->rpb_record, &idx, &key1, false)))
+				new_rpb->rpb_record, &idx, &key1,
+				((idx.idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT))))
 		{
 			CCH_RELEASE(tdbb, &window);
 			context.raise(tdbb, error_code, new_rpb->rpb_record);
 		}
 
 		if ((error_code = BTR_key(tdbb, org_rpb->rpb_relation,
-				org_rpb->rpb_record, &idx, &key2, false)))
+				org_rpb->rpb_record, &idx, &key2,
+				((idx.idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT))))
 		{
 			CCH_RELEASE(tdbb, &window);
 			context.raise(tdbb, error_code, org_rpb->rpb_record);
@@ -935,14 +943,16 @@ void IDX_modify_check_constraints(thread_db* tdbb,
 		idx_e error_code;
 
 		if ((error_code = BTR_key(tdbb, new_rpb->rpb_relation,
-				new_rpb->rpb_record, &idx, &key1, false)))
+				new_rpb->rpb_record, &idx, &key1,
+				((idx.idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT))))
 		{
 			CCH_RELEASE(tdbb, &window);
 			context.raise(tdbb, error_code, new_rpb->rpb_record);
 		}
 
 		if ((error_code = BTR_key(tdbb, org_rpb->rpb_relation,
-				org_rpb->rpb_record, &idx, &key2, false)))
+				org_rpb->rpb_record, &idx, &key2,
+				((idx.idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT))))
 		{
 			CCH_RELEASE(tdbb, &window);
 			context.raise(tdbb, error_code, org_rpb->rpb_record);
@@ -1081,7 +1091,8 @@ void IDX_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		IndexErrorContext context(rpb->rpb_relation, &idx);
 		idx_e error_code;
 
-		if ( (error_code = BTR_key(tdbb, rpb->rpb_relation, rpb->rpb_record, &idx, &key, false)) )
+		if ((error_code = BTR_key(tdbb, rpb->rpb_relation, rpb->rpb_record, &idx, &key,
+				((idx.idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT))))
 		{
 			CCH_RELEASE(tdbb, &window);
 			context.raise(tdbb, error_code, rpb->rpb_record);
@@ -1430,7 +1441,12 @@ static idx_e check_partner_index(thread_db* tdbb,
 	// tmpIndex.idx_flags |= idx_unique;
 	tmpIndex.idx_flags = (tmpIndex.idx_flags & ~idx_unique) | (partner_idx.idx_flags & idx_unique);
 	temporary_key key;
-	result = BTR_key(tdbb, relation, record, &tmpIndex, &key, starting, segment);
+
+	const USHORT keyType = starting ?
+		INTL_KEY_PARTIAL :
+		(tmpIndex.idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT;
+
+	result = BTR_key(tdbb, relation, record, &tmpIndex, &key, keyType, segment);
 	CCH_RELEASE(tdbb, &window);
 
 	// now check for current duplicates

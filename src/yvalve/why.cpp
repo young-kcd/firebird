@@ -128,7 +128,7 @@ static const struct {
 
 // Class-wrapper around external SQLDA.
 // Can be used as local variable, but do it with care
-class SQLDAMetadata FB_FINAL :
+class SQLDAMetadata final :
 	public RefCntIface<IMessageMetadataImpl<SQLDAMetadata, CheckStatusWrapper> >
 {
 friend class SQLDAMetadataLauncher;
@@ -1258,13 +1258,16 @@ namespace Why
 		void checkCursorOpened() const
 		{
 			if (!statement || !statement->cursor)
-				Arg::Gds(isc_dsql_cursor_not_open).raise();
+				(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
+					Arg::Gds(isc_dsql_cursor_err) <<
+					Arg::Gds(isc_dsql_cursor_not_open)).raise();
 		}
 
 		void checkCursorClosed() const
 		{
 			if (statement && statement->cursor)
-				Arg::Gds(isc_dsql_cursor_open_err).raise();
+				(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
+					Arg::Gds(isc_dsql_cursor_open_err)).raise();
 		}
 
 		IStatement* getInterface()
@@ -2800,7 +2803,7 @@ int API_ROUTINE gds__enable_subsystem(TEXT* /*subsystem*/)
 
 namespace
 {
-	class WaitCallback FB_FINAL :
+	class WaitCallback final :
 		public RefCntIface<IEventCallbackImpl<WaitCallback, CheckStatusWrapper> >
 	{
 	public:
@@ -2864,7 +2867,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* userStatus, isc_db_handle*
 
 namespace
 {
-	class QueCallback FB_FINAL : public RefCntIface<IEventCallbackImpl<QueCallback, CheckStatusWrapper> >
+	class QueCallback final : public RefCntIface<IEventCallbackImpl<QueCallback, CheckStatusWrapper> >
 	{
 	public:
 		QueCallback(FPTR_EVENT_CALLBACK aAst, void* aArg)

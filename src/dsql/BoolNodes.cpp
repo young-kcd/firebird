@@ -28,7 +28,7 @@
 #include "../jrd/tra.h"
 #include "../jrd/recsrc/RecordSource.h"
 #include "../jrd/recsrc/Cursor.h"
-#include "../jrd/Optimizer.h"
+#include "../jrd/optimizer/Optimizer.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/evl_proto.h"
@@ -170,7 +170,7 @@ BoolExprNode* BinaryBoolNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	return node;
 }
 
-bool BinaryBoolNode::execute(thread_db* tdbb, jrd_req* request) const
+bool BinaryBoolNode::execute(thread_db* tdbb, Request* request) const
 {
 	switch (blrOp)
 	{
@@ -185,7 +185,7 @@ bool BinaryBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 	return false;
 }
 
-bool BinaryBoolNode::executeAnd(thread_db* tdbb, jrd_req* request) const
+bool BinaryBoolNode::executeAnd(thread_db* tdbb, Request* request) const
 {
 	// If either operand is false, then the result is false;
 	// If both are true, the result is true;
@@ -231,7 +231,7 @@ bool BinaryBoolNode::executeAnd(thread_db* tdbb, jrd_req* request) const
 	return false;
 }
 
-bool BinaryBoolNode::executeOr(thread_db* tdbb, jrd_req* request) const
+bool BinaryBoolNode::executeOr(thread_db* tdbb, Request* request) const
 {
 	// If either operand is true, then the result is true;
 	// If both are false, the result is false;
@@ -643,7 +643,7 @@ void ComparativeBoolNode::pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
 	}
 }
 
-bool ComparativeBoolNode::execute(thread_db* tdbb, jrd_req* request) const
+bool ComparativeBoolNode::execute(thread_db* tdbb, Request* request) const
 {
 	dsc* desc[2] = {NULL, NULL};
 	bool computed_invariant = false;
@@ -817,7 +817,7 @@ bool ComparativeBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 }
 
 // Perform one of the complex string functions CONTAINING, MATCHES, or STARTS WITH.
-bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* desc1,
+bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, Request* request, dsc* desc1,
 	dsc* desc2, bool computedInvariant) const
 {
 	SET_TDBB(tdbb);
@@ -1023,7 +1023,7 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 }
 
 // Execute SLEUTH operator.
-bool ComparativeBoolNode::sleuth(thread_db* tdbb, jrd_req* request, const dsc* desc1,
+bool ComparativeBoolNode::sleuth(thread_db* tdbb, Request* request, const dsc* desc1,
 	const dsc* desc2) const
 {
 	SET_TDBB(tdbb);
@@ -1223,7 +1223,7 @@ void MissingBoolNode::pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
 	arg->getDesc(tdbb, csb, &descriptor_a);
 }
 
-bool MissingBoolNode::execute(thread_db* tdbb, jrd_req* request) const
+bool MissingBoolNode::execute(thread_db* tdbb, Request* request) const
 {
 	EVL_expr(tdbb, request, arg);
 
@@ -1298,7 +1298,7 @@ BoolExprNode* NotBoolNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	return BoolExprNode::pass1(tdbb, csb);
 }
 
-bool NotBoolNode::execute(thread_db* tdbb, jrd_req* request) const
+bool NotBoolNode::execute(thread_db* tdbb, Request* request) const
 {
 	bool value = arg->execute(tdbb, request);
 
@@ -1612,7 +1612,7 @@ void RseBoolNode::pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
 	subQuery = FB_NEW_POOL(*tdbb->getDefaultPool()) SubQuery(rsb, rse->rse_invariants);
 }
 
-bool RseBoolNode::execute(thread_db* tdbb, jrd_req* request) const
+bool RseBoolNode::execute(thread_db* tdbb, Request* request) const
 {
 	USHORT* invariant_flags;
 	impure_value* impure;

@@ -30,6 +30,7 @@
 #include "../jrd/evl_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/intl_proto.h"
+#include "../jrd/optimizer/Optimizer.h"
 
 #include "RecordSource.h"
 
@@ -43,6 +44,15 @@ using namespace Jrd;
 // NS: FIXME - Why use static hash table here??? Hash table shall support dynamic resizing
 static const ULONG HASH_SIZE = 1009;
 static const ULONG BUCKET_PREALLOCATE_SIZE = 32;	// 256 bytes per slot
+
+unsigned HashJoin::maxCapacity()
+{
+	// Binary search across 1000 collisions is computationally similar to
+	// linear searc across 10 collisions. We use this number as a rough
+	// estimation of whether the lookup performance is likely to be acceptable.
+	return HASH_SIZE * 1000;
+}
+
 
 class HashJoin::HashTable : public PermanentStorage
 {
@@ -214,6 +224,7 @@ HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, FB_SIZE_T count,
 	fb_assert(count >= 2);
 
 	m_impure = csb->allocImpure<Impure>();
+	m_cardinality = args[0]->getCardinality();
 
 	m_leader.source = args[0];
 	m_leader.keys = keys[0];
@@ -247,6 +258,10 @@ HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, FB_SIZE_T count,
 	{
 		RecordSource* const sub_rsb = args[i];
 		fb_assert(sub_rsb);
+
+		m_cardinality *= sub_rsb->getCardinality();
+		for (auto keyCount = keys[i]->getCount(); keyCount; keyCount--)
+			m_cardinality *= REDUCE_SELECTIVITY_FACTOR_EQUALITY;
 
 		SubStream sub;
 		sub.buffer = FB_NEW_POOL(csb->csb_pool) BufferedStream(csb, sub_rsb);
@@ -283,7 +298,7 @@ HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, FB_SIZE_T count,
 
 void HashJoin::open(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open | irsb_mustread;
@@ -324,7 +339,7 @@ void HashJoin::open(thread_db* tdbb) const
 
 void HashJoin::close(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	invalidateRecords(request);
@@ -350,7 +365,7 @@ bool HashJoin::getRecord(thread_db* tdbb) const
 {
 	JRD_reschedule(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
@@ -431,6 +446,7 @@ void HashJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigned leve
 	if (detailed)
 	{
 		plan += printIndent(++level) + "Hash Join (inner)";
+		printOptInfo(plan);
 
 		m_leader.source->print(tdbb, plan, true, level);
 
@@ -470,7 +486,7 @@ void HashJoin::findUsedStreams(StreamList& streams, bool expandAll) const
 		m_args[i].source->findUsedStreams(streams, expandAll);
 }
 
-void HashJoin::invalidateRecords(jrd_req* request) const
+void HashJoin::invalidateRecords(Request* request) const
 {
 	m_leader.source->invalidateRecords(request);
 
@@ -487,7 +503,7 @@ void HashJoin::nullRecords(thread_db* tdbb) const
 }
 
 ULONG HashJoin::computeHash(thread_db* tdbb,
-							jrd_req* request,
+							Request* request,
 						    const SubStream& sub,
 							UCHAR* keyBuffer) const
 {

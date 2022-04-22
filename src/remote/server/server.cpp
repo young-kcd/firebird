@@ -907,7 +907,7 @@ private:
 GlobalPtr<Mutex> GlobalPortLock::mtx;
 #endif
 
-class Callback FB_FINAL : public RefCntIface<IEventCallbackImpl<Callback, CheckStatusWrapper> >
+class Callback final : public RefCntIface<IEventCallbackImpl<Callback, CheckStatusWrapper> >
 {
 public:
 	explicit Callback(Rdb* aRdb, Rvnt* aEvent)
@@ -1920,7 +1920,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 	{
 		if ((protocol->p_cnct_version == PROTOCOL_VERSION10 ||
 			 (protocol->p_cnct_version >= PROTOCOL_VERSION11 &&
-			  protocol->p_cnct_version <= PROTOCOL_VERSION17)) &&
+			  protocol->p_cnct_version <= PROTOCOL_VERSION18)) &&
 			 (protocol->p_cnct_architecture == arch_generic ||
 			  protocol->p_cnct_architecture == ARCHITECTURE) &&
 			protocol->p_cnct_weight >= weight)
@@ -2536,7 +2536,7 @@ static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
 			return;
 		}
 
-		// This buffer is used by INET and WNET transports
+		// This buffer is used by INET transport
 		// to return the server identification string
 		UCHAR buffer[BUFFER_TINY];
 		send->p_resp.p_resp_data.cstr_address = buffer;
@@ -2937,7 +2937,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 		return;
 	}
 
-	// For WNET and XNET we should send dummy op_disconnect packet
+	// For XNET we should send dummy op_disconnect packet
 	// to wakeup async port handling events on client side.
 	// For INET it's not necessary because INET client's async port
 	// wakes up while server performs shutdown(socket) call on its async port.
@@ -2946,7 +2946,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 	PACKET *packet = &rdb->rdb_packet;
 	if (this->port_async)
 	{
-		if ((this->port_type == rem_port::XNET) || (this->port_type == rem_port::PIPE))
+		if (this->port_type == rem_port::XNET)
 		{
 			packet->p_operation = op_disconnect;
 			this->port_async->send(packet);
@@ -3833,7 +3833,8 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 
 	if (statement->rsr_cursor || statement->rsr_batch)
 	{
-		 Arg::Gds(isc_dsql_cursor_open_err).raise();
+		(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
+			Arg::Gds(isc_dsql_cursor_open_err)).raise();
 	}
 
 	InternalMessageBuffer iMsgBuffer(sqldata->p_sqldata_blr.cstr_length,
@@ -3989,7 +3990,8 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL, bool scroll)
 			sqldata->p_sqldata_blr.cstr_address, msg_length, NULL);
 
 		if (!msgBuffer.metadata)
-			Arg::Gds(isc_dsql_cursor_open_err).raise();
+			(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
+				Arg::Gds(isc_dsql_cursor_open_err)).raise();
 
 		cursor->setDelayedOutputFormat(&status_vector, msgBuffer.metadata);
 		check(&status_vector);

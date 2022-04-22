@@ -83,7 +83,6 @@
 
 #if defined(WIN_NT)
 #include "../common/isc_proto.h"
-#include "../remote/os/win32/wnet_proto.h"
 #include "../remote/os/win32/xnet_proto.h"
 #endif
 
@@ -97,15 +96,10 @@ const char* const PROTOCOL_INET4 = "inet4";
 const char* const PROTOCOL_INET6 = "inet6";
 
 #ifdef WIN_NT
-const char* const PROTOCOL_WNET = "wnet";
 const char* const PROTOCOL_XNET = "xnet";
-
-const char* const WNET_SEPARATOR = "@";
-const char* const WNET_LOCALHOST = "\\\\.";
 #endif
 
 const char* const INET_SEPARATOR = "/";
-
 const char* const INET_LOCALHOST = "localhost";
 
 
@@ -160,7 +154,7 @@ namespace Remote {
 class Attachment;
 class Statement;
 
-class Blob FB_FINAL : public RefCntIface<IBlobImpl<Blob, CheckStatusWrapper> >
+class Blob final : public RefCntIface<IBlobImpl<Blob, CheckStatusWrapper> >
 {
 public:
 	// IBlob implementation
@@ -210,7 +204,7 @@ int Blob::release()
 	return 0;
 }
 
-class Transaction FB_FINAL : public RefCntIface<ITransactionImpl<Transaction, CheckStatusWrapper> >
+class Transaction final : public RefCntIface<ITransactionImpl<Transaction, CheckStatusWrapper> >
 {
 public:
 	// ITransaction implementation
@@ -281,7 +275,7 @@ int Transaction::release()
 	return 0;
 }
 
-class ResultSet FB_FINAL : public RefCntIface<IResultSetImpl<ResultSet, CheckStatusWrapper> >
+class ResultSet final : public RefCntIface<IResultSetImpl<ResultSet, CheckStatusWrapper> >
 {
 public:
 	// IResultSet implementation
@@ -339,7 +333,7 @@ int ResultSet::release()
 	return 0;
 }
 
-class Batch FB_FINAL : public RefCntIface<IBatchImpl<Batch, CheckStatusWrapper> >
+class Batch final : public RefCntIface<IBatchImpl<Batch, CheckStatusWrapper> >
 {
 public:
 	static const ULONG DEFER_BATCH_LIMIT = 64;
@@ -588,7 +582,7 @@ int Batch::release()
 	return 0;
 }
 
-class Replicator FB_FINAL : public RefCntIface<IReplicatorImpl<Replicator, CheckStatusWrapper> >
+class Replicator final : public RefCntIface<IReplicatorImpl<Replicator, CheckStatusWrapper> >
 {
 public:
 	// IReplicator implementation
@@ -623,7 +617,7 @@ int Replicator::release()
 	return 0;
 }
 
-class Statement FB_FINAL : public RefCntIface<IStatementImpl<Statement, CheckStatusWrapper> >
+class Statement final : public RefCntIface<IStatementImpl<Statement, CheckStatusWrapper> >
 {
 public:
 	// IStatement implementation
@@ -729,7 +723,7 @@ int Statement::release()
 	return 0;
 }
 
-class Request FB_FINAL : public RefCntIface<IRequestImpl<Request, CheckStatusWrapper> >
+class Request final : public RefCntIface<IRequestImpl<Request, CheckStatusWrapper> >
 {
 public:
 	// IRequest implementation
@@ -779,7 +773,7 @@ int Request::release()
 	return 0;
 }
 
-class Events FB_FINAL : public RefCntIface<IEventsImpl<Events, CheckStatusWrapper> >
+class Events final : public RefCntIface<IEventsImpl<Events, CheckStatusWrapper> >
 {
 public:
 	// IEvents implementation
@@ -823,7 +817,7 @@ int Events::release()
 	return 0;
 }
 
-class Attachment FB_FINAL : public RefCntIface<IAttachmentImpl<Attachment, CheckStatusWrapper> >
+class Attachment final : public RefCntIface<IAttachmentImpl<Attachment, CheckStatusWrapper> >
 {
 public:
 	// IAttachment implementation
@@ -930,7 +924,7 @@ int Attachment::release()
 	return 0;
 }
 
-class Service FB_FINAL : public RefCntIface<IServiceImpl<Service, CheckStatusWrapper> >
+class Service final : public RefCntIface<IServiceImpl<Service, CheckStatusWrapper> >
 {
 public:
 	// IService implementation
@@ -1049,7 +1043,7 @@ void registerRedirector(Firebird::IPluginManager* iPlugin)
 } // namespace Remote
 
 /*
-extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* master)
+extern "C" FB_DLL_EXPORT void FB_PLUGIN_ENTRY_POINT(IMaster* master)
 {
 	IPluginManager* pi = master->getPluginManager();
 	registerRedirector(pi);
@@ -4729,13 +4723,11 @@ bool ResultSet::fetch(CheckStatusWrapper* status, void* buffer, P_FETCH operatio
 		(	// Low in inventory
 			(statement->rsr_rows_pending <= statement->rsr_reorder_level) &&
 			(statement->rsr_msgs_waiting <= statement->rsr_reorder_level) &&
-			// not using named pipe on NT
 			// Pipelining causes both server & client to
-			// write at the same time. In named pipes, writes
+			// write at the same time. In XNET, writes
 			// block for the other end to read -  and so when both
 			// attempt to write simultaneously, they end up
-			// waiting indefinitely for the other end to read
-			(port->port_type != rem_port::PIPE) &&
+			// waiting indefinitely for the other end to read.
 			(port->port_type != rem_port::XNET) &&
 			// We're fetching either forward or backward
 			(operation == fetch_next || operation == fetch_prior) &&
@@ -5906,12 +5898,11 @@ void Request::receive(CheckStatusWrapper* status, int level, unsigned int msg_ty
 				(tail->rrq_rows_pending <= tail->rrq_reorder_level &&	// Low in inventory
 					tail->rrq_msgs_waiting <= tail->rrq_reorder_level &&
 					// Pipelining causes both server & client to
-					// write at the same time. In named pipes, writes
+					// write at the same time. In XNET, writes
 					// block for the other end to read -  and so when both
 					// attempt to write simultaenously, they end up
-					// waiting indefinetly for the other end to read
-					(port->port_type != rem_port::PIPE) &&	// not named pipe on NT
-					(port->port_type != rem_port::XNET) &&	// not shared memory on NT
+					// waiting indefinetly for the other end to read.
+					(port->port_type != rem_port::XNET) &&
 					request->rrq_max_msg <= 1)))
 		{
 			// there's only one message type
@@ -7330,20 +7321,6 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 #ifdef WIN_NT
 	if (ISC_analyze_protocol(PROTOCOL_XNET, attach_name, node_name, NULL, needFile))
 		port = XNET_analyze(&cBlock, attach_name, flags & ANALYZE_USER_VFY, cBlock.getConfig(), ref_db_name);
-	else if (ISC_analyze_protocol(PROTOCOL_WNET, attach_name, node_name, WNET_SEPARATOR, needFile) ||
-		ISC_analyze_pclan(attach_name, node_name))
-	{
-		if (node_name.isEmpty())
-			node_name = WNET_LOCALHOST;
-		else
-		{
-			ISC_unescape(node_name);
-			ISC_utf8ToSystem(node_name);
-		}
-
-		port = WNET_analyze(&cBlock, attach_name, node_name.c_str(), flags & ANALYZE_USER_VFY,
-			cBlock.getConfig(), ref_db_name);
-	}
 	else
 #endif
 
@@ -7376,15 +7353,13 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 		if (!port)
 		{
 			PathName expanded_name = attach_name;
-			ISC_expand_share(expanded_name);
-
 			if (ISC_analyze_pclan(expanded_name, node_name))
 			{
 				ISC_unescape(node_name);
 				ISC_utf8ToSystem(node_name);
 
-				port = WNET_analyze(&cBlock, expanded_name, node_name.c_str(), flags & ANALYZE_USER_VFY,
-					cBlock.getConfig(), ref_db_name);
+				port = INET_analyze(&cBlock, expanded_name, node_name.c_str(), flags & ANALYZE_USER_VFY, pb,
+					cBlock.getConfig(), ref_db_name, cryptCb);
 			}
 		}
 #endif
@@ -7416,12 +7391,6 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 			if (!port)
 			{
 				port = XNET_analyze(&cBlock, attach_name, flags & ANALYZE_USER_VFY,
-					cBlock.getConfig(), ref_db_name);
-			}
-
-			if (!port)
-			{
-				port = WNET_analyze(&cBlock, attach_name, WNET_LOCALHOST, flags & ANALYZE_USER_VFY,
 					cBlock.getConfig(), ref_db_name);
 			}
 #endif
@@ -7844,20 +7813,9 @@ static void disconnect( rem_port* port)
 			}
 		}
 
-		// BAND-AID:
-		// It seems as if we are disconnecting the port
-		// on both the server and client side.  For now
-		// let the server handle this for named pipes
+		packet->p_operation = op_disconnect;
+		port->send(packet);
 
-		// 8-Aug-1997  M.  Duquette
-		// R.  Kumar
-		// M.  Romanini
-
-		if (port->port_type != rem_port::PIPE)
-		{
-			packet->p_operation = op_disconnect;
-			port->send(packet);
-		}
 		REMOTE_free_packet(port, packet);
 	}
 
@@ -8644,6 +8602,11 @@ static void receive_packet_noqueue(rem_port* port, PACKET* packet)
 
 			case op_batch_msg:
 				stmt_id = p->packet.p_batch_msg.p_batch_statement;
+				bCheckResponse = true;
+				break;
+
+			case op_batch_create:
+				stmt_id = p->packet.p_batch_create.p_batch_statement;
 				bCheckResponse = true;
 				break;
 

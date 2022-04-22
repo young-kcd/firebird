@@ -167,7 +167,7 @@ namespace
 // Parse blr, returning a compiler scratch block with the results.
 // Caller must do pool handling.
 DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr_length,
-	CompilerScratch* view_csb, CompilerScratch** csb_ptr, JrdStatement** statementPtr,
+	CompilerScratch* view_csb, CompilerScratch** csb_ptr, Statement** statementPtr,
 	const bool trigger, USHORT flags)
 {
 #ifdef CMP_DEBUG
@@ -188,7 +188,7 @@ DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 		PAR_syntax_error(csb, "end_of_command");
 
 	if (statementPtr)
-		*statementPtr = JrdStatement::makeStatement(tdbb, csb, false);
+		*statementPtr = Statement::makeStatement(tdbb, csb, false);
 
 	return csb->csb_node;
 }
@@ -197,7 +197,7 @@ DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 // Finish parse of memory nodes, returning a compiler scratch block with the results.
 // Caller must do pool handling.
 void PAR_preparsed_node(thread_db* tdbb, jrd_rel* relation, DmlNode* node,
-	CompilerScratch* view_csb, CompilerScratch** csb_ptr, JrdStatement** statementPtr,
+	CompilerScratch* view_csb, CompilerScratch** csb_ptr, Statement** statementPtr,
 	const bool trigger, USHORT flags)
 {
 	BlrParseWrapper csb(*tdbb->getDefaultPool(), relation, view_csb, csb_ptr, trigger, flags);
@@ -206,7 +206,7 @@ void PAR_preparsed_node(thread_db* tdbb, jrd_rel* relation, DmlNode* node,
 	csb->csb_node = node;
 
 	if (statementPtr)
-		*statementPtr = JrdStatement::makeStatement(tdbb, csb, false);
+		*statementPtr = Statement::makeStatement(tdbb, csb, false);
 }
 
 
@@ -1141,6 +1141,7 @@ void PAR_procedure_parms(thread_db* tdbb, CompilerScratch* csb, jrd_prc* procedu
 		MemoryPool& pool = *tdbb->getDefaultPool();
 
 		// We have a few parameters. Get on with creating the message block
+		// Outer messages map may start with 2, but they are always in the routine start.
 		USHORT n = ++csb->csb_msg_number;
 		if (n < 2)
 			csb->csb_msg_number = n = 2;

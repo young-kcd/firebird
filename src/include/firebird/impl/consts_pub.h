@@ -128,6 +128,7 @@
 #define isc_dpb_set_bind                  93
 #define isc_dpb_decfloat_round            94
 #define isc_dpb_decfloat_traps            95
+#define isc_dpb_clear_map				  96
 
 
 /**************************************************/
@@ -160,8 +161,7 @@
  <protocol-string> ::=
 	"TCPv4" |
 	"TCPv6" |
-	"XNET" |
-	"WNET" |
+	"XNET"
 	....
 
  <plugin-string> ::=

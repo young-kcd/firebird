@@ -874,7 +874,7 @@ unsigned UtilInterface::getClientVersion()
 }
 
 // End-user proxy for ClumpletReader & Writer
-class XpbBuilder FB_FINAL : public DisposeIface<IXpbBuilderImpl<XpbBuilder, CheckStatusWrapper> >
+class XpbBuilder final : public DisposeIface<IXpbBuilderImpl<XpbBuilder, CheckStatusWrapper> >
 {
 public:
 	XpbBuilder(unsigned kind, const unsigned char* buf, unsigned len)
@@ -1217,7 +1217,7 @@ IXpbBuilder* UtilInterface::getXpbBuilder(CheckStatusWrapper* status,
 	}
 }
 
-class DecFloat16 FB_FINAL : public AutoIface<IDecFloat16Impl<DecFloat16, CheckStatusWrapper> >
+class DecFloat16 final : public AutoIface<IDecFloat16Impl<DecFloat16, CheckStatusWrapper> >
 {
 public:
 	// IDecFloat16 implementation
@@ -1278,7 +1278,7 @@ IDecFloat16* UtilInterface::getDecFloat16(CheckStatusWrapper* status)
 	return &decFloat16;
 }
 
-class DecFloat34 FB_FINAL : public AutoIface<IDecFloat34Impl<DecFloat34, CheckStatusWrapper> >
+class DecFloat34 final : public AutoIface<IDecFloat34Impl<DecFloat34, CheckStatusWrapper> >
 {
 public:
 	// IDecFloat34 implementation
@@ -1339,7 +1339,7 @@ IDecFloat34* UtilInterface::getDecFloat34(CheckStatusWrapper* status)
 	return &decFloat34;
 }
 
-class IfaceInt128 FB_FINAL : public AutoIface<IInt128Impl<IfaceInt128, CheckStatusWrapper> >
+class IfaceInt128 final : public AutoIface<IInt128Impl<IfaceInt128, CheckStatusWrapper> >
 {
 public:
 	// IInt128 implementation

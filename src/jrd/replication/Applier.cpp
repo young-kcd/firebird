@@ -204,7 +204,7 @@ namespace
 	class LocalThreadContext
 	{
 	public:
-		LocalThreadContext(thread_db* tdbb, jrd_tra* tra, jrd_req* req = NULL)
+		LocalThreadContext(thread_db* tdbb, jrd_tra* tra, Request* req = NULL)
 			: m_tdbb(tdbb)
 		{
 			tdbb->setTransaction(tra);
@@ -240,8 +240,8 @@ Applier* Applier::create(thread_db* tdbb)
 	Jrd::ContextPoolHolder context(tdbb, req_pool);
 	AutoPtr<CompilerScratch> csb(FB_NEW_POOL(*req_pool) CompilerScratch(*req_pool));
 
-	const auto request = JrdStatement::makeRequest(tdbb, csb, true);
-	TimeZoneUtil::validateGmtTimeStamp(request->req_gmt_timestamp);
+	const auto request = Statement::makeRequest(tdbb, csb, true);
+	request->validateTimeStamp();
 	request->req_attachment = attachment;
 
 	auto& att_pool = *attachment->att_pool;

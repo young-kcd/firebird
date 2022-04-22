@@ -31,7 +31,7 @@ namespace Jrd {
 class SubQuery;
 
 
-class BinaryBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_BINARY_BOOL>
+class BinaryBoolNode final : public TypedNode<BoolExprNode, ExprNode::TYPE_BINARY_BOOL>
 {
 public:
 	BinaryBoolNode(MemoryPool& pool, UCHAR aBlrOp, BoolExprNode* aArg1 = NULL,
@@ -54,11 +54,11 @@ public:
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
-	virtual bool execute(thread_db* tdbb, jrd_req* request) const;
+	virtual bool execute(thread_db* tdbb, Request* request) const;
 
 private:
-	virtual bool executeAnd(thread_db* tdbb, jrd_req* request) const;
-	virtual bool executeOr(thread_db* tdbb, jrd_req* request) const;
+	virtual bool executeAnd(thread_db* tdbb, Request* request) const;
+	virtual bool executeOr(thread_db* tdbb, Request* request) const;
 
 public:
 	UCHAR blrOp;
@@ -67,7 +67,7 @@ public:
 };
 
 
-class ComparativeBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_COMPARATIVE_BOOL>
+class ComparativeBoolNode final : public TypedNode<BoolExprNode, ExprNode::TYPE_COMPARATIVE_BOOL>
 {
 public:
 	enum DsqlFlag : UCHAR
@@ -106,12 +106,12 @@ public:
 	virtual BoolExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Boolean1(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Boolean2(thread_db* tdbb, CompilerScratch* csb);
-	virtual bool execute(thread_db* tdbb, jrd_req* request) const;
+	virtual bool execute(thread_db* tdbb, Request* request) const;
 
 private:
-	bool stringBoolean(thread_db* tdbb, jrd_req* request, dsc* desc1, dsc* desc2,
+	bool stringBoolean(thread_db* tdbb, Request* request, dsc* desc1, dsc* desc2,
 		bool computedInvariant) const;
-	bool sleuth(thread_db* tdbb, jrd_req* request, const dsc* desc1, const dsc* desc2) const;
+	bool sleuth(thread_db* tdbb, Request* request, const dsc* desc1, const dsc* desc2) const;
 
 	BoolExprNode* createRseNode(DsqlCompilerScratch* dsqlScratch, UCHAR rseBlrOp);
 
@@ -126,7 +126,7 @@ public:
 };
 
 
-class MissingBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_MISSING_BOOL>
+class MissingBoolNode final : public TypedNode<BoolExprNode, ExprNode::TYPE_MISSING_BOOL>
 {
 public:
 	explicit MissingBoolNode(MemoryPool& pool, ValueExprNode* aArg = NULL, bool aDsqlUnknown = false);
@@ -151,7 +151,7 @@ public:
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual BoolExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Boolean2(thread_db* tdbb, CompilerScratch* csb);
-	virtual bool execute(thread_db* tdbb, jrd_req* request) const;
+	virtual bool execute(thread_db* tdbb, Request* request) const;
 
 public:
 	bool dsqlUnknown;
@@ -159,7 +159,7 @@ public:
 };
 
 
-class NotBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_NOT_BOOL>
+class NotBoolNode final : public TypedNode<BoolExprNode, ExprNode::TYPE_NOT_BOOL>
 {
 public:
 	explicit NotBoolNode(MemoryPool& pool, BoolExprNode* aArg = NULL);
@@ -183,7 +183,7 @@ public:
 
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual BoolExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
-	virtual bool execute(thread_db* tdbb, jrd_req* request) const;
+	virtual bool execute(thread_db* tdbb, Request* request) const;
 
 private:
 	BoolExprNode* process(DsqlCompilerScratch* dsqlScratch, bool invert);
@@ -193,7 +193,7 @@ public:
 };
 
 
-class RseBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_RSE_BOOL>
+class RseBoolNode final : public TypedNode<BoolExprNode, ExprNode::TYPE_RSE_BOOL>
 {
 public:
 	RseBoolNode(MemoryPool& pool, UCHAR aBlrOp, RecordSourceNode* aDsqlRse = NULL);
@@ -235,7 +235,7 @@ public:
 	virtual BoolExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Boolean1(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Boolean2(thread_db* tdbb, CompilerScratch* csb);
-	virtual bool execute(thread_db* tdbb, jrd_req* request) const;
+	virtual bool execute(thread_db* tdbb, Request* request) const;
 
 private:
 	BoolExprNode* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb);

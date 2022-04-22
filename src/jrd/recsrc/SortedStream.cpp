@@ -32,6 +32,7 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/vio_proto.h"
+#include "../jrd/optimizer/Optimizer.h"
 
 #include "RecordSource.h"
 
@@ -48,11 +49,15 @@ SortedStream::SortedStream(CompilerScratch* csb, RecordSource* next, SortMap* ma
 	fb_assert(m_next && m_map);
 
 	m_impure = csb->allocImpure<Impure>();
+	m_cardinality = next->getCardinality();
+
+	if (m_map->flags & FLAG_PROJECT)
+		m_cardinality *= DEFAULT_SELECTIVITY;
 }
 
 void SortedStream::open(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open;
@@ -67,7 +72,7 @@ void SortedStream::open(thread_db* tdbb) const
 
 void SortedStream::close(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 
 	invalidateRecords(request);
 
@@ -88,7 +93,7 @@ bool SortedStream::getRecord(thread_db* tdbb) const
 {
 	JRD_reschedule(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
@@ -128,6 +133,7 @@ void SortedStream::print(thread_db* tdbb, string& plan,
 
 		plan += printIndent(++level) +
 			((m_map->flags & FLAG_PROJECT) ? "Unique Sort" : "Sort") + extras;
+		printOptInfo(plan);
 
 		m_next->print(tdbb, plan, true, level);
 	}
@@ -150,7 +156,7 @@ void SortedStream::findUsedStreams(StreamList& streams, bool expandAll) const
 	m_next->findUsedStreams(streams, expandAll);
 }
 
-void SortedStream::invalidateRecords(jrd_req* request) const
+void SortedStream::invalidateRecords(Request* request) const
 {
 	m_next->invalidateRecords(request);
 }
@@ -162,7 +168,7 @@ void SortedStream::nullRecords(thread_db* tdbb) const
 
 Sort* SortedStream::init(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 
 	m_next->open(tdbb);
 	ULONG records = 0;
@@ -310,7 +316,7 @@ bool SortedStream::compareKeys(const UCHAR* p, const UCHAR* q) const
 
 UCHAR* SortedStream::getData(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	ULONG* data = nullptr;
@@ -319,7 +325,7 @@ UCHAR* SortedStream::getData(thread_db* tdbb) const
 	return reinterpret_cast<UCHAR*>(data);
 }
 
-void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
+void SortedStream::mapData(thread_db* tdbb, Request* request, UCHAR* data) const
 {
 	StreamType stream = INVALID_STREAM;
 	dsc from, to;

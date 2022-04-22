@@ -278,7 +278,7 @@ public:
 		run_db_triggers(_run_db_triggers), direct_io(_direct_io),
 		dbase(INVALID_HANDLE_VALUE), backup(INVALID_HANDLE_VALUE),
 		decompress(_deco), childId(0), db_size_pages(0),
-		m_odsNumber(0), m_silent(false), m_printed(false)
+		m_odsNumber(0), m_silent(false), m_printed(false), m_flash_map(false)
 	{
 		// Recognition of local prefix allows to work with
 		// database using TCP/IP loopback while reading file locally.
@@ -344,6 +344,7 @@ private:
 	USHORT m_odsNumber;
 	bool m_silent;		// are we already handling an exception?
 	bool m_printed;		// pr_error() was called to print status vector
+	bool m_flash_map;	// clear mapping cache on attach
 
 	// IO functions
 	FB_SIZE_T read_file(FILE_HANDLE &file, void *buffer, FB_SIZE_T bufsize);
@@ -1006,6 +1007,9 @@ void NBackup::attach_database()
 
 	if (!run_db_triggers)
 		dpb.insertByte(isc_dpb_no_db_triggers, 1);
+
+	if (m_flash_map)
+		dpb.insertByte(isc_dpb_clear_map, 1);
 
 	if (m_silent)
 	{
@@ -1670,6 +1674,14 @@ void NBackup::restore_database(const BackupFiles& files, bool repl_seq, bool inc
 				{
 					close_database();
 					fixup_database(repl_seq, inc_rest);
+
+					m_silent = true;
+					m_flash_map = true;
+					run_db_triggers = false;
+
+					attach_database();
+					detach_database();
+
 					return;
 				}
 				if (!inc_rest || curLevel)

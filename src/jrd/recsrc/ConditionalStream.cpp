@@ -46,11 +46,12 @@ ConditionalStream::ConditionalStream(CompilerScratch* csb,
 	fb_assert(m_first && m_second && m_boolean);
 
 	m_impure = csb->allocImpure<Impure>();
+	m_cardinality = (first->getCardinality() + second->getCardinality()) / 2;
 }
 
 void ConditionalStream::open(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open;
@@ -61,7 +62,7 @@ void ConditionalStream::open(thread_db* tdbb) const
 
 void ConditionalStream::close(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 
 	invalidateRecords(request);
 
@@ -79,7 +80,7 @@ bool ConditionalStream::getRecord(thread_db* tdbb) const
 {
 	JRD_reschedule(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
@@ -90,7 +91,7 @@ bool ConditionalStream::getRecord(thread_db* tdbb) const
 
 bool ConditionalStream::refetchRecord(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
@@ -101,7 +102,7 @@ bool ConditionalStream::refetchRecord(thread_db* tdbb) const
 
 bool ConditionalStream::lockRecord(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
@@ -115,6 +116,8 @@ void ConditionalStream::print(thread_db* tdbb, string& plan, bool detailed, unsi
 	if (detailed)
 	{
 		plan += printIndent(++level) + "Condition";
+		printOptInfo(plan);
+
 		m_first->print(tdbb, plan, true, level);
 		m_second->print(tdbb, plan, true, level);
 	}
@@ -146,7 +149,7 @@ void ConditionalStream::findUsedStreams(StreamList& streams, bool expandAll) con
 	m_second->findUsedStreams(streams, expandAll);
 }
 
-void ConditionalStream::invalidateRecords(jrd_req* request) const
+void ConditionalStream::invalidateRecords(Request* request) const
 {
 	m_first->invalidateRecords(request);
 	m_second->invalidateRecords(request);
