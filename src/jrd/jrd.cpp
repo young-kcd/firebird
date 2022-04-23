@@ -5471,6 +5471,34 @@ IMessageMetadata* JResultSet::getMetadata(CheckStatusWrapper* user_status)
 }
 
 
+void JResultSet::getInfo(CheckStatusWrapper* user_status,
+						 unsigned int itemsLength, const unsigned char* items,
+						 unsigned int bufferLength, unsigned char* buffer)
+{
+	try
+	{
+		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		try
+		{
+			cursor->getInfo(tdbb, itemsLength, items, bufferLength, buffer);
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, user_status, "JResultSet::getInfo");
+			return;
+		}
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return;
+	}
+
+	successful_completion(user_status);
+}
+
 void JResultSet::deprecatedClose(CheckStatusWrapper* user_status)
 {
 	freeEngineData(user_status);

@@ -1668,6 +1668,7 @@ namespace Firebird
 			void (CLOOP_CARG *deprecatedClose)(IResultSet* self, IStatus* status) throw();
 			void (CLOOP_CARG *setDelayedOutputFormat)(IResultSet* self, IStatus* status, IMessageMetadata* format) throw();
 			void (CLOOP_CARG *close)(IResultSet* self, IStatus* status) throw();
+			void (CLOOP_CARG *getInfo)(IResultSet* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw();
 		};
 
 	protected:
@@ -1681,7 +1682,9 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 4;
+		static const unsigned VERSION = 5;
+
+		static const unsigned char INF_RECORD_COUNT = 10;
 
 		template <typename StatusType> int fetchNext(StatusType* status, void* message)
 		{
@@ -1784,6 +1787,19 @@ namespace Firebird
 			}
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->close(this, status);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
+		{
+			if (cloopVTable->version < 5)
+			{
+				StatusType::setVersionError(status, "IResultSet", cloopVTable->version, 5);
+				StatusType::checkException(status);
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status, itemsLength, items, bufferLength, buffer);
 			StatusType::checkException(status);
 		}
 	};
@@ -9620,6 +9636,7 @@ namespace Firebird
 					this->deprecatedClose = &Name::cloopdeprecatedCloseDispatcher;
 					this->setDelayedOutputFormat = &Name::cloopsetDelayedOutputFormatDispatcher;
 					this->close = &Name::cloopcloseDispatcher;
+					this->getInfo = &Name::cloopgetInfoDispatcher;
 				}
 			} vTable;
 
@@ -9803,6 +9820,20 @@ namespace Firebird
 			}
 		}
 
+		static void CLOOP_CARG cloopgetInfoDispatcher(IResultSet* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::getInfo(&status2, itemsLength, items, bufferLength, buffer);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
 		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
@@ -9854,6 +9885,7 @@ namespace Firebird
 		virtual void deprecatedClose(StatusType* status) = 0;
 		virtual void setDelayedOutputFormat(StatusType* status, IMessageMetadata* format) = 0;
 		virtual void close(StatusType* status) = 0;
+		virtual void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>

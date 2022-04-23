@@ -433,6 +433,9 @@ version:	// 3.0 => 4.0
 
 interface ResultSet : ReferenceCounted
 {
+	// Info items
+	const uchar INF_RECORD_COUNT = 10;		// Number of records in the result set
+
 	[notImplemented(Status::RESULT_ERROR)] int fetchNext(Status status, void* message);
 	[notImplemented(Status::RESULT_ERROR)] int fetchPrior(Status status, void* message);
 	[notImplemented(Status::RESULT_ERROR)] int fetchFirst(Status status, void* message);
@@ -452,6 +455,11 @@ interface ResultSet : ReferenceCounted
 version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
 	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedClose(status) endif]
 	void close(Status status);
+
+version:	// 4.0.1 => 5.0
+	void getInfo(Status status,
+				 uint itemsLength, const uchar* items,
+				 uint bufferLength, uchar* buffer);
 }
 
 interface Statement : ReferenceCounted

@@ -169,6 +169,9 @@ public:
 	void close(Firebird::CheckStatusWrapper* status) override;
 	void deprecatedClose(Firebird::CheckStatusWrapper* status) override;
 	void setDelayedOutputFormat(Firebird::CheckStatusWrapper* status, Firebird::IMessageMetadata* format) override;
+	void getInfo(Firebird::CheckStatusWrapper* status,
+		unsigned int itemsLength, const unsigned char* items,
+		unsigned int bufferLength, unsigned char* buffer) override;
 
 public:
 	JResultSet(DsqlCursor* handle, JStatement* aStatement);
