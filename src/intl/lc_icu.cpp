@@ -52,7 +52,7 @@ static bool texttype_default_init(texttype* tt,
 								  //const ASCII* configInfo)
 {
 	AutoPtr<charset> cs(FB_NEW charset);
-	memset(&cs, 0, sizeof(cs));
+	memset(cs, 0, sizeof(*cs));
 
 	// test if that ICU charset exist
 	if (!CSICU_charset_init(cs, charSetName))
