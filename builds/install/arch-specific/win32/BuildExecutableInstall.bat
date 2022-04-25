@@ -264,7 +264,7 @@ copy %FB_ROOT_PATH%\lang_helpers\ib_util.pas %FB_OUTPUT_DIR%\include > nul || (c
 @if errorlevel 0 (
 if "%PROCESSOR_ARCHITECTURE%"=="x86" (
   @echo   Generating fbclient_bor.lib
-  @implib %FB_OUTPUT_DIR%\lib\fbclient_bor.lib %FB_OUTPUT_DIR%\fbclient.dll > nul
+  @implib.exe %FB_OUTPUT_DIR%\lib\fbclient_bor.lib %FB_OUTPUT_DIR%\fbclient.dll > nul
 )
 )
 
@@ -302,7 +302,7 @@ for %%v in ( ib_udf.sql ib_udf2.sql ) do (
 for %%v in ( fbudf.sql fbudf.txt ) do (
   copy %FB_ROOT_PATH%\src\extlib\fbudf\%%v  %FB_OUTPUT_DIR%\UDF\%%v > nul
   @if %ERRORLEVEL% GEQ 1 (
-    call :ERROR Copying %FB_ROOT_PATH%\src\extlib\%%v failed with error %ERRORLEVEL%
+    call :ERROR Copying %FB_ROOT_PATH%\src\extlib\fbudf\%%v to %FB_OUTPUT_DIR%\UDF\%%v failed with error %ERRORLEVEL%
     goto :EOF
   )
 )
@@ -585,7 +585,7 @@ if "%FBBUILD_SHIP_PDB%" == "ship_pdb" (
     )
     set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%%FBBUILD_FILENAME_SUFFIX%.zip
 )
-
+@echo calling sevenzip - %SEVENZIP% %FBBUILD_ZIPFILE% %FBBUILD_ZIP_PACK_ROOT%\*.*
 @%SEVENZIP%\7z.exe a -r -tzip -mx9 %FBBUILD_ZIPFILE% %FBBUILD_ZIP_PACK_ROOT%\*.*
 @echo   End of ZIP_PACK
 @echo.
