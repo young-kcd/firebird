@@ -941,7 +941,7 @@ void TRA_update_counters(thread_db* tdbb, Database* dbb)
 }
 
 
-void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, PermanentResourceList& resources)
+void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& resources)
 {
 /**************************************
  *
@@ -959,12 +959,12 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, PermanentResource
 
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 
-	PermanentResourceList::ResourceTypes b;
+	ResourceList::ResourceTypes b;
 	b.set(Resource::rsc_relation);
 	b.set(Resource::rsc_procedure);
 	b.set(Resource::rsc_function);
 	b.set(Resource::rsc_collation);
-	PermanentResourceList::NewResources newRsc;
+	ResourceList::NewResources newRsc;
 	transaction->tra_resources.transferResources(tdbb, resources, b, newRsc);
 
 	if (!newRsc.hasData())

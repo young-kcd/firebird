@@ -303,7 +303,7 @@ static void post_nothrow(const unsigned lenToAdd, const ISC_STATUS* toAdd, FbSta
 }
 
 
-void ERR_post(const Arg::StatusVector& v)
+void ERR_post [[noreturn]] (const Arg::StatusVector& v)
 /**************************************
  *
  *	E R R _ p o s t
@@ -321,7 +321,7 @@ void ERR_post(const Arg::StatusVector& v)
 }
 
 
-void ERR_punt()
+void ERR_punt [[noreturn]] ()
 {
 /**************************************
  *

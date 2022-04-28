@@ -4602,7 +4602,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 			if (!isTempIndex)
 			{
-				if (!index->idl_lock.exLock(tdbb))
+				if (!index->idl_lock.exclLock(tdbb))
 					//!LCK_lock(tdbb, index->idl_lock, LCK_EX, transaction->getLockWait()))
 				{
 					raiseObjectInUseError("INDEX", arg->dfw_name);
@@ -4645,7 +4645,9 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 		if (index)
 		{
-			if (index->idl_lock.hasExLock(tdbb))
+			// if we are here that means we got exclLock() on step 3
+			fb_assert(index->idl_lock.hasExclLock(tdbb));
+			//if (index->idl_lock.hasExLock(tdbb))
 			{
 				// Release index existence lock and memory.
 				fb_assert(relation->rel_index_locks.load(tdbb, index->idl_id) == index);
@@ -4835,7 +4837,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 			if (relation->rel_existence_lock->getUseCount())
 				MetadataCache::clear_cache(tdbb);
 
-			if (relation->rel_existence_lock->exLock(tdbb))
+			if (!relation->rel_existence_lock->exclLock(tdbb))
 				/////// ??????? !LCK_convert(tdbb, relation->rel_existence_lock, LCK_EX, transaction->getLockWait())))
 			{
 				if (adjusted)

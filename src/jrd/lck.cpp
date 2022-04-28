@@ -1587,11 +1587,12 @@ Lock* Lock::detach()
 }
 
 /**************************************
- *      Someone is trying to drop an object. If there
- *      are outstanding interests in the existence of
- *      that object then just mark as blocking and return.
- *      Otherwise, mark the object as not locked
- *      and release the existence lock.
+ *
+ * Someone is trying to drop an object. If there
+ * are outstanding interests in the existence of
+ * that object then just mark as blocking and return.
+ * Otherwise, mark the object as not locked
+ * and release the existence lock.
  *
  **************************************/
 void ExistenceLock::blockingAst()

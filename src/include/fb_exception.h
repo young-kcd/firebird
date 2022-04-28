@@ -74,7 +74,7 @@ class LongJump : public Exception
 public:
 	virtual void stuffByException(StaticStatusVector& status_vector) const throw();
 	virtual const char* what() const throw();
-	static void raise();
+	static void raise [[noreturn]] ();
 	LongJump() throw() : Exception() { }
 };
 
@@ -85,7 +85,7 @@ public:
 	BadAlloc() throw() : std::bad_alloc(), Exception() { }
 	virtual void stuffByException(StaticStatusVector& status_vector) const throw();
 	virtual const char* what() const throw();
-	static void raise();
+	static void raise [[noreturn]] ();
 };
 
 // Main exception class in firebird
@@ -102,9 +102,9 @@ public:
 
 	const ISC_STATUS* value() const throw() { return m_status_vector; }
 
-	[[noreturn]] static void raise(const ISC_STATUS* status_vector);
-	[[noreturn]] static void raise(const Arg::StatusVector& statusVector);
-	[[noreturn]] static void raise(const IStatus* status);
+	[[noreturn]] static void raise [[noreturn]] (const ISC_STATUS* status_vector);
+	[[noreturn]] static void raise [[noreturn]] (const Arg::StatusVector& statusVector);
+	[[noreturn]] static void raise [[noreturn]] (const IStatus* status);
 
 protected:
 	// Create exception with undefined status vector, this constructor allows
@@ -134,8 +134,8 @@ protected:
 	system_error(const char* syscall, const char* arg, int error_code);
 
 public:
-	static void raise(const char* syscall, int error_code);
-	static void raise(const char* syscall);
+	static void raise [[noreturn]] (const char* syscall, int error_code);
+	static void raise [[noreturn]] (const char* syscall);
 
 	int getErrorCode() const
 	{
@@ -153,19 +153,19 @@ protected:
 	system_call_failed(const char* syscall, const char* arg, int error_code);
 
 public:
-	static void raise(const char* syscall, int error_code);
-	static void raise(const char* syscall);
-	static void raise(const char* syscall, const char* arg, int error_code);
-	static void raise(const char* syscall, const char* arg);
+	static void raise [[noreturn]] (const char* syscall, int error_code);
+	static void raise [[noreturn]] (const char* syscall);
+	static void raise [[noreturn]] (const char* syscall, const char* arg, int error_code);
+	static void raise [[noreturn]] (const char* syscall, const char* arg);
 };
 
 class fatal_exception : public status_exception
 {
 public:
 	explicit fatal_exception(const char* message);
-	static void raiseFmt(const char* format, ...);
+	static void raiseFmt [[noreturn]] (const char* format, ...);
 	const char* what() const throw();
-	static void raise(const char* message);
+	static void raise [[noreturn]] (const char* message);
 };
 
 

@@ -234,8 +234,8 @@ public:
 		return flags & count;
 	}
 
-	bool exLock(thread_db* tdbb);							// Take exclusive lock
-	bool hasExLock(thread_db* tdbb);						// Is object locked exclusively?
+	bool exclLock(thread_db* tdbb);							// Take exclusive lock
+	bool hasExclLock(thread_db* tdbb);						// Is object locked exclusively?
 	void unlock(thread_db* tdbb);							// Release exclusive lock
 			// LCK_convert(tdbb, relation->rel_existence_lock, LCK_SR, transaction->getLockWait());
 	void releaseLock(thread_db* tdbb);						// Release all locks
@@ -257,9 +257,10 @@ private:
 	std::atomic<unsigned> flags;
 	CacheObject* object;
 
-	static const unsigned count =		0x00FFFFFF;
-	static const unsigned countChk =	0x01000000;
-	static const unsigned exclusive =	0x04000000;
+	static const unsigned countMask =	0x0FEFFFFF;
+	static const unsigned countChk =	0x00100000;
+	static const unsigned exclusive =	0x00200000;
+	static const unsigned exCheck =		0x10000000;
 	static const unsigned unlocking =	0x20000000;
 	static const unsigned locked =		0x40000000;
 	static const unsigned blocking =	0x80000000;

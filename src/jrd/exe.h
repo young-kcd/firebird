@@ -140,47 +140,24 @@ struct impure_agg_sort
 };
 
 
-// Resources lists
-
+// Resources list
 
 class ResourceList
 {
-public:
 	typedef Firebird::SortedArray<Resource, Firebird::EmptyStorage<Resource>,
 		Resource, Firebird::DefaultKeyValue<Resource>, Resource> InternalResourceList;
 
-	ResourceList(MemoryPool& p)
-		: list(p)
-	{ }
-
-	template <typename T>
-	void checkResource(Jrd::Resource::rsc_s type, T* object, USHORT id = 0)
-	{
-		Resource r(type, type == Resource::rsc_index ? id : object->getId(), object);
-		if (!list.exist(r))
-			raiseNotRegistered(type, object->c_name());
-	}
-
-protected:
-	InternalResourceList list;
-
-	void raiseNotRegistered [[noreturn]] (Resource::rsc_s type, const char* name);
-};
-
-class PermanentResourceList;
-
-class HazardResourceList : public ResourceList
-{
-	friend class PermanentResourceList;
-
 public:
-	HazardResourceList(MemoryPool& p)
-		: ResourceList(p), hazardFlag(true)
+	ResourceList(MemoryPool& p, bool hazard)
+		: list(p), hazardFlag(hazard)
 	{ }
 
-	~HazardResourceList()
+	typedef Firebird::Bits<Resource::rsc_MAX> ResourceTypes;
+	typedef Firebird::HalfStaticArray<FB_SIZE_T, 128> NewResources;
+
+	~ResourceList()
 	{
-		dehazardPointers(nullptr);
+		releaseResources(nullptr);
 	}
 
 	template <typename T>
@@ -203,6 +180,8 @@ public:
 	template <typename T>
 	void postResource(thread_db* tdbb, Resource::rsc_s type, T* ptr, USHORT id)
 	{
+		fb_assert(hazardFlag);
+
 		Resource r(type, id, ptr);
 		FB_SIZE_T pos;
 
@@ -233,28 +212,11 @@ public:
 			raiseNotRegistered(type, object->c_name());
 	}
 
-private:
-	InternalResourceList list;
-	bool hazardFlag;
+	void transferResources(thread_db* tdbb, ResourceList& from, ResourceTypes rt, NewResources& nr);
+	void transferResources(thread_db* tdbb, ResourceList& from);
 
-	void raiseNotRegistered [[noreturn]] (Resource::rsc_s type, const char* name);
-	void dehazardPointers(thread_db* tdbb);
-};
+	void postIndex(thread_db* tdbb, jrd_rel* relation, USHORT idxId);
 
-class PermanentResourceList : public ResourceList
-{
-public:
-	PermanentResourceList(MemoryPool& p)
-		: ResourceList(p)
-	{ }
-
-	typedef Firebird::Bits<Resource::rsc_MAX> ResourceTypes;
-	typedef Firebird::HalfStaticArray<FB_SIZE_T, 128> NewResources;
-
-	void transferResources(thread_db* tdbb, PermanentResourceList& from, ResourceTypes rt, NewResources& nr);
-	void transferResources(thread_db* tdbb, const HazardResourceList& from);
-
-	void postResource(Resource::rsc_s type, const jrd_rel* resource, USHORT id);
 	void releaseResources(thread_db* tdbb);
 
 	void inc_int_use_count();
@@ -319,11 +281,11 @@ public:
 		void* operator new[](size_t);
 
 	public:
-		iterator(PermanentResourceList* a, Resource::rsc_s type)
+		iterator(ResourceList* a, Resource::rsc_s type)
 			: index(a->getPointer(type))
 		{ }
 
-		iterator(PermanentResourceList* a, bool last)
+		iterator(ResourceList* a, bool last)
 			: index(a->getPointer(last))
 		{ }
 
@@ -349,7 +311,7 @@ public:
 	class Range
 	{
 	public:
-		Range(Resource::rsc_s r, PermanentResourceList* l)
+		Range(Resource::rsc_s r, ResourceList* l)
 			: list(l), start(r)
 		{ }
 
@@ -364,7 +326,7 @@ public:
 		}
 
 	private:
-		PermanentResourceList* list;
+		ResourceList* list;
 		Resource::rsc_s start;
 	};
 
@@ -374,8 +336,13 @@ public:
 	}
 
 private:
+	InternalResourceList list;
+	bool hazardFlag;
+
+	void setResetPointersHazard(thread_db* tdbb, bool set);
+	void raiseNotRegistered [[noreturn]] (Resource::rsc_s type, const char* name);
 	void transferList(thread_db* tdbb, const InternalResourceList& from, Resource::State resetState,
-		ResourceTypes rt, NewResources* nr, HazardResourceList* hazardList);
+		ResourceTypes rt, NewResources* nr, ResourceList* hazardList);
 };
 
 // Access items
@@ -644,7 +611,7 @@ public:
 		mainCsb(aMainCsb),
 		csb_external(p),
 		csb_access(p),
-		csb_resources(p),
+		csb_resources(p, true),
 		csb_dependencies(p),
 		csb_fors(p),
 		csb_localTables(p),
@@ -710,7 +677,7 @@ public:
 	ExternalAccessList csb_external;			// Access to outside procedures/triggers to be checked
 	AccessItemList	csb_access;					// Access items to be checked
 	vec<DeclareVariableNode*>*	csb_variables;	// Vector of variables, if any
-	HazardResourceList	csb_resources;			// Resources (relations and indexes)
+	ResourceList	csb_resources;				// Resources (relations and indexes)
 	Firebird::Array<Dependency>	csb_dependencies;	// objects that this statement depends upon			/// !!!!!!!!!!!!!!!!!
 	Firebird::Array<const RecordSource*> csb_fors;	// record sources
 	Firebird::Array<const DeclareLocalTableNode*> csb_localTables;	// local tables

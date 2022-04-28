@@ -66,7 +66,7 @@ Statement::Statement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 	  requests(*p),
 	  externalList(*p),
 	  accessList(*p),
-	  resources(*p),
+	  resources(*p, false),
 	  triggerName(*p),
 	  triggerInvoker(NULL),
 	  parentStatement(NULL),
@@ -89,6 +89,8 @@ Statement::Statement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 		accessList = csb->csb_access;
 		externalList = csb->csb_external;
 		mapFieldInfo.takeOwnership(csb->csb_map_field_info);
+
+		// Take out existence locks on resources used in statement.
 		resources.transferResources(tdbb, csb->csb_resources);
 		impureSize = csb->csb_impure;
 
@@ -96,64 +98,6 @@ Statement::Statement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 		//	flags |= FLAG_VERSION4;
 		blrVersion = csb->blrVersion;
 
-		// Take out existence locks on resources used in statement. This is
-		// a little complicated since relation locks MUST be taken before
-		// index locks.
-/*	to be moved to transferResources()
-		for (Resource* resource = resources.begin(); resource != resources.end(); ++resource)
-		{
-			switch (resource->rsc_type)
-			{
-				case Resource::rsc_relation:
-				{
-					jrd_rel* relation = resource->rsc_rel;
-					MetadataCache::post_existence(tdbb, relation);
-					break;
-				}
-
-				case Resource::rsc_index:
-				{
-					jrd_rel* relation = resource->rsc_rel;
-					IndexLock* index = CMP_get_index_lock(tdbb, relation, resource->rsc_id);
-					if (index)
-					{
-						++index->idl_count;
-						if (index->idl_count == 1) {
-							LCK_lock(tdbb, index->idl_lock, LCK_SR, LCK_WAIT);
-						}
-					}
-					break;
-				}
-
-				case Resource::rsc_procedure:
-				case Resource::rsc_function:
-				{
-					Routine* routine = resource->rsc_routine;
-					routine->addRef();
-
-#ifdef DEBUG_PROCS
-					string buffer;
-					buffer.printf(
-						"Called from Statement::makeRequest:\n\t Incrementing use count of %s\n",
-						routine->getName()->toString().c_str());
-					JRD_print_procedure_info(tdbb, buffer.c_str());
-#endif
-
-					break;
-				}
-
-				case Resource::rsc_collation:
-				{
-					Collation* coll = resource->rsc_coll;
-					coll->incUseCount(tdbb);
-					break;
-				}
-
-				default:
-					BUGCHECK(219);		// msg 219 request of unknown resource
-			}
-		}
-*/
 		// make a vector of all used RSEs
 		fors = csb->csb_fors;
 
@@ -609,50 +553,6 @@ void Statement::release(thread_db* tdbb)
 	// Release existence locks on references.
 
 	resources.releaseResources(tdbb);
-
-/* move to releaseResources()
-	for (Resource* resource = resources.begin(); resource != resources.end(); ++resource)
-	{
-		switch (resource->rsc_type)
-		{
-			case Resource::rsc_relation:
-			{
-				jrd_rel* relation = resource->rsc_rel;
-				MET_release_existence(tdbb, relation);
-				break;
-			}
-
-			case Resource::rsc_index:
-			{
-				jrd_rel* relation = resource->rsc_rel;
-				IndexLock* index = CMP_get_index_lock(tdbb, relation, resource->rsc_id);
-				if (index && index->idl_count)
-				{
-					--index->idl_count;
-					if (!index->idl_count)
-						LCK_release(tdbb, index->idl_lock);
-				}
-				break;
-			}
-
-			case Resource::rsc_procedure:
-			case Resource::rsc_function:
-				resource->rsc_routine->release(tdbb);
-				break;
-
-			case Resource::rsc_collation:
-			{
-				Collation* coll = resource->rsc_coll;
-				coll->decUseCount(tdbb);
-				break;
-			}
-
-			default:
-				BUGCHECK(220);	// msg 220 release of unknown resource
-				break;
-		}
-	}
-*/
 
 	for (Request** instance = requests.begin(); instance != requests.end(); ++instance)
 		EXE_release(tdbb, *instance);

@@ -1636,12 +1636,14 @@ void AutoRequest::release()
 	}
 }
 
-void HazardResourceList::dehazardPointers(thread_db* tdbb)
+void ResourceList::setResetPointersHazard(thread_db* tdbb, bool set)
 {
-	if (hazardFlag)
+	if (hazardFlag != set)
 	{
-		// deregister hazard pointers
-		HazardDelayedDelete* hazardDelayed = HazardBase::getHazardDelayed(tdbb);
+		// (un-)register hazard pointers
+		HazardDelayedDelete* hazardDelayed = nullptr;
+		if (list.hasData())
+			hazardDelayed = HazardBase::getHazardDelayed(tdbb);
 
 		for (auto r : list)
 		{
@@ -1667,15 +1669,20 @@ void HazardResourceList::dehazardPointers(thread_db* tdbb)
 			}
 
 			if (hazardPointer)
-				hazardDelayed->remove(hazardPointer);
+			{
+				if (set)
+					hazardDelayed->add(hazardPointer);
+				else
+					hazardDelayed->remove(hazardPointer);
+			}
 		}
 
-		hazardFlag = false;
+		hazardFlag = set;
 	}
 }
 
-void PermanentResourceList::transferList(thread_db* tdbb, const InternalResourceList& from,
-	Resource::State resetState, ResourceTypes rt, NewResources* nr, HazardResourceList* hazardList)
+void ResourceList::transferList(thread_db* tdbb, const InternalResourceList& from,
+	Resource::State resetState, ResourceTypes rt, NewResources* nr, ResourceList* hazardList)
 {
 	// Copy needed resources
 	FB_SIZE_T pos = 0;
@@ -1743,11 +1750,13 @@ void PermanentResourceList::transferList(thread_db* tdbb, const InternalResource
 				}
 
 			case Resource::rsc_index:
-				{
+				// Relation locks MUST be taken before index locks.
+				/*{
 					HazardPtr<IndexLock> index = r.rsc_rel->getIndexLock(tdbb, r.rsc_id);
 					r.rsc_state = index ? index->idl_lock.inc(tdbb) : Resource::State::Locked;
 					break;
-				}
+				}*/
+				break;
 
 			case Resource::rsc_procedure:
 			case Resource::rsc_function:
@@ -1783,7 +1792,7 @@ void PermanentResourceList::transferList(thread_db* tdbb, const InternalResource
 	}
 
 	if (hazardList)
-		hazardList->dehazardPointers(tdbb);
+		hazardList->setResetPointersHazard(tdbb, false);
 
 	// Now lock not yet locked objects
 	for (auto n : toLock)
@@ -1802,7 +1811,12 @@ void PermanentResourceList::transferList(thread_db* tdbb, const InternalResource
 			break;
 
 		case Resource::rsc_index:
-			lock = &r.rsc_rel->getIndexLock(tdbb, r.rsc_id)->idl_lock;
+			{
+				HazardPtr<IndexLock> index = r.rsc_rel->getIndexLock(tdbb, r.rsc_id);
+				r.rsc_state = index ? index->idl_lock.inc(tdbb) : Resource::State::Locked;
+				if (index && r.rsc_state != Resource::State::Locked)
+					lock = &index->idl_lock;
+			}
 			break;
 
 		case Resource::rsc_procedure:
@@ -1826,3 +1840,185 @@ void PermanentResourceList::transferList(thread_db* tdbb, const InternalResource
 		r.rsc_state = Resource::State::Locked;
 	}
 }
+
+void ResourceList::raiseNotRegistered [[noreturn]] (Resource::rsc_s type, const char* name)
+{
+	const char* typeName = nullptr;
+	switch (type)
+	{
+	case Resource::rsc_relation:
+		typeName = "Relation";
+		break;
+
+	case Resource::rsc_index:
+		typeName = "Index";
+		break;
+
+	case Resource::rsc_procedure:
+		typeName = "Procedure";
+		break;
+
+	case Resource::rsc_function:
+		typeName = "Function";
+		break;
+
+	case Resource::rsc_collation:
+		typeName = "Collation";
+		break;
+	}
+
+	fb_assert(typeName);
+	string msg;
+	msg.printf("%s %s was not registered for use by request or transaction");
+	ERR_post(Arg::Gds(isc_random) << msg);
+}
+
+void ResourceList::transferResources(thread_db* tdbb, ResourceList& from,
+	ResourceTypes rt, NewResources& nr)
+{
+	transferList(tdbb, from.list, Resource::State::Posted, rt, &nr, nullptr);
+}
+
+void ResourceList::transferResources(thread_db* tdbb, ResourceList& from)
+{
+	NewResources work;
+	transferList(tdbb, from.list, Resource::State::Locked, ResourceTypes().setAll(), &work, &from);
+}
+
+void ResourceList::releaseResources(thread_db* tdbb)
+{
+	// 0. Get ready to run drom dtor()
+	if (!list.hasData())
+		return;
+	if (!tdbb)
+		tdbb = JRD_get_thread_data();
+
+	// 1. Need to take hazard locks on all involved objects
+	setResetPointersHazard(tdbb, true);
+
+	// 2. First of all release indices - they do not need refcnt mutex locked
+	for (auto r : getObjects(Resource::rsc_index))
+	{
+		HazardPtr<IndexLock> index = r->rsc_rel->getIndexLock(tdbb, r->rsc_id);
+		if (index)
+		{
+			if (r->rsc_state == Resource::State::Locked)
+				r->rsc_state = index->idl_lock.dec(tdbb);
+			else if (r->rsc_state == Resource::State::Counted)
+			{
+				r->rsc_state = Resource::State::Posted;
+				index->idl_lock.dec(tdbb);
+			}
+
+			if (r->rsc_state == Resource::State::Unlocking)
+			{
+				index->idl_lock.leave245(tdbb);
+				r->rsc_state = Resource::State::Posted;
+			}
+		}
+		else
+			r->rsc_state = Resource::State::Posted;
+	}
+
+	// 3. Decrement lock count of all objects - refcnt mutex to be locked
+	HalfStaticArray<Resource*, 128> toUnlock;
+	{ // scope
+		MutexLockGuard g(tdbb->getDatabase()->dbb_mdc->mdc_use_mutex, FB_FUNCTION);
+
+		for (auto r : list)
+		{
+			fb_assert(r.rsc_state != Resource::State::Extra);
+
+			if (r.rsc_state == Resource::State::Posted ||
+				r.rsc_state == Resource::State::Registered ||
+				r.rsc_state == Resource::State::Unlocking)	// use count is not increased
+			{
+				continue;
+			}
+
+			switch (r.rsc_type)
+			{
+			case Resource::rsc_relation:
+				{
+					ExistenceLock* lock = r.rsc_rel->rel_existence_lock;
+					r.rsc_state = lock ? lock->dec(tdbb) : Resource::State::Posted;
+					break;
+				}
+
+			case Resource::rsc_index:
+				break;
+
+			case Resource::rsc_procedure:
+			case Resource::rsc_function:
+				{
+					Routine* routine = r.rsc_routine;
+					routine->release(tdbb);
+					break;
+				}
+
+			case Resource::rsc_collation:
+				{
+					Collation* coll = r.rsc_coll;
+					coll->decUseCount(tdbb);
+					break;
+				}
+
+			default:
+				BUGCHECK(219);		// msg 219 request of unknown resource
+			}
+
+			if (r.rsc_state == Resource::State::Unlocking)
+				toUnlock.push(&r);
+		}
+	}
+
+	// 4. Release not needed any more locks
+	for (auto r : toUnlock)
+	{
+		fb_assert(r->rsc_state == Resource::State::Unlocking);
+
+		ExistenceLock* lock = nullptr;
+
+		switch (r->rsc_type)
+		{
+		case Resource::rsc_relation:
+			lock = r->rsc_rel->rel_existence_lock;
+			break;
+
+		case Resource::rsc_index:
+			fb_assert(false);
+			break;
+
+		case Resource::rsc_procedure:
+		case Resource::rsc_function:
+			{
+				Routine* routine = r->rsc_routine;		//!!!!!!!!!!!!!!!!!!!
+
+				break;
+			}
+
+		case Resource::rsc_collation:
+			{
+				Collation* coll = r->rsc_coll;
+
+				break;
+			}
+		}
+
+		if (lock)
+			lock->leave245(tdbb);
+		r->rsc_state = Resource::State::Posted;
+	}
+
+	// 5. Finally time to release hazard locks on objects and cleanup
+	setResetPointersHazard(tdbb, false);
+	list.clear();
+}
+
+void ResourceList::postIndex(thread_db* tdbb, jrd_rel* relation, USHORT idxId)
+{
+	abort();
+//		resources.checkResource(Resource::rsc_relation, relation);
+//		resources.postResource(Resource::rsc_index, relation, idx->idx_id);
+}
+

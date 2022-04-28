@@ -970,8 +970,7 @@ InversionNode* Retrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 	else
 	{
 		auto& resources = tdbb->getRequest()->getStatement()->resources;
-		resources.checkResource(Resource::rsc_relation, relation);
-		resources.postResource(Resource::rsc_index, relation, idx->idx_id);
+		resources.postIndex(tdbb, relation, idx->idx_id);
 	}
 
 	// For external requests, determine index name (to be reported in plans)

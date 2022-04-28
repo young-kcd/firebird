@@ -82,7 +82,7 @@ public:
 	Firebird::Array<Request*> requests;	// vector of requests
 	ExternalAccessList externalList;	// Access to procedures/triggers to be checked
 	AccessItemList accessList;			// Access items to be checked
-	PermanentResourceList resources;	// Resources (relations and indices)
+	ResourceList resources;				// Resources (relations and indices)
 	const jrd_prc* procedure;			// procedure, if any
 	const Function* function;			// function, if any
 	MetaName triggerName;		// name of request (trigger), if any
