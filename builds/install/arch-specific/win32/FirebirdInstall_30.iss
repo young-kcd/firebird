@@ -390,7 +390,7 @@ Name: AutoStartTask; Description: {cm:AutoStartTask}; Components: ServerComponen
 ;Copying of client libs to <sys>
 Name: CopyFbClientToSysTask; Description: {cm:CopyFbClientToSysTask}; Components: ClientComponent; MinVersion: 4,4; Check: ShowCopyFbClientLibTask;
 Name: CopyFbClientAsGds32Task; Description: {cm:CopyFbClientAsGds32Task}; Components: ClientComponent; MinVersion: 4,4; Flags: Unchecked; Check: ShowCopyGds32Task;
-;Name: EnableLegacyClientAuth; Description: {cm:EnableLegacyClientAuth}; Components: ClientComponent; MinVersion: 4,4; Flags: Unchecked; Check: ConfigureAuthentication;
+Name: EnableLegacyClientAuth; Description: {cm:EnableLegacyClientAuth}; Components: ClientComponent; MinVersion: 4,4; Flags: Unchecked; Check: ConfigureAuthentication;
 
 
 [Run]
@@ -858,30 +858,77 @@ begin
 end;
 
 
-
-
-function InitSecurityDB: Boolean;
+function InitSecurityDB( PluginName: String ) : Boolean;
 var
   AStringList: TStringList;
   TempDir: String;
-	ResultCode: Integer;
-	CmdStr: string;
+  ResultCode: Integer;
+  CmdStr: string;
+  InputStr: string;
+  OutputStr: string;
 begin
-	TempDir := ExpandConstant( '{tmp}' );
-	CmdStr := ExpandConstant( '{app}\isql.exe' );
-	AStringList := TStringList.create;
-	with AStringList do begin
-	  Add( 'create user ' + GetAdminUserName + ' password ''' + GetAdminUserPassword + ''' using plugin Srp;' );
-//    if IsTaskSelected('EnableLegacyClientAuth') then
-//      if ( ( uppercase( GetAdminUserName ) <> 'SYSDBA' ) or ( GetAdminUserPassword <> 'masterkey' ) ) then
-//        Add( 'create or alter user ' + GetAdminUserName + ' password ''' + GetAdminUserPassword + ''' using plugin Legacy_UserManager;' );
 
-    Add( 'commit;' );  //Technically exit implies a commit so this not necessary. OTOH, explicitly committing makes for more readable code.
+  if PluginName = '' then
+    PluginName := 'Srp';
+
+  TempDir := ExpandConstant( '{%ProgramData}{\}firebird' );
+  CmdStr := ExpandConstant( '{app}\isql.exe' );
+  InputStr := TempDir + '\' + PluginName + '_temp.sql';
+  OutputStr := InputStr + '.txt';
+
+  // Do we need to do this?
+  if FileExists( InputStr ) then DeleteFile( InputStr );
+  if FileExists( OutputStr ) then DeleteFile( OutputStr );
+
+  AStringList := TStringList.create;
+  with AStringList do begin
+    Add( 'create or alter user ' + GetAdminUserName + ' password ''' + GetAdminUserPassword + ''' using plugin ' + PluginName + ';' );
     Add( 'exit;' );
-    SaveToFile( Tempdir +'\temp.sql' );
-	end;
-	Result := Exec( CmdStr , ' -m -m2 -user SYSDBA -i ' + TempDir + '\temp.sql -o ' + TempDir + '\temp.sql.txt employee ' , TempDir, SW_HIDE, ewWaitUntilTerminated, ResultCode );
-	DeleteFile( TempDir + +'\temp.sql ');
+    SaveToFile( InputStr );
+  end;
+
+
+  Result := Exec( CmdStr , ' -m -m2 -user SYSDBA -i ' + InputStr + ' -o ' + OutputStr + ' employee ' , TempDir, SW_HIDE, ewWaitUntilTerminated, ResultCode );
+  if ResultCode <> 0 then begin
+    Result := False;
+    Log( 'In function InitSecurityDB Exec isql returned ' + IntToStr(ResultCode) + ' executing ' + InputStr  );
+    end
+  else
+    if FindInFile( OutputStr, 'error' ) then begin
+      Result := False;
+      Log( 'In function InitSecurityDB FindInFile found an error in ' + OutputStr );
+      end
+    else begin
+      if FileExists( InputStr ) then
+        DeleteFile( InputStr )
+      else
+        Log( 'In function InitSecurityDB - cannot find' + InputStr );
+
+      if FileExists( OutputStr ) then
+        DeleteFile( OutputStr )
+      else
+        Log( 'In function InitSecurityDB - cannot find' + OutputStr );
+
+      Result := True;
+    end;
+end;
+
+
+function ConfigLegacyClientAuth: Boolean;
+begin
+
+// This order of plugin evaluation favours Legacy_Auth as the preferred plugin
+  ReplaceLine(GetAppPath+'\firebird.conf','AuthServer = ','AuthServer = Legacy_Auth, Srp, Win_Sspi','#');
+  ReplaceLine(GetAppPath+'\firebird.conf','AuthClient = ','AuthClient = Legacy_Auth, Srp, Srp256,  Win_Sspi','#');
+  ReplaceLine(GetAppPath+'\firebird.conf','UserManager = ','UserManager = Legacy_UserManager, Srp','#');
+  ReplaceLine(GetAppPath+'\firebird.conf','WireCrypt = ','WireCrypt = enabled','#');
+
+// This order of plugin evaluation favours the more secure defaults
+//  ReplaceLine(GetAppPath+'\firebird.conf','AuthServer = ','AuthServer = Srp, Win_Sspi, Legacy_Auth ','#');
+//  ReplaceLine(GetAppPath+'\firebird.conf','AuthClient = ','AuthClient = Srp, Srp256, Win_Sspi, Legacy_Auth','#');
+//  ReplaceLine(GetAppPath+'\firebird.conf','UserManager = ','UserManager = Srp, Legacy_UserManager','#');
+//  ReplaceLine(GetAppPath+'\firebird.conf','WireCrypt = ','WireCrypt = enabled','#');
+
 end;
 
 
@@ -976,12 +1023,9 @@ begin
 			if IsTaskSelected('UseSuperServerTask')  then
 				ReplaceLine(GetAppPath+'\firebird.conf','ServerMode = ','ServerMode = Super','#');
 
-//      if IsTaskSelected('EnableLegacyClientAuth') then begin
-//				ReplaceLine(GetAppPath+'\firebird.conf','AuthServer = ','AuthServer = Legacy_Auth, Srp, Win_Sspi','#');
-//				ReplaceLine(GetAppPath+'\firebird.conf','AuthClient = ','AuthClient = Legacy_Auth, Srp, Win_Sspi','#');
-//				ReplaceLine(GetAppPath+'\firebird.conf','UserManager = ','UserManager = Legacy_UserManager, Srp','#');
-//				ReplaceLine(GetAppPath+'\firebird.conf','WireCrypt = ','WireCrypt = enabled','#');
-//      end;
+      if IsTaskSelected('EnableLegacyClientAuth') then begin
+        ConfigLegacyClientAuth;
+      end;
 
 		end;	
 			
@@ -1055,13 +1099,15 @@ begin
       IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\fbtrace.conf', false);
       IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\security3.fdb', false);
 
-			InitSecurityDB;
+      InitSecurityDB('Srp');
 
       //Fix up conf file
       UpdateFirebirdConf;
       RemoveSavedConfIfNoDiff;
 
-				
+      if IsTaskSelected('EnableLegacyClientAuth') then
+        InitSecurityDB( 'Legacy_UserManager' );
+
       end;
 
     ssDone: begin
