@@ -683,6 +683,7 @@ namespace Jrd {
 	public:
 		virtual bool checkObject(thread_db* tdbb, Firebird::Arg::StatusVector&);
 		virtual void afterUnlock(thread_db* tdbb);
+		virtual void lockedExcl [[noreturn]] (thread_db* tdbb);
 	};
 
 } // namespace Jrd

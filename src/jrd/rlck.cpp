@@ -29,7 +29,7 @@
 #include "../jrd/tra.h"
 #include "../jrd/lck.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/lck_proto.h"
+#include "../jrd/lck.h"
 #include "../jrd/rlck_proto.h"
 
 using namespace Jrd;

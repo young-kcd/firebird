@@ -31,7 +31,7 @@
 #include "../dsql/StmtNodes.h"
 #include "../jrd/Function.h"
 #include "../jrd/cmp_proto.h"
-#include "../jrd/lck_proto.h"
+#include "../jrd/lck.h"
 #include "../jrd/exe_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/scl_proto.h"

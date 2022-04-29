@@ -569,7 +569,7 @@ VI. ADDITIONAL NOTES
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/db_alias.h"
 #include "../jrd/intl_proto.h"
-#include "../jrd/lck_proto.h"
+#include "../jrd/lck.h"
 
 #ifdef DEBUG_VAL_VERBOSE
 #include "../jrd/dmp_proto.h"

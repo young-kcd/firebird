@@ -97,7 +97,7 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/evl_string.h"
 #include "../jrd/intl_classes.h"
-#include "../jrd/lck_proto.h"
+#include "../jrd/lck.h"
 #include "../jrd/intl_classes.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/Collation.h"

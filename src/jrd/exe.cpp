@@ -89,7 +89,7 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/jrd_proto.h"
 
-#include "../jrd/lck_proto.h"
+#include "../jrd/lck.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/par_proto.h"

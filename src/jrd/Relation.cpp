@@ -28,7 +28,7 @@
 #include "../jrd/btr_proto.h"
 #include "../jrd/dpm_proto.h"
 #include "../jrd/idx_proto.h"
-#include "../jrd/lck_proto.h"
+#include "../jrd/lck.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/vio_debug.h"

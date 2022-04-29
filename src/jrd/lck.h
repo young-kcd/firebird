@@ -212,6 +212,12 @@ public:
 		unsigned fl = ++flags;
 		fb_assert(!(fl & countChk));
 
+		if (fl & exclMask)
+		{
+			--flags;
+			incrementError();
+		}
+
 		return (fl & locked) && !(fl & unlocking) ? Resource::State::Locked : Resource::State::Counted;
 	}
 
@@ -221,9 +227,10 @@ public:
 	Resource::State dec(thread_db* tdbb)
 	{
 		unsigned fl = --flags;
-		fb_assert(((fl + 1) & count) > 0);
+		fb_assert(!(fl & countChk));
+		//fb_assert(((fl + 1) & count) > 0);
 
-		return (fl & count == 0) && (fl & blocking) ? Resource::State::Unlocking : Resource::State::Posted;
+		return (fl & countMask == 0) && (fl & blocking) ? Resource::State::Unlocking : Resource::State::Posted;
 	}
 
 	// release shared lock if needed (or unconditionally when forced set)
@@ -231,13 +238,15 @@ public:
 
 	unsigned getUseCount()
 	{
-		return flags & count;
+		return flags & sharedMask;
 	}
 
 	bool exclLock(thread_db* tdbb);							// Take exclusive lock
+#ifdef DEV_BUILD
 	bool hasExclLock(thread_db* tdbb);						// Is object locked exclusively?
+#endif
 	void unlock(thread_db* tdbb);							// Release exclusive lock
-			// LCK_convert(tdbb, relation->rel_existence_lock, LCK_SR, transaction->getLockWait());
+
 	void releaseLock(thread_db* tdbb);						// Release all locks
 
 private:
@@ -248,6 +257,8 @@ private:
 	}
 
 	void blockingAst();
+	void incrementError [[noreturn]] ();
+	SSHORT getLockWait(thread_db* tdbb);
 
 public:
 	Firebird::Mutex mutex;
@@ -257,7 +268,9 @@ private:
 	std::atomic<unsigned> flags;
 	CacheObject* object;
 
-	static const unsigned countMask =	0x0FEFFFFF;
+	static const unsigned sharedMask =	0x000FFFFF;
+	static const unsigned exclMask =	0x0FE00000;
+	static const unsigned countMask =	sharedMask | exclMask;
 	static const unsigned countChk =	0x00100000;
 	static const unsigned exclusive =	0x00200000;
 	static const unsigned exCheck =		0x10000000;

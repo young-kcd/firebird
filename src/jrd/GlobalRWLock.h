@@ -33,7 +33,7 @@
 #include "../common/classes/alloc.h"
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
-#include "../jrd/lck_proto.h"
+#include "../jrd/lck.h"
 #include "fb_types.h"
 #include "os/pio.h"
 #include "../common/classes/condition.h"

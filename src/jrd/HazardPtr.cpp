@@ -197,3 +197,7 @@ void CacheObject::afterUnlock(thread_db* tdbb)
 	// do nothing
 }
 
+void CacheObject::lockedExcl [[noreturn]] (thread_db* tdbb)
+{
+	fatal_exception::raise("Unspecified object locked exclusive for deletion");
+}

@@ -35,10 +35,11 @@
 #include "../jrd/err_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../jrd/jrd_proto.h"
-#include "../jrd/lck_proto.h"
+#include "../jrd/lck.h"
 #include "../common/gdsassert.h"
 #include "../lock/lock_proto.h"
 #include "../jrd/Attachment.h"
+#include "../jrd/tra.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -1591,7 +1592,6 @@ Lock* Lock::detach()
  * Someone is trying to drop an object. If there
  * are outstanding interests in the existence of
  * that object then just mark as blocking and return.
- * Otherwise, mark the object as not locked
  * and release the existence lock.
  *
  **************************************/
@@ -1602,7 +1602,7 @@ void ExistenceLock::blockingAst()
 	MutexLockGuard g(mutex, FB_FUNCTION);
 
 	unsigned fl = (flags |= unlocking);
-	if (fl & count == 0)
+	if (fl & countMask == 0)
 	{
 		if (fl & locked)
 			LCK_release(tdbb, lck);
@@ -1620,7 +1620,7 @@ void ExistenceLock::enter245(thread_db* tdbb)
 	Firebird::MutexLockGuard g(mutex, FB_FUNCTION);
 
 	unsigned fl = flags;
-	fb_assert(fl & count > 0);
+	fb_assert(fl & sharedMask > 0);
 
 	if (!(fl & locked))
 	{
@@ -1646,15 +1646,75 @@ void ExistenceLock::leave245(thread_db* tdbb, bool force)
 	unsigned fl = (flags |= unlocking);
 	fb_assert(fl & locked);
 
-	if (((fl & count == 0) && (fl & blocking)) | force)
+	if (((fl & countMask == 0) && (fl & blocking)) | force)
 	{
-		fb_assert(fl & locked);
 		LCK_release(tdbb, lck);			// repost ??????????????
 		if (object)
 			object->afterUnlock(tdbb);
-		flags &= ~(locked | unlocking);
+		flags &= ~(locked | unlocking | blocking);
 	}
 	else
 		flags &= ~unlocking;
 }
 
+bool ExistenceLock::exclLock(thread_db* tdbb)
+{
+	Firebird::MutexLockGuard g(mutex, FB_FUNCTION);
+	unsigned fl = (flags += exclusive);
+
+	if (fl & countMask != exclusive)
+	{
+		flags -= exclusive;
+		return false;
+	}
+
+	//std::function<bool(thread_db*, Lock*, USHORT, SSHORT)> lckFunction = fl & locked ? LCK_convert : LCK_lock;
+	auto lckFunction = fl & locked ? LCK_convert : LCK_lock;
+	if (!lckFunction(tdbb, lck, LCK_EX, getLockWait(tdbb)))
+	{
+		flags -= exclusive;
+		return false;
+	}
+	return true;
+}
+
+SSHORT getLockWait(thread_db* tdbb)
+{
+	jrd_tra* transaction = tdbb->getTransaction();
+	return transaction ? transaction->getLockWait() : 0;
+}
+
+#ifdef DEV_BUILD
+bool ExistenceLock::hasExclLock(thread_db*)
+{
+	Firebird::MutexLockGuard g(mutex, FB_FUNCTION);
+	return flags & exclMask == exclusive;
+}
+#endif
+
+void ExistenceLock::unlock(thread_db* tdbb)
+{
+	Firebird::MutexLockGuard g(mutex, FB_FUNCTION);
+	fb_assert(hasExclLock(tdbb));
+
+	unsigned fl = flags;
+	unsigned newFlags;
+	do
+	{
+		newFlags = (fl | unlocking) - exclusive;
+	} while (!flags.compare_exchange_weak(fl, newFlags, std::memory_order_release, std::memory_order_acquire));
+
+	fb_assert(fl & countMask == 0);
+	if ((fl & locked) && !(fl & blocking))
+	{
+		LCK_convert(tdbb, lck, LCK_SR, getLockWait(tdbb));	// always succeeds
+		flags &= ~unlocking;
+	}
+	else
+	{
+		LCK_release(tdbb, lck);			// repost ??????????????
+		if (object)
+			object->afterUnlock(tdbb);
+		flags &= ~(blocking | unlocking | locked);
+	}
+}

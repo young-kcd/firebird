@@ -26,7 +26,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/exe.h"
 #include "../common/StatusHolder.h"
-#include "../jrd/lck_proto.h"
+#include "../jrd/lck.h"
 #include "../jrd/par_proto.h"
 #include "../jrd/met.h"
 

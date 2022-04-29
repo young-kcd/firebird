@@ -115,7 +115,7 @@
 #include "../yvalve/gds_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../common/isc_proto.h"
-#include "../jrd/lck_proto.h"
+#include "../jrd/lck.h"
 #include "../jrd/met_proto.h"
 #include "../common/intlobj_new.h"
 #include "../jrd/Collation.h"
