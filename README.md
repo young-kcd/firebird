@@ -1,5 +1,5 @@
-[![Build Status](https://api.travis-ci.com/FirebirdSQL/firebird.svg?branch=B3_0_Release)](https://travis-ci.com/FirebirdSQL/firebird)
-[![Build Status](https://ci.appveyor.com/api/projects/status/github/FirebirdSQL/firebird?branch=B3_0_Release&svg=true)](https://ci.appveyor.com/project/FirebirdSQL/firebird)
+[![Build Status (GitHub)](https://github.com/FirebirdSQL/firebird/actions/workflows/main.yml/badge.svg?branch=B3_0_Release)](https://github.com/FirebirdSQL/firebird/actions?query=branch%3AB3_0_Release)
+[![Build Status (AppVeyor)](https://ci.appveyor.com/api/projects/status/github/FirebirdSQL/firebird?branch=B3_0_Release&svg=true)](https://ci.appveyor.com/project/FirebirdSQL/firebird)
 
 # Firebird README
 
