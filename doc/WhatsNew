@@ -1,4 +1,84 @@
   **************************
+  * v3.0.10
+  **************************
+
+    * Improvement #7161
+        Update zlib to 1.2.12
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement #7093
+        Improve indexed lookup speed of strings when the last keys characters are part of collated contractions
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Improvement #6872
+        Faster execution of indexed STARTING WITH with UNICODE collation
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix #7160
+        Missing checkout in trace manager when performing user mapping may cause server hang
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #7158
+        Serious issue with SYSDBA user after a Windows install with EnableLegacyClientAuth
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>
+
+    * Bugfix #7141
+        Services manager breaks long lines into 1023 bytes portions when using isc_info_svc_line in Service::query()
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #7140
+        Wrong select result in case of special sort character
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix #7138
+        Problems accessing FB4 database, copied from another host
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #7137
+        Optimizer regression: bad plan (HASH instead of JOIN) is chosen for some inner joins
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix #7135
+        Firebird engine randomly fails when delivering mapping clear to other processes
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #7128
+        Incorrect error message with isc_sql_interprete()
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix #7122
+        Invalid state of mapping cache after replacement of database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #7121
+        Mapping error when server tries to use mapping rules from database in full shutdown state
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #7106
+        Wrong detection of must-be-delimited user names
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #7094
+        Incorrect indexed lookup of strings when the last keys characters are part of collated contractions and there is multi-segment insensitive descending index
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+
+  **************************
   * v3.0.9
   **************************
 
