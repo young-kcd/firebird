@@ -871,7 +871,7 @@ begin
   if PluginName = '' then
     PluginName := 'Srp';
 
-  TempDir := ExpandConstant( '{%ProgramData}{\}firebird' );
+  TempDir := ExpandConstant( '{tmp}' );
   CmdStr := ExpandConstant( '{app}\isql.exe' );
   InputStr := TempDir + '\' + PluginName + '_temp.sql';
   OutputStr := InputStr + '.txt';
@@ -889,28 +889,20 @@ begin
 
 
   Result := Exec( CmdStr , ' -m -m2 -user SYSDBA -i ' + InputStr + ' -o ' + OutputStr + ' employee ' , TempDir, SW_HIDE, ewWaitUntilTerminated, ResultCode );
+
+// DOC NOTE - we are not actually handling a non-zero result code.
+// This is a complicated subject as the installer can be run either scripted
+// or as a GUI. This needs more research. If InitSecurityDB fails do we fail 
+// the entire install? Allow user to complete and fix manually? Or give both options?
   if ResultCode <> 0 then begin
     Result := False;
     Log( 'In function InitSecurityDB Exec isql returned ' + IntToStr(ResultCode) + ' executing ' + InputStr  );
-    end
-  else
-    if FindInFile( OutputStr, 'error' ) then begin
-      Result := False;
-      Log( 'In function InitSecurityDB FindInFile found an error in ' + OutputStr );
-      end
-    else begin
-      if FileExists( InputStr ) then
-        DeleteFile( InputStr )
-      else
-        Log( 'In function InitSecurityDB - cannot find' + InputStr );
+  end;
+  if FindInFile( OutputStr, 'error' ) then begin
+    Result := False;
+    Log( 'In function InitSecurityDB FindInFile found an error in ' + OutputStr );
+  end;
 
-      if FileExists( OutputStr ) then
-        DeleteFile( OutputStr )
-      else
-        Log( 'In function InitSecurityDB - cannot find' + OutputStr );
-
-      Result := True;
-    end;
 end;
 
 
