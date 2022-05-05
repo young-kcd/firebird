@@ -2803,7 +2803,7 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, ExprNode* in
 					field->length = desc.dsc_length;
 					field->flags = (desc.dsc_flags & DSC_nullable) ? FLD_nullable : 0;
 
-					if (desc.isText() | desc.isBlob())
+					if (desc.isText() || desc.isBlob())
 					{
 						field->textType = desc.getTextType();
 						field->charSetId = desc.getCharSet();
