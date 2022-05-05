@@ -647,6 +647,10 @@ void IndexTableScan::setPage(thread_db* tdbb, Impure* impure, win* window) const
 		}
 
 		impure->irsb_nav_page = newPage;
+
+		// clear position as page was changed
+		impure->irsb_nav_incarnation = 0;
+		impure->irsb_nav_offset = 0;
 	}
 }
 
@@ -659,8 +663,10 @@ void IndexTableScan::setPosition(thread_db* tdbb,
 {
 	// We can actually set position without having a data page
 	// fetched; if not, just set the incarnation to the lowest possible
-	impure->irsb_nav_incarnation = CCH_get_incarnation(window);
+	// Note, setPage could clear position (incarnation and offset).
+
 	setPage(tdbb, impure, window);
+	impure->irsb_nav_incarnation = CCH_get_incarnation(window);
 	impure->irsb_nav_number = rpb->rpb_number;
 
 	// save the current key value
