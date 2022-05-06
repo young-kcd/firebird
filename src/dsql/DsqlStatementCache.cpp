@@ -216,12 +216,13 @@ void DsqlStatementCache::buildStatementKey(thread_db* tdbb, RefStrPtr& key, cons
 	const auto attachment = tdbb->getAttachment();
 
 	const SSHORT charSetId = isInternalRequest ? CS_METADATA : attachment->att_charset;
+	const int debugOptions = (int) attachment->getDebugOptions().getDsqlKeepBlr();
 
 	key = FB_NEW_POOL(getPool()) RefString(getPool());
 
 	key->resize(1 + sizeof(charSetId) + text.length());
 	char* p = key->begin();
-	*p = (clientDialect << 1) | int(isInternalRequest);
+	*p = (clientDialect << 2) | (int(isInternalRequest) << 1) | debugOptions;
 	memcpy(p + 1, &charSetId, sizeof(charSetId));
 	memcpy(p + 1 + sizeof(charSetId), text.c_str(), text.length());
 }
