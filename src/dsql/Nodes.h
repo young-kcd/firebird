@@ -666,12 +666,14 @@ public:
 	// Return all streams referenced by the expression.
 	virtual void collectStreams(SortedStreamList& streamList) const;
 
-	virtual bool containsStream(StreamType stream) const
+	virtual bool containsStream(StreamType stream, bool only = false) const
 	{
 		SortedStreamList streams;
 		collectStreams(streams);
 
-		return streams.exist(stream);
+		return only ?
+			streams.getCount() == 1 && streams[0] == stream :
+			streams.exist(stream);
 	}
 
 	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;

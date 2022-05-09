@@ -55,44 +55,6 @@ using namespace Jrd;
 
 namespace
 {
-	// Check the index for being an expression one and
-	// matching both the given stream and the given expression tree
-	bool checkExpressionIndex(CompilerScratch* csb, const index_desc* idx,
-							  ValueExprNode* node, StreamType stream)
-	{
-		fb_assert(idx);
-
-		if (idx->idx_expression)
-		{
-			// The desired expression can be hidden inside a derived expression node,
-			// so try to recover it (see CORE-4118).
-			while (!idx->idx_expression->sameAs(node, true))
-			{
-				const auto derivedExpr = nodeAs<DerivedExprNode>(node);
-				const auto cast = nodeAs<CastNode>(node);
-
-				if (derivedExpr)
-					node = derivedExpr->arg;
-				else if (cast && cast->artificial)
-					node = cast->source;
-				else
-					return false;
-			}
-
-			SortedStreamList exprStreams, nodeStreams;
-			idx->idx_expression->collectStreams(exprStreams);
-			node->collectStreams(nodeStreams);
-
-			if (exprStreams.getCount() == 1 && exprStreams[0] == 0 &&
-				nodeStreams.getCount() == 1 && nodeStreams[0] == stream)
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
-
 	ValueExprNode* injectCast(CompilerScratch* csb,
 							  ValueExprNode* value, CastNode*& cast,
 							  const dsc& desc)
@@ -194,6 +156,9 @@ Retrieval::Retrieval(thread_db* aTdbb, Optimizer* opt, StreamType streamNumber,
 
 	for (auto& index : *tail->csb_idx)
 	{
+		if ((index.idx_flags & idx_condition) && !checkIndexCondition(index))
+			continue;
+
 		const auto length = ROUNDUP(BTR_key_length(tdbb, relation, &index), sizeof(SLONG));
 
 		// AB: Calculate the cardinality which should reflect the total number
@@ -500,7 +465,7 @@ void Retrieval::analyzeNavigation(const InversionCandidateList& inversions)
 			{
 				if (idx->idx_flags & idx_expression)
 				{
-					if (!checkExpressionIndex(csb, idx, node, stream))
+					if (!checkIndexExpression(idx, node))
 						continue;
 				}
 				else if (!(fieldNode = nodeAs<FieldNode>(node)) || fieldNode->fieldStream != stream)
@@ -723,6 +688,111 @@ bool Retrieval::betterInversion(const InversionCandidate* inv1,
 	}
 
 	return false;
+}
+
+bool Retrieval::checkIndexCondition(const index_desc& idx) const
+{
+	fb_assert(idx.idx_condition);
+
+	if (!idx.idx_condition->containsStream(0, true))
+		return false;
+
+	auto iter = optimizer->getConjuncts(outerFlag, innerFlag);
+
+	BoolExprNodeStack idxConjuncts;
+	const auto conjunctCount = optimizer->decomposeBoolean(idx.idx_condition, idxConjuncts);
+	fb_assert(conjunctCount);
+
+	unsigned matchCount = 0;
+
+	for (BoolExprNodeStack::const_iterator idxIter(idxConjuncts);
+		idxIter.hasData(); ++idxIter)
+	{
+		const auto boolean = idxIter.object();
+
+		// If the index condition is (A OR B) and any of the {A, B} is present
+		// among the available booleans, then the index is possibly usable
+		const auto binaryNode = nodeAs<BinaryBoolNode>(boolean);
+		if (binaryNode && binaryNode->blrOp == blr_or)
+		{
+			for (iter.rewind(); iter.hasData(); ++iter)
+			{
+				if (binaryNode->arg1->sameAs(*iter, true) ||
+					binaryNode->arg2->sameAs(*iter, true))
+				{
+					matchCount++;
+					break;
+				}
+			}
+		}
+
+		// If the index condition is (A IS NOT NULL) and the available booleans
+		// includes any comparative predicate that explicitly mentions A,
+		// then the index is possibly usable
+		const auto notNode = nodeAs<NotBoolNode>(boolean);
+		const auto missingNode = notNode ? nodeAs<MissingBoolNode>(notNode->arg) : nullptr;
+		if (missingNode)
+		{
+			for (iter.rewind(); iter.hasData(); ++iter)
+			{
+				const auto cmpNode = nodeAs<ComparativeBoolNode>(*iter);
+				if (cmpNode && cmpNode->blrOp != blr_equiv)
+				{
+					if (cmpNode->arg1->sameAs(missingNode->arg, true) ||
+						cmpNode->arg2->sameAs(missingNode->arg, true))
+					{
+						matchCount++;
+						break;
+					}
+
+					if (cmpNode->arg3 &&
+						cmpNode->arg3->sameAs(missingNode->arg, true))
+					{
+						matchCount++;
+						break;
+					}
+				}
+			}
+		}
+
+		// If conjunct of the index condition matches any available boolean,
+		// then the index is possibly usable
+		for (iter.rewind(); iter.hasData(); ++iter)
+		{
+			if (idxIter.object()->sameAs(*iter, true))
+			{
+				matchCount++;
+				break;
+			}
+		}
+	}
+
+	return (matchCount >= conjunctCount);
+}
+
+bool Retrieval::checkIndexExpression(const index_desc* idx, ValueExprNode* node) const
+{
+	fb_assert(idx && idx->idx_expression);
+
+	// The desired expression can be hidden inside a derived expression node,
+	// so try to recover it (see CORE-4118).
+	while (!idx->idx_expression->sameAs(node, true))
+	{
+		const auto derivedExpr = nodeAs<DerivedExprNode>(node);
+		const auto cast = nodeAs<CastNode>(node);
+
+		if (derivedExpr)
+			node = derivedExpr->arg;
+		else if (cast && cast->artificial)
+			node = cast->source;
+		else
+			return false;
+	}
+
+	// Check the index for matching both the given stream and the given expression tree
+
+	return idx->idx_expression->containsStream(0, true) &&
+		node->containsStream(stream, true);
 }
 
 void Retrieval::getInversionCandidates(InversionCandidateList& inversions,
@@ -1481,13 +1551,11 @@ bool Retrieval::matchBoolean(IndexScratch* indexScratch,
 	{
 		// see if one side or the other is matchable to the index expression
 
-	    fb_assert(idx->idx_expression);
-
-		if (!checkExpressionIndex(csb, idx, match, stream) ||
+		if (!checkIndexExpression(idx, match) ||
 			(value && !value->computable(csb, stream, false)))
 		{
 			if ((!cmpNode || cmpNode->blrOp != blr_starting) && value &&
-				checkExpressionIndex(csb, idx, value, stream) &&
+				checkIndexExpression(idx, value) &&
 				match->computable(csb, stream, false))
 			{
 				ValueExprNode* temp = match;
@@ -2110,15 +2178,14 @@ bool Retrieval::validateStarts(IndexScratch* indexScratch,
 	{
 		// AB: What if the expression contains a number/float etc.. and
 		// we use starting with against it? Is that allowed?
-		fb_assert(idx->idx_expression);
 
-		if (!(checkExpressionIndex(csb, idx, field, stream) ||
+		if (!(checkIndexExpression(idx, field) ||
 			(value && !value->computable(csb, stream, false))))
 		{
 			// AB: Can we swap de left and right sides by a starting with?
 			// X STARTING WITH 'a' that is never the same as 'a' STARTING WITH X
 			if (value &&
-				checkExpressionIndex(csb, idx, value, stream) &&
+				checkIndexExpression(idx, value) &&
 				field->computable(csb, stream, false))
 			{
 				field = value;

@@ -374,6 +374,7 @@ public:
 
 	RecordSource* compile(RseNode* subRse, BoolExprNodeStack* parentStack);
 	void compileRelation(StreamType stream);
+	unsigned decomposeBoolean(BoolExprNode* boolNode, BoolExprNodeStack& stack);
 	void generateAggregateDistincts(MapNode* map);
 	RecordSource* generateRetrieval(StreamType stream,
 									SortNode** sortClause,
@@ -437,7 +438,6 @@ private:
 									ConjunctIterator& iter);
 	void checkIndices();
 	void checkSorts();
-	unsigned decompose(BoolExprNode* boolNode, BoolExprNodeStack& stack);
 	unsigned distributeEqualities(BoolExprNodeStack& orgStack, unsigned baseCount);
 	void findDependentStreams(const StreamList& streams,
 							  StreamList& dependent_streams,
@@ -592,6 +592,8 @@ protected:
 	void analyzeNavigation(const InversionCandidateList& inversions);
 	bool betterInversion(const InversionCandidate* inv1, const InversionCandidate* inv2,
 		bool ignoreUnmatched) const;
+	bool checkIndexCondition(const index_desc& idx) const;
+	bool checkIndexExpression(const index_desc* idx, ValueExprNode* node) const;
 	InversionNode* composeInversion(InversionNode* node1, InversionNode* node2,
 		InversionNode::Type node_type) const;
 	const Firebird::string& getAlias();
