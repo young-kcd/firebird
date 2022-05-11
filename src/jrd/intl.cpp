@@ -929,7 +929,8 @@ int INTL_convert_string(dsc* to, const dsc* from, Firebird::Callbacks* cb)
 		break;
 	}
 
-	const ULONG src_len = toCharSet->length(toLength, start, false);
+	CharSet* const fromCharSet = INTL_charset_lookup(tdbb, from_cs);
+	const ULONG src_len = fromCharSet->length(from_len, from_ptr, false);
 	const ULONG dest_len  = (ULONG) to_size / toCharSet->maxBytesPerChar();
 
 	if (toCharSet->isMultiByte() && src_len > dest_len)
