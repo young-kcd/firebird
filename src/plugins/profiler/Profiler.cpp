@@ -323,7 +323,7 @@ IProfilerSession* ProfilerPlugin::startSession(ThrowStatusExceptionWrapper* stat
 void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status, ITransaction* transaction)
 {
 	constexpr auto sessionSql = R"""(
-		update or insert into fbprof$sessions
+		update or insert into plg$prof_sessions
 		    (session_id, attachment_id, user_name, description, start_timestamp, finish_timestamp)
 		    values (?, current_connection, current_user, ?, ?, ?)
 		    matching (session_id)
@@ -338,7 +338,7 @@ void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status, ITransaction* tr
 	sessionMessage.clear();
 
 	constexpr auto statementSql = R"""(
-		update or insert into fbprof$statements
+		update or insert into plg$prof_statements
 		    (session_id, statement_id, parent_statement_id, statement_type, package_name, routine_name, sql_text)
 		    values (?, ?, ?, ?, ?, ?, ?)
 		    matching (session_id, statement_id)
@@ -356,7 +356,7 @@ void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status, ITransaction* tr
 	statementMessage.clear();
 
 	constexpr auto recSrcsSql = R"""(
-		update or insert into fbprof$record_sources
+		update or insert into plg$prof_record_sources
 		    (session_id, statement_id, cursor_id, record_source_id,
 		     parent_record_source_id, access_path)
 		    values (?, ?, ?, ?, ?, ?)
@@ -374,7 +374,7 @@ void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status, ITransaction* tr
 	recSrcsMessage.clear();
 
 	constexpr auto requestSql = R"""(
-		update or insert into fbprof$requests
+		update or insert into plg$prof_requests
 		    (session_id, request_id, statement_id, caller_request_id, start_timestamp, finish_timestamp)
 		    values (?, ?, ?, ?, ?, ?)
 		    matching (session_id, request_id)
@@ -392,23 +392,23 @@ void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status, ITransaction* tr
 
 	constexpr auto recSrcStatsSql = R"""(
 		execute block (
-		    session_id type of column fbprof$record_source_stats.session_id = ?,
-		    request_id type of column fbprof$record_source_stats.request_id = ?,
-		    cursor_id type of column fbprof$record_source_stats.cursor_id = ?,
-		    record_source_id type of column fbprof$record_source_stats.record_source_id = ?,
-		    statement_id type of column fbprof$record_source_stats.statement_id = ?,
-		    open_counter type of column fbprof$record_source_stats.open_counter = ?,
-		    open_min_time type of column fbprof$record_source_stats.open_min_time = ?,
-		    open_max_time type of column fbprof$record_source_stats.open_max_time = ?,
-		    open_total_time type of column fbprof$record_source_stats.open_total_time = ?,
-		    fetch_counter type of column fbprof$record_source_stats.fetch_counter = ?,
-		    fetch_min_time type of column fbprof$record_source_stats.fetch_min_time = ?,
-		    fetch_max_time type of column fbprof$record_source_stats.fetch_max_time = ?,
-		    fetch_total_time type of column fbprof$record_source_stats.fetch_total_time = ?
+		    session_id type of column plg$prof_record_source_stats.session_id = ?,
+		    request_id type of column plg$prof_record_source_stats.request_id = ?,
+		    cursor_id type of column plg$prof_record_source_stats.cursor_id = ?,
+		    record_source_id type of column plg$prof_record_source_stats.record_source_id = ?,
+		    statement_id type of column plg$prof_record_source_stats.statement_id = ?,
+		    open_counter type of column plg$prof_record_source_stats.open_counter = ?,
+		    open_min_time type of column plg$prof_record_source_stats.open_min_time = ?,
+		    open_max_time type of column plg$prof_record_source_stats.open_max_time = ?,
+		    open_total_time type of column plg$prof_record_source_stats.open_total_time = ?,
+		    fetch_counter type of column plg$prof_record_source_stats.fetch_counter = ?,
+		    fetch_min_time type of column plg$prof_record_source_stats.fetch_min_time = ?,
+		    fetch_max_time type of column plg$prof_record_source_stats.fetch_max_time = ?,
+		    fetch_total_time type of column plg$prof_record_source_stats.fetch_total_time = ?
 		)
 		as
 		begin
-		    merge into fbprof$record_source_stats
+		    merge into plg$prof_record_source_stats
 		        using rdb$database on
 		            session_id = :session_id and
 		            request_id = :request_id and
@@ -453,19 +453,19 @@ void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status, ITransaction* tr
 
 	constexpr auto psqlStatsSql = R"""(
 		execute block (
-		    session_id type of column fbprof$psql_stats.session_id = ?,
-		    request_id type of column fbprof$psql_stats.request_id = ?,
-		    line_num type of column fbprof$psql_stats.line_num = ?,
-		    column_num type of column fbprof$psql_stats.column_num = ?,
-		    statement_id type of column fbprof$psql_stats.statement_id = ?,
-		    counter type of column fbprof$psql_stats.counter = ?,
-		    min_time type of column fbprof$psql_stats.min_time = ?,
-		    max_time type of column fbprof$psql_stats.max_time = ?,
-		    total_time type of column fbprof$psql_stats.total_time = ?
+		    session_id type of column plg$prof_psql_stats.session_id = ?,
+		    request_id type of column plg$prof_psql_stats.request_id = ?,
+		    line_num type of column plg$prof_psql_stats.line_num = ?,
+		    column_num type of column plg$prof_psql_stats.column_num = ?,
+		    statement_id type of column plg$prof_psql_stats.statement_id = ?,
+		    counter type of column plg$prof_psql_stats.counter = ?,
+		    min_time type of column plg$prof_psql_stats.min_time = ?,
+		    max_time type of column plg$prof_psql_stats.max_time = ?,
+		    total_time type of column plg$prof_psql_stats.total_time = ?
 		)
 		as
 		begin
-		    merge into fbprof$psql_stats
+		    merge into plg$prof_psql_stats
 		        using rdb$database on
 		            session_id = :session_id and
 		            request_id = :request_id and
@@ -834,16 +834,16 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 
 		"grant default plg$profiler to public",
 
-		"create sequence fbprof$session_id",
+		"create sequence plg$prof_session_id",
 
-		"grant usage on sequence fbprof$session_id to plg$profiler",
+		"grant usage on sequence plg$prof_session_id to plg$profiler",
 
 		R"""(
-		create table fbprof$sessions (
+		create table plg$prof_sessions (
 		    session_id bigint not null
-		        constraint fbprof$sessions_pk
+		        constraint plg$prof_sessions_pk
 		            primary key
-		            using index fbprof$sessions_session,
+		            using index plg$prof_sessions_session,
 		    attachment_id bigint not null,
 		    user_name char(63) character set utf8 not null,
 		    description varchar(255) character set utf8,
@@ -851,94 +851,94 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		    finish_timestamp timestamp with time zone
 		))""",
 
-		"grant select, update, insert, delete on table fbprof$sessions to plg$profiler",
+		"grant select, update, insert, delete on table plg$prof_sessions to plg$profiler",
 
 		R"""(
-		create table fbprof$statements (
+		create table plg$prof_statements (
 		    session_id bigint not null
-		        constraint fbprof$statements_session_fk
-		            references fbprof$sessions
+		        constraint plg$prof_statements_session_fk
+		            references plg$prof_sessions
 		            on delete cascade
-		            using index fbprof$statements_session,
+		            using index plg$prof_statements_session,
 		    statement_id bigint not null,
 		    parent_statement_id bigint,
 		    statement_type varchar(20) character set utf8 not null,
 		    package_name char(63) character set utf8,
 		    routine_name char(63) character set utf8,
 		    sql_text blob sub_type text character set utf8,
-		    constraint fbprof$statements_pk
+		    constraint plg$prof_statements_pk
 		        primary key (session_id, statement_id)
-		        using index fbprof$statements_session_statement,
-		    constraint fbprof$statements_parent_statement_fk
-		        foreign key (session_id, parent_statement_id) references fbprof$statements (session_id, statement_id)
+		        using index plg$prof_statements_session_statement,
+		    constraint plg$prof_statements_parent_statement_fk
+		        foreign key (session_id, parent_statement_id) references plg$prof_statements (session_id, statement_id)
 		        on delete cascade
-		        using index fbprof$statements_parent_statement
+		        using index plg$prof_statements_parent_statement
 		))""",
 
-		"grant select, update, insert, delete on table fbprof$statements to plg$profiler",
+		"grant select, update, insert, delete on table plg$prof_statements to plg$profiler",
 
 		R"""(
-		create table fbprof$record_sources (
+		create table plg$prof_record_sources (
 		    session_id bigint not null
-		        constraint fbprof$record_sources_session_fk
-		            references fbprof$sessions
+		        constraint plg$prof_record_sources_session_fk
+		            references plg$prof_sessions
 		            on delete cascade
-		            using index fbprof$record_sources_session,
+		            using index plg$prof_record_sources_session,
 		    statement_id bigint not null,
 		    cursor_id bigint not null,
 		    record_source_id bigint not null,
 		    parent_record_source_id bigint,
 		    access_path varchar(1024) character set utf8 not null,
-		    constraint fbprof$record_sources_pk
+		    constraint plg$prof_record_sources_pk
 		        primary key (session_id, statement_id, cursor_id, record_source_id)
-		        using index fbprof$record_sources_session_statement_cursor_recsource,
-		    constraint fbprof$record_sources_statement_fk
-		        foreign key (session_id, statement_id) references fbprof$statements
+		        using index plg$prof_record_sources_session_statement_cursor_recsource,
+		    constraint plg$prof_record_sources_statement_fk
+		        foreign key (session_id, statement_id) references plg$prof_statements
 		        on delete cascade
-		        using index fbprof$record_sources_session_statement,
-		    constraint fbprof$record_sources_parent_record_source_fk
+		        using index plg$prof_record_sources_session_statement,
+		    constraint plg$prof_record_sources_parent_record_source_fk
 		        foreign key (session_id, statement_id, cursor_id, parent_record_source_id)
-		        references fbprof$record_sources (session_id, statement_id, cursor_id, record_source_id)
+		        references plg$prof_record_sources (session_id, statement_id, cursor_id, record_source_id)
 		        on delete cascade
-		        using index fbprof$record_sources_session_statement_cursor_parent_rec_src
+		        using index plg$prof_record_sources_session_statement_cursor_parent_rec_src
 		))""",
 
-		"grant select, update, insert, delete on table fbprof$record_sources to plg$profiler",
+		"grant select, update, insert, delete on table plg$prof_record_sources to plg$profiler",
 
 		R"""(
-		create table fbprof$requests (
+		create table plg$prof_requests (
 		    session_id bigint not null
-		        constraint fbprof$requests_session_fk
-		            references fbprof$sessions
+		        constraint plg$prof_requests_session_fk
+		            references plg$prof_sessions
 		            on delete cascade
-		            using index fbprof$requests_session,
+		            using index plg$prof_requests_session,
 		    request_id bigint not null,
 		    statement_id bigint not null,
 		    caller_request_id bigint,
 		    start_timestamp timestamp with time zone not null,
 		    finish_timestamp timestamp with time zone,
-		    constraint fbprof$requests_pk
+		    constraint plg$prof_requests_pk
 		        primary key (session_id, request_id)
-		        using index fbprof$requests_session_request,
-		    constraint fbprof$requests_statement_fk
-		        foreign key (session_id, statement_id) references fbprof$statements
+		        using index plg$prof_requests_session_request,
+		    constraint plg$prof_requests_statement_fk
+		        foreign key (session_id, statement_id) references plg$prof_statements
 		        on delete cascade
-		        using index fbprof$requests_session_statement,
-		    constraint fbprof$requests_caller_request_fk
-		        foreign key (session_id, caller_request_id) references fbprof$requests (session_id, request_id)
+		        using index plg$prof_requests_session_statement,
+		    constraint plg$prof_requests_caller_request_fk
+		        foreign key (session_id, caller_request_id) references plg$prof_requests (session_id, request_id)
 		        on delete cascade
-		        using index fbprof$requests_caller_request
+		        using index plg$prof_requests_caller_request
 		))""",
 
-		"grant select, update, insert, delete on table fbprof$requests to plg$profiler",
+		"grant select, update, insert, delete on table plg$prof_requests to plg$profiler",
 
 		R"""(
-		create table fbprof$psql_stats (
+		create table plg$prof_psql_stats (
 		    session_id bigint not null
-		        constraint fbprof$psql_stats_session_fk
-		            references fbprof$sessions
+		        constraint plg$prof_psql_stats_session_fk
+		            references plg$prof_sessions
 		            on delete cascade
-		            using index fbprof$psql_stats_session,
+		            using index plg$prof_psql_stats_session,
 		    request_id bigint not null,
 		    line_num integer not null,
 		    column_num integer not null,
@@ -947,28 +947,28 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		    min_time bigint not null,
 		    max_time bigint not null,
 		    total_time bigint not null,
-		    constraint fbprof$psql_stats_pk
+		    constraint plg$prof_psql_stats_pk
 		        primary key (session_id, request_id, line_num, column_num)
-		        using index fbprof$psql_stats_session_request_line_column,
-		    constraint fbprof$psql_stats_request_fk
-		        foreign key (session_id, request_id) references fbprof$requests
+		        using index plg$prof_psql_stats_session_request_line_column,
+		    constraint plg$prof_psql_stats_request_fk
+		        foreign key (session_id, request_id) references plg$prof_requests
 		        on delete cascade
-		        using index fbprof$psql_stats_session_request,
-		    constraint fbprof$psql_stats_statement_fk
-		        foreign key (session_id, statement_id) references fbprof$statements
+		        using index plg$prof_psql_stats_session_request,
+		    constraint plg$prof_psql_stats_statement_fk
+		        foreign key (session_id, statement_id) references plg$prof_statements
 		        on delete cascade
-		        using index fbprof$psql_stats_session_statement
+		        using index plg$prof_psql_stats_session_statement
 		))""",
 
-		"grant select, update, insert, delete on table fbprof$psql_stats to plg$profiler",
+		"grant select, update, insert, delete on table plg$prof_psql_stats to plg$profiler",
 
 		R"""(
-		create table fbprof$record_source_stats (
+		create table plg$prof_record_source_stats (
 		    session_id bigint not null
-		        constraint fbprof$record_source_stats_session_fk
-		            references fbprof$sessions
+		        constraint plg$prof_record_source_stats_session_fk
+		            references plg$prof_sessions
 		            on delete cascade
-		            using index fbprof$record_source_stats_session_id,
+		            using index plg$prof_record_source_stats_session_id,
 		    request_id bigint not null,
 		    cursor_id bigint not null,
 		    record_source_id bigint not null,
@@ -981,27 +981,27 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		    fetch_min_time bigint not null,
 		    fetch_max_time bigint not null,
 		    fetch_total_time bigint not null,
-		    constraint fbprof$record_source_stats_pk
+		    constraint plg$prof_record_source_stats_pk
 		        primary key (session_id, request_id, cursor_id, record_source_id)
-		        using index fbprof$record_source_stats_session_request_cursor_recsource,
-		    constraint fbprof$record_source_stats_request_fk
-		        foreign key (session_id, request_id) references fbprof$requests
+		        using index plg$prof_record_source_stats_session_request_cursor_recsource,
+		    constraint plg$prof_record_source_stats_request_fk
+		        foreign key (session_id, request_id) references plg$prof_requests
 		        on delete cascade
-		        using index fbprof$record_source_stats_session_request,
-		    constraint fbprof$record_source_stats_statement_fk
-		        foreign key (session_id, statement_id) references fbprof$statements
+		        using index plg$prof_record_source_stats_session_request,
+		    constraint plg$prof_record_source_stats_statement_fk
+		        foreign key (session_id, statement_id) references plg$prof_statements
 		        on delete cascade
-		        using index fbprof$record_source_stats_session_statement,
-		    constraint fbprof$record_source_stats_record_source_fk
-		        foreign key (session_id, statement_id, cursor_id, record_source_id) references fbprof$record_sources
+		        using index plg$prof_record_source_stats_session_statement,
+		    constraint plg$prof_record_source_stats_record_source_fk
+		        foreign key (session_id, statement_id, cursor_id, record_source_id) references plg$prof_record_sources
 		        on delete cascade
-		        using index fbprof$record_source_stats_statement_cursor_record_source
+		        using index plg$prof_record_source_stats_statement_cursor_record_source
 		))""",
 
-		"grant select, update, insert, delete on table fbprof$record_source_stats to plg$profiler",
+		"grant select, update, insert, delete on table plg$prof_record_source_stats to plg$profiler",
 
 		R"""(
-		create view fbprof$psql_stats_view
+		create view plg$prof_psql_stats_view
 		as
 		select pstat.session_id,
 		       pstat.statement_id,
@@ -1012,7 +1012,7 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		       sta_parent.statement_type parent_statement_type,
 		       sta_parent.routine_name parent_routine_name,
 		       (select sql_text
-		          from fbprof$statements
+		          from plg$prof_statements
 		          where session_id = pstat.session_id and
 		                statement_id = coalesce(sta.parent_statement_id, pstat.statement_id)
 		       ) sql_text,
@@ -1023,11 +1023,11 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		       max(pstat.max_time) max_time,
 		       sum(pstat.total_time) total_time,
 		       sum(pstat.total_time) / nullif(sum(pstat.counter), 0) avg_time
-		  from fbprof$psql_stats pstat
-		  join fbprof$statements sta
+		  from plg$prof_psql_stats pstat
+		  join plg$prof_statements sta
 		    on sta.session_id = pstat.session_id and
 		       sta.statement_id = pstat.statement_id
-		  left join fbprof$statements sta_parent
+		  left join plg$prof_statements sta_parent
 		    on sta_parent.session_id = sta.session_id and
 		       sta_parent.statement_id = sta.parent_statement_id
 		  group by pstat.session_id,
@@ -1043,10 +1043,10 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		  order by sum(pstat.total_time) desc
 		)""",
 
-		"grant select on table fbprof$psql_stats_view to plg$profiler",
+		"grant select on table plg$prof_psql_stats_view to plg$profiler",
 
 		R"""(
-		create view fbprof$record_source_stats_view
+		create view plg$prof_record_source_stats_view
 		as
 		select rstat.session_id,
 		       rstat.statement_id,
@@ -1057,7 +1057,7 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		       sta_parent.statement_type parent_statement_type,
 		       sta_parent.routine_name parent_routine_name,
 		       (select sql_text
-		          from fbprof$statements
+		          from plg$prof_statements
 		          where session_id = rstat.session_id and
 		                statement_id = coalesce(sta.parent_statement_id, rstat.statement_id)
 		       ) sql_text,
@@ -1076,16 +1076,16 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		       sum(rstat.fetch_total_time) fetch_total_time,
 		       sum(rstat.fetch_total_time) / nullif(sum(rstat.fetch_counter), 0) fetch_avg_time,
 		       coalesce(sum(rstat.open_total_time), 0) + coalesce(sum(rstat.fetch_total_time), 0) open_fetch_total_time
-		  from fbprof$record_source_stats rstat
-		  join fbprof$record_sources recsrc
+		  from plg$prof_record_source_stats rstat
+		  join plg$prof_record_sources recsrc
 		    on recsrc.session_id = rstat.session_id and
 		       recsrc.statement_id = rstat.statement_id and
 		       recsrc.cursor_id = rstat.cursor_id and
 		       recsrc.record_source_id = rstat.record_source_id
-		  join fbprof$statements sta
+		  join plg$prof_statements sta
 		    on sta.session_id = rstat.session_id and
 		       sta.statement_id = rstat.statement_id
-		  left join fbprof$statements sta_parent
+		  left join plg$prof_statements sta_parent
 		    on sta_parent.session_id = sta.session_id and
 		       sta_parent.statement_id = sta.parent_statement_id
 		  group by rstat.session_id,
@@ -1103,7 +1103,7 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		  order by coalesce(sum(rstat.open_total_time), 0) + coalesce(sum(rstat.fetch_total_time), 0) desc
 		)""",
 
-		"grant select on table fbprof$record_source_stats_view to plg$profiler"
+		"grant select on table plg$prof_record_source_stats_view to plg$profiler"
 	};
 
 	for (auto createSql : createSqlStaments)
@@ -1122,13 +1122,13 @@ void ProfilerPlugin::loadMetadata(ThrowStatusExceptionWrapper* status)
 	constexpr auto loadObjectsSql =
 		R"""(
 		select *
-		    from fbprof$sessions
-		    cross join fbprof$statements
-		    cross join fbprof$record_sources
-		    cross join fbprof$requests
-		    cross join fbprof$psql_stats
-		    cross join fbprof$record_source_stats
-		    where next value for fbprof$session_id = 0
+		    from plg$prof_sessions
+		    cross join plg$prof_statements
+		    cross join plg$prof_record_sources
+		    cross join plg$prof_requests
+		    cross join plg$prof_psql_stats
+		    cross join plg$prof_record_source_stats
+		    where next value for plg$prof_session_id = 0
 		)""";
 
 	auto transaction = makeNoIncRef(userAttachment->startTransaction(status, 0, nullptr));
@@ -1152,7 +1152,7 @@ Session::Session(ThrowStatusExceptionWrapper* status, ProfilerPlugin* aPlugin, I
 	) sequenceMessage(status, MasterInterfacePtr());
 	sequenceMessage.clear();
 
-	constexpr auto sequenceSql = "select next value for fbprof$session_id from rdb$database";
+	constexpr auto sequenceSql = "select next value for plg$prof_session_id from rdb$database";
 
 	auto resultSet = makeNoIncRef(plugin->userAttachment->openCursor(status, transaction, 0, sequenceSql,
 		SQL_DIALECT_CURRENT,

@@ -85,21 +85,21 @@ execute procedure rdb$profiler.finish_session(true);
 
 -- Data analysis
 
-select * from fbprof$sessions;
+select * from plg$prof_sessions;
 
-select * from fbprof$psql_stats_view;
+select * from plg$prof_psql_stats_view;
 
-select * from fbprof$record_source_stats_view;
+select * from plg$prof_record_source_stats_view;
 
 select preq.*
-  from fbprof$requests preq
-  join fbprof$sessions pses
+  from plg$prof_requests preq
+  join plg$prof_sessions pses
     on pses.session_id = preq.session_id and
        pses.description = 'Profile Session 1';
 
 select pstat.*
-  from fbprof$psql_stats pstat
-  join fbprof$sessions pses
+  from plg$prof_psql_stats pstat
+  join plg$prof_sessions pses
     on pses.session_id = pstat.session_id and
        pses.description = 'Profile Session 1'
   order by pstat.session_id,
@@ -108,8 +108,8 @@ select pstat.*
            pstat.column_num;
 
 select pstat.*
-  from fbprof$record_source_stats pstat
-  join fbprof$sessions pses
+  from plg$prof_record_source_stats pstat
+  join plg$prof_sessions pses
     on pses.session_id = pstat.session_id and
        pses.description = 'Profile Session 2'
   order by pstat.session_id,
@@ -158,7 +158,7 @@ Input parameters:
 
 `RDB$PROFILER.FLUSH` updates the snapshot tables with data from the profile sessions in memory.
 
-After update data is stored in tables `FBPROF$SESSIONS`, `FBPROF$STATEMENTS`, `FBPROF$RECORD_SOURCES`, `FBPROF$REQUESTS`, `FBPROF$PSQL_STATS` and `FBPROF$RECORD_SOURCE_STATS` and may be read and analyzed by the user.
+After update data is stored in tables `PLG$PROF_SESSIONS`, `PLG$PROF_STATEMENTS`, `PLG$PROF_RECORD_SOURCES`, `PLG$PROF_REQUESTS`, `PLG$PROF_PSQL_STATS` and `PLG$PROF_RECORD_SOURCE_STATS` and may be read and analyzed by the user.
 
 It also removes finished sessions from memory.
 
@@ -170,7 +170,7 @@ When a session is deleted the related data in others profiler snapshot tables ar
 
 Below is the list of tables that stores profile data.
 
-## Table `FBPROF$SESSIONS`
+## Table `PLG$PROF_SESSIONS`
 
  - `SESSION_ID` type `BIGINT` - Profile session ID
  - `ATTACHMENT_ID` type `BIGINT` - Attachment ID
@@ -180,7 +180,7 @@ Below is the list of tables that stores profile data.
  - `FINISH_TIMESTAMP` type `TIMESTAMP WITH TIME ZONE` - Moment the profile session was finished (NULL when not finished)
  - Primary key: `SESSION_ID`
 
-## Table `FBPROF$STATEMENTS`
+## Table `PLG$PROF_STATEMENTS`
 
  - `SESSION_ID` type `BIGINT` - Profile session ID
  - `STATEMENT_ID` type `BIGINT` - Statement ID
@@ -191,7 +191,7 @@ Below is the list of tables that stores profile data.
  - `SQL_TEXT` type `BLOB subtype TEXT CHARACTER SET UTF8` - SQL text for BLOCK
  - Primary key: `SESSION_ID, STATEMENT_ID`
 
-## Table `FBPROF$RECORD_SOURCES`
+## Table `PLG$PROF_RECORD_SOURCES`
 
  - `SESSION_ID` type `BIGINT` - Profile session ID
  - `STATEMENT_ID` type `BIGINT` - Statement ID
@@ -201,7 +201,7 @@ Below is the list of tables that stores profile data.
  - `ACCESS_PATH` type `VARCHAR(255) CHARACTER SET UTF8` - Access path for the record source
  - Primary key: `SESSION_ID, STATEMENT_ID, CURSOR_ID, RECORD_SOURCE_ID`
 
-## Table `FBPROF$REQUESTS`
+## Table `PLG$PROF_REQUESTS`
 
  - `SESSION_ID` type `BIGINT` - Profile session ID
  - `REQUEST_ID` type `BIGINT` - Request ID
@@ -211,7 +211,7 @@ Below is the list of tables that stores profile data.
  - `FINISH_TIMESTAMP` type `TIMESTAMP WITH TIME ZONE` - Moment this request was finished
  - Primary key: `SESSION_ID, REQUEST_ID`
 
-## Table `FBPROF$PSQL_STATS`
+## Table `PLG$PROF_PSQL_STATS`
 
  - `SESSION_ID` type `BIGINT` - Profile session ID
  - `REQUEST_ID` type `BIGINT` - Request ID
@@ -224,7 +224,7 @@ Below is the list of tables that stores profile data.
  - `TOTAL_TIME` type `BIGINT` - Accumulated execution time (in nanoseconds) of the statement
  - Primary key: `SESSION_ID, REQUEST_ID, LINE_NUM, COLUMN_NUM`
 
-## Table `FBPROF$RECORD_SOURCE_STATS`
+## Table `PLG$PROF_RECORD_SOURCE_STATS`
 
  - `SESSION_ID` type `BIGINT` - Profile session ID
  - `REQUEST_ID` type `BIGINT` - Request ID
@@ -249,7 +249,7 @@ They should be the preferred way to analyze the collected data. They can also be
 
 After hot spots are found, one can drill down in the data at the request level through the tables.
 
-## View `FBPROF$PSQL_STATS_VIEW`
+## View `PLG$PROF_PSQL_STATS_VIEW`
 ```
 select pstat.session_id,
        pstat.statement_id,
@@ -260,7 +260,7 @@ select pstat.session_id,
        sta_parent.statement_type parent_statement_type,
        sta_parent.routine_name parent_routine_name,
        (select sql_text
-          from fbprof$statements
+          from plg$prof_statements
           where session_id = pstat.session_id and
                 statement_id = coalesce(sta.parent_statement_id, pstat.statement_id)
        ) sql_text,
@@ -271,11 +271,11 @@ select pstat.session_id,
        max(pstat.max_time) max_time,
        sum(pstat.total_time) total_time,
        sum(pstat.total_time) / nullif(sum(pstat.counter), 0) avg_time
-  from fbprof$psql_stats pstat
-  join fbprof$statements sta
+  from plg$prof_psql_stats pstat
+  join plg$prof_statements sta
     on sta.session_id = pstat.session_id and
        sta.statement_id = pstat.statement_id
-  left join fbprof$statements sta_parent
+  left join plg$prof_statements sta_parent
     on sta_parent.session_id = sta.session_id and
        sta_parent.statement_id = sta.parent_statement_id
   group by pstat.session_id,
@@ -291,7 +291,7 @@ select pstat.session_id,
   order by sum(pstat.total_time) desc
 ```
 
-## View `FBPROF$RECORD_SOURCE_STATS_VIEW`
+## View `PLG$PROF_RECORD_SOURCE_STATS_VIEW`
 ```
 select rstat.session_id,
        rstat.statement_id,
@@ -302,7 +302,7 @@ select rstat.session_id,
        sta_parent.statement_type parent_statement_type,
        sta_parent.routine_name parent_routine_name,
        (select sql_text
-          from fbprof$statements
+          from plg$prof_statements
           where session_id = rstat.session_id and
                 statement_id = coalesce(sta.parent_statement_id, rstat.statement_id)
        ) sql_text,
@@ -321,16 +321,16 @@ select rstat.session_id,
        sum(rstat.fetch_total_time) fetch_total_time,
        sum(rstat.fetch_total_time) / nullif(sum(rstat.fetch_counter), 0) fetch_avg_time,
        coalesce(sum(rstat.open_total_time), 0) + coalesce(sum(rstat.fetch_total_time), 0) open_fetch_total_time
-  from fbprof$record_source_stats rstat
-  join fbprof$record_sources recsrc
+  from plg$prof_record_source_stats rstat
+  join plg$prof_record_sources recsrc
     on recsrc.session_id = rstat.session_id and
        recsrc.statement_id = rstat.statement_id and
        recsrc.cursor_id = rstat.cursor_id and
        recsrc.record_source_id = rstat.record_source_id
-  join fbprof$statements sta
+  join plg$prof_statements sta
     on sta.session_id = rstat.session_id and
        sta.statement_id = rstat.statement_id
-  left join fbprof$statements sta_parent
+  left join plg$prof_statements sta_parent
     on sta_parent.session_id = sta.session_id and
        sta_parent.statement_id = sta.parent_statement_id
   group by rstat.session_id,
