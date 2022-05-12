@@ -94,15 +94,15 @@ select * from plg$prof_record_source_stats_view;
 select preq.*
   from plg$prof_requests preq
   join plg$prof_sessions pses
-    on pses.session_id = preq.session_id and
+    on pses.profile_id = preq.profile_id and
        pses.description = 'Profile Session 1';
 
 select pstat.*
   from plg$prof_psql_stats pstat
   join plg$prof_sessions pses
-    on pses.session_id = pstat.session_id and
+    on pses.profile_id = pstat.profile_id and
        pses.description = 'Profile Session 1'
-  order by pstat.session_id,
+  order by pstat.profile_id,
            pstat.request_id,
            pstat.line_num,
            pstat.column_num;
@@ -110,9 +110,9 @@ select pstat.*
 select pstat.*
   from plg$prof_record_source_stats pstat
   join plg$prof_sessions pses
-    on pses.session_id = pstat.session_id and
+    on pses.profile_id = pstat.profile_id and
        pses.description = 'Profile Session 2'
-  order by pstat.session_id,
+  order by pstat.profile_id,
            pstat.request_id,
            pstat.cursor_id,
            pstat.record_source_id;
@@ -172,48 +172,48 @@ Below is the list of tables that stores profile data.
 
 ## Table `PLG$PROF_SESSIONS`
 
- - `SESSION_ID` type `BIGINT` - Profile session ID
+ - `PROFILE_ID` type `BIGINT` - Profile session ID
  - `ATTACHMENT_ID` type `BIGINT` - Attachment ID
  - `USER_NAME` type `CHAR(63) CHARACTER SET UTF8` - User name
  - `DESCRIPTION` type `VARCHAR(255) CHARACTER SET UTF8` - Description passed in `RDB$PROFILER.START_SESSION`
  - `START_TIMESTAMP` type `TIMESTAMP WITH TIME ZONE` - Moment the profile session was started
  - `FINISH_TIMESTAMP` type `TIMESTAMP WITH TIME ZONE` - Moment the profile session was finished (NULL when not finished)
- - Primary key: `SESSION_ID`
+ - Primary key: `PROFILE_ID`
 
 ## Table `PLG$PROF_STATEMENTS`
 
- - `SESSION_ID` type `BIGINT` - Profile session ID
+ - `PROFILE_ID` type `BIGINT` - Profile session ID
  - `STATEMENT_ID` type `BIGINT` - Statement ID
  - `PARENT_STATEMENT_ID` type `BIGINT` - Parent statement ID - related to sub routines
  - `STATEMENT_TYPE` type `VARCHAR(20) CHARACTER SET UTF8` - BLOCK, FUNCTION, PROCEDURE or TRIGGER
  - `PACKAGE_NAME` type `CHAR(63) CHARACTER SET UTF8` - Package of FUNCTION or PROCEDURE
  - `ROUTINE_NAME` type `CHAR(63) CHARACTER SET UTF8` - Routine name of FUNCTION, PROCEDURE or TRIGGER
  - `SQL_TEXT` type `BLOB subtype TEXT CHARACTER SET UTF8` - SQL text for BLOCK
- - Primary key: `SESSION_ID, STATEMENT_ID`
+ - Primary key: `PROFILE_ID, STATEMENT_ID`
 
 ## Table `PLG$PROF_RECORD_SOURCES`
 
- - `SESSION_ID` type `BIGINT` - Profile session ID
+ - `PROFILE_ID` type `BIGINT` - Profile session ID
  - `STATEMENT_ID` type `BIGINT` - Statement ID
  - `CURSOR_ID` type `BIGINT` - Cursor ID
  - `RECORD_SOURCE_ID` type `BIGINT` - Record source ID
  - `PARENT_RECORD_SOURCE_ID` type `BIGINT` - Parent record source ID
  - `ACCESS_PATH` type `VARCHAR(255) CHARACTER SET UTF8` - Access path for the record source
- - Primary key: `SESSION_ID, STATEMENT_ID, CURSOR_ID, RECORD_SOURCE_ID`
+ - Primary key: `PROFILE_ID, STATEMENT_ID, CURSOR_ID, RECORD_SOURCE_ID`
 
 ## Table `PLG$PROF_REQUESTS`
 
- - `SESSION_ID` type `BIGINT` - Profile session ID
+ - `PROFILE_ID` type `BIGINT` - Profile session ID
  - `REQUEST_ID` type `BIGINT` - Request ID
  - `STATEMENT_ID` type `BIGINT` - Statement ID
  - `CALLER_REQUEST_ID` type `BIGINT` - Caller request ID
  - `START_TIMESTAMP` type `TIMESTAMP WITH TIME ZONE` - Moment this request was first gathered profile data
  - `FINISH_TIMESTAMP` type `TIMESTAMP WITH TIME ZONE` - Moment this request was finished
- - Primary key: `SESSION_ID, REQUEST_ID`
+ - Primary key: `PROFILE_ID, REQUEST_ID`
 
 ## Table `PLG$PROF_PSQL_STATS`
 
- - `SESSION_ID` type `BIGINT` - Profile session ID
+ - `PROFILE_ID` type `BIGINT` - Profile session ID
  - `REQUEST_ID` type `BIGINT` - Request ID
  - `LINE_NUM` type `INTEGER` - Line number of the statement
  - `COLUMN_NUM` type `INTEGER` - Column number of the statement
@@ -222,11 +222,11 @@ Below is the list of tables that stores profile data.
  - `MIN_TIME` type `BIGINT` - Minimal time (in nanoseconds) of a statement execution
  - `MAX_TIME` type `BIGINT` - Maximum time (in nanoseconds) of a statement execution
  - `TOTAL_TIME` type `BIGINT` - Accumulated execution time (in nanoseconds) of the statement
- - Primary key: `SESSION_ID, REQUEST_ID, LINE_NUM, COLUMN_NUM`
+ - Primary key: `PROFILE_ID, REQUEST_ID, LINE_NUM, COLUMN_NUM`
 
 ## Table `PLG$PROF_RECORD_SOURCE_STATS`
 
- - `SESSION_ID` type `BIGINT` - Profile session ID
+ - `PROFILE_ID` type `BIGINT` - Profile session ID
  - `REQUEST_ID` type `BIGINT` - Request ID
  - `CURSOR_ID` type `BIGINT` - Cursor ID
  - `RECORD_SOURCE_ID` type `BIGINT` - Record source ID
@@ -239,7 +239,7 @@ Below is the list of tables that stores profile data.
  - `FETCH_MIN_TIME` type `BIGINT` - Minimal time (in nanoseconds) of a record source fetch
  - `FETCH_MAX_TIME` type `BIGINT` - Maximum time (in nanoseconds) of a record source fetch
  - `FETCH_TOTAL_TIME` type `BIGINT` - Accumulated fetch time (in nanoseconds) of the record source
- - Primary key: `SESSION_ID, REQUEST_ID, CURSOR_ID, RECORD_SOURCE_ID`
+ - Primary key: `PROFILE_ID, REQUEST_ID, CURSOR_ID, RECORD_SOURCE_ID`
 
 # Auxiliary views
 
@@ -251,7 +251,7 @@ After hot spots are found, one can drill down in the data at the request level t
 
 ## View `PLG$PROF_PSQL_STATS_VIEW`
 ```
-select pstat.session_id,
+select pstat.profile_id,
        pstat.statement_id,
        sta.statement_type,
        sta.package_name,
@@ -261,7 +261,7 @@ select pstat.session_id,
        sta_parent.routine_name parent_routine_name,
        (select sql_text
           from plg$prof_statements
-          where session_id = pstat.session_id and
+          where profile_id = pstat.profile_id and
                 statement_id = coalesce(sta.parent_statement_id, pstat.statement_id)
        ) sql_text,
        pstat.line_num,
@@ -273,12 +273,12 @@ select pstat.session_id,
        sum(pstat.total_time) / nullif(sum(pstat.counter), 0) avg_time
   from plg$prof_psql_stats pstat
   join plg$prof_statements sta
-    on sta.session_id = pstat.session_id and
+    on sta.profile_id = pstat.profile_id and
        sta.statement_id = pstat.statement_id
   left join plg$prof_statements sta_parent
-    on sta_parent.session_id = sta.session_id and
+    on sta_parent.profile_id = sta.profile_id and
        sta_parent.statement_id = sta.parent_statement_id
-  group by pstat.session_id,
+  group by pstat.profile_id,
            pstat.statement_id,
            sta.statement_type,
            sta.package_name,
@@ -293,7 +293,7 @@ select pstat.session_id,
 
 ## View `PLG$PROF_RECORD_SOURCE_STATS_VIEW`
 ```
-select rstat.session_id,
+select rstat.profile_id,
        rstat.statement_id,
        sta.statement_type,
        sta.package_name,
@@ -303,7 +303,7 @@ select rstat.session_id,
        sta_parent.routine_name parent_routine_name,
        (select sql_text
           from plg$prof_statements
-          where session_id = rstat.session_id and
+          where profile_id = rstat.profile_id and
                 statement_id = coalesce(sta.parent_statement_id, rstat.statement_id)
        ) sql_text,
        rstat.cursor_id,
@@ -323,17 +323,17 @@ select rstat.session_id,
        coalesce(sum(rstat.open_total_time), 0) + coalesce(sum(rstat.fetch_total_time), 0) open_fetch_total_time
   from plg$prof_record_source_stats rstat
   join plg$prof_record_sources recsrc
-    on recsrc.session_id = rstat.session_id and
+    on recsrc.profile_id = rstat.profile_id and
        recsrc.statement_id = rstat.statement_id and
        recsrc.cursor_id = rstat.cursor_id and
        recsrc.record_source_id = rstat.record_source_id
   join plg$prof_statements sta
-    on sta.session_id = rstat.session_id and
+    on sta.profile_id = rstat.profile_id and
        sta.statement_id = rstat.statement_id
   left join plg$prof_statements sta_parent
-    on sta_parent.session_id = sta.session_id and
+    on sta_parent.profile_id = sta.profile_id and
        sta_parent.statement_id = sta.parent_statement_id
-  group by rstat.session_id,
+  group by rstat.profile_id,
            rstat.statement_id,
            sta.statement_type,
            sta.package_name,
