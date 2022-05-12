@@ -41,7 +41,7 @@ namespace Jrd
 	class Parameter;
 	class UserId;
 
-	class Routine : public Firebird::PermanentStorage, public HazardObject
+	class Routine : public Firebird::PermanentStorage, public CacheObject
 	{
 	protected:
 		explicit Routine(MemoryPool& p)
@@ -102,7 +102,7 @@ namespace Jrd
 
 		const QualifiedName& getName() const { return name; }
 		void setName(const QualifiedName& value) { name = value; }
-		const char* c_name() const { return name.c_str(); }
+		const char* c_name() const override { return name.c_str(); }
 
 		const MetaName& getSecurityName() const { return securityName; }
 		void setSecurityName(const MetaName& value) { securityName = value; }

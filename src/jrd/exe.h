@@ -219,9 +219,9 @@ public:
 
 	void releaseResources(thread_db* tdbb);
 
-	void inc_int_use_count();
-	void zero_int_use_count();
-	void markUndeletable();
+//	void inc_int_use_count();
+//	void zero_int_use_count();
+//	void markUndeletable();
 
 	Resource* get(FB_SIZE_T n)
 	{
@@ -233,6 +233,9 @@ public:
 		FB_SIZE_T pos;
 		Resource temp(type);
 		list.find(temp, pos);
+
+		if (pos == list.getCount())
+			return list.end();
 		return &list[pos];
 	}
 

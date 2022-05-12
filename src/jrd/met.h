@@ -335,6 +335,8 @@ public:
 	{
 		mdc_internal.grow(irq_MAX);
 		mdc_dyn_req.grow(drq_MAX);
+		memset(mdc_triggers, 0, sizeof(mdc_triggers));
+		mdc_ddl_triggers = nullptr;
 	}
 
 	~MetadataCache();

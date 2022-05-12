@@ -207,6 +207,8 @@ public:
 		lck->setKey(key);
 	}
 
+	enum class ReleaseMethod {Normal, DropObject, CloseCache};
+
 	Resource::State inc(thread_db* tdbb)
 	{
 		unsigned fl = ++flags;
@@ -247,7 +249,7 @@ public:
 #endif
 	void unlock(thread_db* tdbb);							// Release exclusive lock
 
-	void releaseLock(thread_db* tdbb);						// Release all locks
+	void releaseLock(thread_db* tdbb, ReleaseMethod rm);	// Release any lock
 
 private:
 	static int ast(void* self)

@@ -1678,7 +1678,7 @@ bool ExistenceLock::exclLock(thread_db* tdbb)
 	return true;
 }
 
-SSHORT getLockWait(thread_db* tdbb)
+SSHORT ExistenceLock::getLockWait(thread_db* tdbb)
 {
 	jrd_tra* transaction = tdbb->getTransaction();
 	return transaction ? transaction->getLockWait() : 0;
@@ -1716,5 +1716,58 @@ void ExistenceLock::unlock(thread_db* tdbb)
 		if (object)
 			object->afterUnlock(tdbb);
 		flags &= ~(blocking | unlocking | locked);
+	}
+}
+
+void ExistenceLock::incrementError [[noreturn]] ()
+{
+	const char* objTypeName = "unknown object";
+	switch(lck->lck_type)
+	{
+	case LCK_rel_exist:
+		objTypeName = "relation";
+		break;
+	case LCK_idx_exist:
+		objTypeName = "index";
+		break;
+	case LCK_prc_exist:
+		objTypeName = "procedure";
+		break;
+	case LCK_tt_exist:
+		objTypeName = "collation";
+		break;
+	case LCK_fun_exist:
+		objTypeName = "function";
+		break;
+	default:
+		fb_assert(false);
+		break;
+	}
+
+	fatal_exception::raiseFmt("Can not use %s %s which is going to be dropped in regular request",
+		objTypeName, object->c_name());
+}
+
+void ExistenceLock::releaseLock(thread_db* tdbb, ReleaseMethod rm)
+{
+	Firebird::MutexLockGuard g(mutex, FB_FUNCTION);
+	switch (rm)
+	{
+	case ReleaseMethod::Normal:
+		if ((flags |= blocking) & locked)
+			leave245(tdbb);
+		else if (hasExclLock(tdbb))
+			unlock(tdbb);
+		else
+			fb_assert(false);
+		break;
+
+	case ReleaseMethod::DropObject:
+		fb_assert(hasExclLock(tdbb));
+		// fall through
+
+	case ReleaseMethod::CloseCache:
+		LCK_release(tdbb, lck);
+		break;
 	}
 }

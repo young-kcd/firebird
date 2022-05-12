@@ -681,9 +681,10 @@ namespace Jrd {
 	class CacheObject : public HazardObject
 	{
 	public:
-		virtual bool checkObject(thread_db* tdbb, Firebird::Arg::StatusVector&);
+		virtual bool checkObject(thread_db* tdbb, Firebird::Arg::StatusVector&) /*const*/;
 		virtual void afterUnlock(thread_db* tdbb);
-		virtual void lockedExcl [[noreturn]] (thread_db* tdbb);
+		virtual void lockedExcl [[noreturn]] (thread_db* tdbb) /*const*/;
+		virtual const char* c_name() const = 0;
 	};
 
 } // namespace Jrd

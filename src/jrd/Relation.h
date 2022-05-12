@@ -84,7 +84,12 @@ public:
 	explicit Trigger(MemoryPool& p)
 		: blr(p),
 		  debugInfo(p),
+		  statement(nullptr),
 		  releaseInProgress(false),
+		  sysTrigger(false),
+		  type(0),
+		  flags(0),
+		  relation(nullptr),
 		  name(p),
 		  engine(p),
 		  entryPoint(p),
@@ -315,6 +320,10 @@ struct prim
 	vec<int>* prim_reference_ids;
 	vec<int>* prim_relations;
 	vec<int>* prim_indexes;
+
+	prim()
+		: prim_reference_ids(nullptr), prim_relations(nullptr), prim_indexes(nullptr)
+	{ }
 };
 
 
@@ -325,6 +334,10 @@ struct frgn
 	vec<int>* frgn_reference_ids;
 	vec<int>* frgn_relations;
 	vec<int>* frgn_indexes;
+
+	frgn()
+		: frgn_reference_ids(nullptr), frgn_relations(nullptr), frgn_indexes(nullptr)
+	{ }
 };
 
 
@@ -347,6 +360,7 @@ public:
 	ExistenceLock		idl_lock;		// Lock block
 
 	bool hasData() { return true; }
+	const char* c_name() const override;
 };
 
 
@@ -425,7 +439,7 @@ public:
 		return &rel_pages_base;
 	}
 
-	const char* c_name()
+	const char* c_name() const override
 	{
 		return rel_name.c_str();
 	}
@@ -560,14 +574,6 @@ const ULONG REL_gc_lockneed				= 0x80000;	// gc lock should be acquired
 
 
 /// class jrd_rel
-
-inline jrd_rel::jrd_rel(MemoryPool& p)
-	: rel_pool(&p), rel_flags(REL_gc_lockneed),
-	  rel_name(p), rel_owner_name(p), rel_security_name(p),
-	  rel_view_contexts(p), rel_gc_records(p), rel_index_locks(p),
-	  rel_ss_definer(false), rel_pages_base(p)
-{
-}
 
 inline bool jrd_rel::isSystem() const
 {

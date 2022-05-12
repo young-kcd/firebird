@@ -43,6 +43,24 @@ using namespace Firebird;
 
 /// jrd_rel
 
+jrd_rel::jrd_rel(MemoryPool& p)
+	: rel_pool(&p), rel_id(0), rel_current_fmt(0),
+	  rel_flags(REL_gc_lockneed), rel_current_format(nullptr),
+	  rel_name(p), rel_owner_name(p), rel_security_name(p),
+	  rel_formats(nullptr), rel_fields(nullptr),
+	  rel_view_rse(nullptr), rel_view_contexts(p),
+	  rel_file(nullptr), rel_gc_records(p),
+	  rel_sweep_count(0), rel_scan_count(0),
+	  rel_partners_lock(nullptr), rel_rescan_lock(nullptr),
+	  rel_gc_lock(nullptr), rel_index_locks(p), rel_index_blocks(nullptr),
+	  rel_pre_erase(nullptr), rel_post_erase(nullptr),
+	  rel_pre_modify(nullptr), rel_post_modify(nullptr),
+	  rel_pre_store(nullptr), rel_post_store(nullptr),
+	  rel_ss_definer(false), rel_pages_inst(nullptr),
+	  rel_pages_base(p), rel_pages_free(nullptr)
+{
+}
+
 bool jrd_rel::isReplicating(thread_db* tdbb)
 {
 	Database* const dbb = tdbb->getDatabase();
@@ -669,3 +687,7 @@ IndexLock::IndexLock(MemoryPool& p, thread_db* tdbb, jrd_rel* rel, USHORT id)
 	  idl_lock(p, tdbb, LCK_idx_exist, (rel->rel_id << 16) | id, rel)
 { }
 
+const char* IndexLock::c_name() const
+{
+	return "* unk *";
+}

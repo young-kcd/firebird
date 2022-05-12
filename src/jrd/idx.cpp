@@ -651,7 +651,7 @@ void IDX_delete_indices(thread_db* tdbb, jrd_rel* relation, RelationPages* relPa
 		{
 			HazardPtr<IndexLock> idx_lock = relation->getIndexLock(tdbb, i);
 			if (idx_lock)
-				idx_lock->idl_lock.releaseLock(tdbb);
+				idx_lock->idl_lock.releaseLock(tdbb, ExistenceLock::ReleaseMethod::Normal);
 		}
 	}
 

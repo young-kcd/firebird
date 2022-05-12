@@ -317,45 +317,6 @@ void CMP_post_access(thread_db* tdbb,
 }
 
 
-/*void CMP_post_resource(	ResourceList* rsc_ptr, void* obj, Resource::rsc_s type, USHORT id)
-{
-/**************************************
- *
- *	C M P _ p o s t _ r e s o u r c e
- *
- **************************************
- *
- * Functional description
- *	Post a resource usage to the compiler scratch block.
- *
- **************************************
-	// Initialize resource block
-	Resource resource(type, id, NULL, NULL, NULL);
-	switch (type)
-	{
-	case Resource::rsc_relation:
-	case Resource::rsc_index:
-		resource.rsc_rel = (jrd_rel*) obj;
-		break;
-	case Resource::rsc_procedure:
-	case Resource::rsc_function:
-		resource.rsc_routine = (Routine*) obj;
-		break;
-	case Resource::rsc_collation:
-		resource.rsc_coll = (Collation*) obj;
-		break;
-	default:
-		BUGCHECK(220);			// msg 220 unknown resource
-		break;
-	}
-
-	// Add it into list if not present already
-	FB_SIZE_T pos;
-	if (!rsc_ptr->find(resource, pos))
-		rsc_ptr->insert(pos, resource);
-}
-*/
-
 void CMP_release(thread_db* tdbb, Request* request)
 {
 /**************************************

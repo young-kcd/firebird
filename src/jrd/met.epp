@@ -134,36 +134,22 @@ void MetadataCache::inc_int_use_count(Statement* statement)
 	fb_assert(GET_DBB()->dbb_mdc->mdc_use_mutex.locked());
 
 	// Handle sub-statements
-	for (Statement** subStatement = statement->subStatements.begin();
-		 subStatement != statement->subStatements.end();
-		 ++subStatement)
+	for (auto subStatement : statement->subStatements)
+		inc_int_use_count(subStatement);
+
+	// Increment int_use_count for all routines in resource list of request
+
+	for (auto resource : statement->resources.getObjects(Resource::rsc_procedure))
 	{
-		inc_int_use_count(*subStatement);
+		//// FIXME: CORE-4271: fb_assert(resource->rsc_routine->intUseCount >= 0);
+		++resource->rsc_routine->intUseCount;
 	}
 
-	// Increment int_use_count for all procedures in resource list of request
-	statement->resources.inc_int_use_count();
-/*	FB_SIZE_T i;
-
-	for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL, NULL), i);
-		 i < list.getCount(); i++)
+	for (auto resource : statement->resources.getObjects(Resource::rsc_function))
 	{
-		Resource& resource = list[i];
-		if (resource.rsc_type != Resource::rsc_procedure)
-			break;
-		//// FIXME: CORE-4271: fb_assert(resource.rsc_routine->intUseCount >= 0);
-		++resource.rsc_routine->intUseCount;
+		//// FIXME: CORE-4271: fb_assert(resource->rsc_routine->intUseCount >= 0);
+		++resource->rsc_routine->intUseCount;
 	}
-
-	for (list.find(Resource(Resource::rsc_function, 0, NULL, NULL, NULL), i);
-		 i < list.getCount(); i++)
-	{
-		Resource& resource = list[i];
-		if (resource.rsc_type != Resource::rsc_function)
-			break;
-		//// FIXME: CORE-4271: fb_assert(resource.rsc_routine->intUseCount >= 0);
-		++resource.rsc_routine->intUseCount;
-	} !!!!!!!!!!!!!!! */
 }
 
 
@@ -2837,11 +2823,13 @@ HazardPtr<jrd_rel> MetadataCache::lookup_relation(thread_db* tdbb, const MetaNam
 		check_relation->rel_flags &= ~REL_check_existence;
 		if (check_relation != relation)
 		{
-			check_relation->rel_existence_lock->releaseLock(tdbb);
+			check_relation->rel_existence_lock->releaseLock(tdbb, ExistenceLock::ReleaseMethod::DropObject);
 			LCK_release(tdbb, check_relation->rel_partners_lock);
 			LCK_release(tdbb, check_relation->rel_rescan_lock);
 			check_relation->rel_flags &= ~REL_check_partners;
 			check_relation->rel_flags |= REL_deleted;
+
+			// delayedDelete() ???
 		}
 	}
 
@@ -2923,11 +2911,13 @@ HazardPtr<jrd_rel> MetadataCache::lookup_relation_id(thread_db* tdbb, SLONG id, 
 		check_relation->rel_flags &= ~REL_check_existence;
 		if (check_relation != relation)
 		{
-			check_relation->rel_existence_lock->releaseLock(tdbb);
+			check_relation->rel_existence_lock->releaseLock(tdbb, ExistenceLock::ReleaseMethod::DropObject);
 			LCK_release(tdbb, check_relation->rel_partners_lock);
 			LCK_release(tdbb, check_relation->rel_rescan_lock);
 			check_relation->rel_flags &= ~REL_check_partners;
 			check_relation->rel_flags |= REL_deleted;
+
+			// delayedDelete() ???
 		}
 	}
 
@@ -5471,7 +5461,7 @@ void MetadataCache::releaseLocks(thread_db* tdbb)
 		if (relation)
 		{
 			if (relation->rel_existence_lock)
-				relation->rel_existence_lock->releaseLock(tdbb);
+				relation->rel_existence_lock->releaseLock(tdbb, ExistenceLock::ReleaseMethod::CloseCache);
 
 			if (relation->rel_partners_lock)
 			{
@@ -5491,9 +5481,11 @@ void MetadataCache::releaseLocks(thread_db* tdbb)
 				relation->rel_flags |= REL_gc_lockneed;
 			}
 
-			// Safely use writeAccessor() when metadata cache is under destruction
 			for (auto index : relation->rel_index_locks)
-				index->idl_lock.releaseLock(tdbb);
+			{
+				if (index)
+					index->idl_lock.releaseLock(tdbb, ExistenceLock::ReleaseMethod::CloseCache);
+			}
 
 			for (IndexBlock* index = relation->rel_index_blocks; index; index = index->idb_next)
 			{

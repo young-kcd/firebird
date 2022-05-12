@@ -4562,7 +4562,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 	case 0:
 		index = relation->getIndexLock(tdbb, id);
 		if (index)
-			index->idl_lock.releaseLock(tdbb);
+			index->idl_lock.unlock(tdbb);
 		return false;
 
 	case 1:
@@ -4647,33 +4647,30 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 		{
 			// if we are here that means we got exclLock() on step 3
 			fb_assert(index->idl_lock.hasExclLock(tdbb));
-			//if (index->idl_lock.hasExLock(tdbb))
+
+			// Release index existence lock and memory.
+			fb_assert(relation->rel_index_locks.load(tdbb, index->idl_id) == index);
+
+			HazardPtr<IndexLock> arrVal = index;
+			if (!relation->rel_index_locks.replace(tdbb, index->idl_id, arrVal, nullptr))
+				ERR_post(Arg::Gds(isc_random) << "Index block gone unexpestedly");
+			fb_assert(!arrVal);
+			index->idl_lock.releaseLock(tdbb, ExistenceLock::ReleaseMethod::DropObject);
+			index->delayedDelete(tdbb);
+
+			// Release index refresh lock and memory.
+			for (IndexBlock** iptr = &relation->rel_index_blocks; *iptr; iptr = &(*iptr)->idb_next)
 			{
-				// Release index existence lock and memory.
-				fb_assert(relation->rel_index_locks.load(tdbb, index->idl_id) == index);
-
-				HazardPtr<IndexLock> arrVal = index;
-				if (!relation->rel_index_locks.replace(tdbb, index->idl_id, arrVal, nullptr))
-					ERR_post(Arg::Gds(isc_random) << "Index block gone unexpestedly");
-				fb_assert(!arrVal);
-				index->idl_lock.releaseLock(tdbb);
-				index->delayedDelete(tdbb);
-
-				// Release index refresh lock and memory.
-
-				for (IndexBlock** iptr = &relation->rel_index_blocks; *iptr; iptr = &(*iptr)->idb_next)
+				if ((*iptr)->idb_id == id)
 				{
-					if ((*iptr)->idb_id == id)
-					{
-						IndexBlock* index_block = *iptr;
-						*iptr = index_block->idb_next;
+					IndexBlock* index_block = *iptr;
+					*iptr = index_block->idb_next;
 
-						// Lock was released in IDX_delete_index().
+					// Lock was released in IDX_delete_index().
 
-						delete index_block->idb_lock;
-						delete index_block;
-						break;
-					}
+					delete index_block->idb_lock;
+					delete index_block;
+					break;
 				}
 			}
 		}
@@ -4932,7 +4929,9 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 		END_FOR
 
 		// Release relation locks
-		relation->rel_existence_lock->releaseLock(tdbb);
+		if (relation->rel_existence_lock) {
+			relation->rel_existence_lock->releaseLock(tdbb, ExistenceLock::ReleaseMethod::DropObject);
+		}
 		if (relation->rel_partners_lock) {
 			LCK_release(tdbb, relation->rel_partners_lock);
 		}
