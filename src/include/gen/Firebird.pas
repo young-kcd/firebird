@@ -719,6 +719,7 @@ type
 	IProfilerPlugin_flushPtr = procedure(this: IProfilerPlugin; status: IStatus; transaction: ITransaction); cdecl;
 	IProfilerSession_getIdPtr = function(this: IProfilerSession): Int64; cdecl;
 	IProfilerSession_getFlagsPtr = function(this: IProfilerSession): Cardinal; cdecl;
+	IProfilerSession_cancelPtr = procedure(this: IProfilerSession; status: IStatus); cdecl;
 	IProfilerSession_finishPtr = procedure(this: IProfilerSession; status: IStatus; timestamp: ISC_TIMESTAMP_TZ); cdecl;
 	IProfilerSession_defineStatementPtr = procedure(this: IProfilerSession; status: IStatus; statementId: Int64; parentStatementId: Int64; type_: PAnsiChar; packageName: PAnsiChar; routineName: PAnsiChar; sqlText: PAnsiChar); cdecl;
 	IProfilerSession_defineRecordSourcePtr = procedure(this: IProfilerSession; statementId: Int64; cursorId: Cardinal; recSourceId: Cardinal; accessPath: PAnsiChar; parentRecSourceId: Cardinal); cdecl;
@@ -3794,6 +3795,7 @@ type
 	ProfilerSessionVTable = class(DisposableVTable)
 		getId: IProfilerSession_getIdPtr;
 		getFlags: IProfilerSession_getFlagsPtr;
+		cancel: IProfilerSession_cancelPtr;
 		finish: IProfilerSession_finishPtr;
 		defineStatement: IProfilerSession_defineStatementPtr;
 		defineRecordSource: IProfilerSession_defineRecordSourcePtr;
@@ -3814,6 +3816,7 @@ type
 
 		function getId(): Int64;
 		function getFlags(): Cardinal;
+		procedure cancel(status: IStatus);
 		procedure finish(status: IStatus; timestamp: ISC_TIMESTAMP_TZ);
 		procedure defineStatement(status: IStatus; statementId: Int64; parentStatementId: Int64; type_: PAnsiChar; packageName: PAnsiChar; routineName: PAnsiChar; sqlText: PAnsiChar);
 		procedure defineRecordSource(statementId: Int64; cursorId: Cardinal; recSourceId: Cardinal; accessPath: PAnsiChar; parentRecSourceId: Cardinal);
@@ -3833,6 +3836,7 @@ type
 		procedure dispose(); virtual; abstract;
 		function getId(): Int64; virtual; abstract;
 		function getFlags(): Cardinal; virtual; abstract;
+		procedure cancel(status: IStatus); virtual; abstract;
 		procedure finish(status: IStatus; timestamp: ISC_TIMESTAMP_TZ); virtual; abstract;
 		procedure defineStatement(status: IStatus; statementId: Int64; parentStatementId: Int64; type_: PAnsiChar; packageName: PAnsiChar; routineName: PAnsiChar; sqlText: PAnsiChar); virtual; abstract;
 		procedure defineRecordSource(statementId: Int64; cursorId: Cardinal; recSourceId: Cardinal; accessPath: PAnsiChar; parentRecSourceId: Cardinal); virtual; abstract;
@@ -8967,6 +8971,12 @@ end;
 function IProfilerSession.getFlags(): Cardinal;
 begin
 	Result := ProfilerSessionVTable(vTable).getFlags(Self);
+end;
+
+procedure IProfilerSession.cancel(status: IStatus);
+begin
+	ProfilerSessionVTable(vTable).cancel(Self, status);
+	FbException.checkException(status);
 end;
 
 procedure IProfilerSession.finish(status: IStatus; timestamp: ISC_TIMESTAMP_TZ);
@@ -15628,6 +15638,15 @@ begin
 	end
 end;
 
+procedure IProfilerSessionImpl_cancelDispatcher(this: IProfilerSession; status: IStatus); cdecl;
+begin
+	try
+		IProfilerSessionImpl(this).cancel(status);
+	except
+		on e: Exception do FbException.catchException(status, e);
+	end
+end;
+
 procedure IProfilerSessionImpl_finishDispatcher(this: IProfilerSession; status: IStatus; timestamp: ISC_TIMESTAMP_TZ); cdecl;
 begin
 	try
@@ -16738,6 +16757,7 @@ initialization
 	IProfilerSessionImpl_vTable.dispose := @IProfilerSessionImpl_disposeDispatcher;
 	IProfilerSessionImpl_vTable.getId := @IProfilerSessionImpl_getIdDispatcher;
 	IProfilerSessionImpl_vTable.getFlags := @IProfilerSessionImpl_getFlagsDispatcher;
+	IProfilerSessionImpl_vTable.cancel := @IProfilerSessionImpl_cancelDispatcher;
 	IProfilerSessionImpl_vTable.finish := @IProfilerSessionImpl_finishDispatcher;
 	IProfilerSessionImpl_vTable.defineStatement := @IProfilerSessionImpl_defineStatementDispatcher;
 	IProfilerSessionImpl_vTable.defineRecordSource := @IProfilerSessionImpl_defineRecordSourceDispatcher;

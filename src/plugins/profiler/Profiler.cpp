@@ -151,6 +151,8 @@ public:
 		return FLAG_AFTER_EVENTS;
 	}
 
+	void cancel(ThrowStatusExceptionWrapper* status) override;
+
 	void finish(ThrowStatusExceptionWrapper* status, ISC_TIMESTAMP_TZ timestamp) override;
 
 	void defineStatement(ThrowStatusExceptionWrapper* status, SINT64 statementId, SINT64 parentStatementId,
@@ -1164,6 +1166,20 @@ Session::Session(ThrowStatusExceptionWrapper* status, ProfilerPlugin* aPlugin, I
 	plugin->sessions.add(makeRef(this));
 
 	addRef();
+}
+
+void Session::cancel(ThrowStatusExceptionWrapper* status)
+{
+	for (unsigned sessionIdx = 0; sessionIdx < plugin->sessions.getCount(); ++sessionIdx)
+	{
+		const auto& session = plugin->sessions[sessionIdx];
+
+		if (session.getPtr() == this)
+		{
+			plugin->sessions.remove(sessionIdx);
+			break;
+		}
+	}
 }
 
 void Session::finish(ThrowStatusExceptionWrapper* status, ISC_TIMESTAMP_TZ timestamp)

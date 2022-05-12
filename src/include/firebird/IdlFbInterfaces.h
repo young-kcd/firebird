@@ -6696,6 +6696,7 @@ namespace Firebird
 		{
 			ISC_INT64 (CLOOP_CARG *getId)(IProfilerSession* self) throw();
 			unsigned (CLOOP_CARG *getFlags)(IProfilerSession* self) throw();
+			void (CLOOP_CARG *cancel)(IProfilerSession* self, IStatus* status) throw();
 			void (CLOOP_CARG *finish)(IProfilerSession* self, IStatus* status, ISC_TIMESTAMP_TZ timestamp) throw();
 			void (CLOOP_CARG *defineStatement)(IProfilerSession* self, IStatus* status, ISC_INT64 statementId, ISC_INT64 parentStatementId, const char* type, const char* packageName, const char* routineName, const char* sqlText) throw();
 			void (CLOOP_CARG *defineRecordSource)(IProfilerSession* self, ISC_INT64 statementId, unsigned cursorId, unsigned recSourceId, const char* accessPath, unsigned parentRecSourceId) throw();
@@ -6735,6 +6736,13 @@ namespace Firebird
 		{
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getFlags(this);
 			return ret;
+		}
+
+		template <typename StatusType> void cancel(StatusType* status)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->cancel(this, status);
+			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void finish(StatusType* status, ISC_TIMESTAMP_TZ timestamp)
@@ -20084,6 +20092,7 @@ namespace Firebird
 					this->dispose = &Name::cloopdisposeDispatcher;
 					this->getId = &Name::cloopgetIdDispatcher;
 					this->getFlags = &Name::cloopgetFlagsDispatcher;
+					this->cancel = &Name::cloopcancelDispatcher;
 					this->finish = &Name::cloopfinishDispatcher;
 					this->defineStatement = &Name::cloopdefineStatementDispatcher;
 					this->defineRecordSource = &Name::cloopdefineRecordSourceDispatcher;
@@ -20124,6 +20133,20 @@ namespace Firebird
 			{
 				StatusType::catchException(0);
 				return static_cast<unsigned>(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopcancelDispatcher(IProfilerSession* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::cancel(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
 			}
 		}
 
@@ -20295,6 +20318,7 @@ namespace Firebird
 
 		virtual ISC_INT64 getId() = 0;
 		virtual unsigned getFlags() = 0;
+		virtual void cancel(StatusType* status) = 0;
 		virtual void finish(StatusType* status, ISC_TIMESTAMP_TZ timestamp) = 0;
 		virtual void defineStatement(StatusType* status, ISC_INT64 statementId, ISC_INT64 parentStatementId, const char* type, const char* packageName, const char* routineName, const char* sqlText) = 0;
 		virtual void defineRecordSource(ISC_INT64 statementId, unsigned cursorId, unsigned recSourceId, const char* accessPath, unsigned parentRecSourceId) = 0;

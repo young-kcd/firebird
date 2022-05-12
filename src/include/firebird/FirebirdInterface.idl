@@ -1719,6 +1719,9 @@ interface ProfilerSession : Disposable
 	int64 getId();
 	uint getFlags();
 
+	// When closing an attachment, the engine is free to dispose the ProfilerPlugin without call this method in advance.
+	void cancel(Status status);
+
 	void finish(Status status, ISC_TIMESTAMP_TZ timestamp);
 
 	//// FIXME: Add memory stats

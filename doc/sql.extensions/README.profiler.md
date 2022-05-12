@@ -154,6 +154,14 @@ Calling `RDB$PROFILER.FINISH_SESSION(TRUE)` has the same semantics of calling `R
 Input parameters:
  - `FLUSH` type `BOOLEAN NOT NULL`
 
+## Procedure `CANCEL_SESSION`
+
+`RDB$PROFILER.CANCEL_SESSION` cancels the current profiler session.
+
+All session data present in the profiler plugin is discarded and will not be flushed.
+
+Data already flushed is not deleted automatically.
+
 ## Procedure `FLUSH`
 
 `RDB$PROFILER.FLUSH` updates the snapshot tables with data from the profile sessions in memory.

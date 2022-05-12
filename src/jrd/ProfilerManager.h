@@ -128,6 +128,11 @@ private:
 
 	//----------
 
+	static Firebird::IExternalResultSet* cancelSessionProcedure(Firebird::ThrowStatusExceptionWrapper* status,
+		Firebird::IExternalContext* context, const void* in, void* out);
+
+	//----------
+
 	FB_MESSAGE(FinishSessionInput, Firebird::ThrowStatusExceptionWrapper,
 		(FB_BOOLEAN, flush)
 	);

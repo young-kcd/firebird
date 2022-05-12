@@ -220,6 +220,11 @@ namespace Firebird
 			return ptr;
 		}
 
+		const T* getPtr() const
+		{
+			return ptr;
+		}
+
 	protected:
 		T* assign(T* const p)
 		{

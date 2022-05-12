@@ -52,6 +52,26 @@ IExternalResultSet* ProfilerPackage::flushProcedure(ThrowStatusExceptionWrapper*
 	return nullptr;
 }
 
+IExternalResultSet* ProfilerPackage::cancelSessionProcedure(ThrowStatusExceptionWrapper* /*status*/,
+	IExternalContext* context, const void* in, void* out)
+{
+	const auto tdbb = JRD_get_thread_data();
+	const auto attachment = tdbb->getAttachment();
+	const auto transaction = tdbb->getTransaction();
+
+	const auto profilerManager = attachment->getProfilerManager(tdbb);
+
+	if (profilerManager->currentSession)
+	{
+		LogLocalStatus status("Profiler cancelSession");
+
+		profilerManager->currentSession->pluginSession->cancel(&status);
+		profilerManager->currentSession = nullptr;
+	}
+
+	return nullptr;
+}
+
 IExternalResultSet* ProfilerPackage::finishSessionProcedure(ThrowStatusExceptionWrapper* /*status*/,
 	IExternalContext* context, const FinishSessionInput::Type* in, void* out)
 {
@@ -456,6 +476,18 @@ ProfilerPackage::ProfilerPackage(MemoryPool& pool)
 		ODS_13_1,
 		// procedures
 		{
+			SystemProcedure(
+				pool,
+				"CANCEL_SESSION",
+				SystemProcedureFactory<VoidMessage, VoidMessage, cancelSessionProcedure>(),
+				prc_executable,
+				// input parameters
+				{
+				},
+				// output parameters
+				{
+				}
+			),
 			SystemProcedure(
 				pool,
 				"FINISH_SESSION",
