@@ -162,6 +162,12 @@ All session data present in the profiler plugin is discarded and will not be flu
 
 Data already flushed is not deleted automatically.
 
+## Procedure `DISCARD`
+
+`RDB$PROFILER.DISCARD` removes all sessions from memory, without flushing them.
+
+If there is a active session, it is cancelled.
+
 ## Procedure `FLUSH`
 
 `RDB$PROFILER.FLUSH` updates the snapshot tables with data from the profile sessions in memory.

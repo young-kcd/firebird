@@ -37,6 +37,19 @@ using namespace Firebird;
 //--------------------------------------
 
 
+IExternalResultSet* ProfilerPackage::discardProcedure(ThrowStatusExceptionWrapper* /*status*/,
+	IExternalContext* context, const void* in, void* out)
+{
+	const auto tdbb = JRD_get_thread_data();
+	const auto attachment = tdbb->getAttachment();
+
+	const auto profilerManager = attachment->getProfilerManager(tdbb);
+
+	profilerManager->discard();
+
+	return nullptr;
+}
+
 IExternalResultSet* ProfilerPackage::flushProcedure(ThrowStatusExceptionWrapper* /*status*/,
 	IExternalContext* context, const void* in, void* out)
 {
@@ -360,6 +373,12 @@ void ProfilerManager::afterRecordSourceGetRecord(jrd_req* request, const RecordS
 	}
 }
 
+void ProfilerManager::discard()
+{
+	currentSession = nullptr;
+	activePlugins.clear();
+}
+
 void ProfilerManager::flush(ITransaction* transaction)
 {
 	auto pluginAccessor = activePlugins.accessor();
@@ -480,6 +499,18 @@ ProfilerPackage::ProfilerPackage(MemoryPool& pool)
 				pool,
 				"CANCEL_SESSION",
 				SystemProcedureFactory<VoidMessage, VoidMessage, cancelSessionProcedure>(),
+				prc_executable,
+				// input parameters
+				{
+				},
+				// output parameters
+				{
+				}
+			),
+			SystemProcedure(
+				pool,
+				"DISCARD",
+				SystemProcedureFactory<VoidMessage, VoidMessage, discardProcedure>(),
 				prc_executable,
 				// input parameters
 				{

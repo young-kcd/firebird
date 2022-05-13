@@ -106,6 +106,7 @@ public:
 	}
 
 private:
+	void discard();
 	void flush(Firebird::ITransaction* transaction);
 	Statement* getStatement(jrd_req* request);
 	SINT64 getRequest(jrd_req* request, unsigned flags);
@@ -123,6 +124,11 @@ public:
 	ProfilerPackage(Firebird::MemoryPool& pool);
 
 private:
+	static Firebird::IExternalResultSet* discardProcedure(Firebird::ThrowStatusExceptionWrapper* status,
+		Firebird::IExternalContext* context, const void* in, void* out);
+
+	//----------
+
 	static Firebird::IExternalResultSet* flushProcedure(Firebird::ThrowStatusExceptionWrapper* status,
 		Firebird::IExternalContext* context, const void* in, void* out);
 
