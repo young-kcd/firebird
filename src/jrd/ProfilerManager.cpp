@@ -151,8 +151,8 @@ void ProfilerPackage::startSessionFunction(ThrowStatusExceptionWrapper* /*status
 	const auto attachment = tdbb->getAttachment();
 	const auto transaction = tdbb->getTransaction();
 
-	const PathName pluginName(in->pluginName.str, in->pluginName.length);
 	const string description(in->description.str, in->descriptionNull ? 0 : in->description.length);
+	const PathName pluginName(in->pluginName.str, in->pluginNameNull ? 0 : in->pluginName.length);
 
 	const auto profilerManager = attachment->getProfilerManager(tdbb);
 	AutoSetRestore<bool> pauseProfiler(&profilerManager->paused, true);
@@ -200,7 +200,7 @@ SINT64 ProfilerManager::startSession(thread_db* tdbb, const PathName& pluginName
 	}
 	else
 	{
-		GetPlugins<IProfilerPlugin> plugins(IPluginManager::TYPE_PROFILER, pluginName.c_str());
+		GetPlugins<IProfilerPlugin> plugins(IPluginManager::TYPE_PROFILER, pluginName.nullStr());
 
 		if (!plugins.hasData())
 		{
@@ -578,8 +578,8 @@ ProfilerPackage::ProfilerPackage(MemoryPool& pool)
 				SystemFunctionFactory<StartSessionInput, StartSessionOutput, startSessionFunction>(),
 				// parameters
 				{
-					{"PLUGIN_NAME", fld_file_name2, true},
-					{"DESCRIPTION", fld_short_description, true}
+					{"DESCRIPTION", fld_short_description, true, "null", {blr_null}},
+					{"PLUGIN_NAME", fld_file_name2, true, "null", {blr_null}},
 				},
 				{fld_prof_ses_id, false}
 			)

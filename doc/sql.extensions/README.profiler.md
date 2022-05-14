@@ -55,7 +55,7 @@ set term ;!
 
 -- Start profiling
 
-select rdb$profiler.start_session('Default_Profiler', 'Profile Session 1') from rdb$database;
+select rdb$profiler.start_session('Profile Session 1') from rdb$database;
 
 set term !;
 
@@ -72,7 +72,7 @@ execute procedure rdb$profiler.finish_session(true);
 
 execute procedure ins;
 
-select rdb$profiler.start_session('Default_Profiler', 'Profile Session 2') from rdb$database;
+select rdb$profiler.start_session('Profile Session 2') from rdb$database;
 
 select mod(id, 5),
        sum(val)
@@ -122,9 +122,11 @@ select pstat.*
 
 `RDB$PROFILER.START_SESSION` starts a new profiler session, turns it the current session and return its identifier.
 
+If `PLUGIN_NAME` is `NULL` (the default) it uses the database configuration `DefaultProfilerPlugin`.
+
 Input parameters:
- - `PLUGIN_NAME` type `VARCHAR(255) CHARACTER SET UTF8`
- - `DESCRIPTION` type `VARCHAR(255) CHARACTER SET UTF8`
+ - `DESCRIPTION` type `VARCHAR(255) CHARACTER SET UTF8` default `NULL`
+ - `PLUGIN_NAME` type `VARCHAR(255) CHARACTER SET UTF8` default `NULL`
 
 Return type: `BIGINT NOT NULL`.
 

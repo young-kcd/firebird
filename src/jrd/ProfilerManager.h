@@ -163,9 +163,9 @@ private:
 	//----------
 
 	FB_MESSAGE(StartSessionInput, Firebird::ThrowStatusExceptionWrapper,
+		(FB_INTL_VARCHAR(255, CS_METADATA), description)
 		(FB_INTL_VARCHAR(255, CS_METADATA), pluginName)
 		//// TODO: Options: PSQL, SQL.
-		(FB_INTL_VARCHAR(255, CS_METADATA), description)
 		//// TODO: Plugin options.
 	);
 

@@ -65,9 +65,9 @@
 				type getParameterName() const;
 		   form, for world-wide (global) parameters
 				static type getParameterName();
-		   should be used. Also, for world-wide parameters, values of default 
+		   should be used. Also, for world-wide parameters, values of default
 		   config instance (see getDefaultConfig()) should be used.
-		5. Macros CONFIG_GET_GLOBAL_XXX and CONFIG_GET_PER_DB_XXX helps to 
+		5. Macros CONFIG_GET_GLOBAL_XXX and CONFIG_GET_PER_DB_XXX helps to
 		   declare and implement trivial getXXX functions and to enforce rule (4).
 **/
 
@@ -163,6 +163,7 @@ enum ConfigKey
 	KEY_PLUG_AUTH_SERVER,
 	KEY_PLUG_AUTH_CLIENT,
 	KEY_PLUG_AUTH_MANAGE,
+	KEY_PLUG_PROFILER,
 	KEY_PLUG_TRACE,
 	KEY_SECURITY_DATABASE,
 	KEY_SERVER_MODE,
@@ -271,6 +272,7 @@ constexpr ConfigEntry entries[MAX_CONFIG_KEY] =
 	{TYPE_STRING,	"AuthClient",				false,	"Srp256, Srp, Legacy_Auth"},
 #endif
 	{TYPE_STRING,	"UserManager",				false,	"Srp"},
+	{TYPE_STRING,	"DefaultProfilerPlugin",	false,	"Default_Profiler"},
 	{TYPE_STRING,	"TracePlugin",				false,	"fbtrace"},
 	{TYPE_STRING,	"SecurityDatabase",			false,	nullptr},	// sec/db alias - rely on ConfigManager::getDefaultSecurityDb(
 	{TYPE_STRING,	"ServerMode",				true,	nullptr},	// actual value differs in boot/regular cases and set at setupDefaultConfig(
@@ -434,7 +436,7 @@ public:
 
 
 	// CONFIG_GET_GLOBAL_XXX (CONFIG_GET_PER_DB_XXX) set of macros helps to
-	// create trivial static (non-static) getXXX functions. 
+	// create trivial static (non-static) getXXX functions.
 	// Correctness of declaration and implementation is enforced with help
 	// of entries[XXX].is_global.
 
