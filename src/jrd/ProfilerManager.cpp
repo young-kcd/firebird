@@ -526,7 +526,7 @@ ProfilerPackage::ProfilerPackage(MemoryPool& pool)
 				prc_executable,
 				// input parameters
 				{
-					{"FLUSH", fld_bool, false}
+					{"FLUSH", fld_bool, false, "true", {blr_literal, blr_bool, 1}}
 				},
 				// output parameters
 				{
@@ -551,7 +551,7 @@ ProfilerPackage::ProfilerPackage(MemoryPool& pool)
 				prc_executable,
 				// input parameters
 				{
-					{"FLUSH", fld_bool, false}
+					{"FLUSH", fld_bool, false, "false", {blr_literal, blr_bool, 0}}
 				},
 				// output parameters
 				{

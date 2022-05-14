@@ -139,7 +139,7 @@ If `FLUSH` is `TRUE` the snapshot tables are updated with data up to the current
 Calling `RDB$PROFILER.PAUSE_SESSION(TRUE)` has the same semantics of calling `RDB$PROFILER.PAUSE_SESSION(FALSE)` followed by `RDB$PROFILER.FLUSH`.
 
 Input parameters:
- - `FLUSH` type `BOOLEAN NOT NULL`
+ - `FLUSH` type `BOOLEAN NOT NULL` default `FALSE`
 
 ## Procedure `RESUME_SESSION`
 
@@ -154,7 +154,7 @@ If `FLUSH` is `TRUE` the snapshot tables are updated with data of the finished s
 Calling `RDB$PROFILER.FINISH_SESSION(TRUE)` has the same semantics of calling `RDB$PROFILER.FINISH_SESSION(FALSE)` followed by `RDB$PROFILER.FLUSH`.
 
 Input parameters:
- - `FLUSH` type `BOOLEAN NOT NULL`
+ - `FLUSH` type `BOOLEAN NOT NULL` default `TRUE`
 
 ## Procedure `CANCEL_SESSION`
 
