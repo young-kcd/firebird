@@ -207,7 +207,7 @@ public:
 	void init(ThrowStatusExceptionWrapper* status, IAttachment* attachment, ITransaction* transaction) override;
 
 	IProfilerSession* startSession(ThrowStatusExceptionWrapper* status, ITransaction* transaction,
-		const char* description, ISC_TIMESTAMP_TZ timestamp) override;
+		const char* description, const char* options, ISC_TIMESTAMP_TZ timestamp) override;
 
 	void flush(ThrowStatusExceptionWrapper* status, ITransaction* transaction) override;
 
@@ -317,8 +317,22 @@ void ProfilerPlugin::init(ThrowStatusExceptionWrapper* status, IAttachment* atta
 }
 
 IProfilerSession* ProfilerPlugin::startSession(ThrowStatusExceptionWrapper* status, ITransaction* transaction,
-	const char* description, ISC_TIMESTAMP_TZ timestamp)
+	const char* description, const char* options, ISC_TIMESTAMP_TZ timestamp)
 {
+	if (options && options[0])
+	{
+		static const ISC_STATUS statusVector[] = {
+			isc_arg_gds,
+			isc_random,
+			isc_arg_string,
+			(ISC_STATUS) "Invalid OPTIONS for Default_Profiler. Should be empty or NULL.",
+			isc_arg_end
+		};
+
+		status->setErrors(statusVector);
+		return nullptr;
+	}
+
 	return FB_NEW Session(status, this, transaction, description, timestamp);
 }
 

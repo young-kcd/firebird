@@ -90,7 +90,9 @@ public:
 	void operator=(const ProfilerManager&) = delete;
 
 public:
-	SINT64 startSession(thread_db* tdbb, const Firebird::PathName& pluginName, const Firebird::string& description);
+	SINT64 startSession(thread_db* tdbb, const Firebird::PathName& pluginName, const Firebird::string& description,
+		const Firebird::string& options);
+
 	void prepareRecSource(thread_db* tdbb, jrd_req* request, const RecordSource* rsb);
 	void onRequestFinish(jrd_req* request);
 	void beforePsqlLineColumn(jrd_req* request, ULONG line, ULONG column);
@@ -165,8 +167,7 @@ private:
 	FB_MESSAGE(StartSessionInput, Firebird::ThrowStatusExceptionWrapper,
 		(FB_INTL_VARCHAR(255, CS_METADATA), description)
 		(FB_INTL_VARCHAR(255, CS_METADATA), pluginName)
-		//// TODO: Options: PSQL, SQL.
-		//// TODO: Plugin options.
+		(FB_INTL_VARCHAR(255, CS_METADATA), pluginOptions)
 	);
 
 	FB_MESSAGE(StartSessionOutput, Firebird::ThrowStatusExceptionWrapper,

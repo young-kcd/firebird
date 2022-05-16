@@ -6649,7 +6649,7 @@ namespace Firebird
 		struct VTable : public IPluginBase::VTable
 		{
 			void (CLOOP_CARG *init)(IProfilerPlugin* self, IStatus* status, IAttachment* attachment, ITransaction* transaction) throw();
-			IProfilerSession* (CLOOP_CARG *startSession)(IProfilerPlugin* self, IStatus* status, ITransaction* transaction, const char* description, ISC_TIMESTAMP_TZ timestamp) throw();
+			IProfilerSession* (CLOOP_CARG *startSession)(IProfilerPlugin* self, IStatus* status, ITransaction* transaction, const char* description, const char* options, ISC_TIMESTAMP_TZ timestamp) throw();
 			void (CLOOP_CARG *flush)(IProfilerPlugin* self, IStatus* status, ITransaction* transaction) throw();
 		};
 
@@ -6673,10 +6673,10 @@ namespace Firebird
 			StatusType::checkException(status);
 		}
 
-		template <typename StatusType> IProfilerSession* startSession(StatusType* status, ITransaction* transaction, const char* description, ISC_TIMESTAMP_TZ timestamp)
+		template <typename StatusType> IProfilerSession* startSession(StatusType* status, ITransaction* transaction, const char* description, const char* options, ISC_TIMESTAMP_TZ timestamp)
 		{
 			StatusType::clearException(status);
-			IProfilerSession* ret = static_cast<VTable*>(this->cloopVTable)->startSession(this, status, transaction, description, timestamp);
+			IProfilerSession* ret = static_cast<VTable*>(this->cloopVTable)->startSession(this, status, transaction, description, options, timestamp);
 			StatusType::checkException(status);
 			return ret;
 		}
@@ -19978,13 +19978,13 @@ namespace Firebird
 			}
 		}
 
-		static IProfilerSession* CLOOP_CARG cloopstartSessionDispatcher(IProfilerPlugin* self, IStatus* status, ITransaction* transaction, const char* description, ISC_TIMESTAMP_TZ timestamp) throw()
+		static IProfilerSession* CLOOP_CARG cloopstartSessionDispatcher(IProfilerPlugin* self, IStatus* status, ITransaction* transaction, const char* description, const char* options, ISC_TIMESTAMP_TZ timestamp) throw()
 		{
 			StatusType status2(status);
 
 			try
 			{
-				return static_cast<Name*>(self)->Name::startSession(&status2, transaction, description, timestamp);
+				return static_cast<Name*>(self)->Name::startSession(&status2, transaction, description, options, timestamp);
 			}
 			catch (...)
 			{
@@ -20072,7 +20072,7 @@ namespace Firebird
 		}
 
 		virtual void init(StatusType* status, IAttachment* attachment, ITransaction* transaction) = 0;
-		virtual IProfilerSession* startSession(StatusType* status, ITransaction* transaction, const char* description, ISC_TIMESTAMP_TZ timestamp) = 0;
+		virtual IProfilerSession* startSession(StatusType* status, ITransaction* transaction, const char* description, const char* options, ISC_TIMESTAMP_TZ timestamp) = 0;
 		virtual void flush(StatusType* status, ITransaction* transaction) = 0;
 	};
 

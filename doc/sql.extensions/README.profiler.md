@@ -4,7 +4,7 @@ The profiler allows users to measure performance cost of SQL and PSQL code.
 
 It's implemented with a system package in the engine passing data to a profiler plugin.
 
-This documentation treats the engine and plugin parts as a single thing, in the way the default profiler is going to be used.
+This documentation treats the engine and plugin parts as a single thing, in the way the default profiler (`Default_Profiler`) is going to be used.
 
 The `RDB$PROFILER` package allows to profile execution of PSQL code collecting statistics of how many times each line was executed along with its minimum, maximum and accumulated execution times (with nanoseconds precision), as well open and fetch statistics of implicit and explicit SQL cursors.
 
@@ -124,9 +124,12 @@ select pstat.*
 
 If `PLUGIN_NAME` is `NULL` (the default) it uses the database configuration `DefaultProfilerPlugin`.
 
+`PLUGIN_OPTIONS` is plugin specific options and currently should be `NULL` for `Default_Profiler` plugin.
+
 Input parameters:
  - `DESCRIPTION` type `VARCHAR(255) CHARACTER SET UTF8` default `NULL`
  - `PLUGIN_NAME` type `VARCHAR(255) CHARACTER SET UTF8` default `NULL`
+ - `PLUGIN_OPTIONS` type `VARCHAR(255) CHARACTER SET UTF8` default `NULL`
 
 Return type: `BIGINT NOT NULL`.
 

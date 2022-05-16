@@ -153,12 +153,13 @@ void ProfilerPackage::startSessionFunction(ThrowStatusExceptionWrapper* /*status
 
 	const string description(in->description.str, in->descriptionNull ? 0 : in->description.length);
 	const PathName pluginName(in->pluginName.str, in->pluginNameNull ? 0 : in->pluginName.length);
+	const string pluginOptions(in->pluginOptions.str, in->pluginOptionsNull ? 0 : in->pluginOptions.length);
 
 	const auto profilerManager = attachment->getProfilerManager(tdbb);
 	AutoSetRestore<bool> pauseProfiler(&profilerManager->paused, true);
 
 	out->sessionIdNull = FB_FALSE;
-	out->sessionId = profilerManager->startSession(tdbb, pluginName, description);
+	out->sessionId = profilerManager->startSession(tdbb, pluginName, description, pluginOptions);
 }
 
 
@@ -175,7 +176,8 @@ ProfilerManager* ProfilerManager::create(thread_db* tdbb)
 	return FB_NEW_POOL(*tdbb->getAttachment()->att_pool) ProfilerManager(tdbb);
 }
 
-SINT64 ProfilerManager::startSession(thread_db* tdbb, const PathName& pluginName, const string& description)
+SINT64 ProfilerManager::startSession(thread_db* tdbb, const PathName& pluginName, const string& description,
+	const string& options)
 {
 	const auto attachment = tdbb->getAttachment();
 	const auto transaction = tdbb->getTransaction();
@@ -221,6 +223,7 @@ SINT64 ProfilerManager::startSession(thread_db* tdbb, const PathName& pluginName
 	AutoDispose<IProfilerSession> pluginSession = plugin->startSession(&status,
 		transaction->getInterface(true),
 		description.c_str(),
+		options.c_str(),
 		timestamp);
 
 	auto& pool = *tdbb->getAttachment()->att_pool;
@@ -580,6 +583,7 @@ ProfilerPackage::ProfilerPackage(MemoryPool& pool)
 				{
 					{"DESCRIPTION", fld_short_description, true, "null", {blr_null}},
 					{"PLUGIN_NAME", fld_file_name2, true, "null", {blr_null}},
+					{"PLUGIN_OPTIONS", fld_short_description, true, "null", {blr_null}},
 				},
 				{fld_prof_ses_id, false}
 			)

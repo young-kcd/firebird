@@ -715,7 +715,7 @@ type
 	IReplicatedSession_cleanupTransactionPtr = procedure(this: IReplicatedSession; status: IStatus; number: Int64); cdecl;
 	IReplicatedSession_setSequencePtr = procedure(this: IReplicatedSession; status: IStatus; name: PAnsiChar; value: Int64); cdecl;
 	IProfilerPlugin_initPtr = procedure(this: IProfilerPlugin; status: IStatus; attachment: IAttachment; transaction: ITransaction); cdecl;
-	IProfilerPlugin_startSessionPtr = function(this: IProfilerPlugin; status: IStatus; transaction: ITransaction; description: PAnsiChar; timestamp: ISC_TIMESTAMP_TZ): IProfilerSession; cdecl;
+	IProfilerPlugin_startSessionPtr = function(this: IProfilerPlugin; status: IStatus; transaction: ITransaction; description: PAnsiChar; options: PAnsiChar; timestamp: ISC_TIMESTAMP_TZ): IProfilerSession; cdecl;
 	IProfilerPlugin_flushPtr = procedure(this: IProfilerPlugin; status: IStatus; transaction: ITransaction); cdecl;
 	IProfilerSession_getIdPtr = function(this: IProfilerSession): Int64; cdecl;
 	IProfilerSession_getFlagsPtr = function(this: IProfilerSession): Cardinal; cdecl;
@@ -3776,7 +3776,7 @@ type
 		const VERSION = 4;
 
 		procedure init(status: IStatus; attachment: IAttachment; transaction: ITransaction);
-		function startSession(status: IStatus; transaction: ITransaction; description: PAnsiChar; timestamp: ISC_TIMESTAMP_TZ): IProfilerSession;
+		function startSession(status: IStatus; transaction: ITransaction; description: PAnsiChar; options: PAnsiChar; timestamp: ISC_TIMESTAMP_TZ): IProfilerSession;
 		procedure flush(status: IStatus; transaction: ITransaction);
 	end;
 
@@ -3788,7 +3788,7 @@ type
 		procedure setOwner(r: IReferenceCounted); virtual; abstract;
 		function getOwner(): IReferenceCounted; virtual; abstract;
 		procedure init(status: IStatus; attachment: IAttachment; transaction: ITransaction); virtual; abstract;
-		function startSession(status: IStatus; transaction: ITransaction; description: PAnsiChar; timestamp: ISC_TIMESTAMP_TZ): IProfilerSession; virtual; abstract;
+		function startSession(status: IStatus; transaction: ITransaction; description: PAnsiChar; options: PAnsiChar; timestamp: ISC_TIMESTAMP_TZ): IProfilerSession; virtual; abstract;
 		procedure flush(status: IStatus; transaction: ITransaction); virtual; abstract;
 	end;
 
@@ -8951,9 +8951,9 @@ begin
 	FbException.checkException(status);
 end;
 
-function IProfilerPlugin.startSession(status: IStatus; transaction: ITransaction; description: PAnsiChar; timestamp: ISC_TIMESTAMP_TZ): IProfilerSession;
+function IProfilerPlugin.startSession(status: IStatus; transaction: ITransaction; description: PAnsiChar; options: PAnsiChar; timestamp: ISC_TIMESTAMP_TZ): IProfilerSession;
 begin
-	Result := ProfilerPluginVTable(vTable).startSession(Self, status, transaction, description, timestamp);
+	Result := ProfilerPluginVTable(vTable).startSession(Self, status, transaction, description, options, timestamp);
 	FbException.checkException(status);
 end;
 
@@ -15585,10 +15585,10 @@ begin
 	end
 end;
 
-function IProfilerPluginImpl_startSessionDispatcher(this: IProfilerPlugin; status: IStatus; transaction: ITransaction; description: PAnsiChar; timestamp: ISC_TIMESTAMP_TZ): IProfilerSession; cdecl;
+function IProfilerPluginImpl_startSessionDispatcher(this: IProfilerPlugin; status: IStatus; transaction: ITransaction; description: PAnsiChar; options: PAnsiChar; timestamp: ISC_TIMESTAMP_TZ): IProfilerSession; cdecl;
 begin
 	try
-		Result := IProfilerPluginImpl(this).startSession(status, transaction, description, timestamp);
+		Result := IProfilerPluginImpl(this).startSession(status, transaction, description, options, timestamp);
 	except
 		on e: Exception do FbException.catchException(status, e);
 	end
