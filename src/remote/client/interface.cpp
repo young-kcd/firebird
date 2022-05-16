@@ -5985,7 +5985,7 @@ static void disconnect(rem_port* port, bool rmRef)
 	port->port_flags |= PORT_disconnect;
 	port->disconnect();
 	delete rdb;
-	port->port_context = nullptr;
+	port->port_context = NULL;
 
 	// Remove from active ports
 
