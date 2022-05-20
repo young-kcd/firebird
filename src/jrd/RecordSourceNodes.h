@@ -879,6 +879,11 @@ public:
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual RseNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
+	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor)
+	{
+		return true;
+	}
+
 	virtual RseNode* copy(thread_db* /*tdbb*/, NodeCopier& /*copier*/) const
 	{
 		fb_assert(false);
