@@ -3136,7 +3136,9 @@ type
 		procedure registerTrigger(status: IStatus; name: PAnsiChar; factory: IUdrTriggerFactory); virtual; abstract;
 	end;
 
+{$IFNDEF NO_FBCLIENT}
 	function fb_get_master_interface : IMaster; cdecl; external 'fbclient';
+{$ENDIF}
 
 const
 	isc_dpb_version1 = byte(1);
