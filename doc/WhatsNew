@@ -2,6 +2,11 @@
   * v3.0.10
   **************************
 
+    * Improvement #7194
+        Make it possible to avoid fbclient dependency in Pascal programs using firebird.pas
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Improvement #7161
         Update zlib to 1.2.12
       Contributor(s):
@@ -17,6 +22,21 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
+    * Bugfix #7191
+        gstat fails, but return 0 error code with incorrect databases.conf
+      Contributor(s):
+        Alexey Mochalov <aleksey.mochalov at red-soft.ru>
+
+    * Bugfix #7184
+        gbak output is not being flushed to disk
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #7176
+        Incorrect error "Invalid token. Malformed string." with union + blob + non-UTF8 varchar
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
     * Bugfix #7160
         Missing checkout in trace manager when performing user mapping may cause server hang
       Contributor(s):
@@ -26,6 +46,11 @@
         Serious issue with SYSDBA user after a Windows install with EnableLegacyClientAuth
       Contributor(s):
         Paul Reeves <preeves at ibphoenix.com>
+
+    * Bugfix #7147
+        Problems with use of big timeout (or no timeout at all) in trace service
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix #7141
         Services manager breaks long lines into 1023 bytes portions when using isc_info_svc_line in Service::query()
