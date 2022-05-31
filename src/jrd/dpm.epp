@@ -1651,7 +1651,7 @@ punt:
 }
 
 
-bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage)
+bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, FindNextRecordScope scope)
 {
 /**************************************
  *
@@ -1753,16 +1753,7 @@ bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage
 			}
 		}
 
-		if (window->win_flags & WIN_large_scan)
-			CCH_RELEASE_TAIL(tdbb, window);
-		else if ((window->win_flags & WIN_garbage_collector) &&
-				 (window->win_flags & WIN_garbage_collect))
-		{
-			CCH_RELEASE_TAIL(tdbb, window);
-			window->win_flags &= ~WIN_garbage_collect;
-		}
-		else
-			CCH_RELEASE(tdbb, window);
+		CCH_RELEASE(tdbb, window);
 	}
 
 	// Find the next pointer page, data page, and record
@@ -1850,9 +1841,11 @@ bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage
 					rpb->rpb_number.decrement();
 					check_swept(tdbb, rpb);
 					rpb->rpb_number = saveRecNo;
+
+					tdbb->checkCancelState();
 				}
 
-				if (onepage)
+				if (scope == DPM_next_data_page)
 					return false;
 
 				if (!(ppage = get_pointer_page(tdbb, rpb->rpb_relation, relPages, window,
@@ -1862,7 +1855,7 @@ bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage
 				}
 			}
 
-			if (onepage)
+			if (scope == DPM_next_data_page)
 			{
 				CCH_RELEASE(tdbb, window);
 				return false;
@@ -1882,11 +1875,8 @@ bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage
 		else
 			CCH_RELEASE(tdbb, window);
 
-		if (flags & ppg_eof || onepage)
+		if ((flags & ppg_eof) || (scope != DPM_next_all))
 			return false;
-
-		if (sweeper)
-			tdbb->checkCancelState();
 	}
 }
 

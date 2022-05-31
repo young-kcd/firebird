@@ -3856,6 +3856,8 @@ const
 	isc_dpb_decfloat_round = byte(94);
 	isc_dpb_decfloat_traps = byte(95);
 	isc_dpb_clear_map = byte(96);
+	isc_dpb_parallel_workers = byte(100);
+	isc_dpb_worker_attach = byte(101);
 	isc_dpb_address = byte(1);
 	isc_dpb_addr_protocol = byte(1);
 	isc_dpb_addr_endpoint = byte(2);
@@ -4013,6 +4015,7 @@ const
 	isc_spb_bkp_keyname = byte(17);
 	isc_spb_bkp_crypt = byte(18);
 	isc_spb_bkp_include_data = byte(19);
+	isc_spb_bkp_parallel_workers = byte(21);
 	isc_spb_bkp_ignore_checksums = $01;
 	isc_spb_bkp_ignore_limbo = $02;
 	isc_spb_bkp_metadata_only = $04;
@@ -4023,6 +4026,7 @@ const
 	isc_spb_bkp_expand = $80;
 	isc_spb_bkp_no_triggers = $8000;
 	isc_spb_bkp_zip = $010000;
+	isc_spb_bkp_direct_io = $020000;
 	isc_spb_prp_page_buffers = byte(5);
 	isc_spb_prp_sweep_interval = byte(6);
 	isc_spb_prp_shutdown_db = byte(7);
@@ -4078,6 +4082,7 @@ const
 	isc_spb_rpr_commit_trans_64 = byte(49);
 	isc_spb_rpr_rollback_trans_64 = byte(50);
 	isc_spb_rpr_recover_two_phase_64 = byte(51);
+	isc_spb_rpr_par_workers = byte(52);
 	isc_spb_rpr_validate_db = $01;
 	isc_spb_rpr_sweep_db = $02;
 	isc_spb_rpr_mend_db = $04;

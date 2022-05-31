@@ -146,7 +146,7 @@ bool FullTableScan::getRecord(thread_db* tdbb) const
 		return false;
 	}
 
-	if (VIO_next_record(tdbb, rpb, request->req_transaction, request->req_pool, false))
+	if (VIO_next_record(tdbb, rpb, request->req_transaction, request->req_pool, DPM_next_all))
 	{
 		if (impure->irsb_upper.isValid() && rpb->rpb_number > impure->irsb_upper)
 		{

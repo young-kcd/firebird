@@ -2655,6 +2655,27 @@ void MET_lookup_index_expression(thread_db* tdbb, jrd_rel* relation, index_desc*
 }
 
 
+bool MET_lookup_index_expression_blr(thread_db* tdbb, const MetaName& index_name, bid& blob_id)
+{
+	SET_TDBB(tdbb);
+	Attachment* attachment = tdbb->getAttachment();
+
+	bool found = false;
+	AutoCacheRequest request(tdbb, irq_l_exp_index_blr, IRQ_REQUESTS);
+
+	FOR(REQUEST_HANDLE request)
+		IDX IN RDB$INDICES WITH
+		IDX.RDB$INDEX_NAME EQ index_name.c_str()
+	{
+		found = !IDX.RDB$EXPRESSION_BLR.NULL;
+		blob_id = IDX.RDB$EXPRESSION_BLR;
+	}
+	END_FOR;
+
+	return found;
+}
+
+
 bool MET_lookup_partner(thread_db* tdbb, jrd_rel* relation, index_desc* idx, const TEXT* index_name)
 {
 /**************************************

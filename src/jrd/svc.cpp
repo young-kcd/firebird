@@ -2963,6 +2963,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				get_action_svc_data(spb, burp_database, bigint);
 				break;
 			case isc_spb_bkp_factor:
+			case isc_spb_bkp_parallel_workers:
 			case isc_spb_res_buffers:
 			case isc_spb_res_page_size:
 			case isc_spb_verbint:
@@ -3046,6 +3047,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 			case isc_spb_rpr_commit_trans:
 			case isc_spb_rpr_rollback_trans:
 			case isc_spb_rpr_recover_two_phase:
+			case isc_spb_rpr_par_workers:
 				if (!get_action_svc_parameter(spb.getClumpTag(), alice_in_sw_table, switches))
 				{
 					return false;

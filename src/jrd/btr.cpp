@@ -3440,7 +3440,6 @@ static ULONG fast_load(thread_db* tdbb,
 	jrd_rel* const relation = creation.relation;
 	index_desc* const idx = creation.index;
 	const USHORT key_length = creation.key_length;
-	Sort* const scb = creation.sort;
 
 	const USHORT pageSpaceID = relation->getPages(tdbb)->rel_pg_space_id;
 
@@ -3560,9 +3559,9 @@ static ULONG fast_load(thread_db* tdbb,
 			// Get the next record in sorted order.
 
 			UCHAR* record;
-			scb->get(tdbb, reinterpret_cast<ULONG**>(&record));
+			creation.sort->get(tdbb, reinterpret_cast<ULONG**>(&record));
 
-			if (!record || creation.duplicates)
+			if (!record || creation.duplicates.value())
 				break;
 
 			index_sort_record* isr = (index_sort_record*) (record + key_length);
@@ -3780,7 +3779,7 @@ static ULONG fast_load(thread_db* tdbb,
 				++duplicates;
 				if (unique && primarySeen && isPrimary && !(isr->isr_flags & ISR_null))
 				{
-					creation.duplicates++;
+					++creation.duplicates;
 					creation.dup_recno = isr->isr_record_number;
 				}
 
@@ -4153,8 +4152,7 @@ static ULONG fast_load(thread_db* tdbb,
 	tdbb->tdbb_flags &= ~TDBB_no_cache_unwind;
 
 	// do some final housekeeping
-
-	creation.sort.reset();
+	//creation.sort.reset();
 
 	// If index flush fails, try to delete the index tree.
 	// If the index delete fails, just go ahead and punt.

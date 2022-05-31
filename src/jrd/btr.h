@@ -48,6 +48,8 @@ struct temporary_key;
 class jrd_tra;
 class BtrPageGCLock;
 class Sort;
+class PartitionedSort;
+struct sort_key_def;
 
 // Index descriptor block -- used to hold info from index root page
 
@@ -278,11 +280,14 @@ struct IndexCreation
 {
 	jrd_rel* relation;
 	index_desc* index;
+	const TEXT* index_name;
 	jrd_tra* transaction;
+	PartitionedSort* sort;
+	sort_key_def* key_desc;
 	USHORT key_length;
-	Firebird::AutoPtr<Sort> sort;
+	USHORT nullIndLen;
 	SINT64 dup_recno;
-	SLONG duplicates;
+	Firebird::AtomicCounter duplicates;
 };
 
 // Class used to report any index related errors

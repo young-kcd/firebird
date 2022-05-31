@@ -315,27 +315,7 @@ void Sort::get(thread_db* tdbb, ULONG** record_address)
 
 	try
 	{
-		// If there weren't any runs, everything fit in memory. Just return stuff.
-
-		if (!m_merge)
-		{
-			while (true)
-			{
-				if (m_records == 0)
-				{
-					record = NULL;
-					break;
-				}
-				m_records--;
-				if ( (record = *m_next_pointer++) )
-					break;
-			}
-		}
-		else
-		{
-			record = getMerge(m_merge);
-		}
-
+		record = getRecord();
 		*record_address = (ULONG*) record;
 
 		if (record)
@@ -1376,6 +1356,33 @@ sort_record* Sort::getMerge(merge_control* merge)
 }
 
 
+sort_record* Sort::getRecord()
+{
+	sort_record* record = NULL;
+
+	// If there weren't any runs, everything fit in memory. Just return stuff.
+
+	if (!m_merge)
+	{
+		while (true)
+		{
+			if (m_records == 0)
+			{
+				record = NULL;
+				break;
+			}
+			m_records--;
+			if ((record = *m_next_pointer++))
+				break;
+		}
+	}
+	else
+		record = getMerge(m_merge);
+
+	return record;
+}
+
+
 void Sort::init()
 {
 /**************************************
@@ -2161,4 +2168,237 @@ void Sort::sortRunsBySeek(int n)
 		run = rs->run;
 	}
 	run->run_next = tail;
+}
+
+
+/// class PartitionedSort
+
+
+PartitionedSort::PartitionedSort(Database* dbb, SortOwner* owner) :
+	m_owner(owner),
+	m_parts(owner->getPool()),
+	m_nodes(owner->getPool()),
+	m_merge(NULL)
+{
+}
+
+PartitionedSort::~PartitionedSort()
+{
+//	for (ULONG p = 0; p < m_parts.getCount(); p++)
+//		delete m_parts[p].srt_sort;
+}
+
+void PartitionedSort::buidMergeTree()
+{
+	ULONG count = m_parts.getCount();
+	if (count <= 0)
+		return;
+
+	MemoryPool& pool = m_owner->getPool();
+
+	HalfStaticArray<run_merge_hdr*, 8> streams(pool);
+
+	run_merge_hdr** m1 = streams.getBuffer(count);
+	for (sort_control* sort = m_parts.begin(); sort < m_parts.end(); sort++)
+		*m1++ = &sort->srt_header;
+
+	merge_control* node = m_nodes.getBuffer(count - 1);
+	while (count > 1)
+	{
+		run_merge_hdr** m2 = m1 = streams.begin();
+
+		// "m1" is used to sequence through the runs being merged,
+		// while "m2" points at the new merged run
+
+		while (count >= 2)
+		{
+			m_merge = node++;
+			m_merge->mrg_header.rmh_type = RMH_TYPE_MRG;
+
+			// garbage watch
+			fb_assert(((*m1)->rmh_type == RMH_TYPE_MRG) || ((*m1)->rmh_type == RMH_TYPE_SORT));
+
+			(*m1)->rmh_parent = m_merge;
+			m_merge->mrg_stream_a = *m1++;
+
+			// garbage watch
+			fb_assert(((*m1)->rmh_type == RMH_TYPE_MRG) || ((*m1)->rmh_type == RMH_TYPE_SORT));
+
+			(*m1)->rmh_parent = m_merge;
+			m_merge->mrg_stream_b = *m1++;
+
+			m_merge->mrg_record_a = NULL;
+			m_merge->mrg_record_b = NULL;
+
+			*m2++ = (run_merge_hdr*)m_merge;
+			count -= 2;
+		}
+
+		if (count)
+			*m2++ = *m1++;
+		count = m2 - streams.begin();
+	}
+
+	if (m_merge)
+		m_merge->mrg_header.rmh_parent = NULL;
+}
+
+void PartitionedSort::get(thread_db* tdbb, ULONG** record_address)
+{
+	sort_record* record = NULL;
+
+	if (!m_merge)
+		record = m_parts[0].srt_sort->getRecord();
+	else
+		record = getMerge();
+
+	*record_address = (ULONG*)record;
+
+	if (record)
+		m_parts[0].srt_sort->diddleKey((UCHAR*)record->sort_record_key, false, true);
+}
+
+sort_record* PartitionedSort::getMerge()
+{
+	Sort* aSort = m_parts[0].srt_sort;
+	merge_control* merge = m_merge;
+	sort_record* record = NULL;
+	bool eof = false;
+
+	while (merge)
+	{
+		// If node is a run_control, get the next record (or not) and back to parent
+
+		if (merge->mrg_header.rmh_type == RMH_TYPE_SORT)
+		{
+			sort_control* sort = (sort_control*)merge;
+			merge = sort->srt_header.rmh_parent;
+
+			// check for end-of-file condition in either direction
+
+			record = sort->srt_sort->getRecord();
+
+			if (!record)
+			{
+				record = (sort_record*)-1;
+				eof = true;
+				continue;
+			}
+
+			eof = false;
+			continue;
+		}
+
+		// If've we got a record, somebody asked for it. Find out who.
+
+		if (record)
+		{
+			if (merge->mrg_stream_a && !merge->mrg_record_a)
+			{
+				if (eof)
+					merge->mrg_stream_a = NULL;
+				else
+					merge->mrg_record_a = record;
+			}
+			else if (eof)
+				merge->mrg_stream_b = NULL;
+			else
+				merge->mrg_record_b = record;
+		}
+
+		// If either streams need a record and is still active, loop back to pick
+		// up the record. If either stream is dry, return the record of the other.
+		// If both are dry, indicate eof for this stream.
+
+		record = NULL;
+		eof = false;
+
+		if (!merge->mrg_record_a && merge->mrg_stream_a)
+		{
+			merge = (merge_control*)merge->mrg_stream_a;
+			continue;
+		}
+
+		if (!merge->mrg_record_b)
+		{
+			if (merge->mrg_stream_b) {
+				merge = (merge_control*)merge->mrg_stream_b;
+			}
+			else if ((record = merge->mrg_record_a))
+			{
+				merge->mrg_record_a = NULL;
+				merge = merge->mrg_header.rmh_parent;
+			}
+			else
+			{
+				eof = true;
+				record = (sort_record*)-1;
+				merge = merge->mrg_header.rmh_parent;
+			}
+			continue;
+		}
+
+		if (!merge->mrg_record_a)
+		{
+			record = merge->mrg_record_b;
+			merge->mrg_record_b = NULL;
+			merge = merge->mrg_header.rmh_parent;
+			continue;
+		}
+
+		// We have prospective records from each of the sub-streams. Compare them.
+		// If equal, offer each to user routine for possible sacrifice.
+
+		SORTP *p = merge->mrg_record_a->sort_record_key;
+		SORTP *q = merge->mrg_record_b->sort_record_key;
+		//l = m_key_length;
+		ULONG l = aSort->m_unique_length;
+
+		DO_32_COMPARE(p, q, l);
+
+		if (l == 0 && aSort->m_dup_callback)
+		{
+			UCHAR* rec_a = (UCHAR*)merge->mrg_record_a;
+			UCHAR* rec_b = (UCHAR*)merge->mrg_record_a;
+
+			aSort->diddleKey(rec_a, false, true);
+			aSort->diddleKey(rec_b, false, true);
+
+			if ((*aSort->m_dup_callback) ((const UCHAR*)merge->mrg_record_a,
+				(const UCHAR*)merge->mrg_record_b,
+				aSort->m_dup_callback_arg))
+			{
+				merge->mrg_record_a = NULL;
+				aSort->diddleKey(rec_b, true, true);
+				continue;
+			}
+			aSort->diddleKey(rec_a, true, true);
+			aSort->diddleKey(rec_b, true, true);
+		}
+
+		if (l == 0)
+		{
+			l = aSort->m_key_length - aSort->m_unique_length;
+			if (l != 0)
+				DO_32_COMPARE(p, q, l);
+		}
+
+		if (p[-1] < q[-1])
+		{
+			record = merge->mrg_record_a;
+			merge->mrg_record_a = NULL;
+		}
+		else
+		{
+			record = merge->mrg_record_b;
+			merge->mrg_record_b = NULL;
+		}
+
+		merge = merge->mrg_header.rmh_parent;
+	}
+
+	// Merge pointer is null; we're done. Return either the most
+	// recent record, or end of file, as appropriate.
+
+	return eof ? NULL : record;
 }
