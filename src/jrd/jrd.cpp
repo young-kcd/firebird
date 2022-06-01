@@ -112,6 +112,7 @@
 #include "../yvalve/why_proto.h"
 #include "../jrd/flags.h"
 #include "../jrd/Mapping.h"
+#include "../jrd/ThreadCollect.h"
 
 #include "../jrd/Database.h"
 
@@ -128,6 +129,7 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/RefMutex.h"
 #include "../common/classes/ParsedList.h"
+#include "../common/classes/semaphore.h"
 #include "../common/utils_proto.h"
 #include "../jrd/DebugInterface.h"
 #include "../jrd/CryptoManager.h"
@@ -474,6 +476,16 @@ extern "C" FB_DLL_EXPORT void FB_PLUGIN_ENTRY_POINT(IMaster* master)
 namespace
 {
 	using Jrd::Attachment;
+
+	// Required to sync attachment shutdown threads with provider shutdown
+	GlobalPtr<ThreadCollect> shutThreadCollect;
+
+	struct AttShutParams
+	{
+		Semaphore thdStartedSem;
+		Thread::Handle thrHandle;
+		AttachmentsRefHolder* attachments;
+	};
 
 	// Flag engineShutdown guarantees that no new attachment is created after setting it
 	// and helps avoid more than 1 shutdown threads running simultaneously.
@@ -4559,61 +4571,66 @@ void JProvider::shutdown(CheckStatusWrapper* status, unsigned int timeout, const
  **************************************/
 	try
 	{
-		MutexLockGuard guard(shutdownMutex, FB_FUNCTION);
-
-		if (engineShutdown)
-		{
-			return;
-		}
 		{ // scope
-			MutexLockGuard guard(newAttachmentMutex, FB_FUNCTION);
-			engineShutdown = true;
+			MutexLockGuard guard(shutdownMutex, FB_FUNCTION);
+
+			if (engineShutdown)
+			{
+				return;
+			}
+			{ // scope
+				MutexLockGuard guard(newAttachmentMutex, FB_FUNCTION);
+				engineShutdown = true;
+			}
+
+			ThreadContextHolder tdbb;
+
+			EDS::Manager::shutdown();
+
+			ULONG attach_count, database_count, svc_count;
+			JRD_enum_attachments(NULL, attach_count, database_count, svc_count);
+
+			if (attach_count > 0 || svc_count > 0)
+			{
+				gds__log("Shutting down the server with %d active connection(s) to %d database(s), "
+						 "%d active service(s)",
+					attach_count, database_count, svc_count);
+			}
+
+			if (reason == fb_shutrsn_exit_called)
+			{
+				// Starting threads may fail when task is going to close.
+				// This happens at least with some microsoft C runtimes.
+				// If people wish to have timeout, they should better call fb_shutdown() themselves.
+				// Therefore:
+				timeout = 0;
+			}
+
+			if (timeout)
+			{
+				Semaphore shutdown_semaphore;
+
+				Thread::Handle h;
+				Thread::start(shutdown_thread, &shutdown_semaphore, THREAD_medium, &h);
+
+				if (!shutdown_semaphore.tryEnter(0, timeout))
+					waitForShutdown(shutdown_semaphore);
+
+				Thread::waitForCompletion(h);
+			}
+			else
+			{
+				shutdown_thread(NULL);
+			}
+
+			// Do not put it into separate shutdown thread - during shutdown of TraceManager
+			// PluginManager wants to lock a mutex, which is sometimes already locked in current thread
+			TraceManager::shutdown();
+			Mapping::shutdownIpc();
 		}
 
-		ThreadContextHolder tdbb;
-
-		EDS::Manager::shutdown();
-
-		ULONG attach_count, database_count, svc_count;
-		JRD_enum_attachments(NULL, attach_count, database_count, svc_count);
-
-		if (attach_count > 0 || svc_count > 0)
-		{
-			gds__log("Shutting down the server with %d active connection(s) to %d database(s), "
-					 "%d active service(s)",
-				attach_count, database_count, svc_count);
-		}
-
-		if (reason == fb_shutrsn_exit_called)
-		{
-			// Starting threads may fail when task is going to close.
-			// This happens at least with some microsoft C runtimes.
-			// If people wish to have timeout, they should better call fb_shutdown() themselves.
-			// Therefore:
-			timeout = 0;
-		}
-
-		if (timeout)
-		{
-			Semaphore shutdown_semaphore;
-
-			Thread::Handle h;
-			Thread::start(shutdown_thread, &shutdown_semaphore, THREAD_medium, &h);
-
-			if (!shutdown_semaphore.tryEnter(0, timeout))
-				waitForShutdown(shutdown_semaphore);
-
-			Thread::waitForCompletion(h);
-		}
-		else
-		{
-			shutdown_thread(NULL);
-		}
-
-		// Do not put it into separate shutdown thread - during shutdown of TraceManager
-		// PluginManager wants to lock a mutex, which is sometimes already locked in current thread
-		TraceManager::shutdown();
-		Mapping::shutdownIpc();
+		// Wait for completion of all attacment shutdown threads
+		shutThreadCollect->join();
 	}
 	catch (const Exception& ex)
 	{
@@ -8646,22 +8663,26 @@ namespace
 		ThreadModuleRef thdRef(attachmentShutdownThread, &engineShutdown);
 #endif
 
+		AttShutParams* params = static_cast<AttShutParams*>(arg);
+		AttachmentsRefHolder* attachments = params->attachments;
+		Thread::Handle th = params->thrHandle;
+		fb_assert(th);
+
 		try
 		{
-			MutexLockGuard guard(shutdownMutex, FB_FUNCTION);
-			if (engineShutdown)
-			{
-				// Shutdown was done, all attachmnets are gone
-				return 0;
-			}
+			shutThreadCollect->running(th);
+			params->thdStartedSem.release();
 
-			shutdownAttachments(static_cast<AttachmentsRefHolder*>(arg), isc_att_shut_db_down);
+			MutexLockGuard guard(shutdownMutex, FB_FUNCTION);
+			if (!engineShutdown)
+				shutdownAttachments(attachments, isc_att_shut_db_down);
 		}
 		catch (const Exception& ex)
 		{
 			iscLogException("attachmentShutdownThread", ex);
 		}
 
+		shutThreadCollect->ending(th);
 		return 0;
 	}
 } // anonymous namespace
@@ -9477,13 +9498,18 @@ void JRD_shutdown_attachment(Attachment* attachment)
 		fb_assert(attachment->att_flags & ATT_shutdown);
 
 		MemoryPool& pool = *getDefaultMemoryPool();
-		AttachmentsRefHolder* queue = FB_NEW_POOL(pool) AttachmentsRefHolder(pool);
+		AutoPtr<AttachmentsRefHolder> queue(FB_NEW_POOL(pool) AttachmentsRefHolder(pool));
 
 		fb_assert(attachment->getStable());
 		attachment->getStable()->addRef();
 		queue->add(attachment->getStable());
 
-		Thread::start(attachmentShutdownThread, queue, THREAD_high);
+		AttShutParams params;
+		params.attachments = queue;
+		Thread::start(attachmentShutdownThread, &params, THREAD_high, &params.thrHandle);
+		queue.release();
+		shutThreadCollect->houseKeeping();
+		params.thdStartedSem.enter();
 	}
 	catch (const Exception&)
 	{} // no-op
@@ -9532,7 +9558,14 @@ void JRD_shutdown_attachments(Database* dbb)
 		}
 
 		if (queue.hasData())
-			Thread::start(attachmentShutdownThread, queue.release(), THREAD_high);
+		{
+			AttShutParams params;
+			params.attachments = queue;
+			Thread::start(attachmentShutdownThread, &params, THREAD_high, &params.thrHandle);
+			queue.release();
+			shutThreadCollect->houseKeeping();
+			params.thdStartedSem.enter();
+		}
 	}
 	catch (const Exception&)
 	{} // no-op
