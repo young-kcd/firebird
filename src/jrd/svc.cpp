@@ -77,6 +77,7 @@
 #include "../utilities/nbackup/nbkswi.h"
 #include "../jrd/trace/traceswi.h"
 #include "../jrd/val_proto.h"
+#include "../jrd/ThreadCollect.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -114,6 +115,7 @@
 
 
 using namespace Firebird;
+using namespace Jrd;
 
 const int SVC_user_dba			= 2;
 const int SVC_user_any			= 1;
@@ -132,62 +134,9 @@ namespace {
 	GlobalPtr<Mutex> globalServicesMutex;
 
 	// All that we need to shutdown service threads when shutdown in progress
-	typedef Array<Jrd::Service*> AllServices;
+	typedef Array<Service*> AllServices;
 	GlobalPtr<AllServices> allServices;	// protected by globalServicesMutex
 	volatile bool svcShutdown = false;
-
-	class ThreadCollect
-	{
-	public:
-		ThreadCollect(MemoryPool& p)
-			: threads(p)
-		{ }
-
-		void join()
-		{
-			// join threads to be sure they are gone when shutdown is complete
-			// no need locking something cause this is expected to run when services are closing
-			waitFor(threads);
-		}
-
-		void add(Thread::Handle& h)
-		{
-			// put thread into completion wait queue when it finished running
-			MutexLockGuard g(threadsMutex, FB_FUNCTION);
-			threads.add(h);
-		}
-
-		void houseKeeping()
-		{
-			if (!threads.hasData())
-				return;
-
-			// join finished threads
-			AllThreads t;
-			{ // mutex scope
-				MutexLockGuard g(threadsMutex, FB_FUNCTION);
-				t.assign(threads);
-				threads.clear();
-			}
-
-			waitFor(t);
-		}
-
-	private:
-		typedef Array<Thread::Handle> AllThreads;
-
-		static void waitFor(AllThreads& thr)
-		{
-			while (thr.hasData())
-			{
-				Thread::Handle h(thr.pop());
-				Thread::waitForCompletion(h);
-			}
-		}
-
-		AllThreads threads;
-		Mutex threadsMutex;
-	};
 
 	GlobalPtr<ThreadCollect> threadCollect;
 
@@ -199,8 +148,6 @@ namespace {
 
 } // anonymous namespace
 
-
-using namespace Jrd;
 
 Service::Validate::Validate(Service* svc)
 	: sharedGuard(globalServicesMutex, FB_FUNCTION)
@@ -1983,7 +1930,7 @@ THREAD_ENTRY_DECLARE Service::run(THREAD_ENTRY_PARAM arg)
 		svc->finish(SVC_finished);
 
 		if (thrHandle)
-			threadCollect->add(thrHandle);
+			threadCollect->ending(thrHandle);
 	}
 	catch (const Exception& ex)
 	{
