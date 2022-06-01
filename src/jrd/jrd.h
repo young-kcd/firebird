@@ -1029,6 +1029,37 @@ namespace Jrd {
 		BackgroundContextHolder& operator=(const BackgroundContextHolder&);
 	};
 
+	class AttachmentHolder
+	{
+	public:
+		static const unsigned ATT_LOCK_ASYNC			= 1;
+		static const unsigned ATT_DONT_LOCK				= 2;
+		static const unsigned ATT_NO_SHUTDOWN_CHECK		= 4;
+		static const unsigned ATT_NON_BLOCKING			= 8;
+
+		AttachmentHolder(thread_db* tdbb, StableAttachmentPart* sa, unsigned lockFlags, const char* from);
+		~AttachmentHolder();
+
+	private:
+		Firebird::RefPtr<StableAttachmentPart> sAtt;
+		bool async;			// async mutex should be locked instead normal
+		bool nolock; 		// if locked manually, no need to take lock recursively
+		bool blocking;		// holder instance is blocking other instances
+
+	private:
+		// copying is prohibited
+		AttachmentHolder(const AttachmentHolder&);
+		AttachmentHolder& operator =(const AttachmentHolder&);
+	};
+
+	class EngineContextHolder final : public ThreadContextHolder, private AttachmentHolder, private DatabaseContextHolder
+	{
+	public:
+		template <typename I>
+		EngineContextHolder(Firebird::CheckStatusWrapper* status, I* interfacePtr, const char* from,
+							unsigned lockFlags = 0);
+	};
+
 	class AstLockHolder : public Firebird::ReadLockGuard
 	{
 	public:
