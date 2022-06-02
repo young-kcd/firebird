@@ -64,6 +64,7 @@
 
 using MsgFormat::SafeArg;
 using namespace Firebird;
+using namespace Burp;
 
 
 // For service APIs the follow DB handle is a value stored
@@ -394,8 +395,8 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 	// Now go back and write all data
 
 	{
-	Jrd::Coordinator coord(getDefaultMemoryPool());
-	Firebird::BackupRelationTask task(tdgbl);
+	Coordinator coord(getDefaultMemoryPool());
+	BackupRelationTask task(tdgbl);
 
 	for (burp_rel* relation = tdgbl->relations; relation; relation = relation->rel_next)
 	{
@@ -409,9 +410,9 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 			if (!(tdgbl->gbl_sw_meta || tdgbl->skipRelation(relation->rel_name)))
 			{
 				task.SetRelation(relation);
-				coord.RunSync(&task);
+				coord.runSync(&task);
 
-				if (!task.GetResult(NULL))
+				if (!task.getResult(NULL))
 					BURP_exit_local(FINI_ERROR, tdgbl);
 			}
 		}
@@ -2011,7 +2012,7 @@ void put_relation( burp_rel* relation)
 	{
 		FOR(REQUEST_HANDLE tdgbl->handles_put_relation_req_handle3)
 			FIRST 1 P IN RDB$PAGES WITH P.RDB$RELATION_ID EQ relation->rel_id
-			AND P.RDB$PAGE_TYPE = 4
+			AND P.RDB$PAGE_TYPE = pag_pointer
 			SORTED BY DESCENDING P.RDB$PAGE_SEQUENCE
 			relation->rel_max_pp = P.RDB$PAGE_SEQUENCE;
 		END_FOR;
@@ -4388,7 +4389,7 @@ void write_user_privileges()
 
 } // namespace
 
-namespace Firebird {
+namespace Burp {
 
 /// class ReadRelationMeta
 
@@ -4827,4 +4828,4 @@ bool BackupRelationTask::tableReader(Item& item)
 	return true;
 }
 
-} // namespace Firebird
+} // namespace Burp

@@ -276,10 +276,10 @@ public:
 			delete *p;
 	}
 
-	bool Handler(WorkItem& _item);
-	bool GetWorkItem(WorkItem** pItem);
-	bool GetResult(IStatus* status);
-	int GetMaxWorkers();
+	bool handler(WorkItem& _item);
+	bool getWorkItem(WorkItem** pItem);
+	bool getResult(IStatus* status);
+	int getMaxWorkers();
 
 	class Item : public Task::WorkItem
 	{
@@ -439,7 +439,7 @@ private:
 	ULONG m_nextPP;
 };
 
-bool IndexCreateTask::Handler(WorkItem& _item)
+bool IndexCreateTask::handler(WorkItem& _item)
 {
 	Item* item = reinterpret_cast<Item*>(&_item);
 
@@ -739,7 +739,7 @@ bool IndexCreateTask::Handler(WorkItem& _item)
 	return true;
 }
 
-bool IndexCreateTask::GetWorkItem(WorkItem** pItem)
+bool IndexCreateTask::getWorkItem(WorkItem** pItem)
 {
 	Item* item = reinterpret_cast<Item*> (*pItem);
 
@@ -775,7 +775,7 @@ bool IndexCreateTask::GetWorkItem(WorkItem** pItem)
 	return item->m_inuse;
 }
 
-bool IndexCreateTask::GetResult(IStatus* status)
+bool IndexCreateTask::getResult(IStatus* status)
 {
 	if (status)
 	{
@@ -786,7 +786,7 @@ bool IndexCreateTask::GetResult(IStatus* status)
 	return m_status.isSuccess();
 }
 
-int IndexCreateTask::GetMaxWorkers()
+int IndexCreateTask::getMaxWorkers()
 {
 	const int parWorkers = m_items.getCount();
 	if (parWorkers == 1 || m_countPP == 0)
@@ -913,9 +913,9 @@ void IDX_create_index(thread_db* tdbb,
 		FbLocalStatus local_status;
 		fb_utils::init_status(&local_status);
 
-		coord.RunSync(&task);
+		coord.runSync(&task);
 
-		if (!task.GetResult(&local_status))
+		if (!task.getResult(&local_status))
 			local_status.raise();
 	}
 

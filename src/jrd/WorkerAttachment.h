@@ -43,16 +43,16 @@
 namespace Jrd 
 {
 
-class WrkStableAttachment : public SysStableAttachment
+class WorkerStableAttachment : public SysStableAttachment
 {
 public:
-	static WrkStableAttachment* create(FbStatusVector* status, Jrd::Database* dbb);
+	static WorkerStableAttachment* create(FbStatusVector* status, Jrd::Database* dbb);
 
 	void fini();
 
 private:
-	explicit WrkStableAttachment(FbStatusVector* status, Jrd::Attachment* att);
-	virtual ~WrkStableAttachment();
+	explicit WorkerStableAttachment(FbStatusVector* status, Jrd::Attachment* att);
+	virtual ~WorkerStableAttachment();
 };
 
 

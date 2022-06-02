@@ -27,9 +27,7 @@
 
 #include "../common/Task.h"
 
-using namespace Firebird;
-
-namespace Jrd {
+namespace Firebird {
 
 /// class WorkerThread
 
@@ -41,19 +39,11 @@ THREAD_ENTRY_DECLARE WorkerThread::workerThreadRoutine(THREAD_ENTRY_PARAM arg)
 
 WorkerThread* WorkerThread::start(Coordinator* coordinator)
 {
-	WorkerThread* thd = new WorkerThread(coordinator);
+	AutoPtr<WorkerThread> thd = new WorkerThread(coordinator);
 
-	try
-	{
-		Thread::start(WorkerThread::workerThreadRoutine, thd, THREAD_medium, &thd->m_thdHandle);
-	}
-	catch (const status_exception&)
-	{
-		delete thd;
-		throw;
-	}
+	Thread::start(WorkerThread::workerThreadRoutine, thd, THREAD_medium, &thd->m_thdHandle);
 
-	return thd;
+	return thd.release();
 }
 
 int WorkerThread::threadRoutine()
@@ -67,7 +57,7 @@ int WorkerThread::threadRoutine()
 
 		if (m_state == RUNNING && m_worker != NULL)
 		{
-			m_worker->Work(this);
+			m_worker->work(this);
 			m_worker = NULL;
 		}
 
@@ -83,7 +73,7 @@ int WorkerThread::threadRoutine()
 	return 0;
 }
 
-void WorkerThread::RunWorker(Worker* worker)
+void WorkerThread::runWorker(Worker* worker)
 {
 	fb_assert(m_worker == NULL);
 	fb_assert(m_state == IDLE);
@@ -93,7 +83,7 @@ void WorkerThread::RunWorker(Worker* worker)
 	m_waitSem.release();
 }
 
-bool WorkerThread::WaitForState(STATE state, int timeout)
+bool WorkerThread::waitForState(STATE state, int timeout)
 {
 	while (m_state != state) // || m_state == old_state - consume old signals ?
 	{
@@ -109,7 +99,7 @@ bool WorkerThread::WaitForState(STATE state, int timeout)
 	return (m_state == state);
 }
 
-void WorkerThread::Shutdown(bool wait)
+void WorkerThread::shutdown(bool wait)
 {
 	if (m_state == SHUTDOWN)
 		return;
@@ -128,7 +118,7 @@ void WorkerThread::Shutdown(bool wait)
 
 /// class Worker
 
-bool Worker::Work(WorkerThread* thd)
+bool Worker::work(WorkerThread* thd)
 {
 	fb_assert(m_state == READY);
 
@@ -140,10 +130,10 @@ bool Worker::Work(WorkerThread* thd)
 		if (m_thread && m_thread->getState() != WorkerThread::RUNNING)
 			break;
 
-		if (!m_task->GetWorkItem(&workItem))
+		if (!m_task->getWorkItem(&workItem))
 			break;
 
-		if (!m_task->Handler(*workItem))
+		if (!m_task->handler(*workItem))
 			break;
 	}
 
@@ -152,7 +142,7 @@ bool Worker::Work(WorkerThread* thd)
 	return true;
 }
 
-bool Worker::WaitFor(int timeout)
+bool Worker::waitFor(int timeout)
 {
 	if (m_state == IDLE)
 		return true;
@@ -160,7 +150,7 @@ bool Worker::WaitFor(int timeout)
 	if (m_thread == NULL)
 		return false;
 
-	m_thread->WaitForState(WorkerThread::IDLE, timeout);
+	m_thread->waitForState(WorkerThread::IDLE, timeout);
 	return (m_state == IDLE);
 }
 
@@ -172,14 +162,14 @@ Coordinator::~Coordinator()
 	MutexLockGuard guard(m_mutex, FB_FUNCTION);
 
 	for (WorkerThread** p = m_activeThreads.begin(); p < m_activeThreads.end(); p++)
-		(*p)->Shutdown(false);
+		(*p)->shutdown(false);
 
 	while (!m_activeThreads.isEmpty())
 	{
 		WorkerThread* thd = m_activeThreads.pop();
 		{
 			MutexUnlockGuard unlock(m_mutex, FB_FUNCTION);
-			thd->Shutdown(true);
+			thd->shutdown(true);
 		}
 		delete thd;
 	}
@@ -189,7 +179,7 @@ Coordinator::~Coordinator()
 		WorkerThread* thd = m_idleThreads.pop();
 		{
 			MutexUnlockGuard unlock(m_mutex, FB_FUNCTION);
-			thd->Shutdown(true);
+			thd->shutdown(true);
 		}
 		delete thd;
 	}
@@ -199,7 +189,7 @@ Coordinator::~Coordinator()
 		Worker* w = m_activeWorkers.back();
 
 		MutexUnlockGuard unlock(m_mutex, FB_FUNCTION);
-		w->WaitFor(-1);
+		w->waitFor(-1);
 	}
 
 	while (!m_idleWorkers.isEmpty())
@@ -209,9 +199,9 @@ Coordinator::~Coordinator()
 	}
 }
 
-void Coordinator::RunSync(Task* task)
+void Coordinator::runSync(Task* task)
 {
-	int cntWorkers = setupWorkers(task->GetMaxWorkers());
+	int cntWorkers = setupWorkers(task->getMaxWorkers());
 	if (cntWorkers < 1)
 		return;
 
@@ -228,14 +218,14 @@ void Coordinator::RunSync(Task* task)
 			Worker* w = getWorker();
 			taskWorkers.push(WorkerAndThd(w, thd));
 
-			w->SetTask(task);
-			thd->RunWorker(w);
+			w->setTask(task);
+			thd->runWorker(w);
 		}
 	}
 
 	// run syncronously
-	syncWorker->SetTask(task);
-	syncWorker->Work(NULL);
+	syncWorker->setTask(task);
+	syncWorker->work(NULL);
 
 	// wait for all workes
 	for (int i = 0; i < cntWorkers; i++)
@@ -243,8 +233,8 @@ void Coordinator::RunSync(Task* task)
 		WorkerAndThd& wt = taskWorkers[i];
 		if (wt.thread)
 		{
-			if (!wt.worker->Idle())
-				wt.thread->WaitForState(WorkerThread::IDLE, -1);
+			if (!wt.worker->isIdle())
+				wt.thread->waitForState(WorkerThread::IDLE, -1);
 
 			releaseThread(wt.thread);
 		}
@@ -301,7 +291,7 @@ WorkerThread* Coordinator::getThread()
 	{
 		thd = WorkerThread::start(this);
 		if (thd)
-			thd->WaitForState(WorkerThread::IDLE, -1);
+			thd->waitForState(WorkerThread::IDLE, -1);
 	}
 
 	if (thd)

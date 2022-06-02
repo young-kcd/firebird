@@ -25,8 +25,8 @@
  *
  */
 
-#ifndef JRD_TASK_H
-#define JRD_TASK_H
+#ifndef COMMON_TASK_H
+#define COMMON_TASK_H
 
 #include "firebird.h"
 #include "../common/classes/alloc.h"
@@ -35,10 +35,9 @@
 #include "../common/classes/semaphore.h"
 #include "../common/ThreadStart.h"
 
-namespace Jrd 
+namespace Firebird
 {
 
-class Task;
 class Worker;
 class Coordinator;
 class WorkerThread;
@@ -66,12 +65,12 @@ public:
 	};
 
 	// task item handler
-	virtual bool Handler(WorkItem&) = 0;
-	virtual bool GetWorkItem(WorkItem**) = 0;
-	virtual bool GetResult(Firebird::IStatus* status) = 0;
+	virtual bool handler(WorkItem&) = 0;
+	virtual bool getWorkItem(WorkItem**) = 0;
+	virtual bool getResult(IStatus* status) = 0;
 	
 	// evaluate task complexity and recommend number of parallel workers
-	virtual int GetMaxWorkers() { return 1; }
+	virtual int getMaxWorkers() { return 1; }
 };
 
 // Worker: handle work items, optionally uses separate thread
@@ -88,17 +87,16 @@ public:
 
 	virtual ~Worker() {}
 
-	void SetTask(Task* task)
+	void setTask(Task* task)
 	{
 		m_task = task;
 		m_state = READY;
 	}
 
-	bool Work(WorkerThread* thd);
+	bool work(WorkerThread* thd);
 
-	//void SignalStop();
-	bool Idle() const	{ return m_state == IDLE; };
-	bool WaitFor(int timeout = -1);
+	bool isIdle() const	{ return m_state == IDLE; };
+	bool waitFor(int timeout = -1);
 
 protected:
 	enum STATE {IDLE, READY, WORKING};
@@ -114,7 +112,7 @@ protected:
 class Coordinator
 {
 public:
-	Coordinator(Firebird::MemoryPool* pool) :
+	Coordinator(MemoryPool* pool) :
 		m_pool(pool),
 		m_workers(*m_pool),
 		m_idleWorkers(*m_pool),
@@ -125,9 +123,7 @@ public:
 	
 	~Coordinator();
 
-	// AddTask(Task)
-	
-	void RunSync(Task*);
+	void runSync(Task*);
 
 private:
 	struct WorkerAndThd
@@ -155,14 +151,14 @@ private:
 	WorkerThread* getThread();
 	void releaseThread(WorkerThread*);
 
-	Firebird::MemoryPool* m_pool;
-	Firebird::Mutex m_mutex;
-	Firebird::HalfStaticArray<Worker*, 8> m_workers;
-	Firebird::HalfStaticArray<Worker*, 8> m_idleWorkers;
-	Firebird::HalfStaticArray<Worker*, 8> m_activeWorkers;
+	MemoryPool* m_pool;
+	Mutex m_mutex;
+	HalfStaticArray<Worker*, 8> m_workers;
+	HalfStaticArray<Worker*, 8> m_idleWorkers;
+	HalfStaticArray<Worker*, 8> m_activeWorkers;
 	// todo: move to thread pool
-	Firebird::HalfStaticArray<WorkerThread*, 8> m_idleThreads;
-	Firebird::HalfStaticArray<WorkerThread*, 8> m_activeThreads;
+	HalfStaticArray<WorkerThread*, 8> m_idleThreads;
+	HalfStaticArray<WorkerThread*, 8> m_activeThreads;
 };
 
 
@@ -174,7 +170,7 @@ public:
 
 	~WorkerThread()
 	{
-		Shutdown(true);
+		shutdown(true);
 
 #ifdef WIN_NT
 		if (m_thdHandle != INVALID_HANDLE_VALUE)
@@ -184,9 +180,9 @@ public:
 
 	static WorkerThread* start(Coordinator*);
 
-	void RunWorker(Worker*);
-	bool WaitForState(STATE state, int timeout);
-	void Shutdown(bool wait);
+	void runWorker(Worker*);
+	bool waitForState(STATE state, int timeout);
+	void shutdown(bool wait);
 
 	STATE getState() const { return m_state; }
 
@@ -202,12 +198,12 @@ private:
 
 	Coordinator* const m_coordinator;
 	Worker* m_worker;
-	Firebird::Semaphore m_waitSem;		// idle thread waits on this semaphore to start work or go out
-	Firebird::Semaphore m_signalSem;	// semaphore is released when thread going idle
+	Semaphore m_waitSem;		// idle thread waits on this semaphore to start work or go out
+	Semaphore m_signalSem;	// semaphore is released when thread going idle
 	STATE m_state;
 	Thread::Handle m_thdHandle;
 };
 
 } // namespace Jrd
 
-#endif // JRD_TASK_H
+#endif // COMMON_TASK_H

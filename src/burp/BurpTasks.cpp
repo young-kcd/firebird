@@ -31,12 +31,11 @@
 #include "../common/classes/SafeArg.h"
 #include "../burp/burp_proto.h"
 #include "../burp/mvol_proto.h"
-//#include "../common/stuff.h"
-//#include "../jrd/align.h"
 
 using MsgFormat::SafeArg;
+using namespace Firebird;
 
-namespace Firebird
+namespace Burp
 {
 
 /// class IOBuffer
@@ -55,11 +54,6 @@ IOBuffer::IOBuffer(void* item, FB_SIZE_T size) :
 {
 	m_memory = new UCHAR[m_size];
 	m_aligned = m_memory;
-}
-
-IOBuffer::~IOBuffer()
-{
-	delete[] m_memory;
 }
 
 
@@ -163,10 +157,10 @@ void BackupRelationTask::SetRelation(burp_rel* relation)
 	m_readDone = false;
 	m_nextPP = 0;
 
-	m_metadata.setRelation(m_relation, GetMaxWorkers() > 2);
+	m_metadata.setRelation(m_relation, getMaxWorkers() > 2);
 }
 
-bool BackupRelationTask::Handler(WorkItem& _item)
+bool BackupRelationTask::handler(WorkItem& _item)
 {
 	Item* item = reinterpret_cast<Item*>(&_item);
 
@@ -201,7 +195,7 @@ bool BackupRelationTask::Handler(WorkItem& _item)
 	return false;
 }
 
-bool BackupRelationTask::GetWorkItem(BackupRelationTask::WorkItem** pItem)
+bool BackupRelationTask::getWorkItem(BackupRelationTask::WorkItem** pItem)
 {
 	Item* item = reinterpret_cast<Item*> (*pItem);
 
@@ -220,12 +214,14 @@ bool BackupRelationTask::GetWorkItem(BackupRelationTask::WorkItem** pItem)
 	if (item == NULL && !m_readDone)
 	{
 		for (Item** p = m_items.begin(); p < m_items.end(); p++)
+		{
 			if (!(*p)->m_inuse)
 			{
 				(*p)->m_inuse = true;
 				*pItem = item = *p;
 				break;
 			}
+		}
 	}
 	
 	if (!item)
@@ -256,12 +252,12 @@ bool BackupRelationTask::GetWorkItem(BackupRelationTask::WorkItem** pItem)
 	return (item && item->m_inuse);
 }
 
-bool BackupRelationTask::GetResult(IStatus* /*status*/)
+bool BackupRelationTask::getResult(IStatus* /*status*/)
 {
 	return !m_error;
 }
 
-int BackupRelationTask::GetMaxWorkers()
+int BackupRelationTask::getMaxWorkers()
 {
 	unsigned int readers = m_items.getCount() - 1;
 
@@ -274,8 +270,10 @@ int BackupRelationTask::GetMaxWorkers()
 IOBuffer* BackupRelationTask::getCleanBuffer(Item& item)
 {
 	while (!m_stop)
+	{
 		if (item.m_cleanSem.tryEnter(0, 200))
 			break;
+	}
 
 	if (m_stop)
 		return NULL;
@@ -414,8 +412,10 @@ BackupRelationTask* BackupRelationTask::getBackupTask(BurpGlobals* tdgbl)
 IOBuffer* BackupRelationTask::getDirtyBuffer()
 {
 	while (!m_stop)
+	{
 		if (m_dirtySem.tryEnter(0, 200))
 			break;
+	}
 
 	if (m_stop)
 		return NULL;
@@ -678,7 +678,7 @@ void RestoreRelationTask::SetRelation(BurpGlobals* tdgbl, burp_rel* relation)
 	m_metadata.setRelation(tdgbl, m_relation);
 }
 
-bool RestoreRelationTask::Handler(WorkItem& _item)
+bool RestoreRelationTask::handler(WorkItem& _item)
 {
 	Item* item = reinterpret_cast<Item*>(&_item);
 
@@ -715,7 +715,7 @@ bool RestoreRelationTask::Handler(WorkItem& _item)
 	return false;
 }
 
-bool RestoreRelationTask::GetWorkItem(WorkItem** pItem)
+bool RestoreRelationTask::getWorkItem(WorkItem** pItem)
 {
 	Item* item = reinterpret_cast<Item*> (*pItem);
 
@@ -735,12 +735,14 @@ bool RestoreRelationTask::GetWorkItem(WorkItem** pItem)
 	if (item == NULL && haveWork)
 	{
 		for (Item** p = m_items.begin(); p < m_items.end(); p++)
+		{
 			if (!(*p)->m_inuse && (!(*p)->m_reader || !m_readDone))
 			{
 				(*p)->m_inuse = true;
 				*pItem = item = *p;
 				break;
 			}
+		}
 	}
 
 	if (!item)
@@ -764,12 +766,12 @@ bool RestoreRelationTask::GetWorkItem(WorkItem** pItem)
 	return (item && item->m_inuse);
 }
 
-bool RestoreRelationTask::GetResult(IStatus* status)
+bool RestoreRelationTask::getResult(IStatus* status)
 {
 	return !m_error;
 }
 
-int RestoreRelationTask::GetMaxWorkers()
+int RestoreRelationTask::getMaxWorkers()
 {
 	return m_items.getCount();
 }
@@ -788,7 +790,7 @@ void RestoreRelationTask::verbRecs(FB_UINT64& records, bool total)
 	if (!total)
 		++records;
 
-	const FB_UINT64 verb = m_masterGbl->verboseInterval / GetMaxWorkers();
+	const FB_UINT64 verb = m_masterGbl->verboseInterval / getMaxWorkers();
 	if (records < verb && !total)
 		return;
 
@@ -946,8 +948,10 @@ bool RestoreRelationTask::freeItem(Item& item, bool commit)
 IOBuffer* RestoreRelationTask::getCleanBuffer()
 {
 	while (!m_stop)
+	{
 		if (m_cleanSem.tryEnter(0, 200))
 			break;
+	}
 
 	if (m_stop)
 		return NULL;
@@ -1086,7 +1090,7 @@ RestoreRelationTask::Item::EnsureUnlockBuffer::~EnsureUnlockBuffer()
 void RestoreRelationTask::ExcReadDone::stuffByException(StaticStatusVector& status) const throw()
 {
 	ISC_STATUS sv[] = {isc_arg_gds, isc_random, isc_arg_string,
-		(ISC_STATUS)(IPTR) "Unexpected call to Firebird::RestoreRelationTask::ExcReadDone::stuffException()", isc_arg_end};
+		(ISC_STATUS)(IPTR) "Unexpected call to RestoreRelationTask::ExcReadDone::stuffException()", isc_arg_end};
 
 	try
 	{
@@ -1100,7 +1104,7 @@ void RestoreRelationTask::ExcReadDone::stuffByException(StaticStatusVector& stat
 
 const char* RestoreRelationTask::ExcReadDone::what() const throw()
 {
-	return "Firebird::RestoreRelationTask::ExcReadDone";
+	return "RestoreRelationTask::ExcReadDone";
 }
 
 void RestoreRelationTask::ExcReadDone::raise()

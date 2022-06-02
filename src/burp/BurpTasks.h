@@ -34,15 +34,16 @@
 #include "../common/Task.h"
 #include "../common/UtilSvc.h"
 #include "../common/classes/array.h"
+#include "../common/classes/auto.h"
 #include "../common/classes/condition.h"
 #include "../common/classes/fb_atomic.h"
 
-namespace Firebird {
+namespace Burp {
 
 class ReadRelationMeta
 {
 public:
-	ReadRelationMeta() : 
+	ReadRelationMeta() :
 		m_blr(*getDefaultMemoryPool())
 	{
 		clear();
@@ -88,9 +89,9 @@ public:
 	void reset(const ReadRelationMeta* meta);
 	void clear();
 
-	void compile(Firebird::CheckStatusWrapper* status, IAttachment* db);
+	void compile(Firebird::CheckStatusWrapper* status, Firebird::IAttachment* db);
 	void setParams(ULONG loPP, ULONG hiPP);
-	void start(Firebird::CheckStatusWrapper* status, ITransaction* tran);
+	void start(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* tran);
 	void receive(Firebird::CheckStatusWrapper* status);
 	void release(Firebird::CheckStatusWrapper* status);
 
@@ -110,7 +111,7 @@ public:
 	}
 
 private:
-	struct INMSG
+	struct InMsg
 	{
 		ULONG loPP;
 		ULONG hiPP;
@@ -118,10 +119,10 @@ private:
 
 	const burp_rel* m_relation;
 	const ReadRelationMeta* m_meta;
-	INMSG m_inMgs;
+	InMsg m_inMgs;
 	Firebird::Array<UCHAR> m_outMsg;
 	SSHORT* m_eof;
-	IRequest* m_request;
+	Firebird::IRequest* m_request;
 };
 
 
@@ -137,7 +138,7 @@ public:
 	void setRelation(BurpGlobals* tdgbl, const burp_rel* relation);
 	void clear();
 
-	IBatch* createBatch(BurpGlobals* tdgbl, IAttachment* att);
+	Firebird::IBatch* createBatch(BurpGlobals* tdgbl, Firebird::IAttachment* att);
 
 //private:
 	bool prepareBatch(BurpGlobals* tdgbl);
@@ -183,8 +184,8 @@ public:
 	void reset(WriteRelationMeta* meta);
 	void clear();
 
-	void compile(BurpGlobals* tdgbl, IAttachment* att);
-	void send(BurpGlobals* tdgbl, ITransaction* tran, bool lastRec);
+	void compile(BurpGlobals* tdgbl, Firebird::IAttachment* att);
+	void send(BurpGlobals* tdgbl, Firebird::ITransaction* tran, bool lastRec);
 	void release();
 
 	ULONG getDataLength() const
@@ -197,7 +198,7 @@ public:
 		return m_inMsg.begin();
 	}
 
-	IBatch* getBatch() const
+	Firebird::IBatch* getBatch() const
 	{
 		return m_batch;
 	}
@@ -222,8 +223,8 @@ private:
 	WriteRelationMeta* m_meta;
 	Firebird::Array<UCHAR> m_inMsg;
 	Firebird::Array<UCHAR> m_batchMsg;
-	IBatch* m_batch;
-	IRequest* m_request;
+	Firebird::IBatch* m_batch;
+	Firebird::IRequest* m_request;
 	int m_recs;
 	bool m_resync;
 };
@@ -231,7 +232,7 @@ private:
 // forward declaration
 class IOBuffer;
 
-class BackupRelationTask : public Jrd::Task
+class BackupRelationTask : public Firebird::Task
 {
 public:
 	BackupRelationTask(BurpGlobals* tdgbl);
@@ -239,12 +240,12 @@ public:
 
 	void SetRelation(burp_rel* relation);
 
-	bool Handler(WorkItem& _item);
-	bool GetWorkItem(WorkItem** pItem);
-	bool GetResult(IStatus* status);
-	int GetMaxWorkers();
+	bool handler(WorkItem& _item);
+	bool getWorkItem(WorkItem** pItem);
+	bool getResult(Firebird::IStatus* status);
+	int getMaxWorkers();
 
-	class Item : public Task::WorkItem
+	class Item : public Firebird::Task::WorkItem
 	{
 	public:
 		Item(BackupRelationTask* task, bool writer) : WorkItem(task),
@@ -260,7 +261,7 @@ public:
 			m_buffer(NULL)
 		{}
 
-		BackupRelationTask* getBackupTask() const 
+		BackupRelationTask* getBackupTask() const
 		{
 			return reinterpret_cast<BackupRelationTask*> (m_task);
 		}
@@ -279,16 +280,16 @@ public:
 		bool m_writer;			// file writer or table reader
 		bool m_ownAttach;
 		BurpGlobals* m_gbl;
-		IAttachment* m_att;
-		ITransaction* m_tra;
+		Firebird::IAttachment* m_att;
+		Firebird::ITransaction* m_tra;
 		burp_rel* m_relation;
 		ReadRelationReq m_request;
 		ULONG m_ppSequence;		// PP to read
 
-		Mutex m_mutex;
-		HalfStaticArray<IOBuffer*, 2> m_cleanBuffers;
+		Firebird::Mutex m_mutex;
+		Firebird::HalfStaticArray<IOBuffer*, 2> m_cleanBuffers;
 		IOBuffer* m_buffer;
-		Semaphore m_cleanSem;
+		Firebird::Semaphore m_cleanSem;
 	};
 
 	static BackupRelationTask* getBackupTask(BurpGlobals* tdgbl);
@@ -304,7 +305,7 @@ public:
 		return m_stop;
 	}
 
-	Mutex burpOutMutex;
+	Firebird::Mutex burpOutMutex;
 private:
 	void initItem(BurpGlobals* tdgbl, Item& item);
 	void freeItem(Item& item);
@@ -325,19 +326,19 @@ private:
 	bool m_readDone;		// true when all readers are done
 	ULONG m_nextPP;
 
-	Mutex m_mutex;
-	HalfStaticArray<Item*, 8> m_items;
+	Firebird::Mutex m_mutex;
+	Firebird::HalfStaticArray<Item*, 8> m_items;
 	ISC_STATUS_ARRAY m_status;
 	volatile bool m_stop;
 	bool m_error;
 
-	HalfStaticArray<IOBuffer*, 16> m_buffers;
-	HalfStaticArray<IOBuffer*, 8> m_dirtyBuffers;
-	Semaphore m_dirtySem;
+	Firebird::HalfStaticArray<IOBuffer*, 16> m_buffers;
+	Firebird::HalfStaticArray<IOBuffer*, 8> m_dirtyBuffers;
+	Firebird::Semaphore m_dirtySem;
 };
 
 
-class RestoreRelationTask : public Jrd::Task
+class RestoreRelationTask : public Firebird::Task
 {
 public:
 	RestoreRelationTask(BurpGlobals* tdgbl);
@@ -345,12 +346,12 @@ public:
 
 	void SetRelation(BurpGlobals* tdgbl, burp_rel* relation);
 
-	bool Handler(WorkItem& _item);
-	bool GetWorkItem(WorkItem** pItem);
-	bool GetResult(IStatus* status);
-	int GetMaxWorkers();
+	bool handler(WorkItem& _item);
+	bool getWorkItem(WorkItem** pItem);
+	bool getResult(Firebird::IStatus* status);
+	int getMaxWorkers();
 
-	class Item : public Task::WorkItem
+	class Item : public Firebird::Task::WorkItem
 	{
 	public:
 		Item(RestoreRelationTask* task, bool reader) : WorkItem(task),
@@ -383,20 +384,20 @@ public:
 		bool m_reader;			// file reader or table writer
 		bool m_ownAttach;
 		BurpGlobals* m_gbl;
-		IAttachment* m_att;
-		ITransaction* m_tra;
+		Firebird::IAttachment* m_att;
+		Firebird::ITransaction* m_tra;
 		burp_rel* m_relation;
 		WriteRelationReq m_request;
 
-		Mutex m_mutex;
+		Firebird::Mutex m_mutex;
 		IOBuffer* m_buffer;
 	};
 
-	class ExcReadDone : public Exception
+	class ExcReadDone : public Firebird::Exception
 	{
 	public:
-		ExcReadDone() throw() : Exception() { }
-		virtual void stuffByException(StaticStatusVector& status_vector) const throw();
+		ExcReadDone() throw() : Firebird::Exception() { }
+		virtual void stuffByException(Firebird::StaticStatusVector& status_vector) const throw();
 		virtual const char* what() const throw();
 		static void raise();
 	};
@@ -425,7 +426,7 @@ public:
 	// commit and detach all worker connections
 	bool finish();
 
-	Mutex burpOutMutex;
+	Firebird::Mutex burpOutMutex;
 private:
 	void initItem(BurpGlobals* tdgbl, Item& item);
 	bool freeItem(Item& item, bool commit);
@@ -452,19 +453,19 @@ private:
 	int m_writers;			// number of active writers, could be less than items allocated
 	bool m_readDone;		// all records was read
 
-	Mutex m_mutex;
-	HalfStaticArray<Item*, 8> m_items;
+	Firebird::Mutex m_mutex;
+	Firebird::HalfStaticArray<Item*, 8> m_items;
 	ISC_STATUS_ARRAY m_status;
 	volatile bool m_stop;
 	bool m_error;
 	Firebird::AtomicCounter m_records;		// records restored for the current relation
 	FB_UINT64 m_verbRecs;					// last records count reported
 
-	HalfStaticArray<IOBuffer*, 16> m_buffers;
-	HalfStaticArray<IOBuffer*, 16> m_cleanBuffers;
-	HalfStaticArray<IOBuffer*, 16> m_dirtyBuffers;
-	Semaphore m_cleanSem;
-	Condition m_dirtyCond;
+	Firebird::HalfStaticArray<IOBuffer*, 16> m_buffers;
+	Firebird::HalfStaticArray<IOBuffer*, 16> m_cleanBuffers;
+	Firebird::HalfStaticArray<IOBuffer*, 16> m_dirtyBuffers;
+	Firebird::Semaphore m_cleanSem;
+	Firebird::Condition m_dirtyCond;
 };
 
 
@@ -472,27 +473,25 @@ class IOBuffer
 {
 public:
 	IOBuffer(void*, FB_SIZE_T size);
-	~IOBuffer();
-
 
 	UCHAR* getBuffer() const
 	{
 		return m_aligned;
 	}
-	
+
 	FB_SIZE_T getSize() const
-	{ 
-		return m_size; 
+	{
+		return m_size;
 	}
-	
+
 	FB_SIZE_T getRecs() const
-	{ 
-		return m_recs; 
+	{
+		return m_recs;
 	}
-	
+
 	FB_SIZE_T getUsed() const
-	{ 
-		return m_used; 
+	{
+		return m_used;
 	}
 
 	void setUsed(FB_SIZE_T used)
@@ -562,7 +561,7 @@ public:
 
 private:
 	void* const m_item;
-	UCHAR* m_memory;
+	Firebird::AutoPtr<UCHAR> m_memory;
 	UCHAR* m_aligned;
 	const FB_SIZE_T m_size;
 	FB_SIZE_T m_used;
@@ -570,7 +569,7 @@ private:
 	IOBuffer* m_next;
 	bool m_linked;
 	int m_locked;
-	Mutex m_mutex;
+	Firebird::Mutex m_mutex;
 };
 
 
@@ -606,6 +605,6 @@ private:
 	BurpGlobals* m_tdgbl;
 };
 
-} // namespace Firebird
+} // namespace Burp
 
 #endif // BURP_TASKS_H

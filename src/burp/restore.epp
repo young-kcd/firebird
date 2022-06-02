@@ -65,6 +65,7 @@
 
 using MsgFormat::SafeArg;
 using namespace Firebird;
+using namespace Burp;
 
 
 //  For service APIs the follow DB handle is a value stored
@@ -147,7 +148,7 @@ bool	get_pub_table(BurpGlobals* tdgbl);
 bool	get_ref_constraint(BurpGlobals* tdgbl);
 bool	get_rel_constraint(BurpGlobals* tdgbl);
 bool	get_relation(BurpGlobals* tdgbl);
-bool	get_relation_data(BurpGlobals* tdgbl, Jrd::Coordinator* coord, RestoreRelationTask* task);
+bool	get_relation_data(BurpGlobals* tdgbl, Coordinator* coord, RestoreRelationTask* task);
 bool	get_sql_roles(BurpGlobals* tdgbl);
 bool	get_mapping(BurpGlobals* tdgbl);
 bool	get_db_creator(BurpGlobals* tdgbl);
@@ -8479,7 +8480,7 @@ bool get_rel_constraint(BurpGlobals* tdgbl)
 	return true;
 }
 
-bool get_relation_data(BurpGlobals* tdgbl, Jrd::Coordinator* coord, RestoreRelationTask* task)
+bool get_relation_data(BurpGlobals* tdgbl, Coordinator* coord, RestoreRelationTask* task)
 {
 /**************************************
  *
@@ -8544,9 +8545,9 @@ bool get_relation_data(BurpGlobals* tdgbl, Jrd::Coordinator* coord, RestoreRelat
 			else
 			{
 				task->SetRelation(tdgbl, relation);
-				coord->RunSync(task);
+				coord->runSync(task);
 				task->verbRecsFinal();
-				if (!task->GetResult(NULL))
+				if (!task->getResult(NULL))
 					BURP_exit_local(FINI_ERROR, tdgbl);
 				record = task->getLastRecord();
 			}
@@ -10529,48 +10530,48 @@ rec_type ignore_data(BurpGlobals* tdgbl, burp_rel* relation)
 
 	try
 	{
-	while (true)
-	{
-		if (get(tdgbl) != att_data_length)
-			BURP_error_redirect(NULL, 39);
-			// msg 39 expected record length
-		USHORT len = (USHORT) get_int32(tdgbl);
-		if (tdgbl->gbl_sw_transportable)
+		while (true)
 		{
-			if (get(tdgbl) != att_xdr_length)
-				BURP_error_redirect(NULL, 55);
-				// msg 55 Expected XDR record length
-			else
-				len = (USHORT) get_int32(tdgbl);
-		}
-		if (get(tdgbl) != att_data_data)
-			BURP_error_redirect(NULL, 41);
-			// msg 41 expected data attribute
-		if (len)
-		{
-			if (tdgbl->gbl_sw_compress)
+			if (get(tdgbl) != att_data_length)
+				BURP_error_redirect(NULL, 39);
+				// msg 39 expected record length
+			USHORT len = (USHORT) get_int32(tdgbl);
+			if (tdgbl->gbl_sw_transportable)
 			{
-				UCHAR* buffer = (UCHAR*) BURP_alloc (len);
-				decompress (tdgbl, buffer, len);
-				BURP_free (buffer);
+				if (get(tdgbl) != att_xdr_length)
+					BURP_error_redirect(NULL, 55);
+					// msg 55 Expected XDR record length
+				else
+					len = (USHORT) get_int32(tdgbl);
 			}
-			else
-				get_skip(tdgbl, len);
-		}
-		++records;
+			if (get(tdgbl) != att_data_data)
+				BURP_error_redirect(NULL, 41);
+				// msg 41 expected data attribute
+			if (len)
+			{
+				if (tdgbl->gbl_sw_compress)
+				{
+					UCHAR* buffer = (UCHAR*) BURP_alloc (len);
+					decompress (tdgbl, buffer, len);
+					BURP_free (buffer);
+				}
+				else
+					get_skip(tdgbl, len);
+			}
+			++records;
 
-		while (get_record(&record, tdgbl))
-		{
-			if (record == rec_blob)
-				ignore_blob(tdgbl);
-			else if (record == rec_array)
-				ignore_array (tdgbl, relation);
-			else
+			while (get_record(&record, tdgbl))
+			{
+				if (record == rec_blob)
+					ignore_blob(tdgbl);
+				else if (record == rec_array)
+					ignore_array (tdgbl, relation);
+				else
+					break;
+			}
+			if (record != rec_data)
 				break;
 		}
-		if (record != rec_data)
-			break;
-	}
 	}
 	catch (RestoreRelationTask::ExcReadDone&)
 	{
@@ -10940,7 +10941,7 @@ bool restore(BurpGlobals* tdgbl, Firebird::IProvider* provider, const TEXT* file
 	bool flag = false;
 	rec_type record;
 
-	Jrd::Coordinator coord(getDefaultMemoryPool());
+	Coordinator coord(getDefaultMemoryPool());
 	RestoreRelationTask task(tdgbl);
 
 	while (get_record(&record, tdgbl) != rec_end)
@@ -11923,7 +11924,7 @@ void fix_system_generators(BurpGlobals* tdgbl)
 
 } // namespace
 
-namespace Firebird
+namespace Burp
 {
 
 /// class WriteRelationMeta
@@ -12978,4 +12979,4 @@ bool RestoreRelationTask::tableWriter(BurpGlobals* tdgbl, Item& item)
 	return true;
 }
 
-} // namespace Firebird
+} // namespace Burp

@@ -70,6 +70,7 @@
 
 using MsgFormat::SafeArg;
 using Firebird::FbLocalStatus;
+using namespace Burp;
 
 const int open_mask	= 0666;
 
@@ -837,7 +838,7 @@ void MVOL_read(BurpGlobals* tdgbl)
 	if (!tdgbl->master)
 	{
 		// hvlad: it will throw ExcReadDone exception when there is nothing to read
-		Firebird::RestoreRelationTask::renewBuffer(tdgbl);
+		RestoreRelationTask::renewBuffer(tdgbl);
 		tdgbl->mvol_io_ptr = tdgbl->mvol_io_buffer;
 		return;
 	}
@@ -1101,7 +1102,7 @@ void MVOL_write(BurpGlobals* tdgbl)
 {
 	if (!tdgbl->master)
 	{
-		Firebird::BackupRelationTask::renewBuffer(tdgbl);
+		BackupRelationTask::renewBuffer(tdgbl);
 		return;
 	}
 
@@ -1123,7 +1124,7 @@ UCHAR mvol_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 
 	if (!tdgbl->master)
 	{
-		Firebird::BackupRelationTask::renewBuffer(tdgbl);
+		BackupRelationTask::renewBuffer(tdgbl);
 		*(*io_ptr)++ = c;
 		(*io_cnt)--;
 		return c;
@@ -1350,7 +1351,7 @@ const UCHAR* MVOL_write_block(BurpGlobals* tdgbl, const UCHAR* ptr, ULONG count)
 		{
 			if (!tdgbl->master)
 			{
-				Firebird::BackupRelationTask::renewBuffer(tdgbl);
+				BackupRelationTask::renewBuffer(tdgbl);
 			}
 			else
 			{

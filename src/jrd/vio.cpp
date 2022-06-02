@@ -319,10 +319,10 @@ public:
 		ULONG m_lastPP;
 	};
 
-	bool Handler(WorkItem& _item);
+	bool handler(WorkItem& _item);
 
-	bool GetWorkItem(WorkItem** pItem);
-	bool GetResult(IStatus* status)
+	bool getWorkItem(WorkItem** pItem);
+	bool getResult(IStatus* status)
 	{
 		if (status)
 		{
@@ -333,7 +333,7 @@ public:
 		return m_status.isSuccess();
 	}
 
-	int GetMaxWorkers()
+	int getMaxWorkers()
 	{ 
 		return m_items.getCount(); 
 	}
@@ -401,7 +401,7 @@ private:
 };
 
 
-bool SweepTask::Handler(WorkItem& _item)
+bool SweepTask::handler(WorkItem& _item)
 {
 	Item* item = reinterpret_cast<Item*>(&_item);
 
@@ -501,7 +501,7 @@ bool SweepTask::Handler(WorkItem& _item)
 	return false;
 }
 
-bool SweepTask::GetWorkItem(WorkItem** pItem)
+bool SweepTask::getWorkItem(WorkItem** pItem)
 {
 	MutexLockGuard guard(m_mutex, FB_FUNCTION);
 
@@ -4299,9 +4299,9 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 		FbLocalStatus local_status;
 		local_status->init();
 
-		coord.RunSync(&sweep);
+		coord.runSync(&sweep);
 
-		if (!sweep.GetResult(&local_status))
+		if (!sweep.getResult(&local_status))
 			local_status.raise();
 
 		return true;

@@ -4151,9 +4151,6 @@ static ULONG fast_load(thread_db* tdbb,
 
 	tdbb->tdbb_flags &= ~TDBB_no_cache_unwind;
 
-	// do some final housekeeping
-	//creation.sort.reset();
-
 	// If index flush fails, try to delete the index tree.
 	// If the index delete fails, just go ahead and punt.
 	try

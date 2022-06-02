@@ -45,9 +45,9 @@ using namespace Firebird;
 namespace Jrd {
 
 
-/// WrkStableAttachment
+/// class WorkerStableAttachment
 
-WrkStableAttachment::WrkStableAttachment(FbStatusVector* status, Jrd::Attachment* attachment) :
+WorkerStableAttachment::WorkerStableAttachment(FbStatusVector* status, Jrd::Attachment* attachment) :
 	SysStableAttachment(attachment)
 {
 	UserId user;
@@ -69,12 +69,12 @@ WrkStableAttachment::WrkStableAttachment(FbStatusVector* status, Jrd::Attachment
 	initDone();
 }
 
-WrkStableAttachment::~WrkStableAttachment()
+WorkerStableAttachment::~WorkerStableAttachment()
 {
 	fini();
 }
 
-WrkStableAttachment* WrkStableAttachment::create(FbStatusVector* status, Jrd::Database* dbb)
+WorkerStableAttachment* WorkerStableAttachment::create(FbStatusVector* status, Jrd::Database* dbb)
 {
 	Attachment* attachment = NULL;
 	try
@@ -83,7 +83,7 @@ WrkStableAttachment* WrkStableAttachment::create(FbStatusVector* status, Jrd::Da
 		attachment->att_filename = dbb->dbb_filename;
 		attachment->att_flags |= ATT_worker;
 
-		WrkStableAttachment* sAtt = FB_NEW WrkStableAttachment(status, attachment);
+		WorkerStableAttachment* sAtt = FB_NEW WorkerStableAttachment(status, attachment);
 		return sAtt;
 	}
 	catch (const Exception& ex)
@@ -97,7 +97,7 @@ WrkStableAttachment* WrkStableAttachment::create(FbStatusVector* status, Jrd::Da
 	return NULL;
 }
 
-void WrkStableAttachment::fini()
+void WorkerStableAttachment::fini()
 {
 	Attachment* attachment = NULL;
 	{
@@ -377,7 +377,7 @@ StableAttachmentPart* WorkerAttachment::doAttach(FbStatusVector* status, Databas
 	StableAttachmentPart* sAtt = NULL;
 
 	if (Config::getServerMode() == MODE_SUPER)
-		sAtt = WrkStableAttachment::create(status, dbb);
+		sAtt = WorkerStableAttachment::create(status, dbb);
 	else
 	{
 		ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
@@ -408,7 +408,7 @@ void WorkerAttachment::doDetach(FbStatusVector* status, StableAttachmentPart* sA
 	// if (att->att_flags & ATT_system)
 	if (Config::getServerMode() == MODE_SUPER)
 	{
-		WrkStableAttachment* wrk = reinterpret_cast<WrkStableAttachment*>(sAtt);
+		WorkerStableAttachment* wrk = reinterpret_cast<WorkerStableAttachment*>(sAtt);
 		wrk->fini();
 	}
 	else

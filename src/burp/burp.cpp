@@ -86,6 +86,7 @@
 
 using namespace Firebird;
 using MsgFormat::SafeArg;
+using namespace Burp;
 
 const char* fopen_write_type = "w";
 const char* fopen_read_type	 = "r";
