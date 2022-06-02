@@ -698,6 +698,8 @@ void Sort::releaseBuffer()
 	}
 	else
 		delete[] m_memory;
+
+	m_flags &= ~scb_reuse_buffer;
 }
 
 
