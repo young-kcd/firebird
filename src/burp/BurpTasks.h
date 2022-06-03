@@ -561,7 +561,7 @@ public:
 
 private:
 	void* const m_item;
-	Firebird::AutoPtr<UCHAR> m_memory;
+	Firebird::Array<UCHAR> m_memory;
 	UCHAR* m_aligned;
 	const FB_SIZE_T m_size;
 	FB_SIZE_T m_used;

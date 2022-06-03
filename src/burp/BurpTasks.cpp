@@ -42,7 +42,7 @@ namespace Burp
 
 IOBuffer::IOBuffer(void* item, FB_SIZE_T size) :
 	m_item(item),
-	m_memory(NULL),
+	m_memory(*getDefaultMemoryPool(), size),
 	m_aligned(NULL),
 	m_size(size),
 	m_used(0),
@@ -52,8 +52,7 @@ IOBuffer::IOBuffer(void* item, FB_SIZE_T size) :
 	m_locked(0)
 
 {
-	m_memory = new UCHAR[m_size];
-	m_aligned = m_memory;
+	m_aligned = m_memory.getBuffer(m_size);
 }
 
 

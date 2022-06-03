@@ -39,9 +39,9 @@ THREAD_ENTRY_DECLARE WorkerThread::workerThreadRoutine(THREAD_ENTRY_PARAM arg)
 
 WorkerThread* WorkerThread::start(Coordinator* coordinator)
 {
-	AutoPtr<WorkerThread> thd = new WorkerThread(coordinator);
+	AutoPtr<WorkerThread> thd = FB_NEW WorkerThread(coordinator);
 
-	Thread::start(WorkerThread::workerThreadRoutine, thd, THREAD_medium, &thd->m_thdHandle);
+	Thread::start(workerThreadRoutine, thd, THREAD_medium, &thd->m_thdHandle);
 
 	return thd.release();
 }
