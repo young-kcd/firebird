@@ -22,6 +22,11 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
+    * Bugfix #7197
+        Segfault in Linux CS after successful detach from a database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix #7191
         gstat fails, but return 0 error code with incorrect databases.conf
       Contributor(s):
