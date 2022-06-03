@@ -299,12 +299,13 @@ class Database : public pool_alloc<type_dbb>
 		};
 
 		static Firebird::GlobalPtr<DbIdHash> g_hashTable;
-		static Firebird::GlobalPtr<Firebird::Mutex> g_mutex;
 
 	public:
 		static GlobalObjectHolder* init(const Firebird::string& id,
 										const Firebird::PathName& filename,
 										Firebird::RefPtr<const Firebird::Config> config);
+
+		int release() const override;
 
 		~GlobalObjectHolder();
 

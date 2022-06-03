@@ -47,6 +47,11 @@
 
 using namespace Firebird;
 
+namespace
+{
+	GlobalPtr<Mutex> glblObjectsMutex;
+}
+
 namespace Jrd
 {
 	bool Database::onRawDevice() const
@@ -493,11 +498,20 @@ namespace Jrd
 
 	// Database::GlobalObjectHolder class implementation
 
+	int Database::GlobalObjectHolder::release() const
+	{
+		// Release should be executed under glblObjectsMutex protection
+		// in order to modify reference counter & hash table atomically
+		MutexLockGuard guard(glblObjectsMutex, FB_FUNCTION);
+
+		return RefCounted::release();
+	}
+
 	Database::GlobalObjectHolder* Database::GlobalObjectHolder::init(const string& id,
 																	 const PathName& filename,
 																	 RefPtr<const Config> config)
 	{
-		MutexLockGuard guard(g_mutex, FB_FUNCTION);
+		MutexLockGuard guard(glblObjectsMutex, FB_FUNCTION);
 
 		Database::GlobalObjectHolder::DbId* entry = g_hashTable->lookup(id);
 		if (!entry)
@@ -512,17 +526,14 @@ namespace Jrd
 
 	Database::GlobalObjectHolder::~GlobalObjectHolder()
 	{
-		// here we cleanup what should not be globally protected
+		// dtor is executed under glblObjectsMutex protection
 		if (m_replMgr)
 			m_replMgr->shutdown();
-
-		MutexLockGuard guard(g_mutex, FB_FUNCTION);
 
 		Database::GlobalObjectHolder::DbId* entry = g_hashTable->lookup(m_id);
 		if (!g_hashTable->remove(m_id))
 			fb_assert(false);
 
-		// these objects should be deleted under g_mutex protection
 		m_lockMgr = nullptr;
 		m_eventMgr = nullptr;
 		m_replMgr = nullptr;
@@ -571,6 +582,5 @@ namespace Jrd
 
 	GlobalPtr<Database::GlobalObjectHolder::DbIdHash>
 		Database::GlobalObjectHolder::g_hashTable;
-	GlobalPtr<Mutex> Database::GlobalObjectHolder::g_mutex;
 
 } // namespace
