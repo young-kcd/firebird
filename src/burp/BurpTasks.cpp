@@ -175,7 +175,7 @@ bool BackupRelationTask::handler(WorkItem& _item)
 
 		BurpGlobals gbl(m_masterGbl->uSvc);
 		gbl.master = false;
-		
+
 		BurpGblHolder holder(&gbl, item);
 
 		initItem(&gbl, *item);
@@ -222,7 +222,7 @@ bool BackupRelationTask::getWorkItem(BackupRelationTask::WorkItem** pItem)
 			}
 		}
 	}
-	
+
 	if (!item)
 		return false;
 
@@ -322,7 +322,7 @@ IOBuffer* BackupRelationTask::renewBuffer(BurpGlobals* tdgbl)
 
 	IOBuffer* oldBuf = item->m_buffer;
 	IOBuffer* newBuf = task->getCleanBuffer(*item);
-	//fb_assert(newBuf);
+
 	if (!newBuf)
 	{
 		if (oldBuf && task->m_stop)
@@ -344,7 +344,7 @@ IOBuffer* BackupRelationTask::renewBuffer(BurpGlobals* tdgbl)
 		{
 			used = tdgbl->mvol_io_data - tdgbl->mvol_io_buffer;
 			oldBuf->setUsed(used);
-			
+
 			used = newBuf->getSize() - used;
 			memcpy(p, tdgbl->mvol_io_data, used);
 		}

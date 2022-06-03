@@ -68,7 +68,7 @@ public:
 	virtual bool handler(WorkItem&) = 0;
 	virtual bool getWorkItem(WorkItem**) = 0;
 	virtual bool getResult(IStatus* status) = 0;
-	
+
 	// evaluate task complexity and recommend number of parallel workers
 	virtual int getMaxWorkers() { return 1; }
 };
@@ -120,7 +120,7 @@ public:
 		m_idleThreads(*m_pool),
 		m_activeThreads(*m_pool)
 	{}
-	
+
 	~Coordinator();
 
 	void runSync(Task*);
@@ -192,7 +192,7 @@ private:
 		m_worker(NULL),
 		m_state(STARTING)
 	{}
-	
+
 	static THREAD_ENTRY_DECLARE workerThreadRoutine(THREAD_ENTRY_PARAM);
 	int threadRoutine();
 

@@ -77,7 +77,7 @@ void WorkerThread::runWorker(Worker* worker)
 {
 	fb_assert(m_worker == NULL);
 	fb_assert(m_state == IDLE);
-	
+
 	m_worker = worker;
 	m_state = RUNNING;
 	m_waitSem.release();

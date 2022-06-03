@@ -1500,9 +1500,6 @@ void put_data(burp_rel* relation, ReadRelationReq* request)
 	}
 	count++; // eof
 
-	//BURP_verbose(142, relation->rel_name);
-	//// msg 142  writing data for relation %s
-
 	FbLocalStatus status;
 	request->start(&status, gds_trans);
 	if (status->getState() & IStatus::STATE_ERRORS)
@@ -1543,9 +1540,6 @@ void put_data(burp_rel* relation, ReadRelationReq* request)
 			break;
 
 		records++;
-		// Verbose records
-		//if ((records % tdgbl->verboseInterval) == 0)
-		//	BURP_verbose(108, SafeArg() << records);
 
 		put(tdgbl, (UCHAR) rec_data);
 		put_int32(att_data_length, record_length);
@@ -1591,13 +1585,6 @@ void put_data(burp_rel* relation, ReadRelationReq* request)
 
 	if (xdr_buffer.lstr_address)
 		BURP_free(xdr_buffer.lstr_address);
-
-	//BURP_verbose(108, SafeArg() << records);
-	//// msg 108 %ld records written
-
-	//if (request->release(status_vector))
-	//	BURP_error_redirect(status_vector, 30);
-	//// msg 30 isc_release_request failed
 }
 
 
