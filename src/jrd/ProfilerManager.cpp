@@ -28,7 +28,10 @@
 #include "../jrd/ids.h"
 #include "../jrd/recsrc/Cursor.h"
 #include "../jrd/dpm_proto.h"
+#include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
+#include "../jrd/pag_proto.h"
+#include "../jrd/tra_proto.h"
 
 using namespace Jrd;
 using namespace Firebird;
@@ -37,11 +40,137 @@ using namespace Firebird;
 //--------------------------------------
 
 
+namespace
+{
+	class ProfilerIpc final : public IpcObject
+	{
+	public:
+		enum class Tag : UCHAR
+		{
+			NOP = 0,
+
+			RESPONSE,
+			EXCEPTION,
+
+			CANCEL_SESSION,
+			DISCARD,
+			FINISH_SESSION,
+			FLUSH,
+			PAUSE_SESSION,
+			RESUME_SESSION,
+			START_SESSION
+		};
+
+		class Guard
+		{
+		public:
+			explicit Guard(ProfilerIpc* ipc)
+				: sharedMemory(ipc->sharedMemory)
+			{
+				sharedMemory->mutexLock();
+			}
+
+			~Guard()
+			{
+				sharedMemory->mutexUnlock();
+			}
+
+			Guard(const Guard&) = delete;
+			Guard& operator=(const Guard&) = delete;
+
+		private:
+			SharedMemoryBase* const sharedMemory;
+		};
+
+		struct Header : public MemoryHeader
+		{
+			event_t serverEvent;
+			event_t clientEvent;
+			USHORT bufferSize;
+			Tag tag;
+			alignas(FB_ALIGNMENT) UCHAR buffer[4096];
+		};
+
+		static const USHORT VERSION = 1;
+
+	public:
+		ProfilerIpc(thread_db* tdbb, MemoryPool& pool, AttNumber aAttachmentId);
+
+		ProfilerIpc(const ProfilerIpc&) = delete;
+		ProfilerIpc& operator=(const ProfilerIpc&) = delete;
+
+	public:
+		bool initialize(SharedMemoryBase* sm, bool init) override;
+		void mutexBug(int osErrorCode, const char* text) override;
+
+	public:
+		template <typename Input, typename Output>
+		void sendAndReceive(thread_db* tdbb, Tag tag, const Input* in, Output* out)
+		{
+			internalSendAndReceive(tdbb, tag, in, sizeof(*in), out, sizeof(*out));
+		}
+
+		template <typename Input>
+		void send(thread_db* tdbb, Tag tag, const Input* in)
+		{
+			internalSendAndReceive(tdbb, tag, in, sizeof(*in), nullptr, 0);
+		}
+
+	private:
+		void internalSendAndReceive(thread_db* tdbb, Tag tag, const void* in, unsigned inSize, void* out, unsigned outSize);
+
+	public:
+		AutoPtr<SharedMemory<Header>> sharedMemory;
+		AttNumber attachmentId;
+	};
+}	// anonymous namespace
+
+class Jrd::ProfilerListener final
+{
+public:
+	explicit ProfilerListener(thread_db* tdbb);
+	~ProfilerListener();
+
+	ProfilerListener(const ProfilerListener&) = delete;
+	ProfilerListener& operator=(const ProfilerListener&) = delete;
+
+public:
+	void exceptionHandler(const Firebird::Exception& ex, ThreadFinishSync<ProfilerListener*>::ThreadRoutine* routine);
+
+private:
+	void watcherThread();
+
+	static void watcherThread(ProfilerListener* listener)
+	{
+		listener->watcherThread();
+	}
+
+	void processCommand(thread_db* tdbb);
+
+private:
+	Attachment* const attachment;
+	Firebird::Semaphore startupSemaphore;
+	ThreadFinishSync<ProfilerListener*> cleanupSync;
+	Firebird::AutoPtr<ProfilerIpc> ipc;
+	bool exiting = false;
+};
+
+
+//--------------------------------------
+
+
 IExternalResultSet* ProfilerPackage::discardProcedure(ThrowStatusExceptionWrapper* /*status*/,
-	IExternalContext* context, const void* in, void* out)
+	IExternalContext* context, const DiscardInput::Type* in, void* out)
 {
 	const auto tdbb = JRD_get_thread_data();
 	const auto attachment = tdbb->getAttachment();
+
+	if (in->attachmentId != attachment->att_attachment_id)
+	{
+		ProfilerIpc ipc(tdbb, *getDefaultMemoryPool(), in->attachmentId);
+		ipc.send(tdbb, ProfilerIpc::Tag::DISCARD, in);
+		return nullptr;
+	}
 
 	const auto profilerManager = attachment->getProfilerManager(tdbb);
 
@@ -51,14 +180,20 @@ IExternalResultSet* ProfilerPackage::discardProcedure(ThrowStatusExceptionWrappe
 }
 
 IExternalResultSet* ProfilerPackage::flushProcedure(ThrowStatusExceptionWrapper* /*status*/,
-	IExternalContext* context, const void* in, void* out)
+	IExternalContext* context, const FlushInput::Type* in, void* out)
 {
 	const auto tdbb = JRD_get_thread_data();
 	const auto attachment = tdbb->getAttachment();
-	const auto transaction = tdbb->getTransaction();
 
+	if (in->attachmentId != attachment->att_attachment_id)
+	{
+		ProfilerIpc ipc(tdbb, *getDefaultMemoryPool(), in->attachmentId);
+		ipc.send(tdbb, ProfilerIpc::Tag::FLUSH, in);
+		return nullptr;
+	}
+
+	const auto transaction = tdbb->getTransaction();
 	const auto profilerManager = attachment->getProfilerManager(tdbb);
-	AutoSetRestore<bool> pauseProfiler(&profilerManager->paused, true);
 
 	profilerManager->flush(transaction->getInterface(true));
 
@@ -66,21 +201,22 @@ IExternalResultSet* ProfilerPackage::flushProcedure(ThrowStatusExceptionWrapper*
 }
 
 IExternalResultSet* ProfilerPackage::cancelSessionProcedure(ThrowStatusExceptionWrapper* /*status*/,
-	IExternalContext* context, const void* in, void* out)
+	IExternalContext* context, const CancelSessionInput::Type* in, void* out)
 {
 	const auto tdbb = JRD_get_thread_data();
 	const auto attachment = tdbb->getAttachment();
-	const auto transaction = tdbb->getTransaction();
 
+	if (in->attachmentId != attachment->att_attachment_id)
+	{
+		ProfilerIpc ipc(tdbb, *getDefaultMemoryPool(), in->attachmentId);
+		ipc.send(tdbb, ProfilerIpc::Tag::CANCEL_SESSION, in);
+		return nullptr;
+	}
+
+	const auto transaction = tdbb->getTransaction();
 	const auto profilerManager = attachment->getProfilerManager(tdbb);
 
-	if (profilerManager->currentSession)
-	{
-		LogLocalStatus status("Profiler cancelSession");
-
-		profilerManager->currentSession->pluginSession->cancel(&status);
-		profilerManager->currentSession = nullptr;
-	}
+	profilerManager->cancelSession();
 
 	return nullptr;
 }
@@ -90,19 +226,18 @@ IExternalResultSet* ProfilerPackage::finishSessionProcedure(ThrowStatusException
 {
 	const auto tdbb = JRD_get_thread_data();
 	const auto attachment = tdbb->getAttachment();
-	const auto transaction = tdbb->getTransaction();
 
-	const auto profilerManager = attachment->getProfilerManager(tdbb);
-	AutoSetRestore<bool> pauseProfiler(&profilerManager->paused, true);
-
-	if (profilerManager->currentSession)
+	if (in->attachmentId != attachment->att_attachment_id)
 	{
-		const auto timestamp = TimeZoneUtil::getCurrentTimeStamp(attachment->att_current_timezone);
-		LogLocalStatus status("Profiler finish");
-
-		profilerManager->currentSession->pluginSession->finish(&status, timestamp);
-		profilerManager->currentSession = nullptr;
+		ProfilerIpc ipc(tdbb, *getDefaultMemoryPool(), in->attachmentId);
+		ipc.send(tdbb, ProfilerIpc::Tag::FINISH_SESSION, in);
+		return nullptr;
 	}
+
+	const auto transaction = tdbb->getTransaction();
+	const auto profilerManager = attachment->getProfilerManager(tdbb);
+
+	profilerManager->finishSession(tdbb);
 
 	if (in->flush)
 		profilerManager->flush(transaction->getInterface(true));
@@ -115,31 +250,42 @@ IExternalResultSet* ProfilerPackage::pauseSessionProcedure(ThrowStatusExceptionW
 {
 	const auto tdbb = JRD_get_thread_data();
 	const auto attachment = tdbb->getAttachment();
-	const auto transaction = tdbb->getTransaction();
 
+	if (in->attachmentId != attachment->att_attachment_id)
+	{
+		ProfilerIpc ipc(tdbb, *getDefaultMemoryPool(), in->attachmentId);
+		ipc.send(tdbb, ProfilerIpc::Tag::PAUSE_SESSION, in);
+		return nullptr;
+	}
+
+	const auto transaction = tdbb->getTransaction();
 	const auto profilerManager = attachment->getProfilerManager(tdbb);
 
-	if (!profilerManager->currentSession)
-		return nullptr;
-
-	profilerManager->paused = true;
-
-	if (in->flush)
-		profilerManager->flush(transaction->getInterface(true));
+	if (profilerManager->pauseSession())
+	{
+		if (in->flush)
+			profilerManager->flush(transaction->getInterface(true));
+	}
 
 	return nullptr;
 }
 
 IExternalResultSet* ProfilerPackage::resumeSessionProcedure(ThrowStatusExceptionWrapper* /*status*/,
-	IExternalContext* context, const void* in, void* out)
+	IExternalContext* context, const ResumeSessionInput::Type* in, void* out)
 {
 	const auto tdbb = JRD_get_thread_data();
 	const auto attachment = tdbb->getAttachment();
 
+	if (in->attachmentId != attachment->att_attachment_id)
+	{
+		ProfilerIpc ipc(tdbb, *getDefaultMemoryPool(), in->attachmentId);
+		ipc.send(tdbb, ProfilerIpc::Tag::RESUME_SESSION, in);
+		return nullptr;
+	}
+
 	const auto profilerManager = attachment->getProfilerManager(tdbb);
 
-	if (profilerManager->currentSession && profilerManager->paused)
-		profilerManager->paused = false;
+	profilerManager->resumeSession();
 
 	return nullptr;
 }
@@ -149,17 +295,22 @@ void ProfilerPackage::startSessionFunction(ThrowStatusExceptionWrapper* /*status
 {
 	const auto tdbb = JRD_get_thread_data();
 	const auto attachment = tdbb->getAttachment();
-	const auto transaction = tdbb->getTransaction();
+
+	if (in->attachmentId != attachment->att_attachment_id)
+	{
+		ProfilerIpc ipc(tdbb, *getDefaultMemoryPool(), in->attachmentId);
+		ipc.sendAndReceive(tdbb, ProfilerIpc::Tag::START_SESSION, in, out);
+		return;
+	}
 
 	const string description(in->description.str, in->descriptionNull ? 0 : in->description.length);
 	const PathName pluginName(in->pluginName.str, in->pluginNameNull ? 0 : in->pluginName.length);
 	const string pluginOptions(in->pluginOptions.str, in->pluginOptionsNull ? 0 : in->pluginOptions.length);
 
 	const auto profilerManager = attachment->getProfilerManager(tdbb);
-	AutoSetRestore<bool> pauseProfiler(&profilerManager->paused, true);
 
 	out->sessionIdNull = FB_FALSE;
-	out->sessionId = profilerManager->startSession(tdbb, pluginName, description, pluginOptions);
+	out->sessionId = profilerManager->startSession(tdbb, in->attachmentId, pluginName, description, pluginOptions);
 }
 
 
@@ -171,14 +322,42 @@ ProfilerManager::ProfilerManager(thread_db* tdbb)
 {
 }
 
+ProfilerManager::~ProfilerManager()
+{
+}
+
 ProfilerManager* ProfilerManager::create(thread_db* tdbb)
 {
 	return FB_NEW_POOL(*tdbb->getAttachment()->att_pool) ProfilerManager(tdbb);
 }
 
-SINT64 ProfilerManager::startSession(thread_db* tdbb, const PathName& pluginName, const string& description,
-	const string& options)
+int ProfilerManager::blockingAst(void* astObject)
 {
+	const auto attachment = static_cast<Attachment*>(astObject);
+
+	try
+	{
+		const auto dbb = attachment->att_database;
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, attachment->att_profiler_listener_lock);
+
+		const auto profilerManager = attachment->getProfilerManager(tdbb);
+
+		if (!profilerManager->listener)
+			profilerManager->listener = FB_NEW_POOL(*attachment->att_pool) ProfilerListener(tdbb);
+
+		LCK_release(tdbb, attachment->att_profiler_listener_lock);
+	}
+	catch (const Exception&)
+	{} // no-op
+
+	return 0;
+}
+
+SINT64 ProfilerManager::startSession(thread_db* tdbb, AttNumber attachmentId, const PathName& pluginName,
+	const string& description, const string& options)
+{
+	AutoSetRestore<bool> pauseProfiler(&paused, true);
+
 	const auto attachment = tdbb->getAttachment();
 	const auto transaction = tdbb->getTransaction();
 	ThrowLocalStatus status;
@@ -376,6 +555,45 @@ void ProfilerManager::afterRecordSourceGetRecord(jrd_req* request, const RecordS
 	}
 }
 
+void ProfilerManager::cancelSession()
+{
+	if (currentSession)
+	{
+		LogLocalStatus status("Profiler cancelSession");
+
+		currentSession->pluginSession->cancel(&status);
+		currentSession = nullptr;
+	}
+}
+
+void ProfilerManager::finishSession(thread_db* tdbb)
+{
+	if (currentSession)
+	{
+		const auto attachment = tdbb->getAttachment();
+		const auto timestamp = TimeZoneUtil::getCurrentTimeStamp(attachment->att_current_timezone);
+		LogLocalStatus status("Profiler finish");
+
+		currentSession->pluginSession->finish(&status, timestamp);
+		currentSession = nullptr;
+	}
+}
+
+bool ProfilerManager::pauseSession()
+{
+	if (!currentSession)
+		return false;
+
+	paused = true;
+	return true;
+}
+
+void ProfilerManager::resumeSession()
+{
+	if (currentSession)
+		paused = false;
+}
+
 void ProfilerManager::discard()
 {
 	currentSession = nullptr;
@@ -384,6 +602,8 @@ void ProfilerManager::discard()
 
 void ProfilerManager::flush(ITransaction* transaction)
 {
+	AutoSetRestore<bool> pauseProfiler(&paused, true);
+
 	auto pluginAccessor = activePlugins.accessor();
 
 	for (bool hasNext = pluginAccessor.getFirst(); hasNext;)
@@ -491,6 +711,355 @@ SINT64 ProfilerManager::getRequest(jrd_req* request, unsigned flags)
 //--------------------------------------
 
 
+ProfilerIpc::ProfilerIpc(thread_db* tdbb, MemoryPool& pool, AttNumber aAttachmentId)
+	: attachmentId(aAttachmentId)
+{
+	const auto database = tdbb->getDatabase();
+
+	string fileName;
+	static_assert(std::is_same<decltype(attachmentId), FB_UINT64>::value);
+	fileName.printf(PROFILER_FILE, database->getUniqueFileId().c_str(), attachmentId);
+
+	try
+	{
+		sharedMemory = FB_NEW_POOL(pool) SharedMemory<Header>(fileName.c_str(), sizeof(Header), this);
+	}
+	catch (const Exception& ex)
+	{
+		iscLogException("ProfilerManager: cannot initialize the shared memory region", ex);
+		throw;
+	}
+
+	fb_assert(sharedMemory->getHeader()->mhb_type == SharedMemoryBase::SRAM_PROFILER);
+	fb_assert(sharedMemory->getHeader()->mhb_header_version == MemoryHeader::HEADER_VERSION);
+	fb_assert(sharedMemory->getHeader()->mhb_version == VERSION);
+}
+
+bool ProfilerIpc::initialize(SharedMemoryBase* sm, bool init)
+{
+	if (init)
+	{
+		const auto header = reinterpret_cast<Header*>(sm->sh_mem_header);
+
+		// Initialize the shared data header.
+		header->init(SharedMemoryBase::SRAM_PROFILER, VERSION);
+
+		if (sm->eventInit(&header->serverEvent) != FB_SUCCESS)
+			(Arg::Gds(isc_random) << "ProfilerIpc eventInit(serverEvent) failed").raise();
+
+		if (sm->eventInit(&header->clientEvent) != FB_SUCCESS)
+		{
+			sm->eventFini(&header->serverEvent);
+			(Arg::Gds(isc_random) << "ProfilerIpc eventInit(clientEvent) failed").raise();
+		}
+	}
+
+	return true;
+}
+
+void ProfilerIpc::mutexBug(int osErrorCode, const char* text)
+{
+	iscLogStatus("Error when working with profiler shared memory",
+		(Arg::Gds(isc_sys_request) << text << Arg::OsError(osErrorCode)).value());
+}
+
+void ProfilerIpc::internalSendAndReceive(thread_db* tdbb, Tag tag,
+	const void* in, unsigned inSize, void* out, unsigned outSize)
+{
+	{	// scope
+		ThreadStatusGuard tempStatus(tdbb);
+
+		Lock tempLock(tdbb, sizeof(SINT64), LCK_attachment);
+		tempLock.setKey(attachmentId);
+
+		// Check if attachment is alive.
+		if (LCK_lock(tdbb, &tempLock, LCK_EX, LCK_NO_WAIT))
+		{
+			LCK_release(tdbb, &tempLock);
+			(Arg::Gds(isc_random) << "Cannot start remote profile session - attachment is not active").raise();
+		}
+
+		// Ask remote attachment to initialize the profile listener.
+
+		tempLock.lck_type = LCK_profiler_listener;
+
+		if (LCK_lock(tdbb, &tempLock, LCK_SR, LCK_WAIT))
+			LCK_release(tdbb, &tempLock);
+	}
+
+	Guard guard(this);
+
+	const auto header = sharedMemory->getHeader();
+
+	header->bufferSize = inSize;
+	header->tag = tag;
+
+	fb_assert(inSize <= sizeof(header->buffer));
+	memcpy(header->buffer, in, inSize);
+
+	const SLONG value = sharedMemory->eventClear(&header->clientEvent);
+
+	sharedMemory->eventPost(&header->serverEvent);
+
+	sharedMemory->eventWait(&header->clientEvent, value, 0);
+
+	if (header->tag == Tag::RESPONSE)
+	{
+		fb_assert(outSize == header->bufferSize);
+		memcpy(out, header->buffer, header->bufferSize);
+	}
+	else
+	{
+		fb_assert(header->tag == Tag::EXCEPTION);
+		(Arg::Gds(isc_random) << (char*) header->buffer).raise();
+	}
+}
+
+
+//--------------------------------------
+
+
+ProfilerListener::ProfilerListener(thread_db* tdbb)
+	: attachment(tdbb->getAttachment()),
+	  cleanupSync(*attachment->att_pool, watcherThread, THREAD_medium)
+{
+	auto& pool = *attachment->att_pool;
+
+	ipc = FB_NEW_POOL(pool) ProfilerIpc(tdbb, pool, attachment->att_attachment_id);
+
+	cleanupSync.run(this);
+}
+
+ProfilerListener::~ProfilerListener()
+{
+	exiting = true;
+
+	// Terminate the watcher thread.
+	startupSemaphore.tryEnter(5);
+
+	ProfilerIpc::Guard guard(ipc);
+
+	auto& sharedMemory = ipc->sharedMemory;
+
+	sharedMemory->eventPost(&sharedMemory->getHeader()->serverEvent);
+	cleanupSync.waitForCompletion();
+
+	const auto header = sharedMemory->getHeader();
+
+	sharedMemory->eventFini(&header->serverEvent);
+	sharedMemory->eventFini(&header->clientEvent);
+}
+
+void ProfilerListener::exceptionHandler(const Exception& ex, ThreadFinishSync<ProfilerListener*>::ThreadRoutine*)
+{
+	iscLogException("Error closing profiler watcher thread\n", ex);
+}
+
+void ProfilerListener::watcherThread()
+{
+	bool startup = true;
+
+	try
+	{
+		while (!exiting)
+		{
+			auto& sharedMemory = ipc->sharedMemory;
+			const auto header = sharedMemory->getHeader();
+
+			const SLONG value = sharedMemory->eventClear(&header->serverEvent);
+
+			if (header->tag != ProfilerIpc::Tag::NOP)
+			{
+				FbLocalStatus statusVector;
+				EngineContextHolder tdbb(&statusVector, attachment->getInterface(), FB_FUNCTION);
+
+				try
+				{
+					processCommand(tdbb);
+					header->tag = ProfilerIpc::Tag::RESPONSE;
+				}
+				catch (const status_exception& e)
+				{
+					//// TODO: Serialize status vector instead of formated message.
+
+					const ISC_STATUS* status = e.value();
+					string errorMsg;
+					TEXT temp[BUFFER_LARGE];
+
+					while (fb_interpret(temp, sizeof(temp), &status))
+					{
+						if (errorMsg.hasData())
+							errorMsg += "\n\t";
+
+						errorMsg += temp;
+					}
+
+					header->bufferSize = MIN(errorMsg.length(), sizeof(header->buffer) - 1);
+					strncpy((char*) header->buffer, errorMsg.c_str(), sizeof(header->buffer));
+					header->buffer[header->bufferSize] = '\0';
+
+					header->tag = ProfilerIpc::Tag::EXCEPTION;
+				}
+
+				sharedMemory->eventPost(&header->clientEvent);
+			}
+
+			if (startup)
+			{
+				startup = false;
+				startupSemaphore.release();
+			}
+
+			if (exiting)
+				break;
+
+			sharedMemory->eventWait(&header->serverEvent, value, 0);
+		}
+	}
+	catch (const Exception& ex)
+	{
+		iscLogException("Error in profiler watcher thread\n", ex);
+	}
+
+	try
+	{
+		if (startup)
+			startupSemaphore.release();
+	}
+	catch (const Exception& ex)
+	{
+		exceptionHandler(ex, nullptr);
+	}
+}
+
+void ProfilerListener::processCommand(thread_db* tdbb)
+{
+	const auto header = ipc->sharedMemory->getHeader();
+	const auto profilerManager = attachment->getProfilerManager(tdbb);
+
+	jrd_tra* transaction = nullptr;
+	try
+	{
+		const auto startTransaction = [&]() {
+			transaction = TRA_start(tdbb, 0, 0);
+			tdbb->setTransaction(transaction);
+		};
+
+		using Tag = ProfilerIpc::Tag;
+
+		switch (header->tag)
+		{
+			case Tag::CANCEL_SESSION:
+				profilerManager->cancelSession();
+				header->bufferSize = 0;
+				break;
+
+			case Tag::DISCARD:
+				profilerManager->discard();
+				header->bufferSize = 0;
+				break;
+
+			case Tag::FINISH_SESSION:
+			{
+				const auto in = reinterpret_cast<const ProfilerPackage::FinishSessionInput::Type*>(header->buffer);
+				fb_assert(sizeof(*in) == header->bufferSize);
+
+				profilerManager->finishSession(tdbb);
+
+				if (in->flush)
+				{
+					startTransaction();
+					profilerManager->flush(transaction->getInterface(true));
+				}
+
+				header->bufferSize = 0;
+				break;
+			}
+
+			case Tag::FLUSH:
+				startTransaction();
+				profilerManager->flush(transaction->getInterface(true));
+				header->bufferSize = 0;
+				break;
+
+			case Tag::PAUSE_SESSION:
+				if (profilerManager->currentSession)
+				{
+					const auto in = reinterpret_cast<const ProfilerPackage::PauseSessionInput::Type*>(header->buffer);
+					fb_assert(sizeof(*in) == header->bufferSize);
+
+					if (profilerManager->pauseSession())
+					{
+						if (in->flush)
+						{
+							startTransaction();
+							profilerManager->flush(transaction->getInterface(true));
+						}
+					}
+				}
+
+				header->bufferSize = 0;
+				break;
+
+			case Tag::RESUME_SESSION:
+				profilerManager->resumeSession();
+				header->bufferSize = 0;
+				break;
+
+			case Tag::START_SESSION:
+			{
+				startTransaction();
+
+				const auto in = reinterpret_cast<const ProfilerPackage::StartSessionInput::Type*>(header->buffer);
+				fb_assert(sizeof(*in) == header->bufferSize);
+
+				const string description(in->description.str,
+					in->descriptionNull ? 0 : in->description.length);
+				const PathName pluginName(in->pluginName.str,
+					in->pluginNameNull ? 0 : in->pluginName.length);
+				const string pluginOptions(in->pluginOptions.str,
+					in->pluginOptionsNull ? 0 : in->pluginOptions.length);
+
+				const auto out = reinterpret_cast<ProfilerPackage::StartSessionOutput::Type*>(header->buffer);
+				header->bufferSize = sizeof(*out);
+
+				out->sessionIdNull = FB_FALSE;
+				out->sessionId = profilerManager->startSession(tdbb,
+					in->attachmentId, pluginName, description, pluginOptions);
+
+				break;
+			}
+
+			default:
+				fb_assert(false);
+				(Arg::Gds(isc_random) << "Invalid profiler's remote command").raise();
+				break;
+		}
+
+		if (transaction)
+		{
+			TRA_commit(tdbb, transaction, false);
+			tdbb->setTransaction(nullptr);
+			transaction = nullptr;
+		}
+	}
+	catch (...)
+	{
+		if (transaction)
+		{
+			TRA_rollback(tdbb, transaction, false, true);
+			tdbb->setTransaction(nullptr);
+			transaction = nullptr;
+		}
+
+		throw;
+	}
+}
+
+
+//--------------------------------------
+
+
 ProfilerPackage::ProfilerPackage(MemoryPool& pool)
 	: SystemPackage(
 		pool,
@@ -501,10 +1070,12 @@ ProfilerPackage::ProfilerPackage(MemoryPool& pool)
 			SystemProcedure(
 				pool,
 				"CANCEL_SESSION",
-				SystemProcedureFactory<VoidMessage, VoidMessage, cancelSessionProcedure>(),
+				SystemProcedureFactory<CancelSessionInput, VoidMessage, cancelSessionProcedure>(),
 				prc_executable,
 				// input parameters
 				{
+					{"ATTACHMENT_ID", fld_att_id, false, "current_connection",
+						{blr_internal_info, blr_literal, blr_long, 0, INFO_TYPE_CONNECTION_ID, 0, 0, 0}}
 				},
 				// output parameters
 				{
@@ -513,10 +1084,12 @@ ProfilerPackage::ProfilerPackage(MemoryPool& pool)
 			SystemProcedure(
 				pool,
 				"DISCARD",
-				SystemProcedureFactory<VoidMessage, VoidMessage, discardProcedure>(),
+				SystemProcedureFactory<DiscardInput, VoidMessage, discardProcedure>(),
 				prc_executable,
 				// input parameters
 				{
+					{"ATTACHMENT_ID", fld_att_id, false, "current_connection",
+						{blr_internal_info, blr_literal, blr_long, 0, INFO_TYPE_CONNECTION_ID, 0, 0, 0}}
 				},
 				// output parameters
 				{
@@ -529,7 +1102,9 @@ ProfilerPackage::ProfilerPackage(MemoryPool& pool)
 				prc_executable,
 				// input parameters
 				{
-					{"FLUSH", fld_bool, false, "true", {blr_literal, blr_bool, 1}}
+					{"FLUSH", fld_bool, false, "true", {blr_literal, blr_bool, 1}},
+					{"ATTACHMENT_ID", fld_att_id, false, "current_connection",
+						{blr_internal_info, blr_literal, blr_long, 0, INFO_TYPE_CONNECTION_ID, 0, 0, 0}}
 				},
 				// output parameters
 				{
@@ -538,10 +1113,12 @@ ProfilerPackage::ProfilerPackage(MemoryPool& pool)
 			SystemProcedure(
 				pool,
 				"FLUSH",
-				SystemProcedureFactory<VoidMessage, VoidMessage, flushProcedure>(),
+				SystemProcedureFactory<FlushInput, VoidMessage, flushProcedure>(),
 				prc_executable,
 				// input parameters
 				{
+					{"ATTACHMENT_ID", fld_att_id, false, "current_connection",
+						{blr_internal_info, blr_literal, blr_long, 0, INFO_TYPE_CONNECTION_ID, 0, 0, 0}}
 				},
 				// output parameters
 				{
@@ -554,7 +1131,9 @@ ProfilerPackage::ProfilerPackage(MemoryPool& pool)
 				prc_executable,
 				// input parameters
 				{
-					{"FLUSH", fld_bool, false, "false", {blr_literal, blr_bool, 0}}
+					{"FLUSH", fld_bool, false, "false", {blr_literal, blr_bool, 0}},
+					{"ATTACHMENT_ID", fld_att_id, false, "current_connection",
+						{blr_internal_info, blr_literal, blr_long, 0, INFO_TYPE_CONNECTION_ID, 0, 0, 0}}
 				},
 				// output parameters
 				{
@@ -563,10 +1142,12 @@ ProfilerPackage::ProfilerPackage(MemoryPool& pool)
 			SystemProcedure(
 				pool,
 				"RESUME_SESSION",
-				SystemProcedureFactory<VoidMessage, VoidMessage, resumeSessionProcedure>(),
+				SystemProcedureFactory<ResumeSessionInput, VoidMessage, resumeSessionProcedure>(),
 				prc_executable,
 				// input parameters
 				{
+					{"ATTACHMENT_ID", fld_att_id, false, "current_connection",
+						{blr_internal_info, blr_literal, blr_long, 0, INFO_TYPE_CONNECTION_ID, 0, 0, 0}}
 				},
 				// output parameters
 				{
@@ -582,6 +1163,8 @@ ProfilerPackage::ProfilerPackage(MemoryPool& pool)
 				// parameters
 				{
 					{"DESCRIPTION", fld_short_description, true, "null", {blr_null}},
+					{"ATTACHMENT_ID", fld_att_id, false, "current_connection",
+						{blr_internal_info, blr_literal, blr_long, 0, INFO_TYPE_CONNECTION_ID, 0, 0, 0}},
 					{"PLUGIN_NAME", fld_file_name2, true, "null", {blr_null}},
 					{"PLUGIN_OPTIONS", fld_short_description, true, "null", {blr_null}},
 				},

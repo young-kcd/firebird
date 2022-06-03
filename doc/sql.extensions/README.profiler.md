@@ -8,9 +8,13 @@ This documentation treats the engine and plugin parts as a single thing, in the 
 
 The `RDB$PROFILER` package allows to profile execution of PSQL code collecting statistics of how many times each line was executed along with its minimum, maximum and accumulated execution times (with nanoseconds precision), as well open and fetch statistics of implicit and explicit SQL cursors.
 
-To collect profile data, an user must first start a profile session with `RDB$PROFILER.START_SESSION`. This function returns an profile session ID which is later stored in the profiler snapshot tables to be queried and analyzed by the user.
+To collect profile data, an user must first start a profile session with `RDB$PROFILER.START_SESSION`. This function returns an profile session ID which is later stored in the profiler snapshot tables to be queried and analyzed by the user. A profiler session may be local (same attachment) or remote (another attachment).
 
-After a session is started, PSQL and SQL statements statistics starts to be collected in memory. Note that a profile session collects data only of statements executed in the same attachment where the session was started.
+Remote profiling just forwards commands to the remote attachment. So it's possible that a client simultaneous profile multiple attachments. It's also possible that a locally or remotely started profile session have commands issued by another attachment.
+
+Remote issued commands needs that the target attachment be in an idle state, i.e., not executing others requests. When they are not idle the call blocks waiting for that state.
+
+After a session is started, PSQL and SQL statements statistics starts to be collected in memory. Note that a profile session collects data only of statements executed in the same attachment associated with the session.
 
 Data is aggregated and stored per requests (i.e. a statement execution). When querying snapshot tables, user may do extra aggregation per statements or use the auxiliary views that do that automatically.
 
@@ -120,7 +124,7 @@ select pstat.*
 
 ## Function `START_SESSION`
 
-`RDB$PROFILER.START_SESSION` starts a new profiler session, turns it the current session and return its identifier.
+`RDB$PROFILER.START_SESSION` starts a new profiler session, turns it the current session (of the given `ATTACHMENT_ID`) and return its identifier.
 
 If `PLUGIN_NAME` is `NULL` (the default) it uses the database configuration `DefaultProfilerPlugin`.
 
@@ -128,6 +132,7 @@ If `PLUGIN_NAME` is `NULL` (the default) it uses the database configuration `Def
 
 Input parameters:
  - `DESCRIPTION` type `VARCHAR(255) CHARACTER SET UTF8` default `NULL`
+ - `ATTACHMENT_ID` type `BIGINT NOT NULL` default `CURRENT_CONNECTION`
  - `PLUGIN_NAME` type `VARCHAR(255) CHARACTER SET UTF8` default `NULL`
  - `PLUGIN_OPTIONS` type `VARCHAR(255) CHARACTER SET UTF8` default `NULL`
 
@@ -135,51 +140,67 @@ Return type: `BIGINT NOT NULL`.
 
 ## Procedure `PAUSE_SESSION`
 
-`RDB$PROFILER.PAUSE_SESSION` pauses the current profiler session so the next executed statements statistics are not collected.
+`RDB$PROFILER.PAUSE_SESSION` pauses the current profiler session (of the given `ATTACHMENT_ID`) so the next executed statements statistics are not collected.
 
 If `FLUSH` is `TRUE` the snapshot tables are updated with data up to the current moment. Otherwise data remains only in memory for later update.
 
-Calling `RDB$PROFILER.PAUSE_SESSION(TRUE)` has the same semantics of calling `RDB$PROFILER.PAUSE_SESSION(FALSE)` followed by `RDB$PROFILER.FLUSH`.
+Calling `RDB$PROFILER.PAUSE_SESSION(TRUE)` has the same semantics of calling `RDB$PROFILER.PAUSE_SESSION(FALSE)` followed by `RDB$PROFILER.FLUSH` (using the same `ATTACHMENT_ID`).
 
 Input parameters:
  - `FLUSH` type `BOOLEAN NOT NULL` default `FALSE`
+ - `ATTACHMENT_ID` type `BIGINT NOT NULL` default `CURRENT_CONNECTION`
 
 ## Procedure `RESUME_SESSION`
 
-`RDB$PROFILER.RESUME_SESSION` resumes the current profiler session if it was paused so the next executed statements statistics are collected again.
+`RDB$PROFILER.RESUME_SESSION` resumes the current profiler session (of the given `ATTACHMENT_ID`) if it was paused so the next executed statements statistics are collected again.
+
+Input parameters:
+ - `ATTACHMENT_ID` type `BIGINT NOT NULL` default `CURRENT_CONNECTION`
 
 ## Procedure `FINISH_SESSION`
 
-`RDB$PROFILER.FINISH_SESSION` finishes the current profiler session.
+`RDB$PROFILER.FINISH_SESSION` finishes the current profiler session (of the given `ATTACHMENT_ID`).
 
 If `FLUSH` is `TRUE` the snapshot tables are updated with data of the finished session (and old finished sessions not yet present in the snapshot). Otherwise data remains only in memory for later update.
 
-Calling `RDB$PROFILER.FINISH_SESSION(TRUE)` has the same semantics of calling `RDB$PROFILER.FINISH_SESSION(FALSE)` followed by `RDB$PROFILER.FLUSH`.
+Calling `RDB$PROFILER.FINISH_SESSION(TRUE)` has the same semantics of calling `RDB$PROFILER.FINISH_SESSION(FALSE)` followed by `RDB$PROFILER.FLUSH` (using the same `ATTACHMENT_ID`).
 
 Input parameters:
  - `FLUSH` type `BOOLEAN NOT NULL` default `TRUE`
+ - `ATTACHMENT_ID` type `BIGINT NOT NULL` default `CURRENT_CONNECTION`
 
 ## Procedure `CANCEL_SESSION`
 
-`RDB$PROFILER.CANCEL_SESSION` cancels the current profiler session.
+`RDB$PROFILER.CANCEL_SESSION` cancels the current profiler session (of the given `ATTACHMENT_ID`).
 
 All session data present in the profiler plugin is discarded and will not be flushed.
 
 Data already flushed is not deleted automatically.
 
+Input parameters:
+ - `ATTACHMENT_ID` type `BIGINT NOT NULL` default `CURRENT_CONNECTION`
+
 ## Procedure `DISCARD`
 
-`RDB$PROFILER.DISCARD` removes all sessions from memory, without flushing them.
+`RDB$PROFILER.DISCARD` removes all sessions (of the given `ATTACHMENT_ID`) from memory, without flushing them.
 
 If there is a active session, it is cancelled.
 
+Input parameters:
+ - `ATTACHMENT_ID` type `BIGINT NOT NULL` default `CURRENT_CONNECTION`
+
 ## Procedure `FLUSH`
 
-`RDB$PROFILER.FLUSH` updates the snapshot tables with data from the profile sessions in memory.
+`RDB$PROFILER.FLUSH` updates the snapshot tables with data from the profile sessions (of the given `ATTACHMENT_ID`) in memory.
 
 After update data is stored in tables `PLG$PROF_SESSIONS`, `PLG$PROF_STATEMENTS`, `PLG$PROF_RECORD_SOURCES`, `PLG$PROF_REQUESTS`, `PLG$PROF_PSQL_STATS` and `PLG$PROF_RECORD_SOURCE_STATS` and may be read and analyzed by the user.
 
 It also removes finished sessions from memory.
+
+If a remote `ATTACHMENT_ID` is used the data is updated in an autonomous transaction.
+
+Input parameters:
+ - `ATTACHMENT_ID` type `BIGINT NOT NULL` default `CURRENT_CONNECTION`
 
 # Snapshot tables
 

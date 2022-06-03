@@ -552,6 +552,7 @@ public:
 	AttNumber	att_attachment_id;			// Attachment ID
 	Lock*		att_cancel_lock;			// Lock to cancel the active request
 	Lock*		att_monitor_lock;			// Lock for monitoring purposes
+	Lock*		att_profiler_listener_lock;	// Lock for remote profiler listener
 	const ULONG	att_lock_owner_id;			// ID for the lock manager
 	SLONG		att_lock_owner_handle;		// Handle for the lock manager
 	ULONG		att_backup_state_counter;	// Counter of backup state locks for attachment

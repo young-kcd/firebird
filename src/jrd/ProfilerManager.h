@@ -28,19 +28,21 @@
 #include "../common/classes/auto.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/Nullable.h"
-#include "../jrd/Monitoring.h"
 #include "../jrd/SystemPackages.h"
 
 namespace Jrd {
 
 class Attachment;
 class jrd_req;
+class RecordSource;
 class thread_db;
-class Profiler;
+
+class ProfilerListener;
 
 
 class ProfilerManager final
 {
+	friend class ProfilerListener;
 	friend class ProfilerPackage;
 
 private:
@@ -84,14 +86,19 @@ private:
 	ProfilerManager(thread_db* tdbb);
 
 public:
+	~ProfilerManager();
+
+public:
 	static ProfilerManager* create(thread_db* tdbb);
+
+	static int blockingAst(void* astObject);
 
 	ProfilerManager(const ProfilerManager&) = delete;
 	void operator=(const ProfilerManager&) = delete;
 
 public:
-	SINT64 startSession(thread_db* tdbb, const Firebird::PathName& pluginName, const Firebird::string& description,
-		const Firebird::string& options);
+	SINT64 startSession(thread_db* tdbb, AttNumber attachmentId, const Firebird::PathName& pluginName,
+		const Firebird::string& description, const Firebird::string& options);
 
 	void prepareRecSource(thread_db* tdbb, jrd_req* request, const RecordSource* rsb);
 	void onRequestFinish(jrd_req* request);
@@ -108,41 +115,66 @@ public:
 	}
 
 private:
+	void cancelSession();
+	void finishSession(thread_db* tdbb);
+	bool pauseSession();
+	void resumeSession();
 	void discard();
 	void flush(Firebird::ITransaction* transaction);
+
 	Statement* getStatement(jrd_req* request);
 	SINT64 getRequest(jrd_req* request, unsigned flags);
 
 private:
+	Firebird::AutoPtr<ProfilerListener> listener;
 	Firebird::LeftPooledMap<Firebird::PathName, Firebird::AutoPlugin<Firebird::IProfilerPlugin>> activePlugins;
 	Firebird::AutoPtr<Session> currentSession;
 	bool paused = false;
 };
 
 
-class ProfilerPackage : public SystemPackage
+class ProfilerPackage final : public SystemPackage
 {
+	friend class ProfilerListener;
+	friend class ProfilerManager;
+
 public:
 	ProfilerPackage(Firebird::MemoryPool& pool);
 
+	ProfilerPackage(const ProfilerPackage&) = delete;
+	ProfilerPackage& operator=(const ProfilerPackage&) = delete;
+
 private:
-	static Firebird::IExternalResultSet* discardProcedure(Firebird::ThrowStatusExceptionWrapper* status,
-		Firebird::IExternalContext* context, const void* in, void* out);
+	FB_MESSAGE(AttachmentIdMessage, Firebird::ThrowStatusExceptionWrapper,
+		(FB_BIGINT, attachmentId)
+	);
 
 	//----------
+
+	using DiscardInput = AttachmentIdMessage;
+
+	static Firebird::IExternalResultSet* discardProcedure(Firebird::ThrowStatusExceptionWrapper* status,
+		Firebird::IExternalContext* context, const DiscardInput::Type* in, void* out);
+
+	//----------
+
+	using FlushInput = AttachmentIdMessage;
 
 	static Firebird::IExternalResultSet* flushProcedure(Firebird::ThrowStatusExceptionWrapper* status,
-		Firebird::IExternalContext* context, const void* in, void* out);
+		Firebird::IExternalContext* context, const FlushInput::Type* in, void* out);
 
 	//----------
 
+	using CancelSessionInput = AttachmentIdMessage;
+
 	static Firebird::IExternalResultSet* cancelSessionProcedure(Firebird::ThrowStatusExceptionWrapper* status,
-		Firebird::IExternalContext* context, const void* in, void* out);
+		Firebird::IExternalContext* context, const CancelSessionInput::Type* in, void* out);
 
 	//----------
 
 	FB_MESSAGE(FinishSessionInput, Firebird::ThrowStatusExceptionWrapper,
 		(FB_BOOLEAN, flush)
+		(FB_BIGINT, attachmentId)
 	);
 
 	static Firebird::IExternalResultSet* finishSessionProcedure(Firebird::ThrowStatusExceptionWrapper* status,
@@ -152,6 +184,7 @@ private:
 
 	FB_MESSAGE(PauseSessionInput, Firebird::ThrowStatusExceptionWrapper,
 		(FB_BOOLEAN, flush)
+		(FB_BIGINT, attachmentId)
 	);
 
 	static Firebird::IExternalResultSet* pauseSessionProcedure(Firebird::ThrowStatusExceptionWrapper* status,
@@ -159,13 +192,16 @@ private:
 
 	//----------
 
+	using ResumeSessionInput = AttachmentIdMessage;
+
 	static Firebird::IExternalResultSet* resumeSessionProcedure(Firebird::ThrowStatusExceptionWrapper* status,
-		Firebird::IExternalContext* context, const void* in, void* out);
+		Firebird::IExternalContext* context, const ResumeSessionInput::Type* in, void* out);
 
 	//----------
 
 	FB_MESSAGE(StartSessionInput, Firebird::ThrowStatusExceptionWrapper,
 		(FB_INTL_VARCHAR(255, CS_METADATA), description)
+		(FB_BIGINT, attachmentId)
 		(FB_INTL_VARCHAR(255, CS_METADATA), pluginName)
 		(FB_INTL_VARCHAR(255, CS_METADATA), pluginOptions)
 	);

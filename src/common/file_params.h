@@ -46,6 +46,8 @@ static const char* const TRACE_FILE		= "fb" COMMON_FILE_PREFIX "_trace";
 static const char* const USER_MAP_FILE	= "fb" COMMON_FILE_PREFIX "_user_mapping";
 static const char* const FB_TRACE_LOG_MUTEX = "fb_trace_log_mutex";
 
+static const char* const PROFILER_FILE	= "fb_profiler_%s_%" UQUADFORMAT;
+
 #ifdef UNIX
 static const char* const INIT_FILE		= "fb_init";
 static const char* const SEM_FILE		= "fb_sem";

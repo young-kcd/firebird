@@ -727,6 +727,12 @@ void Jrd::Attachment::initLocks(thread_db* tdbb)
 		lock = FB_NEW_RPT(*att_pool, 0)
 			Lock(tdbb, 0, LCK_repl_tables, this, blockingAstReplSet);
 		att_repl_lock = lock;
+
+		lock = FB_NEW_RPT(*att_pool, 0)
+			Lock(tdbb, sizeof(AttNumber), LCK_profiler_listener, this, ProfilerManager::blockingAst);
+		att_profiler_listener_lock = lock;
+		lock->setKey(att_attachment_id);
+		LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
 	}
 }
 
@@ -843,6 +849,9 @@ void Jrd::Attachment::releaseLocks(thread_db* tdbb)
 
 	if (att_repl_lock)
 		LCK_release(tdbb, att_repl_lock);
+
+	if (att_profiler_listener_lock)
+		LCK_release(tdbb, att_profiler_listener_lock);
 
 	// And release the system requests
 
