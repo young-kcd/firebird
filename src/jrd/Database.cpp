@@ -527,12 +527,16 @@ namespace Jrd
 	Database::GlobalObjectHolder::~GlobalObjectHolder()
 	{
 		// dtor is executed under glblObjectsMutex protection
-		if (m_replMgr)
-			m_replMgr->shutdown();
-
 		Database::GlobalObjectHolder::DbId* entry = g_hashTable->lookup(m_id);
 		if (!g_hashTable->remove(m_id))
 			fb_assert(false);
+
+		{ // scope
+			// here we cleanup what should not be globally protected
+			MutexUnlockGuard guard(glblObjectsMutex, FB_FUNCTION);
+			if (m_replMgr)
+				m_replMgr->shutdown();
+		}
 
 		m_lockMgr = nullptr;
 		m_eventMgr = nullptr;
