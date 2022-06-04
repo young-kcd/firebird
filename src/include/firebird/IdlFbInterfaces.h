@@ -6648,9 +6648,9 @@ namespace Firebird
 	public:
 		struct VTable : public IPluginBase::VTable
 		{
-			void (CLOOP_CARG *init)(IProfilerPlugin* self, IStatus* status, IAttachment* attachment, ITransaction* transaction) throw();
-			IProfilerSession* (CLOOP_CARG *startSession)(IProfilerPlugin* self, IStatus* status, ITransaction* transaction, const char* description, const char* options, ISC_TIMESTAMP_TZ timestamp) throw();
-			void (CLOOP_CARG *flush)(IProfilerPlugin* self, IStatus* status, ITransaction* transaction) throw();
+			void (CLOOP_CARG *init)(IProfilerPlugin* self, IStatus* status, IAttachment* attachment) throw();
+			IProfilerSession* (CLOOP_CARG *startSession)(IProfilerPlugin* self, IStatus* status, const char* description, const char* options, ISC_TIMESTAMP_TZ timestamp) throw();
+			void (CLOOP_CARG *flush)(IProfilerPlugin* self, IStatus* status) throw();
 		};
 
 	protected:
@@ -6666,25 +6666,25 @@ namespace Firebird
 	public:
 		static const unsigned VERSION = 4;
 
-		template <typename StatusType> void init(StatusType* status, IAttachment* attachment, ITransaction* transaction)
+		template <typename StatusType> void init(StatusType* status, IAttachment* attachment)
 		{
 			StatusType::clearException(status);
-			static_cast<VTable*>(this->cloopVTable)->init(this, status, attachment, transaction);
+			static_cast<VTable*>(this->cloopVTable)->init(this, status, attachment);
 			StatusType::checkException(status);
 		}
 
-		template <typename StatusType> IProfilerSession* startSession(StatusType* status, ITransaction* transaction, const char* description, const char* options, ISC_TIMESTAMP_TZ timestamp)
+		template <typename StatusType> IProfilerSession* startSession(StatusType* status, const char* description, const char* options, ISC_TIMESTAMP_TZ timestamp)
 		{
 			StatusType::clearException(status);
-			IProfilerSession* ret = static_cast<VTable*>(this->cloopVTable)->startSession(this, status, transaction, description, options, timestamp);
+			IProfilerSession* ret = static_cast<VTable*>(this->cloopVTable)->startSession(this, status, description, options, timestamp);
 			StatusType::checkException(status);
 			return ret;
 		}
 
-		template <typename StatusType> void flush(StatusType* status, ITransaction* transaction)
+		template <typename StatusType> void flush(StatusType* status)
 		{
 			StatusType::clearException(status);
-			static_cast<VTable*>(this->cloopVTable)->flush(this, status, transaction);
+			static_cast<VTable*>(this->cloopVTable)->flush(this, status);
 			StatusType::checkException(status);
 		}
 	};
@@ -19964,13 +19964,13 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopinitDispatcher(IProfilerPlugin* self, IStatus* status, IAttachment* attachment, ITransaction* transaction) throw()
+		static void CLOOP_CARG cloopinitDispatcher(IProfilerPlugin* self, IStatus* status, IAttachment* attachment) throw()
 		{
 			StatusType status2(status);
 
 			try
 			{
-				static_cast<Name*>(self)->Name::init(&status2, attachment, transaction);
+				static_cast<Name*>(self)->Name::init(&status2, attachment);
 			}
 			catch (...)
 			{
@@ -19978,13 +19978,13 @@ namespace Firebird
 			}
 		}
 
-		static IProfilerSession* CLOOP_CARG cloopstartSessionDispatcher(IProfilerPlugin* self, IStatus* status, ITransaction* transaction, const char* description, const char* options, ISC_TIMESTAMP_TZ timestamp) throw()
+		static IProfilerSession* CLOOP_CARG cloopstartSessionDispatcher(IProfilerPlugin* self, IStatus* status, const char* description, const char* options, ISC_TIMESTAMP_TZ timestamp) throw()
 		{
 			StatusType status2(status);
 
 			try
 			{
-				return static_cast<Name*>(self)->Name::startSession(&status2, transaction, description, options, timestamp);
+				return static_cast<Name*>(self)->Name::startSession(&status2, description, options, timestamp);
 			}
 			catch (...)
 			{
@@ -19993,13 +19993,13 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopflushDispatcher(IProfilerPlugin* self, IStatus* status, ITransaction* transaction) throw()
+		static void CLOOP_CARG cloopflushDispatcher(IProfilerPlugin* self, IStatus* status) throw()
 		{
 			StatusType status2(status);
 
 			try
 			{
-				static_cast<Name*>(self)->Name::flush(&status2, transaction);
+				static_cast<Name*>(self)->Name::flush(&status2);
 			}
 			catch (...)
 			{
@@ -20071,9 +20071,9 @@ namespace Firebird
 		{
 		}
 
-		virtual void init(StatusType* status, IAttachment* attachment, ITransaction* transaction) = 0;
-		virtual IProfilerSession* startSession(StatusType* status, ITransaction* transaction, const char* description, const char* options, ISC_TIMESTAMP_TZ timestamp) = 0;
-		virtual void flush(StatusType* status, ITransaction* transaction) = 0;
+		virtual void init(StatusType* status, IAttachment* attachment) = 0;
+		virtual IProfilerSession* startSession(StatusType* status, const char* description, const char* options, ISC_TIMESTAMP_TZ timestamp) = 0;
+		virtual void flush(StatusType* status) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>

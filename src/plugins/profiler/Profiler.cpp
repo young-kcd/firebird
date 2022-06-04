@@ -130,7 +130,7 @@ class Session final :
 	public RefCounted
 {
 public:
-	Session(ThrowStatusExceptionWrapper* status, ProfilerPlugin* aPlugin, ITransaction* transaction,
+	Session(ThrowStatusExceptionWrapper* status, ProfilerPlugin* aPlugin,
 			const char* aDescription, ISC_TIMESTAMP_TZ aStartTimestamp);
 
 public:
@@ -204,12 +204,12 @@ public:
 	{
 	}
 
-	void init(ThrowStatusExceptionWrapper* status, IAttachment* attachment, ITransaction* transaction) override;
+	void init(ThrowStatusExceptionWrapper* status, IAttachment* attachment) override;
 
-	IProfilerSession* startSession(ThrowStatusExceptionWrapper* status, ITransaction* transaction,
+	IProfilerSession* startSession(ThrowStatusExceptionWrapper* status,
 		const char* description, const char* options, ISC_TIMESTAMP_TZ timestamp) override;
 
-	void flush(ThrowStatusExceptionWrapper* status, ITransaction* transaction) override;
+	void flush(ThrowStatusExceptionWrapper* status) override;
 
 private:
 	void createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<IAttachment> attachment,
@@ -224,7 +224,7 @@ public:
 
 //--------------------------------------
 
-void ProfilerPlugin::init(ThrowStatusExceptionWrapper* status, IAttachment* attachment, ITransaction* transaction)
+void ProfilerPlugin::init(ThrowStatusExceptionWrapper* status, IAttachment* attachment)
 {
 	userAttachment = attachment;
 
@@ -254,12 +254,14 @@ void ProfilerPlugin::init(ThrowStatusExceptionWrapper* status, IAttachment* atta
 	message.clear();
 
 	RefPtr<IAttachment> refAttachment(attachment);
-	RefPtr<ITransaction> refTransaction(transaction);
+	RefPtr<ITransaction> refTransaction;
 	string currentRole;
 	bool roleInUse;
 
 	for (unsigned i = 0; i < 2; ++i)
 	{
+		refTransaction = makeNoIncRef(refAttachment->startTransaction(status, 0, nullptr));
+
 		auto resultSet = makeNoIncRef(refAttachment->openCursor(status, refTransaction, 0, sql, SQL_DIALECT_CURRENT,
 			nullptr, nullptr, message.getMetadata(), nullptr, 0));
 
@@ -294,8 +296,6 @@ void ProfilerPlugin::init(ThrowStatusExceptionWrapper* status, IAttachment* atta
 
 			refAttachment = makeNoIncRef(dispatcher->attachDatabase(status, dbName.c_str(),
 				dpb->getBufferLength(status), dpb->getBuffer(status)));
-
-			refTransaction = makeNoIncRef(refAttachment->startTransaction(status, 0, nullptr));
 		}
 	}
 
@@ -306,17 +306,17 @@ void ProfilerPlugin::init(ThrowStatusExceptionWrapper* status, IAttachment* atta
 	{
 		// Refresh roles.
 
-		attachment->execute(status, transaction, 0, "set role plg$profiler",
+		attachment->execute(status, nullptr, 0, "set role plg$profiler",
 			SQL_DIALECT_CURRENT, nullptr, nullptr, nullptr, nullptr);
 
-		attachment->execute(status, transaction, 0, ("set role " + currentRole).c_str(),
+		attachment->execute(status, nullptr, 0, ("set role " + currentRole).c_str(),
 			SQL_DIALECT_CURRENT, nullptr, nullptr, nullptr, nullptr);
 	}
 
 	loadMetadata(status);
 }
 
-IProfilerSession* ProfilerPlugin::startSession(ThrowStatusExceptionWrapper* status, ITransaction* transaction,
+IProfilerSession* ProfilerPlugin::startSession(ThrowStatusExceptionWrapper* status,
 	const char* description, const char* options, ISC_TIMESTAMP_TZ timestamp)
 {
 	if (options && options[0])
@@ -333,10 +333,10 @@ IProfilerSession* ProfilerPlugin::startSession(ThrowStatusExceptionWrapper* stat
 		return nullptr;
 	}
 
-	return FB_NEW Session(status, this, transaction, description, timestamp);
+	return FB_NEW Session(status, this, description, timestamp);
 }
 
-void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status, ITransaction* transaction)
+void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status)
 {
 	constexpr auto sessionSql = R"""(
 		update or insert into plg$prof_sessions
@@ -513,6 +513,8 @@ void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status, ITransaction* tr
 		(FB_BIGINT, totalTime)
 	) psqlStatsMessage(status, MasterInterfacePtr());
 	psqlStatsMessage.clear();
+
+	auto transaction = makeNoIncRef(userAttachment->startTransaction(status, 0, nullptr));
 
 	auto sessionStmt = makeNoIncRef(userAttachment->prepare(status, transaction, 0, sessionSql, SQL_DIALECT_CURRENT, 0));
 	auto statementStmt = makeNoIncRef(userAttachment->prepare(
@@ -840,6 +842,9 @@ void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status, ITransaction* tr
 	}
 
 	executeBatches();
+
+	transaction->commit(status);
+	transaction.clear();
 }
 
 void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<IAttachment> attachment,
@@ -1157,7 +1162,7 @@ void ProfilerPlugin::loadMetadata(ThrowStatusExceptionWrapper* status)
 
 //--------------------------------------
 
-Session::Session(ThrowStatusExceptionWrapper* status, ProfilerPlugin* aPlugin, ITransaction* transaction,
+Session::Session(ThrowStatusExceptionWrapper* status, ProfilerPlugin* aPlugin,
 		const char* aDescription, ISC_TIMESTAMP_TZ aStartTimestamp)
 	: plugin(aPlugin),
 	  startTimestamp(aStartTimestamp),
@@ -1170,12 +1175,17 @@ Session::Session(ThrowStatusExceptionWrapper* status, ProfilerPlugin* aPlugin, I
 
 	constexpr auto sequenceSql = "select next value for plg$prof_profile_id from rdb$database";
 
+	auto transaction = makeNoIncRef(plugin->userAttachment->startTransaction(status, 0, nullptr));
+
 	auto resultSet = makeNoIncRef(plugin->userAttachment->openCursor(status, transaction, 0, sequenceSql,
 		SQL_DIALECT_CURRENT,
 		nullptr, nullptr, sequenceMessage.getMetadata(), nullptr, 0));
 
 	resultSet->fetchNext(status, sequenceMessage.getData());
 	id = sequenceMessage->value;
+
+	transaction->commit(status);
+	transaction.clear();
 
 	plugin->sessions.add(makeRef(this));
 

@@ -1700,15 +1700,12 @@ interface ReplicatedSession : PluginBase
 
 interface ProfilerPlugin : PluginBase
 {
-	// The transaction should not be stored for later usage after the method returns.
-	void init(Status status, Attachment attachment, Transaction transaction);
+	void init(Status status, Attachment attachment);
 
-	// The transaction should not be stored for later usage after the method returns.
-	ProfilerSession startSession(Status status, Transaction transaction, const string description,
+	ProfilerSession startSession(Status status, const string description,
 		const string options, ISC_TIMESTAMP_TZ timestamp);
 
-	// The transaction should not be stored for later usage after the method returns.
-	void flush(Status status, Transaction transaction);
+	void flush(Status status);
 }
 
 interface ProfilerSession : Disposable

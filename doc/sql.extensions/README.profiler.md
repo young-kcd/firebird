@@ -22,7 +22,7 @@ A session may be paused to temporary disable statistics collecting. It may be re
 
 A new session may be started when a session is already active. In this case it has the same semantics of finishing the current session with `RDB$PROFILER.FINISH_SESSION(FALSE)` so snapshots tables are not updated in the same moment.
 
-To analyze the collected data, the user must flush the data to the snapshot tables, which may be done finishing or pausing a session (with `FLUSH` parameter set to `TRUE`) or calling `RDB$PROFILER.FLUSH`.
+To analyze the collected data, the user must flush the data to the snapshot tables, which may be done finishing or pausing a session (with `FLUSH` parameter set to `TRUE`) or calling `RDB$PROFILER.FLUSH`. Data is flushed using an autonomous transaction (a transaction started and finished for the specific purpose of profiler data update).
 
 Following is a sample profile session and queries for data analysis.
 
@@ -88,6 +88,8 @@ select mod(id, 5),
 execute procedure rdb$profiler.finish_session(true);
 
 -- Data analysis
+
+commit;  -- start new transaction
 
 select * from plg$prof_sessions;
 
@@ -195,9 +197,9 @@ Input parameters:
 
 After update data is stored in tables `PLG$PROF_SESSIONS`, `PLG$PROF_STATEMENTS`, `PLG$PROF_RECORD_SOURCES`, `PLG$PROF_REQUESTS`, `PLG$PROF_PSQL_STATS` and `PLG$PROF_RECORD_SOURCE_STATS` and may be read and analyzed by the user.
 
-It also removes finished sessions from memory.
+Data is updated using an autonomous transaction, so if the procedure is called in a snapshot transaction, data will not be directly readable in the same transaction.
 
-If a remote `ATTACHMENT_ID` is used the data is updated in an autonomous transaction.
+Once flush happens, finished sessions are removed from memory.
 
 Input parameters:
  - `ATTACHMENT_ID` type `BIGINT NOT NULL` default `CURRENT_CONNECTION`

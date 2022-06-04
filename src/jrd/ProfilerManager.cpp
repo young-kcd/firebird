@@ -192,10 +192,9 @@ IExternalResultSet* ProfilerPackage::flushProcedure(ThrowStatusExceptionWrapper*
 		return nullptr;
 	}
 
-	const auto transaction = tdbb->getTransaction();
 	const auto profilerManager = attachment->getProfilerManager(tdbb);
 
-	profilerManager->flush(transaction->getInterface(true));
+	profilerManager->flush();
 
 	return nullptr;
 }
@@ -234,13 +233,9 @@ IExternalResultSet* ProfilerPackage::finishSessionProcedure(ThrowStatusException
 		return nullptr;
 	}
 
-	const auto transaction = tdbb->getTransaction();
 	const auto profilerManager = attachment->getProfilerManager(tdbb);
 
-	profilerManager->finishSession(tdbb);
-
-	if (in->flush)
-		profilerManager->flush(transaction->getInterface(true));
+	profilerManager->finishSession(tdbb, in->flush);
 
 	return nullptr;
 }
@@ -258,14 +253,9 @@ IExternalResultSet* ProfilerPackage::pauseSessionProcedure(ThrowStatusExceptionW
 		return nullptr;
 	}
 
-	const auto transaction = tdbb->getTransaction();
 	const auto profilerManager = attachment->getProfilerManager(tdbb);
 
-	if (profilerManager->pauseSession())
-	{
-		if (in->flush)
-			profilerManager->flush(transaction->getInterface(true));
-	}
+	profilerManager->pauseSession(in->flush);
 
 	return nullptr;
 }
@@ -359,7 +349,6 @@ SINT64 ProfilerManager::startSession(thread_db* tdbb, AttNumber attachmentId, co
 	AutoSetRestore<bool> pauseProfiler(&paused, true);
 
 	const auto attachment = tdbb->getAttachment();
-	const auto transaction = tdbb->getTransaction();
 	ThrowLocalStatus status;
 
 	const auto timestamp = TimeZoneUtil::getCurrentTimeStamp(attachment->att_current_timezone);
@@ -393,14 +382,13 @@ SINT64 ProfilerManager::startSession(thread_db* tdbb, AttNumber attachmentId, co
 		plugin.reset(plugins.plugin());
 		plugin->addRef();
 
-		plugin->init(&status, attachment->getInterface(), transaction->getInterface(true));
+		plugin->init(&status, attachment->getInterface());
 
 		plugin->addRef();
 		activePlugins.put(pluginName)->reset(plugin.get());
 	}
 
 	AutoDispose<IProfilerSession> pluginSession = plugin->startSession(&status,
-		transaction->getInterface(true),
 		description.c_str(),
 		options.c_str(),
 		timestamp);
@@ -566,7 +554,7 @@ void ProfilerManager::cancelSession()
 	}
 }
 
-void ProfilerManager::finishSession(thread_db* tdbb)
+void ProfilerManager::finishSession(thread_db* tdbb, bool flushData)
 {
 	if (currentSession)
 	{
@@ -577,15 +565,18 @@ void ProfilerManager::finishSession(thread_db* tdbb)
 		currentSession->pluginSession->finish(&status, timestamp);
 		currentSession = nullptr;
 	}
+
+	if (flushData)
+		flush();
 }
 
-bool ProfilerManager::pauseSession()
+void ProfilerManager::pauseSession(bool flushData)
 {
-	if (!currentSession)
-		return false;
+	if (currentSession)
+		paused = true;
 
-	paused = true;
-	return true;
+	if (flushData)
+		flush();
 }
 
 void ProfilerManager::resumeSession()
@@ -600,7 +591,7 @@ void ProfilerManager::discard()
 	activePlugins.clear();
 }
 
-void ProfilerManager::flush(ITransaction* transaction)
+void ProfilerManager::flush()
 {
 	AutoSetRestore<bool> pauseProfiler(&paused, true);
 
@@ -612,7 +603,7 @@ void ProfilerManager::flush(ITransaction* transaction)
 		auto& plugin = pluginAccessor.current()->second;
 
 		LogLocalStatus status("Profiler flush");
-		plugin->flush(&status, transaction);
+		plugin->flush(&status);
 
 		hasNext = pluginAccessor.getNext();
 
@@ -937,122 +928,74 @@ void ProfilerListener::processCommand(thread_db* tdbb)
 	const auto header = ipc->sharedMemory->getHeader();
 	const auto profilerManager = attachment->getProfilerManager(tdbb);
 
-	jrd_tra* transaction = nullptr;
-	try
+	using Tag = ProfilerIpc::Tag;
+
+	switch (header->tag)
 	{
-		const auto startTransaction = [&]() {
-			transaction = TRA_start(tdbb, 0, 0);
-			tdbb->setTransaction(transaction);
-		};
+		case Tag::CANCEL_SESSION:
+			profilerManager->cancelSession();
+			header->bufferSize = 0;
+			break;
 
-		using Tag = ProfilerIpc::Tag;
+		case Tag::DISCARD:
+			profilerManager->discard();
+			header->bufferSize = 0;
+			break;
 
-		switch (header->tag)
+		case Tag::FINISH_SESSION:
 		{
-			case Tag::CANCEL_SESSION:
-				profilerManager->cancelSession();
-				header->bufferSize = 0;
-				break;
-
-			case Tag::DISCARD:
-				profilerManager->discard();
-				header->bufferSize = 0;
-				break;
-
-			case Tag::FINISH_SESSION:
-			{
-				const auto in = reinterpret_cast<const ProfilerPackage::FinishSessionInput::Type*>(header->buffer);
-				fb_assert(sizeof(*in) == header->bufferSize);
-
-				profilerManager->finishSession(tdbb);
-
-				if (in->flush)
-				{
-					startTransaction();
-					profilerManager->flush(transaction->getInterface(true));
-				}
-
-				header->bufferSize = 0;
-				break;
-			}
-
-			case Tag::FLUSH:
-				startTransaction();
-				profilerManager->flush(transaction->getInterface(true));
-				header->bufferSize = 0;
-				break;
-
-			case Tag::PAUSE_SESSION:
-				if (profilerManager->currentSession)
-				{
-					const auto in = reinterpret_cast<const ProfilerPackage::PauseSessionInput::Type*>(header->buffer);
-					fb_assert(sizeof(*in) == header->bufferSize);
-
-					if (profilerManager->pauseSession())
-					{
-						if (in->flush)
-						{
-							startTransaction();
-							profilerManager->flush(transaction->getInterface(true));
-						}
-					}
-				}
-
-				header->bufferSize = 0;
-				break;
-
-			case Tag::RESUME_SESSION:
-				profilerManager->resumeSession();
-				header->bufferSize = 0;
-				break;
-
-			case Tag::START_SESSION:
-			{
-				startTransaction();
-
-				const auto in = reinterpret_cast<const ProfilerPackage::StartSessionInput::Type*>(header->buffer);
-				fb_assert(sizeof(*in) == header->bufferSize);
-
-				const string description(in->description.str,
-					in->descriptionNull ? 0 : in->description.length);
-				const PathName pluginName(in->pluginName.str,
-					in->pluginNameNull ? 0 : in->pluginName.length);
-				const string pluginOptions(in->pluginOptions.str,
-					in->pluginOptionsNull ? 0 : in->pluginOptions.length);
-
-				const auto out = reinterpret_cast<ProfilerPackage::StartSessionOutput::Type*>(header->buffer);
-				header->bufferSize = sizeof(*out);
-
-				out->sessionIdNull = FB_FALSE;
-				out->sessionId = profilerManager->startSession(tdbb,
-					in->attachmentId, pluginName, description, pluginOptions);
-
-				break;
-			}
-
-			default:
-				fb_assert(false);
-				(Arg::Gds(isc_random) << "Invalid profiler's remote command").raise();
-				break;
+			const auto in = reinterpret_cast<const ProfilerPackage::FinishSessionInput::Type*>(header->buffer);
+			fb_assert(sizeof(*in) == header->bufferSize);
+			profilerManager->finishSession(tdbb, in->flush);
+			header->bufferSize = 0;
+			break;
 		}
 
-		if (transaction)
+		case Tag::FLUSH:
+			profilerManager->flush();
+			header->bufferSize = 0;
+			break;
+
+		case Tag::PAUSE_SESSION:
 		{
-			TRA_commit(tdbb, transaction, false);
-			tdbb->setTransaction(nullptr);
-			transaction = nullptr;
-		}
-	}
-	catch (...)
-	{
-		if (transaction)
-		{
-			TRA_rollback(tdbb, transaction, false, true);
-			tdbb->setTransaction(nullptr);
-			transaction = nullptr;
+			const auto in = reinterpret_cast<const ProfilerPackage::PauseSessionInput::Type*>(header->buffer);
+			fb_assert(sizeof(*in) == header->bufferSize);
+			profilerManager->pauseSession(in->flush);
+			header->bufferSize = 0;
+			break;
 		}
 
-		throw;
+		case Tag::RESUME_SESSION:
+			profilerManager->resumeSession();
+			header->bufferSize = 0;
+			break;
+
+		case Tag::START_SESSION:
+		{
+			const auto in = reinterpret_cast<const ProfilerPackage::StartSessionInput::Type*>(header->buffer);
+			fb_assert(sizeof(*in) == header->bufferSize);
+
+			const string description(in->description.str,
+				in->descriptionNull ? 0 : in->description.length);
+			const PathName pluginName(in->pluginName.str,
+				in->pluginNameNull ? 0 : in->pluginName.length);
+			const string pluginOptions(in->pluginOptions.str,
+				in->pluginOptionsNull ? 0 : in->pluginOptions.length);
+
+			const auto out = reinterpret_cast<ProfilerPackage::StartSessionOutput::Type*>(header->buffer);
+			header->bufferSize = sizeof(*out);
+
+			out->sessionIdNull = FB_FALSE;
+			out->sessionId = profilerManager->startSession(tdbb,
+				in->attachmentId, pluginName, description, pluginOptions);
+
+			break;
+		}
+
+		default:
+			fb_assert(false);
+			(Arg::Gds(isc_random) << "Invalid profiler's remote command").raise();
+			break;
 	}
 }
 

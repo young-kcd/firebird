@@ -116,11 +116,11 @@ public:
 
 private:
 	void cancelSession();
-	void finishSession(thread_db* tdbb);
-	bool pauseSession();
+	void finishSession(thread_db* tdbb, bool flushData);
+	void pauseSession(bool flushData);
 	void resumeSession();
 	void discard();
-	void flush(Firebird::ITransaction* transaction);
+	void flush();
 
 	Statement* getStatement(jrd_req* request);
 	SINT64 getRequest(jrd_req* request, unsigned flags);
