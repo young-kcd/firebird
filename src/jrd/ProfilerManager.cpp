@@ -88,6 +88,7 @@ namespace
 			event_t clientEvent;
 			USHORT bufferSize;
 			Tag tag;
+			char userName[USERNAME_LENGTH + 1];	// \0 if has PROFILE_ANY_ATTACHMENT
 			alignas(FB_ALIGNMENT) UCHAR buffer[4096];
 		};
 
@@ -107,12 +108,14 @@ namespace
 		template <typename Input, typename Output>
 		void sendAndReceive(thread_db* tdbb, Tag tag, const Input* in, Output* out)
 		{
+			static_assert(sizeof(*in) <= sizeof(std::declval<Header>().buffer), "Buffer size too small");
 			internalSendAndReceive(tdbb, tag, in, sizeof(*in), out, sizeof(*out));
 		}
 
 		template <typename Input>
 		void send(thread_db* tdbb, Tag tag, const Input* in)
 		{
+			static_assert(sizeof(*in) <= sizeof(std::declval<Header>().buffer), "Buffer size too small");
 			internalSendAndReceive(tdbb, tag, in, sizeof(*in), nullptr, 0);
 		}
 
@@ -757,6 +760,8 @@ void ProfilerIpc::mutexBug(int osErrorCode, const char* text)
 void ProfilerIpc::internalSendAndReceive(thread_db* tdbb, Tag tag,
 	const void* in, unsigned inSize, void* out, unsigned outSize)
 {
+	const auto attachment = tdbb->getAttachment();
+
 	{	// scope
 		ThreadStatusGuard tempStatus(tdbb);
 
@@ -782,8 +787,14 @@ void ProfilerIpc::internalSendAndReceive(thread_db* tdbb, Tag tag,
 
 	const auto header = sharedMemory->getHeader();
 
-	header->bufferSize = inSize;
 	header->tag = tag;
+
+	if (attachment->locksmith(tdbb, PROFILE_ANY_ATTACHMENT))
+		header->userName[0] = '\0';
+	else
+		strcpy(header->userName, attachment->getUserName().c_str());
+
+	header->bufferSize = inSize;
 
 	fb_assert(inSize <= sizeof(header->buffer));
 	memcpy(header->buffer, in, inSize);
@@ -928,6 +939,9 @@ void ProfilerListener::processCommand(thread_db* tdbb)
 	const auto header = ipc->sharedMemory->getHeader();
 	const auto profilerManager = attachment->getProfilerManager(tdbb);
 
+	if (header->userName[0] && attachment->getUserName() != header->userName)
+		status_exception::raise(Arg::Gds(isc_miss_prvlg) << "PROFILE_ANY_ATTACHMENT");
+
 	using Tag = ProfilerIpc::Tag;
 
 	switch (header->tag)
@@ -983,6 +997,7 @@ void ProfilerListener::processCommand(thread_db* tdbb)
 				in->pluginOptionsNull ? 0 : in->pluginOptions.length);
 
 			const auto out = reinterpret_cast<ProfilerPackage::StartSessionOutput::Type*>(header->buffer);
+			static_assert(sizeof(*out) <= sizeof(header->buffer), "Buffer size too small");
 			header->bufferSize = sizeof(*out);
 
 			out->sessionIdNull = FB_FALSE;

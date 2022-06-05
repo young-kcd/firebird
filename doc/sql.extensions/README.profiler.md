@@ -14,6 +14,8 @@ Remote profiling just forwards commands to the remote attachment. So it's possib
 
 Remote issued commands needs that the target attachment be in an idle state, i.e., not executing others requests. When they are not idle the call blocks waiting for that state.
 
+If remote attachment is from a different user, the calling user must have system privilege PROFILE_ANY_ATTACHMENT.
+
 After a session is started, PSQL and SQL statements statistics starts to be collected in memory. Note that a profile session collects data only of statements executed in the same attachment associated with the session.
 
 Data is aggregated and stored per requests (i.e. a statement execution). When querying snapshot tables, user may do extra aggregation per statements or use the auxiliary views that do that automatically.
