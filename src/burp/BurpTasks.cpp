@@ -132,7 +132,6 @@ BackupRelationTask::BackupRelationTask(BurpGlobals* tdgbl) : Task(),
 			m_buffers.add(buf);
 
 			item->m_cleanBuffers.add(buf);
-			item->m_cleanSem.release();
 		}
 	}
 }
@@ -185,11 +184,13 @@ bool BackupRelationTask::handler(WorkItem& _item)
 	{
 		m_stop = true;
 		m_error = true;
+		stopItems();
 	}
 	catch (const Exception&)	// could be different handlers for LongJump and Exception
 	{
 		m_stop = true;
 		m_error = true;
+		stopItems();
 	}
 	return false;
 }
@@ -245,7 +246,7 @@ bool BackupRelationTask::getWorkItem(BackupRelationTask::WorkItem** pItem)
 	else if (!newReader && --m_readers == 0)
 	{
 		m_readDone = true;
-		m_dirtySem.release();
+		m_dirtyCond.notifyAll();
 	}
 
 	return (item && item->m_inuse);
@@ -268,18 +269,16 @@ int BackupRelationTask::getMaxWorkers()
 
 IOBuffer* BackupRelationTask::getCleanBuffer(Item& item)
 {
-	while (!m_stop)
-	{
-		if (item.m_cleanSem.tryEnter(0, 200))
-			break;
-	}
-
-	if (m_stop)
-		return NULL;
-
 	IOBuffer* buf = NULL;
 	{
 		MutexLockGuard guard(item.m_mutex, FB_FUNCTION);
+
+		while (!m_stop && !item.m_cleanBuffers.hasData())
+			item.m_cleanCond.wait(item.m_mutex);
+
+		if (m_stop)
+			return NULL;
+
 		fb_assert(item.m_cleanBuffers.hasData());
 
 		if (item.m_cleanBuffers.hasData())
@@ -303,10 +302,13 @@ void BackupRelationTask::putDirtyBuffer(IOBuffer* buf)
 
 	{
 		MutexLockGuard guard(m_mutex, FB_FUNCTION);
+
+		if (m_dirtyBuffers.isEmpty())
+			m_dirtyCond.notifyOne();
+
 		m_dirtyBuffers.push(buf);
 	}
 	buf->unlock();
-	m_dirtySem.release();
 }
 
 IOBuffer* BackupRelationTask::renewBuffer(BurpGlobals* tdgbl)
@@ -410,19 +412,17 @@ BackupRelationTask* BackupRelationTask::getBackupTask(BurpGlobals* tdgbl)
 
 IOBuffer* BackupRelationTask::getDirtyBuffer()
 {
-	while (!m_stop)
-	{
-		if (m_dirtySem.tryEnter(0, 200))
-			break;
-	}
-
-	if (m_stop)
-		return NULL;
-
 	IOBuffer* buf = NULL;
 	{
 		MutexLockGuard guard(m_mutex, FB_FUNCTION);
-		fb_assert(m_dirtyBuffers.hasData() || m_readDone);
+
+		while (!m_stop && !m_readDone && !m_dirtyBuffers.hasData())
+			m_dirtyCond.wait(m_mutex);
+
+		if (m_stop || m_readDone)
+			return NULL;
+
+		fb_assert(m_dirtyBuffers.hasData());
 
 		if (m_dirtyBuffers.hasData())
 		{
@@ -443,10 +443,13 @@ void BackupRelationTask::putCleanBuffer(IOBuffer* buf)
 	Item* item = reinterpret_cast<Item*>(buf->getItem());
 	{
 		MutexLockGuard guard(item->m_mutex, FB_FUNCTION);
+
+		if (item->m_cleanBuffers.isEmpty())
+			item->m_cleanCond.notifyOne();
+
 		item->m_cleanBuffers.push(buf);
 	}
 	buf->unlock();
-	item->m_cleanSem.release();
 }
 
 void BackupRelationTask::initItem(BurpGlobals* tdgbl, Item& item)
@@ -543,6 +546,14 @@ void BackupRelationTask::freeItem(Item& item)
 			item.m_att = nullptr;
 		}
 	}
+}
+
+void BackupRelationTask::stopItems()
+{
+	MutexLockGuard guard(m_mutex, FB_FUNCTION);
+
+	for (Item** p = m_items.begin(); p < m_items.end(); p++)
+		(*p)->m_cleanCond.notifyAll();
 }
 
 bool BackupRelationTask::fileWriter(Item& item)
@@ -704,12 +715,14 @@ bool RestoreRelationTask::handler(WorkItem& _item)
 		m_stop = true;
 		m_error = true;
 		m_dirtyCond.notifyAll();
+		m_cleanCond.notifyAll();
 	}
 	catch (const Exception&)	// could be different handlers for LongJump and Exception
 	{
 		m_stop = true;
 		m_error = true;
 		m_dirtyCond.notifyAll();
+		m_cleanCond.notifyAll();
 	}
 	return false;
 }
@@ -946,18 +959,15 @@ bool RestoreRelationTask::freeItem(Item& item, bool commit)
 
 IOBuffer* RestoreRelationTask::getCleanBuffer()
 {
-	while (!m_stop)
-	{
-		if (m_cleanSem.tryEnter(0, 200))
-			break;
-	}
-
-	if (m_stop)
-		return NULL;
-
 	IOBuffer* buf = NULL;
 	{
 		MutexLockGuard guard(m_mutex, FB_FUNCTION);
+		while (!m_stop && !m_cleanBuffers.hasData())
+			m_cleanCond.wait(m_mutex);
+
+		if (m_stop)
+			return NULL;
+
 		fb_assert(m_cleanBuffers.hasData() /*|| m_readDone*/);
 
 		if (m_cleanBuffers.hasData())
@@ -977,9 +987,10 @@ IOBuffer* RestoreRelationTask::getCleanBuffer()
 void RestoreRelationTask::putDirtyBuffer(IOBuffer* buf)
 {
 	MutexLockGuard guard(m_mutex, FB_FUNCTION);
-	m_dirtyBuffers.push(buf);
+	if (m_dirtyBuffers.isEmpty())
+		m_dirtyCond.notifyOne();
 	buf->unlock();
-	m_dirtyCond.notifyOne();
+	m_dirtyBuffers.push(buf);
 }
 
 IOBuffer* RestoreRelationTask::renewBuffer(BurpGlobals* tdgbl)
@@ -1074,8 +1085,9 @@ IOBuffer* RestoreRelationTask::getDirtyBuffer()
 void RestoreRelationTask::putCleanBuffer(IOBuffer* buf)
 {
 	MutexLockGuard guard(m_mutex, FB_FUNCTION);
+	if (m_cleanBuffers.isEmpty())
+		m_cleanCond.notifyOne();
 	m_cleanBuffers.push(buf);
-	m_cleanSem.release();
 }
 
 RestoreRelationTask::Item::EnsureUnlockBuffer::~EnsureUnlockBuffer()

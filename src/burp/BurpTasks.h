@@ -289,7 +289,7 @@ public:
 		Firebird::Mutex m_mutex;
 		Firebird::HalfStaticArray<IOBuffer*, 2> m_cleanBuffers;
 		IOBuffer* m_buffer;
-		Firebird::Semaphore m_cleanSem;
+		Firebird::Condition m_cleanCond;
 	};
 
 	static BackupRelationTask* getBackupTask(BurpGlobals* tdgbl);
@@ -309,6 +309,7 @@ public:
 private:
 	void initItem(BurpGlobals* tdgbl, Item& item);
 	void freeItem(Item& item);
+	void stopItems();
 	bool fileWriter(Item& item);
 	bool tableReader(Item& item);
 
@@ -334,7 +335,7 @@ private:
 
 	Firebird::HalfStaticArray<IOBuffer*, 16> m_buffers;
 	Firebird::HalfStaticArray<IOBuffer*, 8> m_dirtyBuffers;
-	Firebird::Semaphore m_dirtySem;
+	Firebird::Condition m_dirtyCond;
 };
 
 
@@ -464,7 +465,7 @@ private:
 	Firebird::HalfStaticArray<IOBuffer*, 16> m_buffers;
 	Firebird::HalfStaticArray<IOBuffer*, 16> m_cleanBuffers;
 	Firebird::HalfStaticArray<IOBuffer*, 16> m_dirtyBuffers;
-	Firebird::Semaphore m_cleanSem;
+	Firebird::Condition m_cleanCond;
 	Firebird::Condition m_dirtyCond;
 };
 
