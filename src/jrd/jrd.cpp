@@ -1338,7 +1338,7 @@ static JAttachment*	initAttachment(thread_db*, const PathName&, const PathName&,
 	const DatabaseOptions&, RefMutexUnlock&, IPluginConfig*, JProvider*);
 static JAttachment*	create_attachment(const PathName&, Database*, JProvider* provider, const DatabaseOptions&, bool newDb);
 static void		prepare_tra(thread_db*, jrd_tra*, USHORT, const UCHAR*);
-static void		release_attachment(thread_db*, Attachment*);
+static void		release_attachment(thread_db*, Attachment*, XThreadEnsureUnlock* = nullptr);
 static void		start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra_handle,
 	Jrd::Attachment* attachment, unsigned int tpb_length, const UCHAR* tpb);
 static void		rollback(thread_db*, jrd_tra*, const bool);
@@ -3417,6 +3417,7 @@ void JAttachment::internalDropDatabase(CheckStatusWrapper* user_status)
 			// Prepare to set ODS to 0
    			WIN window(HEADER_PAGE_NUMBER);
 			Ods::header_page* header = NULL;
+			XThreadEnsureUnlock threadGuard(dbb->dbb_thread_mutex, FB_FUNCTION);
 
 			try
 			{
@@ -3440,6 +3441,13 @@ void JAttachment::internalDropDatabase(CheckStatusWrapper* user_status)
 						ERR_post(Arg::Gds(isc_att_shutdown) << Arg::Gds(err));
 
 					ERR_post(Arg::Gds(isc_att_shutdown));
+				}
+
+				// try to block special threads before taking exclusive lock on database
+				if (!threadGuard.tryEnter())
+				{
+					ERR_post(Arg::Gds(isc_no_meta_update) <<
+							 Arg::Gds(isc_obj_in_use) << Arg::Str("DATABASE"));
 				}
 
 				if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD, NULL))
@@ -3494,7 +3502,7 @@ void JAttachment::internalDropDatabase(CheckStatusWrapper* user_status)
 			}
 
 			// Unlink attachment from database
-			release_attachment(tdbb, attachment);
+			release_attachment(tdbb, attachment, &threadGuard);
 			att = NULL;
 			attachment = NULL;
 			guard.leave();
@@ -7574,7 +7582,7 @@ static void prepare_tra(thread_db* tdbb, jrd_tra* transaction, USHORT length, co
 }
 
 
-void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
+void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment, XThreadEnsureUnlock* dropGuard)
 {
 /**************************************
  *
@@ -7655,8 +7663,14 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	Sync sync(&dbb->dbb_sync, "jrd.cpp: release_attachment");
 
 	// avoid races with special threads
+	// take into an account lock earlier taken in DROP DATABASE
 	XThreadEnsureUnlock threadGuard(dbb->dbb_thread_mutex, FB_FUNCTION);
-	threadGuard.enter();
+	XThreadEnsureUnlock* activeThreadGuard = dropGuard;
+	if (!activeThreadGuard)
+	{
+		threadGuard.enter();
+		activeThreadGuard = &threadGuard;
+	}
 
 	sync.lock(SYNC_EXCLUSIVE);
 
@@ -7690,7 +7704,7 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 		}
 
 		// Notify special threads
-		threadGuard.leave();
+		activeThreadGuard->leave();
 
 		// Sync with special threads
 		if (!other)
