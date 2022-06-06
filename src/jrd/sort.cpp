@@ -656,7 +656,10 @@ void Sort::allocateBuffer(MemoryPool& pool)
 	{
 		m_size_memory = m_max_alloc_size;
 		m_memory = FB_NEW_POOL(*m_dbb->dbb_permanent) UCHAR[m_size_memory];
-		m_flags |= scb_reuse_buffer;
+
+		// Mark the buffer as cacheable for future reuse
+		if (m_size_memory == MAX_SORT_BUFFER_SIZE)
+			m_flags |= scb_reuse_buffer;
 	}
 	catch (const BadAlloc&)
 	{
