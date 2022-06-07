@@ -8033,6 +8033,9 @@ const StmtNode* StoreNode::store(thread_db* tdbb, Request* request, WhichTrigger
 	record_param* rpb = &request->req_rpb[stream];
 	jrd_rel* relation = rpb->rpb_relation;
 
+	if ((marks & MARK_BULK_INSERT) || request->req_batch_mode)
+		rpb->rpb_stream_flags |= RPB_s_bulk;
+
 	const auto localTableSource = nodeAs<LocalTableSourceNode>(target);
 	const auto localTable = localTableSource ?
 		request->getStatement()->localTables[localTableSource->tableNumber] :

@@ -3337,9 +3337,17 @@ static rhd* locate_space(thread_db* tdbb,
 	ULONG pp_sequence =
 		(type == DPM_primary ? relPages->rel_pri_data_space : relPages->rel_sec_data_space);
 
+	const bool bulkInsert = (type == DPM_primary) && (rpb->rpb_stream_flags & RPB_s_bulk);
+
 	for (;; pp_sequence++)
 	{
-		locklevel_t ppLock = LCK_read;
+		// Bulk inserts looks up for empty DP only to avoid contention with
+		// another attachments doing bulk inserts. Note, DP number is saved in
+		// relPages->rel_last_free_pri_dp and next insert by same attachment
+		// will use same DP while concurrent bulk attachments will ignore it as
+		// non-empty. Take write lock on PP early to clear 'empty' flag.
+
+		locklevel_t ppLock = bulkInsert ? LCK_write : LCK_read;
 
 		if (type == DPM_primary)
 			relPages->rel_pri_data_space = pp_sequence;
@@ -3379,6 +3387,9 @@ static rhd* locate_space(thread_db* tdbb,
 			// ppg_dp_empty bit. To do it, we need to re-fetch PP with write lock.
 			bool dp_is_empty = PPG_DP_BIT_TEST(bits, slot, ppg_dp_empty);
 			bool dp_is_secondary = PPG_DP_BIT_TEST(bits, slot, ppg_dp_secondary);
+
+			if (bulkInsert && !dp_is_empty)
+				continue;
 
 			if (dp_is_empty)
 			{
@@ -3459,7 +3470,12 @@ static rhd* locate_space(thread_db* tdbb,
 		space = find_space(tdbb, rpb, size, stack, record, type);
 
 		if (space)
+		{
+			if (DPM_primary)
+				relPages->rel_last_free_pri_dp = window->win_page.getPageNum();
+
 			break;
+		}
 	}
 
 	if (i == 20)
