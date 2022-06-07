@@ -91,7 +91,7 @@ execute procedure rdb$profiler.finish_session(true);
 
 -- Data analysis
 
-commit;  -- start new transaction
+set transaction read committed;
 
 select * from plg$prof_sessions;
 
@@ -130,12 +130,15 @@ select pstat.*
 
 `RDB$PROFILER.START_SESSION` starts a new profiler session, turns it the current session (of the given `ATTACHMENT_ID`) and return its identifier.
 
+If `FLUSH_INTERVAL` is different than `NULL` auto-flush is setup in the same way as manually calling `RDB$PROFILER.SET_FLUSH_INTERVAL`.
+
 If `PLUGIN_NAME` is `NULL` (the default) it uses the database configuration `DefaultProfilerPlugin`.
 
 `PLUGIN_OPTIONS` is plugin specific options and currently should be `NULL` for `Default_Profiler` plugin.
 
 Input parameters:
  - `DESCRIPTION` type `VARCHAR(255) CHARACTER SET UTF8` default `NULL`
+ - `FLUSH_INTERVAL` type `INTEGER` default `NULL`
  - `ATTACHMENT_ID` type `BIGINT NOT NULL` default `CURRENT_CONNECTION`
  - `PLUGIN_NAME` type `VARCHAR(255) CHARACTER SET UTF8` default `NULL`
  - `PLUGIN_OPTIONS` type `VARCHAR(255) CHARACTER SET UTF8` default `NULL`
@@ -204,6 +207,16 @@ Data is updated using an autonomous transaction, so if the procedure is called i
 Once flush happens, finished sessions are removed from memory.
 
 Input parameters:
+ - `ATTACHMENT_ID` type `BIGINT NOT NULL` default `CURRENT_CONNECTION`
+
+## Procedure `SET_FLUSH_INTERVAL`
+
+`RDB$PROFILER.SET_FLUSH_INTERVAL` turns periodic auto-flush on (when `FLUSH_INTERVAL` is greater than 0) or off (when `FLUSH_INTERVAL` is equal to 0).
+
+`FLUSH_INTERVAL` is interpreted as number of seconds.
+
+Input parameters:
+ - `FLUSH_INTERVAL` type `INTEGER NOT NULL`
  - `ATTACHMENT_ID` type `BIGINT NOT NULL` default `CURRENT_CONNECTION`
 
 # Snapshot tables

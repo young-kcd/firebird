@@ -28,6 +28,8 @@
 #include "../common/classes/auto.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/Nullable.h"
+#include "../common/classes/RefCounted.h"
+#include "../common/classes/TimerImpl.h"
 #include "../jrd/SystemPackages.h"
 
 namespace Jrd {
@@ -97,8 +99,8 @@ public:
 	void operator=(const ProfilerManager&) = delete;
 
 public:
-	SINT64 startSession(thread_db* tdbb, AttNumber attachmentId, const Firebird::PathName& pluginName,
-		const Firebird::string& description, const Firebird::string& options);
+	SINT64 startSession(thread_db* tdbb, Nullable<SLONG> flushInterval,
+		const Firebird::PathName& pluginName, const Firebird::string& description, const Firebird::string& options);
 
 	void prepareRecSource(thread_db* tdbb, jrd_req* request, const RecordSource* rsb);
 	void onRequestFinish(jrd_req* request);
@@ -114,13 +116,27 @@ public:
 		return currentSession && !paused;
 	}
 
+	static void checkFlushInterval(SLONG interval)
+	{
+		if (interval < 0)
+		{
+			Firebird::status_exception::raise(
+				Firebird::Arg::Gds(isc_not_valid_for_var) <<
+				"FLUSH_INTERVAL" <<
+				Firebird::Arg::Num(interval));
+		}
+	}
+
 private:
 	void cancelSession();
 	void finishSession(thread_db* tdbb, bool flushData);
 	void pauseSession(bool flushData);
 	void resumeSession();
+	void setFlushInterval(SLONG interval);
 	void discard();
-	void flush();
+	void flush(bool updateTimer = true);
+
+	void updateFlushTimer(bool canStopTimer = true);
 
 	Statement* getStatement(jrd_req* request);
 	SINT64 getRequest(jrd_req* request, unsigned flags);
@@ -129,6 +145,8 @@ private:
 	Firebird::AutoPtr<ProfilerListener> listener;
 	Firebird::LeftPooledMap<Firebird::PathName, Firebird::AutoPlugin<Firebird::IProfilerPlugin>> activePlugins;
 	Firebird::AutoPtr<Session> currentSession;
+	Firebird::RefPtr<Firebird::TimerImpl> flushTimer;
+	unsigned currentFlushInterval = 0;
 	bool paused = false;
 };
 
@@ -199,8 +217,19 @@ private:
 
 	//----------
 
+	FB_MESSAGE(SetFlushIntervalInput, Firebird::ThrowStatusExceptionWrapper,
+		(FB_INTEGER, flushInterval)
+		(FB_BIGINT, attachmentId)
+	);
+
+	static Firebird::IExternalResultSet* setFlushIntervalProcedure(Firebird::ThrowStatusExceptionWrapper* status,
+		Firebird::IExternalContext* context, const SetFlushIntervalInput::Type* in, void* out);
+
+	//----------
+
 	FB_MESSAGE(StartSessionInput, Firebird::ThrowStatusExceptionWrapper,
 		(FB_INTL_VARCHAR(255, CS_METADATA), description)
+		(FB_INTEGER, flushInterval)
 		(FB_BIGINT, attachmentId)
 		(FB_INTL_VARCHAR(255, CS_METADATA), pluginName)
 		(FB_INTL_VARCHAR(255, CS_METADATA), pluginOptions)

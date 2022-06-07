@@ -58,6 +58,7 @@ namespace
 			FLUSH,
 			PAUSE_SESSION,
 			RESUME_SESSION,
+			SET_FLUSH_INTERVAL,
 			START_SESSION
 		};
 
@@ -283,6 +284,26 @@ IExternalResultSet* ProfilerPackage::resumeSessionProcedure(ThrowStatusException
 	return nullptr;
 }
 
+IExternalResultSet* ProfilerPackage::setFlushIntervalProcedure(ThrowStatusExceptionWrapper* /*status*/,
+	IExternalContext* context, const SetFlushIntervalInput::Type* in, void* out)
+{
+	const auto tdbb = JRD_get_thread_data();
+	const auto attachment = tdbb->getAttachment();
+
+	if (in->attachmentId != attachment->att_attachment_id)
+	{
+		ProfilerIpc ipc(tdbb, *getDefaultMemoryPool(), in->attachmentId);
+		ipc.send(tdbb, ProfilerIpc::Tag::SET_FLUSH_INTERVAL, in);
+		return nullptr;
+	}
+
+	const auto profilerManager = attachment->getProfilerManager(tdbb);
+
+	profilerManager->setFlushInterval(in->flushInterval);
+
+	return nullptr;
+}
+
 void ProfilerPackage::startSessionFunction(ThrowStatusExceptionWrapper* /*status*/,
 	IExternalContext* context, const StartSessionInput::Type* in, StartSessionOutput::Type* out)
 {
@@ -297,13 +318,15 @@ void ProfilerPackage::startSessionFunction(ThrowStatusExceptionWrapper* /*status
 	}
 
 	const string description(in->description.str, in->descriptionNull ? 0 : in->description.length);
+	const Nullable<SLONG> flushInterval(in->flushIntervalNull ?
+		Nullable<SLONG>() : Nullable<SLONG>(in->flushInterval));
 	const PathName pluginName(in->pluginName.str, in->pluginNameNull ? 0 : in->pluginName.length);
 	const string pluginOptions(in->pluginOptions.str, in->pluginOptionsNull ? 0 : in->pluginOptions.length);
 
 	const auto profilerManager = attachment->getProfilerManager(tdbb);
 
 	out->sessionIdNull = FB_FALSE;
-	out->sessionId = profilerManager->startSession(tdbb, in->attachmentId, pluginName, description, pluginOptions);
+	out->sessionId = profilerManager->startSession(tdbb, flushInterval, pluginName, description, pluginOptions);
 }
 
 
@@ -313,10 +336,22 @@ void ProfilerPackage::startSessionFunction(ThrowStatusExceptionWrapper* /*status
 ProfilerManager::ProfilerManager(thread_db* tdbb)
 	: activePlugins(*tdbb->getAttachment()->att_pool)
 {
+	const auto attachment = tdbb->getAttachment();
+
+	flushTimer = FB_NEW TimerImpl();
+
+	flushTimer->setOnTimer([this, attachment](auto) {
+		FbLocalStatus statusVector;
+		EngineContextHolder innerTdbb(&statusVector, attachment->getInterface(), FB_FUNCTION);
+
+		flush(false);
+		updateFlushTimer(false);
+	});
 }
 
 ProfilerManager::~ProfilerManager()
 {
+	flushTimer->stop();
 }
 
 ProfilerManager* ProfilerManager::create(thread_db* tdbb)
@@ -346,9 +381,12 @@ int ProfilerManager::blockingAst(void* astObject)
 	return 0;
 }
 
-SINT64 ProfilerManager::startSession(thread_db* tdbb, AttNumber attachmentId, const PathName& pluginName,
-	const string& description, const string& options)
+SINT64 ProfilerManager::startSession(thread_db* tdbb, Nullable<SLONG> flushInterval,
+	const PathName& pluginName, const string& description, const string& options)
 {
+	if (flushInterval.isAssigned())
+		checkFlushInterval(flushInterval.value);
+
 	AutoSetRestore<bool> pauseProfiler(&paused, true);
 
 	const auto attachment = tdbb->getAttachment();
@@ -404,6 +442,9 @@ SINT64 ProfilerManager::startSession(thread_db* tdbb, AttNumber attachmentId, co
 	currentSession->flags = currentSession->pluginSession->getFlags();
 
 	paused = false;
+
+	if (flushInterval.isAssigned())
+		setFlushInterval(flushInterval.value);
 
 	return currentSession->pluginSession->getId();
 }
@@ -585,7 +626,19 @@ void ProfilerManager::pauseSession(bool flushData)
 void ProfilerManager::resumeSession()
 {
 	if (currentSession)
+	{
 		paused = false;
+		updateFlushTimer();
+	}
+}
+
+void ProfilerManager::setFlushInterval(SLONG interval)
+{
+	checkFlushInterval(interval);
+
+	currentFlushInterval = (unsigned) interval;
+
+	updateFlushTimer();
 }
 
 void ProfilerManager::discard()
@@ -594,25 +647,38 @@ void ProfilerManager::discard()
 	activePlugins.clear();
 }
 
-void ProfilerManager::flush()
+void ProfilerManager::flush(bool updateTimer)
 {
-	AutoSetRestore<bool> pauseProfiler(&paused, true);
+	{	// scope
+		AutoSetRestore<bool> pauseProfiler(&paused, true);
 
-	auto pluginAccessor = activePlugins.accessor();
+		auto pluginAccessor = activePlugins.accessor();
 
-	for (bool hasNext = pluginAccessor.getFirst(); hasNext;)
-	{
-		auto& pluginName = pluginAccessor.current()->first;
-		auto& plugin = pluginAccessor.current()->second;
+		for (bool hasNext = pluginAccessor.getFirst(); hasNext;)
+		{
+			auto& pluginName = pluginAccessor.current()->first;
+			auto& plugin = pluginAccessor.current()->second;
 
-		LogLocalStatus status("Profiler flush");
-		plugin->flush(&status);
+			LogLocalStatus status("Profiler flush");
+			plugin->flush(&status);
 
-		hasNext = pluginAccessor.getNext();
+			hasNext = pluginAccessor.getNext();
 
-		if (!currentSession || plugin.get() != currentSession->plugin.get())
-			activePlugins.remove(pluginName);
+			if (!currentSession || plugin.get() != currentSession->plugin.get())
+				activePlugins.remove(pluginName);
+		}
 	}
+
+	if (updateTimer)
+		updateFlushTimer();
+}
+
+void ProfilerManager::updateFlushTimer(bool canStopTimer)
+{
+	if (currentSession && !paused && currentFlushInterval)
+		flushTimer->reset(currentFlushInterval);
+	else if (canStopTimer)
+		flushTimer->stop();
 }
 
 ProfilerManager::Statement* ProfilerManager::getStatement(jrd_req* request)
@@ -984,6 +1050,16 @@ void ProfilerListener::processCommand(thread_db* tdbb)
 			header->bufferSize = 0;
 			break;
 
+		case Tag::SET_FLUSH_INTERVAL:
+		{
+			const auto in = reinterpret_cast<const ProfilerPackage::SetFlushIntervalInput::Type*>(header->buffer);
+			fb_assert(sizeof(*in) == header->bufferSize);
+
+			profilerManager->setFlushInterval(in->flushInterval);
+			header->bufferSize = 0;
+			break;
+		}
+
 		case Tag::START_SESSION:
 		{
 			const auto in = reinterpret_cast<const ProfilerPackage::StartSessionInput::Type*>(header->buffer);
@@ -991,6 +1067,8 @@ void ProfilerListener::processCommand(thread_db* tdbb)
 
 			const string description(in->description.str,
 				in->descriptionNull ? 0 : in->description.length);
+			const Nullable<SLONG> flushInterval(in->flushIntervalNull ?
+				Nullable<SLONG>() : Nullable<SLONG>(in->flushInterval));
 			const PathName pluginName(in->pluginName.str,
 				in->pluginNameNull ? 0 : in->pluginName.length);
 			const string pluginOptions(in->pluginOptions.str,
@@ -1001,8 +1079,8 @@ void ProfilerListener::processCommand(thread_db* tdbb)
 			header->bufferSize = sizeof(*out);
 
 			out->sessionIdNull = FB_FALSE;
-			out->sessionId = profilerManager->startSession(tdbb,
-				in->attachmentId, pluginName, description, pluginOptions);
+			out->sessionId = profilerManager->startSession(tdbb, flushInterval,
+				pluginName, description, pluginOptions);
 
 			break;
 		}
@@ -1110,6 +1188,21 @@ ProfilerPackage::ProfilerPackage(MemoryPool& pool)
 				// output parameters
 				{
 				}
+			),
+			SystemProcedure(
+				pool,
+				"SET_FLUSH_INTERVAL",
+				SystemProcedureFactory<SetFlushIntervalInput, VoidMessage, setFlushIntervalProcedure>(),
+				prc_executable,
+				// input parameters
+				{
+					{"FLUSH_INTERVAL", fld_seconds_interval, false},
+					{"ATTACHMENT_ID", fld_att_id, false, "current_connection",
+						{blr_internal_info, blr_literal, blr_long, 0, INFO_TYPE_CONNECTION_ID, 0, 0, 0}}
+				},
+				// output parameters
+				{
+				}
 			)
 		},
 		// functions
@@ -1121,6 +1214,7 @@ ProfilerPackage::ProfilerPackage(MemoryPool& pool)
 				// parameters
 				{
 					{"DESCRIPTION", fld_short_description, true, "null", {blr_null}},
+					{"FLUSH_INTERVAL", fld_seconds_interval, true, "null", {blr_null}},
 					{"ATTACHMENT_ID", fld_att_id, false, "current_connection",
 						{blr_internal_info, blr_literal, blr_long, 0, INFO_TYPE_CONNECTION_ID, 0, 0, 0}},
 					{"PLUGIN_NAME", fld_file_name2, true, "null", {blr_null}},

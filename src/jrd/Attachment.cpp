@@ -1172,3 +1172,8 @@ bool Attachment::isProfilerActive()
 {
 	return att_profiler_manager && att_profiler_manager->isActive();
 }
+
+void Attachment::releaseProfilerManager()
+{
+	att_profiler_manager.reset();
+}

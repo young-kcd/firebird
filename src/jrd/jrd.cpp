@@ -7518,6 +7518,8 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	if (!attachment)
 		return;
 
+	attachment->releaseProfilerManager();
+
 	attachment->att_replicator = nullptr;
 
 	while (attachment->att_repl_appliers.hasData())

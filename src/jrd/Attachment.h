@@ -800,6 +800,7 @@ public:
 
 	ProfilerManager* getProfilerManager(thread_db* tdbb);
 	bool isProfilerActive();
+	void releaseProfilerManager();
 
 	JProvider* getProvider()
 	{
