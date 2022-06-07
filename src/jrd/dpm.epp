@@ -961,6 +961,9 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, ULONG prior_page)
 		if (relPages->rel_last_free_pri_dp == pages[i])
 			relPages->rel_last_free_pri_dp = 0;
 
+		if (relPages->rel_last_free_blb_dp == pages[i])
+			relPages->rel_last_free_blb_dp = 0;
+
 		relPages->setDPNumber(dpSequence + s, 0);
 	}
 
@@ -2186,6 +2189,10 @@ RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 
 	rpb.rpb_relation = blob->blb_relation;
 	rpb.rpb_transaction_nr = tdbb->getTransaction()->tra_number;
+	rpb.rpb_flags = rpb_blob;
+
+	if (blob->blb_flags & BLB_bulk)
+		rpb.rpb_stream_flags |= RPB_s_bulk;
 
 	blh* header = (blh*) locate_space(tdbb, &rpb, (SSHORT) (BLH_SIZE + length),
 									  stack, record, DPM_other);
@@ -3303,14 +3310,20 @@ static rhd* locate_space(thread_db* tdbb,
 		}
 	}
 
-	if (type == DPM_primary && relPages->rel_last_free_pri_dp)
+	const bool isBlob = (type == DPM_other) && (rpb->rpb_flags & rpb_blob);
+	if ((type == DPM_primary) && relPages->rel_last_free_pri_dp ||
+		isBlob && relPages->rel_last_free_blb_dp)
 	{
-		window->win_page = relPages->rel_last_free_pri_dp;
+		window->win_page = (type == DPM_primary) ? relPages->rel_last_free_pri_dp : 
+												   relPages->rel_last_free_blb_dp;
 		data_page* dpage = (data_page*) CCH_FETCH(tdbb, window, LCK_write, pag_undefined);
+
+		const UCHAR wrongFlags = dpg_orphan | 
+			((type == DPM_primary) ? dpg_secondary | dpg_large : 0);
 
 		const bool pageOk =
 			dpage->dpg_header.pag_type == pag_data &&
-			!(dpage->dpg_header.pag_flags & (dpg_secondary | dpg_large | dpg_orphan)) &&
+			!(dpage->dpg_header.pag_flags & wrongFlags) &&
 			dpage->dpg_relation == rpb->rpb_relation->rel_id &&
 			//dpage->dpg_sequence == dpSequence &&
 			(dpage->dpg_count > 0);
@@ -3324,7 +3337,10 @@ static rhd* locate_space(thread_db* tdbb,
 		else
 			CCH_RELEASE(tdbb, window);
 
-		relPages->rel_last_free_pri_dp = 0;
+		if (type == DPM_primary)
+			relPages->rel_last_free_pri_dp = 0;
+		else
+			relPages->rel_last_free_blb_dp = 0;
 	}
 
 	// Look for space anywhere
@@ -3337,7 +3353,7 @@ static rhd* locate_space(thread_db* tdbb,
 	ULONG pp_sequence =
 		(type == DPM_primary ? relPages->rel_pri_data_space : relPages->rel_sec_data_space);
 
-	const bool bulkInsert = (type == DPM_primary) && (rpb->rpb_stream_flags & RPB_s_bulk);
+	const bool bulkInsert = (type == DPM_primary || isBlob) && (rpb->rpb_stream_flags & RPB_s_bulk);
 
 	for (;; pp_sequence++)
 	{
@@ -3438,6 +3454,8 @@ static rhd* locate_space(thread_db* tdbb,
 					{
 						if (type == DPM_primary)
 							relPages->rel_last_free_pri_dp = dp_number;
+						else if (isBlob)
+							relPages->rel_last_free_blb_dp = dp_number;
 
 						return (rhd*)space;
 					}
@@ -3471,8 +3489,10 @@ static rhd* locate_space(thread_db* tdbb,
 
 		if (space)
 		{
-			if (DPM_primary)
+			if (type == DPM_primary)
 				relPages->rel_last_free_pri_dp = window->win_page.getPageNum();
+			else if (isBlob)
+				relPages->rel_last_free_blb_dp = window->win_page.getPageNum();
 
 			break;
 		}

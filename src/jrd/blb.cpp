@@ -950,7 +950,7 @@ SLONG blb::BLB_lseek(USHORT mode, SLONG offset)
 // compiler allows to modify from_desc->dsc_address' contents when from_desc is
 // constant, this is misleading so I didn't make the source descriptor constant.
 void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc,
-			   jrd_rel* relation, Record* record, USHORT fieldId)
+			   jrd_rel* relation, Record* record, USHORT fieldId, bool bulk)
 {
 /**************************************
  *
@@ -1206,6 +1206,9 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc,
 #ifdef CHECK_BLOB_FIELD_ACCESS_FOR_SELECT
 	blob->blb_fld_id = fieldId;
 #endif
+	if (bulk)
+		blob->blb_flags |= BLB_bulk;
+
 	destination->set_permanent(relation->rel_id, DPM_store_blob(tdbb, blob, record));
 	// This is the only place in the engine where blobs are materialized
 	// If new places appear code below should transform to common sub-routine
