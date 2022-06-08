@@ -3210,8 +3210,13 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 		lstring data;
 		data.lstr_allocated = 0;
 		data.lstr_address = NULL;
-		Firebird::Array<UCHAR> dataBuffer;
 		RCRD_LENGTH old_length = 0;
+		Firebird::Cleanup datClean( [&data]
+			{
+				if (data.lstr_address)
+					BURP_free(data.lstr_address);
+			}
+		);
 
 		Firebird::Array<UCHAR> sqlBuffer;
 		UCHAR* sql = sqlBuffer.getBuffer(meta->getMessageLength(&tdgbl->throwStatus));
@@ -3249,10 +3254,13 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 				else
 				{
 					data.lstr_length = len = get_int32(tdgbl);
+
 					if (len > data.lstr_allocated)
 					{
 						data.lstr_allocated = len;
-						data.lstr_address = dataBuffer.getBuffer(data.lstr_allocated);
+						if (data.lstr_address)
+							BURP_free (data.lstr_address);
+						data.lstr_address = BURP_alloc(data.lstr_allocated);
 					}
 					p = data.lstr_address;
 				}
