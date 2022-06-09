@@ -128,7 +128,7 @@ BackupRelationTask::BackupRelationTask(BurpGlobals* tdgbl) : Task(),
 		// two IO buffers per item is enough
 		for (int j = 0; j < 2; j++)
 		{
-			IOBuffer* buf = FB_NEW_POOL(*pool) IOBuffer(item, 1024*256);
+			IOBuffer* buf = FB_NEW_POOL(*pool) IOBuffer(item, tdgbl->mvol_io_buffer_size);
 			m_buffers.add(buf);
 
 			item->m_cleanBuffers.add(buf);
@@ -254,6 +254,8 @@ bool BackupRelationTask::getWorkItem(BackupRelationTask::WorkItem** pItem)
 
 bool BackupRelationTask::getResult(IStatus* /*status*/)
 {
+	fb_assert(!m_error || m_dirtyBuffers.isEmpty());
+
 	return !m_error;
 }
 
@@ -419,10 +421,8 @@ IOBuffer* BackupRelationTask::getDirtyBuffer()
 		while (!m_stop && !m_readDone && !m_dirtyBuffers.hasData())
 			m_dirtyCond.wait(m_mutex);
 
-		if (m_stop || m_readDone)
+		if (m_stop)
 			return NULL;
-
-		fb_assert(m_dirtyBuffers.hasData());
 
 		if (m_dirtyBuffers.hasData())
 		{
@@ -655,7 +655,7 @@ RestoreRelationTask::RestoreRelationTask(BurpGlobals* tdgbl) : Task(),
 		// two IO buffers per item is enough
 		for (int j = 0; j < 2; j++)
 		{
-			IOBuffer* buf = FB_NEW_POOL(*pool) IOBuffer(item, 1024 * 256);
+			IOBuffer* buf = FB_NEW_POOL(*pool) IOBuffer(item, tdgbl->mvol_io_buffer_size);
 			m_buffers.add(buf);
 
 			putCleanBuffer(buf);
@@ -780,6 +780,8 @@ bool RestoreRelationTask::getWorkItem(WorkItem** pItem)
 
 bool RestoreRelationTask::getResult(IStatus* status)
 {
+	fb_assert(!m_error || m_dirtyBuffers.isEmpty());
+
 	return !m_error;
 }
 

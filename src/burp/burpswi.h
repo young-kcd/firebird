@@ -122,10 +122,10 @@ static const Switches::in_sw_tab_t reference_burp_in_sw_table[] =
 				// msg 73: @1CREATE_DATABASE create database from backup file
 	{IN_SW_BURP_CO,   isc_spb_bkp_convert,		"CONVERT",			0, 0, 0, false, true,	254,	2, NULL, boBackup},
 				// msg 254: @1CO(NVERT)  backup external files as tables
-	{IN_SW_BURP_DIRECT_IO, isc_spb_bkp_direct_io,"DIRECT_IO",		0, 0, 0, false, true,	409,	1, NULL, boBackup},
-				// msg 409: @1D(IRECT_IO)            direct IO for backup file(s)
 	{IN_SW_BURP_CRYPT,	isc_spb_bkp_crypt,		"CRYPT", 			0, 0, 0, false, false,	373,	3, NULL, boGeneral},
 				// msg 373:@1CRY(PT) plugin name
+	{IN_SW_BURP_DIRECT_IO, isc_spb_bkp_direct_io,"DIRECT_IO",		0, 0, 0, false, true,	409,	1, NULL, boGeneral},
+				// msg 409: @1D(IRECT_IO)            direct IO for backup file(s)
 	{IN_SW_BURP_E,	  isc_spb_bkp_expand,		"EXPAND",			0, 0, 0, false, true,	97, 	1, NULL, boBackup},
 				// msg 97: @1EXPAND no data compression
 	{IN_SW_BURP_FA,   isc_spb_bkp_factor,		"FACTOR",			0, 0, 0, false, false,	181,	2, NULL, boBackup},

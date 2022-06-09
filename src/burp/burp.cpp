@@ -1398,12 +1398,6 @@ int gbak(Firebird::UtilSvc* uSvc)
 
 	action = open_files(file1, &file2, sw_replace, dpb);
 
-	if (tdgbl->stdIoMode && tdgbl->uSvc->isService())
-		tdgbl->gbl_sw_direct_io = false;
-
-	if (tdgbl->gbl_sw_direct_io && tdgbl->gbl_sw_blk_factor <= 1)
-		tdgbl->io_buffer_size = GBAK_DIRECT_IO_BUFFER_SIZE;
-
 	MVOL_init(tdgbl->io_buffer_size);
 
 	int result;
@@ -2149,6 +2143,7 @@ static gbak_action open_files(const TEXT* file1,
 				tdgbl->uSvc->setDataMode(true);
 				fil->fil_fd = GBAK_STDOUT_DESC();
 				tdgbl->stdIoMode = true;
+				tdgbl->gbl_sw_direct_io = false;
 				break;
 			}
 			else
@@ -2255,6 +2250,7 @@ static gbak_action open_files(const TEXT* file1,
 		fil->fil_fd = GBAK_STDIN_DESC();
 		tdgbl->file_desc = fil->fil_fd;
 		tdgbl->stdIoMode = true;
+		tdgbl->gbl_sw_direct_io = false;
 		tdgbl->gbl_sw_files = fil->fil_next;
 	}
 	else
@@ -2266,7 +2262,8 @@ static gbak_action open_files(const TEXT* file1,
 #ifdef WIN_NT
 		if ((fil->fil_fd = NT_tape_open(nm.c_str(), MODE_READ, OPEN_EXISTING)) == INVALID_HANDLE_VALUE)
 #else
-		if ((fil->fil_fd = os_utils::open(nm.c_str(), MODE_READ)) == INVALID_HANDLE_VALUE)
+		const int rmode = MODE_READ | (tdgbl->gbl_sw_direct_io ? O_DIRECT : 0);
+		if ((fil->fil_fd = os_utils::open(nm.c_str(), rmode)) == INVALID_HANDLE_VALUE)
 #endif
 		{
 			BURP_error(65, true, fil->fil_name.c_str());
@@ -2311,7 +2308,7 @@ static gbak_action open_files(const TEXT* file1,
 #ifdef WIN_NT
 				if ((fil->fil_fd = NT_tape_open(nm.c_str(), MODE_READ, OPEN_EXISTING)) == INVALID_HANDLE_VALUE)
 #else
-				if ((fil->fil_fd = os_utils::open(nm.c_str(), MODE_READ)) == INVALID_HANDLE_VALUE)
+				if ((fil->fil_fd = os_utils::open(nm.c_str(), rmode)) == INVALID_HANDLE_VALUE)
 #endif
 				{
 					BURP_error(65, false, fil->fil_name.c_str());

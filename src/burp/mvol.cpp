@@ -1041,7 +1041,7 @@ DESC NT_tape_open(const char* name, ULONG mode, ULONG create)
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	const DWORD flags = (mode == MODE_WRITE && tdgbl->gbl_sw_direct_io) ? FILE_FLAG_NO_BUFFERING : 0;
+	const DWORD flags = tdgbl->gbl_sw_direct_io ? FILE_FLAG_NO_BUFFERING : 0;
 
 	if (strnicmp(name, "\\\\.\\tape", 8))
 	{
