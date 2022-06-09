@@ -1361,8 +1361,6 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 
 	SINT64 lastPerfCounter = fb_utils::query_performance_counter();
 	const StmtNode* profileNode = nullptr;
-	ULONG lastProfiledLine = node->line;
-	ULONG lastProfiledColumn = node->column;
 
 	while (node && !(request->req_flags & req_stall))
 	{
@@ -1380,24 +1378,22 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 
 				if (attachment->isProfilerActive() && !request->hasInternalStatement())
 				{
-					if (profileNode &&
-						profileNode->hasLineColumn &&
-						profileNode->isProfileAware() &&
-						(profileNode->line != lastProfiledLine || profileNode->column != lastProfiledColumn))
+					if (node->hasLineColumn &&
+						node->isProfileAware() &&
+						(!profileNode ||
+						 !(node->line == profileNode->line && node->column == profileNode->column)))
 					{
-						const SINT64 currentPerfCounter = fb_utils::query_performance_counter();
+						if (profileNode)
+						{
+							const SINT64 currentPerfCounter = fb_utils::query_performance_counter();
 
-						attachment->getProfilerManager(tdbb)->afterPsqlLineColumn(request,
-							profileNode->line, profileNode->column,
-							currentPerfCounter - lastPerfCounter);
+							attachment->getProfilerManager(tdbb)->afterPsqlLineColumn(request,
+								profileNode->line, profileNode->column,
+								currentPerfCounter - lastPerfCounter);
 
-						lastPerfCounter = currentPerfCounter;
-						lastProfiledLine = profileNode->line;
-						lastProfiledColumn = profileNode->column;
-					}
+							lastPerfCounter = currentPerfCounter;
+						}
 
-					if (node->hasLineColumn)
-					{
 						profileNode = node;
 
 						attachment->getProfilerManager(tdbb)->beforePsqlLineColumn(request,
@@ -1448,12 +1444,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 		}
 	} // while()
 
-	if (attachment->isProfilerActive() &&
-		!request->hasInternalStatement() &&
-		profileNode &&
-		profileNode->hasLineColumn &&
-		profileNode->isProfileAware() &&
-		(profileNode->line != lastProfiledLine || profileNode->column != lastProfiledColumn))
+	if (attachment->isProfilerActive() && !request->hasInternalStatement() && profileNode)
 	{
 		const SINT64 currentPerfCounter = fb_utils::query_performance_counter();
 
