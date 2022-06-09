@@ -5404,8 +5404,6 @@ YTransaction* YTransaction::enterDtc(CheckStatusWrapper* status)
 		YEntry<YTransaction> entry(status, this);
 
 		YTransaction* copy = FB_NEW YTransaction(this);
-		// copy is created with zero handle
-		copy->addRef();
 		copy->addRef();
 		next->addRef();		// We use NoIncr in YTransaction ctor
 
