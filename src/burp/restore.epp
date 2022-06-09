@@ -125,7 +125,7 @@ bool	get_character_set(BurpGlobals* tdgbl);
 bool	get_chk_constraint(BurpGlobals* tdgbl);
 bool	get_collation(BurpGlobals* tdgbl);
 SLONG	get_compressed(BurpGlobals* tdgbl, UCHAR* buffer, SLONG length);
-rec_type	get_data(BurpGlobals* tdgbl, burp_rel*, bool, WriteRelationReq* req);
+void	get_data(BurpGlobals* tdgbl, burp_rel*, WriteRelationReq* req);
 bool	get_exception(BurpGlobals* tdgbl);
 burp_fld*	get_field(BurpGlobals* tdgbl, burp_rel*);
 bool	get_field_dimensions(BurpGlobals* tdgbl);
@@ -146,7 +146,7 @@ bool	get_publication(BurpGlobals* tdgbl);
 bool	get_pub_table(BurpGlobals* tdgbl);
 bool	get_ref_constraint(BurpGlobals* tdgbl);
 bool	get_rel_constraint(BurpGlobals* tdgbl);
-bool	get_relation(BurpGlobals* tdgbl);
+bool	get_relation(BurpGlobals* tdgbl, Coordinator* coord, RestoreRelationTask* task);
 bool	get_relation_data(BurpGlobals* tdgbl, Coordinator* coord, RestoreRelationTask* task);
 bool	get_sql_roles(BurpGlobals* tdgbl);
 bool	get_mapping(BurpGlobals* tdgbl);
@@ -3176,7 +3176,7 @@ void fix_exception(BurpGlobals* tdgbl, const char* exc_name, scan_attr_t& scan_n
 		bad_attribute(scan_next_attr, attribute, 287); // msg 287 exception
 }
 
-rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation, WriteRelationReq* req)
+void get_data(BurpGlobals* tdgbl, burp_rel* relation, WriteRelationReq* req)
 {
 /**************************************
  *
@@ -3188,11 +3188,6 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation, Wr
  *	Write data records for a relation.
  *
  **************************************/
-
-	// If we're only doing meta-data, ignore data records
-
-	if (tdgbl->gbl_sw_meta || skip_relation)
-		return ignore_data(tdgbl, relation);
 
 	FbLocalStatus status_vector;
 
@@ -3341,7 +3336,6 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation, Wr
 		commit_relation_data(tdgbl, relation);
 
 	task->verbRecs(records, true);
-	return record;
 }
 
 bool get_exception(BurpGlobals* tdgbl)
@@ -7655,7 +7649,7 @@ bool get_ref_constraint(BurpGlobals* tdgbl)
 	return true;
 }
 
-bool get_relation(BurpGlobals* tdgbl)
+bool get_relation(BurpGlobals* tdgbl, Coordinator* coord, RestoreRelationTask* task)
 {
 /**************************************
  *
@@ -7972,7 +7966,18 @@ bool get_relation(BurpGlobals* tdgbl)
 	if (gds_status->hasData())
 		EXEC SQL SET TRANSACTION;
 
-	get_data(tdgbl, relation, tdgbl->skipRelation(rel_name), nullptr);
+	// If we're only doing meta-data, ignore data records
+
+	if (tdgbl->gbl_sw_meta || tdgbl->skipRelation(rel_name))
+		ignore_data(tdgbl, relation);
+	else
+	{
+		task->SetRelation(tdgbl, relation);
+		coord->runSync(task);
+		task->verbRecsFinal();
+		if (!task->getResult(NULL))
+			BURP_exit_local(FINI_ERROR, tdgbl);
+	}
 
 	return true;
 }
@@ -8107,7 +8112,7 @@ bool get_relation_data(BurpGlobals* tdgbl, Coordinator* coord, RestoreRelationTa
 			return true;
 
 		case rec_data:
-			// get_data does a GET_RECORD
+			// If we're only doing meta-data, ignore data records
 
 			if (tdgbl->gbl_sw_meta || skip_flag)
 				record = ignore_data(tdgbl, relation);
@@ -10548,7 +10553,7 @@ bool restore(BurpGlobals* tdgbl, Firebird::IProvider* provider, const TEXT* file
 			break;
 
 		case rec_relation:
-			if (!get_relation(tdgbl))
+			if (!get_relation(tdgbl, &coord, &task))
 				return false;
 			flag = true;
 			flag_norel = false;
@@ -12535,7 +12540,7 @@ bool RestoreRelationTask::tableWriter(BurpGlobals* tdgbl, Item& item)
 {
 	item.m_request.reset(&m_metadata);
 
-	get_data(tdgbl, item.m_relation, false, &item.m_request);
+	get_data(tdgbl, item.m_relation, &item.m_request);
 
 	item.getRestoreTask()->releaseBuffer(item);
 
