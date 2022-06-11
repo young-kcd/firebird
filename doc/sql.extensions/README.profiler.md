@@ -266,6 +266,7 @@ Below is the list of tables that stores profile data.
  - `CALLER_REQUEST_ID` type `BIGINT` - Caller request ID
  - `START_TIMESTAMP` type `TIMESTAMP WITH TIME ZONE` - Moment this request was first gathered profile data
  - `FINISH_TIMESTAMP` type `TIMESTAMP WITH TIME ZONE` - Moment this request was finished
+ - `TOTAL_TIME` type `BIGINT` - Accumulated execution time (in nanoseconds) of the request
  - Primary key: `PROFILE_ID, REQUEST_ID`
 
 ## Table `PLG$PROF_PSQL_STATS`
@@ -275,10 +276,10 @@ Below is the list of tables that stores profile data.
  - `LINE_NUM` type `INTEGER` - Line number of the statement
  - `COLUMN_NUM` type `INTEGER` - Column number of the statement
  - `STATEMENT_ID` type `BIGINT` - Statement ID
- - `COUNTER` type `BIGINT` - Number of executed times of the statement
- - `MIN_TIME` type `BIGINT` - Minimal time (in nanoseconds) of a statement execution
- - `MAX_TIME` type `BIGINT` - Maximum time (in nanoseconds) of a statement execution
- - `TOTAL_TIME` type `BIGINT` - Accumulated execution time (in nanoseconds) of the statement
+ - `COUNTER` type `BIGINT` - Number of executed times of the line/column
+ - `MIN_TIME` type `BIGINT` - Minimal time (in nanoseconds) of a line/column execution
+ - `MAX_TIME` type `BIGINT` - Maximum time (in nanoseconds) of a line/column execution
+ - `TOTAL_TIME` type `BIGINT` - Accumulated execution time (in nanoseconds) of the line/column
  - Primary key: `PROFILE_ID, REQUEST_ID, LINE_NUM, COLUMN_NUM`
 
 ## Table `PLG$PROF_RECORD_SOURCE_STATS`
@@ -305,6 +306,44 @@ These views help profile data extraction aggregated at statement level.
 They should be the preferred way to analyze the collected data. They can also be used together with the tables to get additional data not present on the views.
 
 After hot spots are found, one can drill down in the data at the request level through the tables.
+
+## View `PLG$PROF_STATEMENT_STATS_VIEW`
+```
+select req.profile_id,
+       req.statement_id,
+       sta.statement_type,
+       sta.package_name,
+       sta.routine_name,
+       sta.parent_statement_id,
+       sta_parent.statement_type parent_statement_type,
+       sta_parent.routine_name parent_routine_name,
+       (select sql_text
+          from plg$prof_statements
+          where profile_id = req.profile_id and
+                statement_id = coalesce(sta.parent_statement_id, req.statement_id)
+       ) sql_text,
+       count(*) counter,
+       min(req.total_time) min_time,
+       max(req.total_time) max_time,
+       sum(req.total_time) total_time,
+       sum(req.total_time) / count(*) avg_time
+  from plg$prof_requests req
+  join plg$prof_statements sta
+    on sta.profile_id = req.profile_id and
+       sta.statement_id = req.statement_id
+  left join plg$prof_statements sta_parent
+    on sta_parent.profile_id = sta.profile_id and
+       sta_parent.statement_id = sta.parent_statement_id
+  group by req.profile_id,
+           req.statement_id,
+           sta.statement_type,
+           sta.package_name,
+           sta.routine_name,
+           sta.parent_statement_id,
+           sta_parent.statement_type,
+           sta_parent.routine_name
+  order by sum(req.total_time) desc
+```
 
 ## View `PLG$PROF_PSQL_STATS_VIEW`
 ```

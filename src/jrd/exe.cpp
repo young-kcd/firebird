@@ -910,6 +910,8 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 
 	request->req_records_affected.clear();
 
+	request->req_profiler_time = 0;
+
 	// Store request start time for timestamp work
 	TimeZoneUtil::validateGmtTimeStamp(request->req_gmt_timestamp);
 
@@ -1003,7 +1005,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 		const auto attachment = request->req_attachment;
 
 		if (attachment->isProfilerActive() && !request->hasInternalStatement())
-			attachment->getProfilerManager(tdbb)->onRequestFinish(request);
+			attachment->getProfilerManager(tdbb)->onRequestFinish(request, request->req_profiler_time);
 	}
 
 	request->req_sorts.unlinkAll();
@@ -1359,7 +1361,8 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 
 	// Execute stuff until we drop
 
-	SINT64 lastPerfCounter = fb_utils::query_performance_counter();
+	SINT64 initialPerfCounter = fb_utils::query_performance_counter();
+	SINT64 lastPerfCounter = initialPerfCounter;
 	const StmtNode* profileNode = nullptr;
 
 	while (node && !(request->req_flags & req_stall))
@@ -1444,13 +1447,18 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 		}
 	} // while()
 
-	if (attachment->isProfilerActive() && !request->hasInternalStatement() && profileNode)
+	if (attachment->isProfilerActive() && !request->hasInternalStatement())
 	{
 		const SINT64 currentPerfCounter = fb_utils::query_performance_counter();
 
-		attachment->getProfilerManager(tdbb)->afterPsqlLineColumn(request,
-			profileNode->line, profileNode->column,
-			currentPerfCounter - lastPerfCounter);
+		if (profileNode)
+		{
+			attachment->getProfilerManager(tdbb)->afterPsqlLineColumn(request,
+				profileNode->line, profileNode->column,
+				currentPerfCounter - lastPerfCounter);
+		}
+
+		request->req_profiler_time += currentPerfCounter - initialPerfCounter;
 	}
 
 	request->adjustCallerStats();
@@ -1477,6 +1485,9 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 		request->req_flags &= ~(req_active | req_reserved);
 		request->req_gmt_timestamp.invalidate();
 		release_blobs(tdbb, request);
+
+		if (attachment->isProfilerActive() && !request->hasInternalStatement())
+			attachment->getProfilerManager(tdbb)->onRequestFinish(request, request->req_profiler_time);
 	}
 
 	request->req_next = node;

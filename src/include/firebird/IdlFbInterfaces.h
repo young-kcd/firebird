@@ -6701,7 +6701,7 @@ namespace Firebird
 			void (CLOOP_CARG *defineStatement)(IProfilerSession* self, IStatus* status, ISC_INT64 statementId, ISC_INT64 parentStatementId, const char* type, const char* packageName, const char* routineName, const char* sqlText) throw();
 			void (CLOOP_CARG *defineRecordSource)(IProfilerSession* self, ISC_INT64 statementId, unsigned cursorId, unsigned recSourceId, const char* accessPath, unsigned parentRecSourceId) throw();
 			void (CLOOP_CARG *onRequestStart)(IProfilerSession* self, IStatus* status, ISC_INT64 requestId, ISC_INT64 statementId, ISC_INT64 callerRequestId, ISC_TIMESTAMP_TZ timestamp) throw();
-			void (CLOOP_CARG *onRequestFinish)(IProfilerSession* self, IStatus* status, ISC_INT64 requestId, ISC_TIMESTAMP_TZ timestamp) throw();
+			void (CLOOP_CARG *onRequestFinish)(IProfilerSession* self, IStatus* status, ISC_INT64 requestId, ISC_TIMESTAMP_TZ timestamp, ISC_UINT64 runTime) throw();
 			void (CLOOP_CARG *beforePsqlLineColumn)(IProfilerSession* self, ISC_INT64 requestId, unsigned line, unsigned column) throw();
 			void (CLOOP_CARG *afterPsqlLineColumn)(IProfilerSession* self, ISC_INT64 requestId, unsigned line, unsigned column, ISC_UINT64 runTime) throw();
 			void (CLOOP_CARG *beforeRecordSourceOpen)(IProfilerSession* self, ISC_INT64 requestId, unsigned cursorId, unsigned recSourceId) throw();
@@ -6771,10 +6771,10 @@ namespace Firebird
 			StatusType::checkException(status);
 		}
 
-		template <typename StatusType> void onRequestFinish(StatusType* status, ISC_INT64 requestId, ISC_TIMESTAMP_TZ timestamp)
+		template <typename StatusType> void onRequestFinish(StatusType* status, ISC_INT64 requestId, ISC_TIMESTAMP_TZ timestamp, ISC_UINT64 runTime)
 		{
 			StatusType::clearException(status);
-			static_cast<VTable*>(this->cloopVTable)->onRequestFinish(this, status, requestId, timestamp);
+			static_cast<VTable*>(this->cloopVTable)->onRequestFinish(this, status, requestId, timestamp, runTime);
 			StatusType::checkException(status);
 		}
 
@@ -20204,13 +20204,13 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG clooponRequestFinishDispatcher(IProfilerSession* self, IStatus* status, ISC_INT64 requestId, ISC_TIMESTAMP_TZ timestamp) throw()
+		static void CLOOP_CARG clooponRequestFinishDispatcher(IProfilerSession* self, IStatus* status, ISC_INT64 requestId, ISC_TIMESTAMP_TZ timestamp, ISC_UINT64 runTime) throw()
 		{
 			StatusType status2(status);
 
 			try
 			{
-				static_cast<Name*>(self)->Name::onRequestFinish(&status2, requestId, timestamp);
+				static_cast<Name*>(self)->Name::onRequestFinish(&status2, requestId, timestamp, runTime);
 			}
 			catch (...)
 			{
@@ -20323,7 +20323,7 @@ namespace Firebird
 		virtual void defineStatement(StatusType* status, ISC_INT64 statementId, ISC_INT64 parentStatementId, const char* type, const char* packageName, const char* routineName, const char* sqlText) = 0;
 		virtual void defineRecordSource(ISC_INT64 statementId, unsigned cursorId, unsigned recSourceId, const char* accessPath, unsigned parentRecSourceId) = 0;
 		virtual void onRequestStart(StatusType* status, ISC_INT64 requestId, ISC_INT64 statementId, ISC_INT64 callerRequestId, ISC_TIMESTAMP_TZ timestamp) = 0;
-		virtual void onRequestFinish(StatusType* status, ISC_INT64 requestId, ISC_TIMESTAMP_TZ timestamp) = 0;
+		virtual void onRequestFinish(StatusType* status, ISC_INT64 requestId, ISC_TIMESTAMP_TZ timestamp, ISC_UINT64 runTime) = 0;
 		virtual void beforePsqlLineColumn(ISC_INT64 requestId, unsigned line, unsigned column) = 0;
 		virtual void afterPsqlLineColumn(ISC_INT64 requestId, unsigned line, unsigned column, ISC_UINT64 runTime) = 0;
 		virtual void beforeRecordSourceOpen(ISC_INT64 requestId, unsigned cursorId, unsigned recSourceId) = 0;

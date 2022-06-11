@@ -119,6 +119,7 @@ struct Request
 	SINT64 callerRequestId;
 	ISC_TIMESTAMP_TZ startTimestamp;
 	Nullable<ISC_TIMESTAMP_TZ> finishTimestamp;
+	Nullable<FB_UINT64> totalTime;
 	NonPooledMap<CursorRecSourceKey, RecordSourceStats> recordSourcesStats{defaultPool()};
 	NonPooledMap<LineColumnKey, Stats> psqlStats{defaultPool()};
 };
@@ -164,7 +165,8 @@ public:
 	void onRequestStart(ThrowStatusExceptionWrapper* status, SINT64 requestId, SINT64 statementId,
 		SINT64 callerRequestId, ISC_TIMESTAMP_TZ timestamp) override;
 
-	void onRequestFinish(ThrowStatusExceptionWrapper* status, SINT64 requestId, ISC_TIMESTAMP_TZ timestamp) override;
+	void onRequestFinish(ThrowStatusExceptionWrapper* status, SINT64 requestId,
+		ISC_TIMESTAMP_TZ timestamp, FB_UINT64 runTime) override;
 
 	void beforePsqlLineColumn(SINT64 requestId, unsigned line, unsigned column) override
 	{
@@ -391,8 +393,8 @@ void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status)
 
 	constexpr auto requestSql = R"""(
 		update or insert into plg$prof_requests
-		    (profile_id, request_id, statement_id, caller_request_id, start_timestamp, finish_timestamp)
-		    values (?, ?, ?, ?, ?, ?)
+		    (profile_id, request_id, statement_id, caller_request_id, start_timestamp, finish_timestamp, total_time)
+		    values (?, ?, ?, ?, ?, ?, ?)
 		    matching (profile_id, request_id)
 	)""";
 
@@ -403,6 +405,7 @@ void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status)
 		(FB_BIGINT, callerRequestId)
 		(FB_TIMESTAMP_TZ, startTimestamp)
 		(FB_TIMESTAMP_TZ, finishTimestamp)
+		(FB_BIGINT, totalTime)
 	) requestMessage(status, MasterInterfacePtr());
 	requestMessage.clear();
 
@@ -732,6 +735,9 @@ void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status)
 					requestMessage->finishTimestampNull = profileRequest.finishTimestamp.isUnknown();
 					requestMessage->finishTimestamp = profileRequest.finishTimestamp.value;
 
+					requestMessage->totalTimeNull = profileRequest.totalTime.isUnknown();
+					requestMessage->totalTime = profileRequest.totalTime.value;
+
 					addBatch(requestBatch, requestBatchSize, requestMessage);
 
 					if (profileRequest.finishTimestamp.isAssigned())
@@ -938,6 +944,7 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		    caller_request_id bigint,
 		    start_timestamp timestamp with time zone not null,
 		    finish_timestamp timestamp with time zone,
+		    total_time bigint,
 		    constraint plg$prof_requests_pk
 		        primary key (profile_id, request_id)
 		        using index plg$prof_requests_profile_request,
@@ -1020,6 +1027,47 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		))""",
 
 		"grant select, update, insert, delete on table plg$prof_record_source_stats to plg$profiler",
+
+		R"""(
+		create view plg$prof_statement_stats_view
+		as
+		select req.profile_id,
+		       req.statement_id,
+		       sta.statement_type,
+		       sta.package_name,
+		       sta.routine_name,
+		       sta.parent_statement_id,
+		       sta_parent.statement_type parent_statement_type,
+		       sta_parent.routine_name parent_routine_name,
+		       (select sql_text
+		          from plg$prof_statements
+		          where profile_id = req.profile_id and
+		                statement_id = coalesce(sta.parent_statement_id, req.statement_id)
+		       ) sql_text,
+		       count(*) counter,
+		       min(req.total_time) min_time,
+		       max(req.total_time) max_time,
+		       sum(req.total_time) total_time,
+		       sum(req.total_time) / count(*) avg_time
+		  from plg$prof_requests req
+		  join plg$prof_statements sta
+		    on sta.profile_id = req.profile_id and
+		       sta.statement_id = req.statement_id
+		  left join plg$prof_statements sta_parent
+		    on sta_parent.profile_id = sta.profile_id and
+		       sta_parent.statement_id = sta.parent_statement_id
+		  group by req.profile_id,
+		           req.statement_id,
+		           sta.statement_type,
+		           sta.package_name,
+		           sta.routine_name,
+		           sta.parent_statement_id,
+		           sta_parent.statement_type,
+		           sta_parent.routine_name
+		  order by sum(req.total_time) desc
+		)""",
+
+		"grant select on table plg$prof_statement_stats_view to plg$profiler",
 
 		R"""(
 		create view plg$prof_psql_stats_view
@@ -1283,12 +1331,14 @@ void Session::onRequestStart(ThrowStatusExceptionWrapper* status, SINT64 request
 	request->startTimestamp = timestamp;
 }
 
-void Session::onRequestFinish(ThrowStatusExceptionWrapper* status, SINT64 requestId, ISC_TIMESTAMP_TZ timestamp)
+void Session::onRequestFinish(ThrowStatusExceptionWrapper* status, SINT64 requestId,
+	ISC_TIMESTAMP_TZ timestamp, FB_UINT64 runTime)
 {
 	if (auto request = requests.get(requestId))
 	{
 		request->dirty = true;
 		request->finishTimestamp = timestamp;
+		request->totalTime = runTime;
 	}
 }
 

@@ -510,14 +510,14 @@ void ProfilerManager::prepareRecSource(thread_db* tdbb, jrd_req* request, const 
 	}
 }
 
-void ProfilerManager::onRequestFinish(jrd_req* request)
+void ProfilerManager::onRequestFinish(jrd_req* request, FB_UINT64 runTime)
 {
 	if (const auto profileRequestId = getRequest(request, 0))
 	{
 		const auto timestamp = TimeZoneUtil::getCurrentTimeStamp(request->req_attachment->att_current_timezone);
 
 		LogLocalStatus status("Profiler onRequestFinish");
-		currentSession->pluginSession->onRequestFinish(&status, profileRequestId, timestamp);
+		currentSession->pluginSession->onRequestFinish(&status, profileRequestId, timestamp, runTime);
 
 		currentSession->requests.findAndRemove(profileRequestId);
 	}

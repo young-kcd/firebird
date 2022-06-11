@@ -103,7 +103,7 @@ public:
 		const Firebird::PathName& pluginName, const Firebird::string& description, const Firebird::string& options);
 
 	void prepareRecSource(thread_db* tdbb, jrd_req* request, const RecordSource* rsb);
-	void onRequestFinish(jrd_req* request);
+	void onRequestFinish(jrd_req* request, FB_UINT64 runTime);
 	void beforePsqlLineColumn(jrd_req* request, ULONG line, ULONG column);
 	void afterPsqlLineColumn(jrd_req* request, ULONG line, ULONG column, FB_UINT64 runTime);
 	void beforeRecordSourceOpen(jrd_req* request, const RecordSource* rsb);

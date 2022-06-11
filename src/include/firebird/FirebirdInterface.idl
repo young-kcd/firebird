@@ -1734,7 +1734,7 @@ interface ProfilerSession : Disposable
 	void onRequestStart(Status status, int64 requestId, int64 statementId, int64 callerRequestId,
 		ISC_TIMESTAMP_TZ timestamp);
 
-	void onRequestFinish(Status status, int64 requestId, ISC_TIMESTAMP_TZ timestamp);
+	void onRequestFinish(Status status, int64 requestId, ISC_TIMESTAMP_TZ timestamp, uint64 runTime);
 
 	void beforePsqlLineColumn(int64 requestId, uint line, uint column);
 	void afterPsqlLineColumn(int64 requestId, uint line, uint column, uint64 runTime);
