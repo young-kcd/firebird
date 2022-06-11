@@ -1047,8 +1047,8 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		       count(*) counter,
 		       min(req.total_time) min_time,
 		       max(req.total_time) max_time,
-		       sum(req.total_time) total_time,
-		       sum(req.total_time) / count(*) avg_time
+		       cast(sum(req.total_time) as bigint) total_time,
+		       cast(sum(req.total_time) / count(*) as bigint) avg_time
 		  from plg$prof_requests req
 		  join plg$prof_statements sta
 		    on sta.profile_id = req.profile_id and
@@ -1087,11 +1087,11 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		       ) sql_text,
 		       pstat.line_num,
 		       pstat.column_num,
-		       sum(pstat.counter) counter,
+		       cast(sum(pstat.counter) as bigint) counter,
 		       min(pstat.min_time) min_time,
 		       max(pstat.max_time) max_time,
-		       sum(pstat.total_time) total_time,
-		       sum(pstat.total_time) / nullif(sum(pstat.counter), 0) avg_time
+		       cast(sum(pstat.total_time) as bigint) total_time,
+		       cast(sum(pstat.total_time) / nullif(sum(pstat.counter), 0) as bigint) avg_time
 		  from plg$prof_psql_stats pstat
 		  join plg$prof_statements sta
 		    on sta.profile_id = pstat.profile_id and
@@ -1134,17 +1134,17 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		       rstat.record_source_id,
 		       recsrc.parent_record_source_id,
 		       recsrc.access_path,
-		       sum(rstat.open_counter) open_counter,
+		       cast(sum(rstat.open_counter) as bigint) open_counter,
 		       min(rstat.open_min_time) open_min_time,
 		       max(rstat.open_max_time) open_max_time,
-		       sum(rstat.open_total_time) open_total_time,
-		       sum(rstat.open_total_time) / nullif(sum(rstat.open_counter), 0) open_avg_time,
-		       sum(rstat.fetch_counter) fetch_counter,
+		       cast(sum(rstat.open_total_time) as bigint) open_total_time,
+		       cast(sum(rstat.open_total_time) / nullif(sum(rstat.open_counter), 0) as bigint) open_avg_time,
+		       cast(sum(rstat.fetch_counter) as bigint) fetch_counter,
 		       min(rstat.fetch_min_time) fetch_min_time,
 		       max(rstat.fetch_max_time) fetch_max_time,
-		       sum(rstat.fetch_total_time) fetch_total_time,
-		       sum(rstat.fetch_total_time) / nullif(sum(rstat.fetch_counter), 0) fetch_avg_time,
-		       coalesce(sum(rstat.open_total_time), 0) + coalesce(sum(rstat.fetch_total_time), 0) open_fetch_total_time
+		       cast(sum(rstat.fetch_total_time) as bigint) fetch_total_time,
+		       cast(sum(rstat.fetch_total_time) / nullif(sum(rstat.fetch_counter), 0) as bigint) fetch_avg_time,
+		       cast(coalesce(sum(rstat.open_total_time), 0) + coalesce(sum(rstat.fetch_total_time), 0) as bigint) open_fetch_total_time
 		  from plg$prof_record_source_stats rstat
 		  join plg$prof_record_sources recsrc
 		    on recsrc.profile_id = rstat.profile_id and
