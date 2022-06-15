@@ -2191,7 +2191,6 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 
 			REPL_attach(tdbb, cleanupTransactions);
 
-			attachment->att_trace_manager->activate();
 			if (attachment->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_ATTACH))
 			{
 				TraceConnectionImpl conn(attachment);
@@ -2274,8 +2273,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 			}
 			else
 			{
-				trace_failed_attach(attachment && attachment->att_trace_manager &&
-					attachment->att_trace_manager->isActive() ? attachment->att_trace_manager : NULL,
+				trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
 					filename, options, false, user_status);
 			}
 
@@ -3191,7 +3189,6 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			REPL_attach(tdbb, false);
 
 			// Report that we created attachment to Trace API
-			attachment->att_trace_manager->activate();
 			if (attachment->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_ATTACH))
 			{
 				TraceConnectionImpl conn(attachment);
@@ -3205,8 +3202,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 		catch (const Exception& ex)
 		{
 			ex.stuffException(user_status);
-			trace_failed_attach(attachment && attachment->att_trace_manager &&
-				attachment->att_trace_manager->isActive() ? attachment->att_trace_manager : NULL,
+			trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
 				filename, options, true, user_status);
 
 			mapping.clearMainHandle();

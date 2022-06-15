@@ -88,8 +88,7 @@ TraceManager::TraceManager(Attachment* in_att) :
 	attachment(in_att),
 	service(NULL),
 	filename(NULL),
-	trace_sessions(*in_att->att_pool),
-	active(false)
+	trace_sessions(*in_att->att_pool)
 {
 	init();
 }
@@ -98,8 +97,7 @@ TraceManager::TraceManager(Service* in_svc) :
 	attachment(NULL),
 	service(in_svc),
 	filename(NULL),
-	trace_sessions(in_svc->getPool()),
-	active(true)
+	trace_sessions(in_svc->getPool())
 {
 	init();
 }
@@ -108,8 +106,7 @@ TraceManager::TraceManager(const char* in_filename) :
 	attachment(NULL),
 	service(NULL),
 	filename(in_filename),
-	trace_sessions(*getDefaultMemoryPool()),
-	active(true)
+	trace_sessions(*getDefaultMemoryPool())
 {
 	init();
 }
@@ -265,10 +262,11 @@ void TraceManager::update_session(const TraceSession& session)
 
 			if (attachment)
 			{
-				if ((!attachment->att_user) || (attachment->att_flags & ATT_mapping))
+				if (attachment->att_flags & ATT_mapping)
 					return;
 
-				curr_user = attachment->getUserName().c_str();
+				if (attachment->att_user)
+					curr_user = attachment->att_user->getUserName().c_str();
 
 				if (session.ses_auth.hasData())
 				{
@@ -290,7 +288,7 @@ void TraceManager::update_session(const TraceSession& session)
 			}
 			else if (service)
 			{
-				curr_user = service->getUserName().c_str();
+				curr_user = service->getUserName().nullStr();
 
 				if (session.ses_auth.hasData())
 				{
@@ -327,7 +325,7 @@ void TraceManager::update_session(const TraceSession& session)
 
 		t_role.upper();
 		if (s_user != DBA_USER_NAME && t_role != ADMIN_ROLE &&
-			s_user != curr_user && (!priv.test(TRACE_ANY_ATTACHMENT)))
+			((!curr_user) || (s_user != curr_user)) && (!priv.test(TRACE_ANY_ATTACHMENT)))
 		{
 			return;
 		}
