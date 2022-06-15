@@ -45,6 +45,8 @@ using namespace Firebird;
 namespace Jrd {
 
 
+const unsigned WORKER_IDLE_TIMEOUT = 60;	// 1 minute
+
 /// class WorkerStableAttachment
 
 WorkerStableAttachment::WorkerStableAttachment(FbStatusVector* status, Jrd::Attachment* attachment) :
@@ -65,6 +67,7 @@ WorkerStableAttachment::WorkerStableAttachment(FbStatusVector* status, Jrd::Atta
 	PAG_header(tdbb, true);
 	PAG_attachment_id(tdbb);
 	TRA_init(attachment);
+	Monitoring::publishAttachment(tdbb);
 
 	initDone();
 }
@@ -95,6 +98,11 @@ WorkerStableAttachment* WorkerStableAttachment::create(FbStatusVector* status, J
 		Attachment::destroy(attachment);
 
 	return NULL;
+}
+
+void WorkerStableAttachment::doOnIdleTimer(Firebird::TimerImpl* timer)
+{
+	WorkerAttachment::detachIdle(this);
 }
 
 void WorkerStableAttachment::fini()
@@ -232,7 +240,19 @@ void WorkerAttachment::shutdownDbb(Database* dbb)
 
 StableAttachmentPart* WorkerAttachment::getAttachment(FbStatusVector* status, Database* dbb)
 {
-	//?? Database::Checkout cout(dbb);
+	// There should be no locked attachment.
+#ifdef _DEBUG
+	thread_db* tdbb = JRD_get_thread_data();
+	if (tdbb)
+	{
+		Attachment* att = tdbb->getAttachment();
+		if (att)
+		{
+			const StableAttachmentPart::Sync* sync = att->getStable()->getSync();
+			fb_assert(!sync || !sync->locked());
+		}
+	}
+#endif
 
 	Arg::Gds(isc_shutdown).copyTo(status);
 
@@ -244,7 +264,6 @@ StableAttachmentPart* WorkerAttachment::getAttachment(FbStatusVector* status, Da
 
 	if (m_shutdown)
 		return NULL;
-
 
 	FB_SIZE_T maxWorkers = Config::getMaxParallelWorkers();
 	if (maxWorkers <= 0)
@@ -298,7 +317,10 @@ StableAttachmentPart* WorkerAttachment::getAttachment(FbStatusVector* status, Da
 		fb_assert(!att || (att->att_flags & ATT_worker));
 
 		if (att)
+		{
 			att->att_use_count++;
+			att->setupIdleTimer(true);
+		}
 	}
 
 	if (att)
@@ -319,10 +341,12 @@ void WorkerAttachment::releaseAttachment(FbStatusVector* status, StableAttachmen
 			return;
 
 		att->att_use_count--;
+		att->setupIdleTimer(false);
+
 		item = getByName(att->att_database->dbb_filename);
 	}
 
-	bool detach = (m_shutdown || (item == NULL));
+	const bool detach = (m_shutdown || (item == NULL));
 	bool tryClear = false;
 
 	if (item)
@@ -372,6 +396,36 @@ void WorkerAttachment::clear(bool checkRefs)
 	}
 }
 
+bool WorkerAttachment::detachIdle(StableAttachmentPart* sAtt)
+{
+	WorkerAttachment* item = NULL;
+	{	// scope
+		AttSyncLockGuard attGuard(sAtt->getSync(), FB_FUNCTION);
+
+		Attachment* att = sAtt->getHandle();
+		if (!att || att->att_use_count > 0)
+			return false;
+
+		item = getByName(att->att_database->dbb_filename);
+	}
+
+	if (item)
+	{
+		MutexLockGuard guard(item->m_mutex, FB_FUNCTION);
+
+		FB_SIZE_T pos;
+		if (item->m_idleAtts.find(sAtt, pos))
+			item->m_idleAtts.remove(pos);
+		else
+			return false;
+	}
+
+	FbLocalStatus status;
+	doDetach(&status, sAtt);
+
+	return true;
+}
+
 StableAttachmentPart* WorkerAttachment::doAttach(FbStatusVector* status, Database* dbb)
 {
 	StableAttachmentPart* sAtt = NULL;
@@ -396,7 +450,10 @@ StableAttachmentPart* WorkerAttachment::doAttach(FbStatusVector* status, Databas
 	}
 
 	if (sAtt)
+	{
 		sAtt->addRef(); // !!
+		sAtt->getHandle()->setIdleTimeout(WORKER_IDLE_TIMEOUT);
+	}
 
 	return sAtt;
 }
@@ -415,7 +472,6 @@ void WorkerAttachment::doDetach(FbStatusVector* status, StableAttachmentPart* sA
 	{
 		JAttachment* jAtt = sAtt->getInterface();
 		jAtt->detach(status);
-		jAtt->release();
 	}
 	sAtt->release(); // !!
 }

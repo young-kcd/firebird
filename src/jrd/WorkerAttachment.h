@@ -50,6 +50,9 @@ public:
 
 	void fini();
 
+protected:
+	virtual void doOnIdleTimer(Firebird::TimerImpl* timer);
+
 private:
 	explicit WorkerStableAttachment(FbStatusVector* status, Jrd::Attachment* att);
 	virtual ~WorkerStableAttachment();
@@ -79,6 +82,8 @@ public:
 
 	static Jrd::StableAttachmentPart* getAttachment(FbStatusVector* status, Jrd::Database* dbb);
 	static void releaseAttachment(FbStatusVector* status, Jrd::StableAttachmentPart* sAtt);
+
+	static bool detachIdle(Jrd::StableAttachmentPart* sAtt);
 
 	static void incUserAtts(const Firebird::PathName& dbname);
 	static void decUserAtts(const Firebird::PathName& dbname);
