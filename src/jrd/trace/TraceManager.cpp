@@ -88,7 +88,9 @@ TraceManager::TraceManager(Attachment* in_att) :
 	attachment(in_att),
 	service(NULL),
 	filename(NULL),
-	trace_sessions(*in_att->att_pool)
+	callback(NULL),
+	trace_sessions(*in_att->att_pool),
+	active(false)
 {
 	init();
 }
@@ -97,16 +99,20 @@ TraceManager::TraceManager(Service* in_svc) :
 	attachment(NULL),
 	service(in_svc),
 	filename(NULL),
-	trace_sessions(in_svc->getPool())
+	callback(NULL),
+	trace_sessions(in_svc->getPool()),
+	active(true)
 {
 	init();
 }
 
-TraceManager::TraceManager(const char* in_filename) :
+TraceManager::TraceManager(const char* in_filename, ICryptKeyCallback* cb) :
 	attachment(NULL),
 	service(NULL),
 	filename(in_filename),
-	trace_sessions(*getDefaultMemoryPool())
+	callback(cb),
+	trace_sessions(*getDefaultMemoryPool()),
+	active(true)
 {
 	init();
 }
@@ -248,7 +254,8 @@ void TraceManager::update_session(const TraceSession& session)
 	}
 
 	// if this session is not from administrator, it may trace connections
-	// only created by the same user
+	// only created by the same user, or when it has TRACE_ANY_ATTACHMENT
+	// privilege in current context
 	if (!(session.ses_flags & (trs_admin | trs_system)))
 	{
 		const char* curr_user = nullptr;
@@ -302,6 +309,26 @@ void TraceManager::update_session(const TraceSession& session)
 					mapping.setErrorMessagesContextName("services manager");
 					mapping.setSqlRole(session.ses_role);
 					mapping.setSecurityDbAlias(config->getSecurityDatabase(), nullptr);
+
+					mapResult = mapping.mapUser(s_user, t_role);
+				}
+			}
+			else if (filename)
+			{
+				if (session.ses_auth.hasData())
+				{
+					Mapping mapping(Mapping::MAP_NO_FLAGS, callback);
+					mapping.needSystemPrivileges(priv);
+					mapping.setAuthBlock(session.ses_auth);
+					mapping.setSqlRole(session.ses_role);
+
+					RefPtr<const Config> config;
+					PathName org_filename(filename), expanded_name;
+					if (! expandDatabaseName(org_filename, expanded_name, &config))
+						expanded_name = filename;
+
+					mapping.setSecurityDbAlias(config->getSecurityDatabase(), expanded_name.c_str());
+					mapping.setDb(filename, expanded_name.c_str(), nullptr);
 
 					mapResult = mapping.mapUser(s_user, t_role);
 				}

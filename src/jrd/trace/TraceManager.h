@@ -39,6 +39,12 @@
 #include "../../jrd/trace/TraceConfigStorage.h"
 #include "../../jrd/trace/TraceSession.h"
 
+namespace Firebird {
+
+class ICryptKeyCallback;
+
+}
+
 namespace Jrd {
 
 class Database;
@@ -52,7 +58,7 @@ public:
     /* Initializes plugins. */
 	explicit TraceManager(Attachment* in_att);
 	explicit TraceManager(Service* in_svc);
-	explicit TraceManager(const char* in_filename);
+	TraceManager(const char* in_filename, Firebird::ICryptKeyCallback* callback);
 
 	/* Finalize plugins. Called when database is closed by the engine */
 	~TraceManager();
@@ -121,13 +127,31 @@ public:
 
 	inline bool needs(unsigned e)
 	{
-		if (!init_factories)
+		if (!active || !init_factories)
 			return false;
 
 		if (changeNumber != getStorage()->getChangeNumber())
 			update_sessions();
 
 		return trace_needs & (FB_CONST64(1) << e);
+	}
+
+	// should be called after attachment user is authenticated
+	void activate()
+	{
+		active = true;
+	}
+
+	// helps avoid early use
+	bool isActive()
+	{
+		return active;
+	}
+
+	// external access to stored attachment
+	Attachment* getAttachment()
+	{
+		return attachment;
 	}
 
 	/* DSQL-friendly routines to call Trace API hooks.
@@ -151,6 +175,7 @@ private:
 	Attachment*	attachment;
 	Service* service;
 	const char* filename;
+	Firebird::ICryptKeyCallback* callback;
 	NotificationNeeds trace_needs, new_needs;
 
 	// This structure should be POD-like to be stored in Array
@@ -233,6 +258,7 @@ private:
 	static Firebird::GlobalPtr<StorageInstance, Firebird::InstanceControl::PRIORITY_DELETE_FIRST> storageInstance;
 
 	ULONG changeNumber;
+	bool active;
 };
 
 }

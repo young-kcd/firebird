@@ -1092,10 +1092,10 @@ namespace Jrd {
 				m_ref->getSync()->leave();
 		}
 
-		EngineCheckout(Attachment* att, const char* from)
+		EngineCheckout(Attachment* att, const char* from, bool optional = false)
 			: m_tdbb(nullptr), m_from(from)
 		{
-			fb_assert(att);
+			fb_assert(optional || att);
 
 			if (att && att->att_use_count)
 			{

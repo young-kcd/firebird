@@ -1550,7 +1550,7 @@ static void trace_warning(thread_db* tdbb, FbStatusVector* userStatus, const cha
 
 
 static void trace_failed_attach(TraceManager* traceManager, const char* filename,
-	const DatabaseOptions& options, bool create, FbStatusVector* status)
+	const DatabaseOptions& options, bool create, FbStatusVector* status, ICryptKeyCallback* callback)
 {
 	// Report to Trace API that attachment has not been created
 	const char* origFilename = filename;
@@ -1565,15 +1565,24 @@ static void trace_failed_attach(TraceManager* traceManager, const char* filename
 		ITracePlugin::RESULT_UNAUTHORIZED : ITracePlugin::RESULT_FAILED;
 	const char* func = create ? "JProvider::createDatabase" : "JProvider::attachDatabase";
 
+	Attachment* att = traceManager ? traceManager->getAttachment() : nullptr;
+	if (traceManager && (! traceManager->isActive()))
+		traceManager = nullptr;
+
 	if (!traceManager)
 	{
-		TraceManager tempMgr(origFilename);
+		if (!options.dpb_map_attach)
+		{
+			EngineCheckout guard(att, FB_FUNCTION, true);
 
-		if (tempMgr.needs(ITraceFactory::TRACE_EVENT_ATTACH))
-			tempMgr.event_attach(&conn, create, result);
+			TraceManager tempMgr(origFilename, callback);
 
-		if (tempMgr.needs(ITraceFactory::TRACE_EVENT_ERROR))
-			tempMgr.event_error(&conn, &traceStatus, func);
+			if (tempMgr.needs(ITraceFactory::TRACE_EVENT_ATTACH))
+				tempMgr.event_attach(&conn, create, result);
+
+			if (tempMgr.needs(ITraceFactory::TRACE_EVENT_ERROR))
+				tempMgr.event_error(&conn, &traceStatus, func);
+		}
 	}
 	else
 	{
@@ -1705,7 +1714,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 		catch (const Exception& ex)
 		{
 			ex.stuffException(user_status);
-			trace_failed_attach(NULL, filename, options, false, user_status);
+			trace_failed_attach(NULL, filename, options, false, user_status, cryptCallback);
 			throw;
 		}
 
@@ -1713,7 +1722,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 		const VdnResult vdn = verifyDatabaseName(expanded_name, tdbb->tdbb_status_vector, is_alias);
 		if (!is_alias && vdn == VDN_FAIL)
 		{
-			trace_failed_attach(NULL, filename, options, false, tdbb->tdbb_status_vector);
+			trace_failed_attach(NULL, filename, options, false, tdbb->tdbb_status_vector, cryptCallback);
 			status_exception::raise(tdbb->tdbb_status_vector);
 		}
 
@@ -2191,6 +2200,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 
 			REPL_attach(tdbb, cleanupTransactions);
 
+			attachment->att_trace_manager->activate();
 			if (attachment->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_ATTACH))
 			{
 				TraceConnectionImpl conn(attachment);
@@ -2274,7 +2284,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 			else
 			{
 				trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
-					filename, options, false, user_status);
+					filename, options, false, user_status, cryptCallback);
 			}
 
 			mapping.clearMainHandle();
@@ -2875,7 +2885,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 		catch (const Exception& ex)
 		{
 			ex.stuffException(user_status);
-			trace_failed_attach(NULL, filename, options, true, user_status);
+			trace_failed_attach(NULL, filename, options, true, user_status, cryptCallback);
 			throw;
 		}
 
@@ -2883,7 +2893,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 		const VdnResult vdn = verifyDatabaseName(expanded_name, tdbb->tdbb_status_vector, is_alias);
 		if (!is_alias && vdn == VDN_FAIL)
 		{
-			trace_failed_attach(NULL, filename, options, true, tdbb->tdbb_status_vector);
+			trace_failed_attach(NULL, filename, options, true, tdbb->tdbb_status_vector, cryptCallback);
 			status_exception::raise(tdbb->tdbb_status_vector);
 		}
 
@@ -3189,6 +3199,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			REPL_attach(tdbb, false);
 
 			// Report that we created attachment to Trace API
+			attachment->att_trace_manager->activate();
 			if (attachment->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_ATTACH))
 			{
 				TraceConnectionImpl conn(attachment);
@@ -3203,7 +3214,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 		{
 			ex.stuffException(user_status);
 			trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
-				filename, options, true, user_status);
+				filename, options, true, user_status, cryptCallback);
 
 			mapping.clearMainHandle();
 			unwindAttach(tdbb, ex, user_status, false);
