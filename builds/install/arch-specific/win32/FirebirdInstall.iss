@@ -163,24 +163,32 @@
 #pragma warning "msvc runtime major version was not defined. Forcing default value."
 #endif
 
-#if Len(GetEnv("MSVC_RUNTIME_MINOR_VERSION_0")) > 0
-#define msvc_runtime_minor_version_0 GetEnv("MSVC_RUNTIME_MINOR_VERSION_0")
+#if Len(GetEnv("MSVC_RUNTIME_MINOR_VERSION")) > 0
+#define msvc_runtime_minor_version GetEnv("MSVC_RUNTIME_MINOR_VERSION")
 #else
-#define msvc_runtime_minor_version_0 0
+#define msvc_runtime_minor_version 0
 #pragma warning "msvc runtime minor version 0 was not defined. Forcing default value."
+#endif
+
+#if Len(GetEnv("MSVC_RUNTIME_LIBRARY_VERSION")) > 0
+#define msvc_runtime_library_version GetEnv("MSVC_RUNTIME_LIBRARY_VERSION")
+#endif
+
+#if Len(GetEnv("MSVC_RUNTIME_FILE_VERSION")) > 0
+#define msvc_runtime_file_version GetEnv("MSVC_RUNTIME_FILE_VERSION")
 #endif
 
 ;if we are running msvc15 then we sometimes need to look for 140 and sometimes for 141
 ; the rule until MS changes it again is that 141 is always used, except for the filename
 ; of the vcruntime and msvcp dll's.
-#if msvc_version = 15
-#if Len(GetEnv("MSVC_RUNTIME_MINOR_VERSION_1")) > 0
-#define msvc_runtime_minor_version_1 GetEnv("MSVC_RUNTIME_MINOR_VERSION_1")
-#else
-#define msvc_runtime_minor_version_1 1
-#pragma warning "msvc runtime minor version 1 was not defined. Forcing default value."
-#endif
-#endif
+;#if msvc_version = 15
+;#if Len(GetEnv("MSVC_RUNTIME_MINOR_VERSION_2")) > 0
+;#define msvc_runtime_minor_version GetEnv("MSVC_RUNTIME_MINOR_VERSION_2")
+;#else
+;#define msvc_runtime_minor_version 2
+;#pragma warning "msvc runtime minor version 2 was not defined. Forcing default value."
+;#endif
+;#endif
 
 #if Int(msvc_version,15) < 15
 #define msvcr_filename = "msvcr"
@@ -377,9 +385,9 @@ Name: CopyFbClientAsGds32Task; Description: {cm:CopyFbClientAsGds32Task}; Compon
 [Run]
 ; due to the changes required to support MSVC15 support for earlier versions is now broken.
 #if Int(msvc_runtime_major_version,14) >= 14
-Filename: msiexec.exe; Parameters: "/qn /norestart /i ""{tmp}\vccrt{#msvc_runtime_major_version}{#msvc_runtime_minor_version_1}_Win32.msi"" /L*v ""{tmp}\vccrt{#msvc_runtime_major_version}{#msvc_runtime_minor_version_1}_Win32.log"" "; StatusMsg: "Installing MSVC 32-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
+Filename: msiexec.exe; Parameters: "/qn /norestart /i ""{tmp}\vccrt{#msvc_runtime_library_version}_Win32.msi"" /L*v ""{tmp}\vccrt{#msvc_runtime_library_version}_Win32.log"" "; StatusMsg: "Installing MSVC 32-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
 #if PlatformTarget == "x64"
-Filename: msiexec.exe; Parameters: "/qn /norestart /i ""{tmp}\vccrt{#msvc_runtime_major_version}{#msvc_runtime_minor_version_1}_x64.msi"" /L*v ""{tmp}\vccrt{#msvc_runtime_major_version}{#msvc_runtime_minor_version_1}_x64.log"" ";  StatusMsg: "Installing MSVC 64-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
+Filename: msiexec.exe; Parameters: "/qn /norestart /i ""{tmp}\vccrt{#msvc_runtime_library_version}_x64.msi"" /L*v ""{tmp}\vccrt{#msvc_runtime_library_version}_x64.log"" ";  StatusMsg: "Installing MSVC 64-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
 #endif
 #endif
 
@@ -511,12 +519,12 @@ Source: {#WOW64Dir}\zlib1.dll; DestDir: {app}\WOW64; Components: ClientComponent
 ;We just install the runtimes into the install dir.
 
 #if Int(msvc_runtime_major_version,14) >= 14
-Source: {#FilesDir}\{#msvcr_filename}{#msvc_runtime_major_version}{#msvc_runtime_minor_version_0}.dll; DestDir: {app}; Components: ClientComponent; Flags: sharedfile;
-Source: {#FilesDir}\msvcp{#msvc_runtime_major_version}{#msvc_runtime_minor_version_0}.dll; DestDir: {app}; Components: ClientComponent; Flags: sharedfile;
+Source: {#FilesDir}\{#msvcr_filename}{#msvc_runtime_file_version}.dll; DestDir: {app}; Components: ClientComponent; Flags: sharedfile;
+Source: {#FilesDir}\msvcp{#msvc_runtime_file_version}.dll; DestDir: {app}; Components: ClientComponent; Flags: sharedfile;
 #if PlatformTarget == "x64"
 ;If we are installing on x64 we need some 32-bit libraries for compatibility with 32-bit applications
-Source: {#WOW64Dir}\{#msvcr_filename}{#msvc_runtime_major_version}{#msvc_runtime_minor_version_0}.dll; DestDir: {app}\WOW64; Components: ClientComponent; Flags: sharedfile {#SkipFileIfDevStatus};
-Source: {#WOW64Dir}\msvcp{#msvc_runtime_major_version}{#msvc_runtime_minor_version_0}.dll; DestDir: {app}\WOW64; Components: ClientComponent; Flags: sharedfile {#SkipFileIfDevStatus};
+Source: {#WOW64Dir}\{#msvcr_filename}{#msvc_runtime_file_version}.dll; DestDir: {app}\WOW64; Components: ClientComponent; Flags: sharedfile {#SkipFileIfDevStatus};
+Source: {#WOW64Dir}\msvcp{#msvc_runtime_file_version}.dll; DestDir: {app}\WOW64; Components: ClientComponent; Flags: sharedfile {#SkipFileIfDevStatus};
 #endif
 #endif  /* #if Int(msvc_runtime_major_version,14) >= 10 */
 
@@ -524,10 +532,10 @@ Source: {#WOW64Dir}\msvcp{#msvc_runtime_major_version}{#msvc_runtime_minor_versi
 #if PlatformTarget == "x64"
 ;MinVersion 0,5.0 means no version of Win9x and at least Win2k if NT O/S
 ;In addition, O/S must have Windows Installer 3.0.
-Source: {#FilesDir}\system32\vccrt{#msvc_runtime_major_version}{#msvc_runtime_minor_version_1}_x64.msi; DestDir: {tmp};  Check: HasWI30; MinVersion: {#MinVer}; Components: ClientComponent; Flags: {#SkipFileIfDevStatus}
-Source: {#WOW64Dir}\system32\vccrt{#msvc_runtime_major_version}{#msvc_runtime_minor_version_1}_Win32.msi; DestDir: {tmp}; Check: HasWI30; MinVersion: {#MinVer}; Components: ClientComponent; Flags: {#SkipFileIfDevStatus}
+Source: {#FilesDir}\system32\vccrt{#msvc_runtime_library_version}_x64.msi; DestDir: {tmp};  Check: HasWI30; MinVersion: {#MinVer}; Components: ClientComponent; Flags: {#SkipFileIfDevStatus}
+Source: {#WOW64Dir}\system32\vccrt{#msvc_runtime_library_version}_Win32.msi; DestDir: {tmp}; Check: HasWI30; MinVersion: {#MinVer}; Components: ClientComponent; Flags: {#SkipFileIfDevStatus}
 #else
-Source: {#FilesDir}\system32\vccrt{#msvc_runtime_major_version}{#msvc_runtime_minor_version_1}_Win32.msi; DestDir: {tmp}; Check: HasWI30; MinVersion: {#MinVer}; Components: ClientComponent; Flags: {#SkipFileIfDevStatus}
+Source: {#FilesDir}\system32\vccrt{#msvc_runtime_library_version}_Win32.msi; DestDir: {tmp}; Check: HasWI30; MinVersion: {#MinVer}; Components: ClientComponent; Flags: {#SkipFileIfDevStatus}
 #endif
 #endif
 
@@ -575,7 +583,10 @@ Source: {#FilesDir}\examples\*.*; DestDir: {app}\examples; Components: DevAdminC
 #ifdef ship_pdb
 Source: {#FilesDir}\fbclient.pdb; DestDir: {app}; Components: ClientComponent;
 Source: {#FilesDir}\firebird.pdb; DestDir: {app}; Components: ServerComponent;
-;Source: {#FilesDir}\fbembed.pdb; DestDir: {app}; Components: ClientComponent;
+Source: {#FilesDir}\gbak.pdb; DestDir: {app}; Components: DevAdminComponent;
+Source: {#FilesDir}\gfix.pdb; DestDir: {app}; Components: DevAdminComponent;
+Source: {#FilesDir}\isql.pdb; DestDir: {app}; Components: ClientComponent;
+Source: {#FilesDir}\plugins\*.pdb; DestDir: {app}\plugins; Components: ServerComponent;
 #if PlatformTarget == "x64"
 Source: {#WOW64Dir}\fbclient.pdb; DestDir: {app}\WOW64; Components: ClientComponent;
 #endif
