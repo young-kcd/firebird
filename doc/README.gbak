@@ -87,7 +87,7 @@ b) restore using 2 parallel workers
 engine will build indices using 2 connections and 2 threads.
 
 c) restore using no parallel workers but let engine to decide how many worker
-shoudl be used to build indices
+should be used to build indices
 
 	gbak -r <backup> <database>
 
