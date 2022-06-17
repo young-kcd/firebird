@@ -103,12 +103,12 @@ copy %FB_ROOT_PATH%\src\extlib\*.sql %FB_OUTPUT_DIR%\plugins\udr > nul
 @copy %FB_INSTALL_SCRIPTS%\uninstall_service.bat %FB_OUTPUT_DIR% >nul
 
 :: MSVC runtime
-@copy "%VCToolsRedistDir%\..\..\VC\redist\%VSCMD_ARG_TGT_ARCH%\Microsoft.VC%MSVC_RUNTIME_LIBRARY_VERSION%.CRT\vcruntime140.dll" %FB_OUTPUT_DIR% >nul
-@if exist "%VCToolsRedistDir%\..\..\VC\redist\%VSCMD_ARG_TGT_ARCH%\Microsoft.VC%MSVC_RUNTIME_LIBRARY_VERSION%.CRT\vcruntime140_1.dll" (
-  copy "%VCToolsRedistDir%\..\..\VC\redist\%VSCMD_ARG_TGT_ARCH%\Microsoft.VC%MSVC_RUNTIME_LIBRARY_VERSION%.CRT\vcruntime140_1.dll" %FB_OUTPUT_DIR% >nul
+copy "%VCToolsRedistDir%\%VSCMD_ARG_TGT_ARCH%\Microsoft.VC%MSVC_RUNTIME_LIBRARY_VERSION%.CRT\vcruntime140.dll" %FB_OUTPUT_DIR% > nul
+if exist "%VCToolsRedistDir%\%VSCMD_ARG_TGT_ARCH%\Microsoft.VC%MSVC_RUNTIME_LIBRARY_VERSION%.CRT\vcruntime140_1.dll" (
+  copy "%VCToolsRedistDir%\%VSCMD_ARG_TGT_ARCH%\Microsoft.VC%MSVC_RUNTIME_LIBRARY_VERSION%.CRT\vcruntime140_1.dll" %FB_OUTPUT_DIR% > nul
 )
-@copy "%VCToolsRedistDir%\..\..\VC\redist\%VSCMD_ARG_TGT_ARCH%\Microsoft.VC%MSVC_RUNTIME_LIBRARY_VERSION%.CRT\msvcp140.dll" %FB_OUTPUT_DIR% >nul
-)
+copy "%VCToolsRedistDir%\%VSCMD_ARG_TGT_ARCH%\Microsoft.VC%MSVC_RUNTIME_LIBRARY_VERSION%.CRT\msvcp140.dll" %FB_OUTPUT_DIR% > nul
+
 
 @goto :EOF
 
