@@ -39,6 +39,12 @@
 #include "../../jrd/trace/TraceConfigStorage.h"
 #include "../../jrd/trace/TraceSession.h"
 
+namespace Firebird {
+
+class ICryptKeyCallback;
+
+}
+
 namespace Jrd {
 
 class Database;
@@ -52,7 +58,7 @@ public:
     /* Initializes plugins. */
 	explicit TraceManager(Attachment* in_att);
 	explicit TraceManager(Service* in_svc);
-	explicit TraceManager(const char* in_filename);
+	TraceManager(const char* in_filename, Firebird::ICryptKeyCallback* callback);
 
 	/* Finalize plugins. Called when database is closed by the engine */
 	~TraceManager();
@@ -142,6 +148,12 @@ public:
 		return active;
 	}
 
+	// external access to stored attachment
+	Attachment* getAttachment()
+	{
+		return attachment;
+	}
+
 	/* DSQL-friendly routines to call Trace API hooks.
        Needed because DSQL cannot include JRD for the current engine */
 	static bool need_dsql_prepare(Attachment* att);
@@ -163,6 +175,7 @@ private:
 	Attachment*	attachment;
 	Service* service;
 	const char* filename;
+	Firebird::ICryptKeyCallback* callback;
 	NotificationNeeds trace_needs, new_needs;
 
 	// This structure should be POD-like to be stored in Array

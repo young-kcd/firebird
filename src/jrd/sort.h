@@ -270,7 +270,8 @@ typedef bool (*FPTR_REJECT_DUP_CALLBACK)(const UCHAR*, const UCHAR*, void*);
 
 // flags as set in m_flags
 
-const int scb_sorted = 1;	// stream has been sorted
+const int scb_sorted		= 1;	// stream has been sorted
+const int scb_reuse_buffer	= 2;	// reuse buffer if possible
 
 class Sort
 {
