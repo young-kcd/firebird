@@ -1330,10 +1330,14 @@ static void			check_single_maintenance(thread_db* tdbb);
 
 namespace {
 	enum VdnResult {VDN_FAIL, VDN_OK/*, VDN_SECURITY*/};
+
+	const unsigned UNWIND_INTERNAL = 1;
+	const unsigned UNWIND_CREATE = 2;
 }
 static VdnResult	verifyDatabaseName(const PathName&, FbStatusVector*, bool);
 
-static void		unwindAttach(thread_db* tdbb, const Exception& ex, FbStatusVector* userStatus, bool internalFlag);
+static void		unwindAttach(thread_db* tdbb, const char* filename, const Exception& ex,
+	FbStatusVector* userStatus, unsigned flags, const DatabaseOptions& options, Mapping& mapping, ICryptKeyCallback* callback);
 static JAttachment*	initAttachment(thread_db*, const PathName&, const PathName&, RefPtr<const Config>, bool,
 	const DatabaseOptions&, RefMutexUnlock&, IPluginConfig*, JProvider*);
 static JAttachment*	create_attachment(const PathName&, Database*, JProvider* provider, const DatabaseOptions&, bool newDb);
@@ -1549,14 +1553,19 @@ static void trace_warning(thread_db* tdbb, FbStatusVector* userStatus, const cha
 }
 
 
-static void trace_failed_attach(TraceManager* traceManager, const char* filename,
-	const DatabaseOptions& options, bool create, FbStatusVector* status, ICryptKeyCallback* callback)
+// Report to Trace API that attachment has not been created
+static void trace_failed_attach(const char* filename, const DatabaseOptions& options,
+	bool create, FbStatusVector* status, ICryptKeyCallback* callback)
 {
-	// Report to Trace API that attachment has not been created
+	// Avoid uncontrolled recursion
+	if (options.dpb_map_attach)
+		return;
+
 	const char* origFilename = filename;
 	if (options.dpb_org_filename.hasData())
 		origFilename = options.dpb_org_filename.c_str();
 
+	// Create trivial trace object for connection
 	TraceFailedConnection conn(origFilename, &options);
 	TraceStatusVectorImpl traceStatus(status, TraceStatusVectorImpl::TS_ERRORS);
 
@@ -1565,33 +1574,14 @@ static void trace_failed_attach(TraceManager* traceManager, const char* filename
 		ITracePlugin::RESULT_UNAUTHORIZED : ITracePlugin::RESULT_FAILED;
 	const char* func = create ? "JProvider::createDatabase" : "JProvider::attachDatabase";
 
-	Attachment* att = traceManager ? traceManager->getAttachment() : nullptr;
-	if (traceManager && (! traceManager->isActive()))
-		traceManager = nullptr;
+	// Perform actual trace
+	TraceManager tempMgr(origFilename, callback);
 
-	if (!traceManager)
-	{
-		if (!options.dpb_map_attach)
-		{
-			EngineCheckout guard(att, FB_FUNCTION, true);
+	if (tempMgr.needs(ITraceFactory::TRACE_EVENT_ATTACH))
+		tempMgr.event_attach(&conn, create, result);
 
-			TraceManager tempMgr(origFilename, callback);
-
-			if (tempMgr.needs(ITraceFactory::TRACE_EVENT_ATTACH))
-				tempMgr.event_attach(&conn, create, result);
-
-			if (tempMgr.needs(ITraceFactory::TRACE_EVENT_ERROR))
-				tempMgr.event_error(&conn, &traceStatus, func);
-		}
-	}
-	else
-	{
-		if (traceManager->needs(ITraceFactory::TRACE_EVENT_ATTACH))
-			traceManager->event_attach(&conn, create, result);
-
-		if (traceManager->needs(ITraceFactory::TRACE_EVENT_ERROR))
-			traceManager->event_error(&conn, &traceStatus, func);
-	}
+	if (tempMgr.needs(ITraceFactory::TRACE_EVENT_ERROR))
+		tempMgr.event_error(&conn, &traceStatus, func);
 }
 
 
@@ -1714,7 +1704,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 		catch (const Exception& ex)
 		{
 			ex.stuffException(user_status);
-			trace_failed_attach(NULL, filename, options, false, user_status, cryptCallback);
+			trace_failed_attach(filename, options, false, user_status, cryptCallback);
 			throw;
 		}
 
@@ -1722,13 +1712,12 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 		const VdnResult vdn = verifyDatabaseName(expanded_name, tdbb->tdbb_status_vector, is_alias);
 		if (!is_alias && vdn == VDN_FAIL)
 		{
-			trace_failed_attach(NULL, filename, options, false, tdbb->tdbb_status_vector, cryptCallback);
+			trace_failed_attach(filename, options, false, tdbb->tdbb_status_vector, cryptCallback);
 			status_exception::raise(tdbb->tdbb_status_vector);
 		}
 
 		Database* dbb = NULL;
 		Jrd::Attachment* attachment = NULL;
-		bool attachTraced = false;
 
 		// Initialize special error handling
 		try
@@ -2206,7 +2195,6 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				TraceConnectionImpl conn(attachment);
 				attachment->att_trace_manager->event_attach(&conn, false, ITracePlugin::RESULT_SUCCESS);
 			}
-			attachTraced = true;
 
 			// Recover database after crash during backup difference file merge
 			dbb->dbb_backup_manager->endBackup(tdbb, true); // true = do recovery
@@ -2269,26 +2257,8 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 		catch (const Exception& ex)
 		{
 			ex.stuffException(user_status);
-			if (attachTraced)
-			{
-				TraceManager* traceManager = attachment->att_trace_manager;
-				TraceConnectionImpl conn(attachment);
-				TraceStatusVectorImpl traceStatus(user_status, TraceStatusVectorImpl::TS_ERRORS);
-
-				if (traceManager->needs(ITraceFactory::TRACE_EVENT_ERROR))
-					traceManager->event_error(&conn, &traceStatus, "JProvider::attachDatabase");
-
-				if (traceManager->needs(ITraceFactory::TRACE_EVENT_DETACH))
-					traceManager->event_detach(&conn, false);
-			}
-			else
-			{
-				trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
-					filename, options, false, user_status, cryptCallback);
-			}
-
-			mapping.clearMainHandle();
-			unwindAttach(tdbb, ex, user_status, existingId);
+			unwindAttach(tdbb, filename, ex, user_status, existingId ? UNWIND_INTERNAL : 0,
+				options, mapping, cryptCallback);
 		}
 	}
 	catch (const Exception& ex)
@@ -2885,7 +2855,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 		catch (const Exception& ex)
 		{
 			ex.stuffException(user_status);
-			trace_failed_attach(NULL, filename, options, true, user_status, cryptCallback);
+			trace_failed_attach(filename, options, true, user_status, cryptCallback);
 			throw;
 		}
 
@@ -2893,7 +2863,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 		const VdnResult vdn = verifyDatabaseName(expanded_name, tdbb->tdbb_status_vector, is_alias);
 		if (!is_alias && vdn == VDN_FAIL)
 		{
-			trace_failed_attach(NULL, filename, options, true, tdbb->tdbb_status_vector, cryptCallback);
+			trace_failed_attach(filename, options, true, tdbb->tdbb_status_vector, cryptCallback);
 			status_exception::raise(tdbb->tdbb_status_vector);
 		}
 
@@ -3213,11 +3183,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 		catch (const Exception& ex)
 		{
 			ex.stuffException(user_status);
-			trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
-				filename, options, true, user_status, cryptCallback);
-
-			mapping.clearMainHandle();
-			unwindAttach(tdbb, ex, user_status, false);
+			unwindAttach(tdbb, filename, ex, user_status, UNWIND_CREATE, options, mapping, cryptCallback);
 		}
 	}
 	catch (const Exception& ex)
@@ -8590,12 +8556,40 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options, const char
 	}
 }
 
-static void unwindAttach(thread_db* tdbb, const Exception& ex, FbStatusVector* userStatus, bool internalFlag)
+static void unwindAttach(thread_db* tdbb, const char* filename, const Exception& ex,
+	FbStatusVector* userStatus, unsigned flags, const DatabaseOptions& options, Mapping& mapping, ICryptKeyCallback* callback)
 {
-	transliterateException(tdbb, ex, userStatus, NULL);
+	bool attTraced = false;
+	try
+	{
+		auto att = tdbb->getAttachment();
+		if (att && att->att_trace_manager && att->att_trace_manager->isActive())
+		{
+			TraceManager* traceManager = att->att_trace_manager;
+			TraceConnectionImpl conn(att);
+			TraceStatusVectorImpl traceStatus(userStatus, TraceStatusVectorImpl::TS_ERRORS);
+
+			if (traceManager->needs(ITraceFactory::TRACE_EVENT_ATTACH))
+				traceManager->event_attach(&conn, flags & UNWIND_CREATE, ITracePlugin::RESULT_FAILED);
+
+			if (traceManager->needs(ITraceFactory::TRACE_EVENT_ERROR))
+			{
+				const char* func = flags & UNWIND_CREATE ? "JProvider::createDatabase" : "JProvider::attachDatabase";
+				traceManager->event_error(&conn, &traceStatus, func);
+			}
+
+			attTraced = true;
+		}
+	}
+	catch (const Exception&)
+	{
+		// no-op
+	}
 
 	try
 	{
+		mapping.clearMainHandle();
+
 		const auto dbb = tdbb->getDatabase();
 
 		if (dbb)
@@ -8630,7 +8624,10 @@ static void unwindAttach(thread_db* tdbb, const Exception& ex, FbStatusVector* u
 			}
 
 			JRD_shutdown_database(dbb, SHUT_DBB_RELEASE_POOLS |
-				(internalFlag ? SHUT_DBB_OVERWRITE_CHECK : 0));
+				(flags & UNWIND_INTERNAL ? SHUT_DBB_OVERWRITE_CHECK : 0));
+
+			if (!attTraced)
+				trace_failed_attach(filename, options, flags & UNWIND_CREATE, userStatus, callback);
 		}
 	}
 	catch (const Exception&)
@@ -8638,7 +8635,7 @@ static void unwindAttach(thread_db* tdbb, const Exception& ex, FbStatusVector* u
 		// no-op
 	}
 
-	return;
+	transliterateException(tdbb, ex, userStatus, NULL);
 }
 
 
