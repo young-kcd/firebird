@@ -625,7 +625,7 @@ private:
 		if (!CreateWellKnownSid(WinWorldSid, NULL, &sid, &cbSid))
 			raiseError("CreateWellKnownSid");
 
-		// Create security desctriptor which allows generic access to the just created SID
+		// Create security descriptor which allows generic access to the just created SID
 
 		SECURITY_ATTRIBUTES sa;
 		RtlSecureZeroMemory(&sa, sizeof(sa));
