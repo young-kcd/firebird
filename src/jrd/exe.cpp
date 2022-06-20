@@ -713,6 +713,12 @@ void EXE_receive(thread_db* tdbb,
 							current->bli_request->req_blobs.fastRemove();
 							current->bli_request = NULL;
 						}
+
+						if (!current->bli_materialized &&
+							(current->bli_blob_object->blb_flags & BLB_close_on_read))
+						{
+							current->bli_blob_object->BLB_close(tdbb);
+						}
 					}
 					else
 					{
@@ -1259,10 +1265,9 @@ void EXE_execute_triggers(thread_db* tdbb,
 }
 
 
-static void stuff_stack_trace(const jrd_req* request)
+bool EXE_get_stack_trace(const jrd_req* request, string& sTrace)
 {
-	string sTrace;
-
+	sTrace = "";
 	for (const jrd_req* req = request; req; req = req->req_caller)
 	{
 		const JrdStatement* const statement = req->getStatement();
@@ -1318,7 +1323,14 @@ static void stuff_stack_trace(const jrd_req* request)
 		}
 	}
 
-	if (sTrace.hasData())
+	return sTrace.hasData();
+}
+
+static void stuff_stack_trace(const jrd_req* request)
+{
+	string sTrace;
+
+	if (EXE_get_stack_trace(request, sTrace))
 		ERR_post_nothrow(Arg::Gds(isc_stack_trace) << Arg::Str(sTrace));
 }
 
