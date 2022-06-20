@@ -617,7 +617,7 @@ private:
 
 	void init()
 	{
-		char sid[SECURITY_MAX_SID_SIZE];
+		alignas(SID) char sid[SECURITY_MAX_SID_SIZE];
 		DWORD cbSid = sizeof(sid);
 
 		// For now use EVERYONE, could be changed later
