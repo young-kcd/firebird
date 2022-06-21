@@ -254,6 +254,7 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, JProvider* provider
 	  att_dest_bind(&att_bindings),
 	  att_original_timezone(TimeZoneUtil::getSystemTimeZone()),
 	  att_current_timezone(att_original_timezone),
+	  att_parallel_workers(0),
 	  att_repl_appliers(*pool),
 	  att_utility(UTIL_NONE),
 	  att_procedures(*pool),
@@ -1035,7 +1036,7 @@ void StableAttachmentPart::manualAsyncUnlock(ULONG& flags)
 	}
 }
 
-void StableAttachmentPart::onIdleTimer(TimerImpl*)
+void StableAttachmentPart::doOnIdleTimer(TimerImpl*)
 {
 	// Ensure attachment is still alive and still idle
 
@@ -1074,8 +1075,11 @@ void Attachment::setupIdleTimer(bool clear)
 	{
 		if (!att_idle_timer)
 		{
-			att_idle_timer = FB_NEW IdleTimer(getStable());
-			att_idle_timer->setOnTimer(&StableAttachmentPart::onIdleTimer);
+			using IdleTimer = TimerWithRef<StableAttachmentPart>;
+
+			auto idleTimer = FB_NEW IdleTimer(getStable());
+			idleTimer->setOnTimer(&StableAttachmentPart::onIdleTimer);
+			att_idle_timer = idleTimer;
 		}
 
 		att_idle_timer->reset(timeout);

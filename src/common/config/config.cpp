@@ -412,6 +412,12 @@ void Config::checkValues()
 	checkIntForLoBound(KEY_INLINE_SORT_THRESHOLD, 0, true);
 
 	checkIntForLoBound(KEY_MAX_STATEMENT_CACHE_SIZE, 0, true);
+
+	checkIntForLoBound(KEY_MAX_PARALLEL_WORKERS, 1, true);
+	checkIntForHiBound(KEY_MAX_PARALLEL_WORKERS, 64, false);	// todo: detect number of available cores
+
+	checkIntForLoBound(KEY_PARALLEL_WORKERS, 1, true);
+	checkIntForHiBound(KEY_MAX_PARALLEL_WORKERS, values[KEY_MAX_PARALLEL_WORKERS].intVal, false);
 }
 
 

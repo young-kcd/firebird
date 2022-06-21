@@ -113,6 +113,7 @@
 #include "../jrd/ThreadCollect.h"
 
 #include "../jrd/Database.h"
+#include "../jrd/WorkerAttachment.h"
 
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
@@ -1094,6 +1095,8 @@ namespace Jrd
 		bool	dpb_reset_icu;
 		bool	dpb_map_attach;
 		ULONG	dpb_remote_flags;
+		SSHORT	dpb_parallel_workers;
+		bool	dpb_worker_attach;
 		ReplicaMode	dpb_replica_mode;
 		bool	dpb_set_db_replica;
 		bool	dpb_clear_map;
@@ -2157,6 +2160,11 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				}
 			}
 
+			if (options.dpb_parallel_workers)
+			{
+				attachment->att_parallel_workers = options.dpb_parallel_workers;
+			}
+
 			if (options.dpb_set_db_readonly)
 			{
 				validateAccess(tdbb, attachment, CHANGE_HEADER_SETTINGS);
@@ -2249,6 +2257,11 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 					throw;
 				}
 			}
+
+			if (options.dpb_worker_attach)
+				attachment->att_flags |= ATT_worker;
+			else
+				WorkerAttachment::incUserAtts(dbb->dbb_filename);
 
 			jAtt->getStable()->manualUnlock(attachment->att_flags);
 
@@ -3107,6 +3120,11 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			CCH_init2(tdbb);
 			VIO_init(tdbb);
 
+			if (options.dpb_parallel_workers)
+			{
+				attachment->att_parallel_workers = options.dpb_parallel_workers;
+			}
+
 			if (options.dpb_set_db_readonly)
 			{
 				if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD, &dbbGuard))
@@ -3175,6 +3193,8 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 				TraceConnectionImpl conn(attachment);
 				attachment->att_trace_manager->event_attach(&conn, true, ITracePlugin::RESULT_SUCCESS);
 			}
+
+			WorkerAttachment::incUserAtts(dbb->dbb_filename);
 
 			jAtt->getStable()->manualUnlock(attachment->att_flags);
 
@@ -3428,6 +3448,9 @@ void JAttachment::internalDropDatabase(CheckStatusWrapper* user_status)
 					ERR_post(Arg::Gds(isc_lock_timeout) <<
 							 Arg::Gds(isc_obj_in_use) << Arg::Str(file_name));
 				}
+
+				if (!(attachment->att_flags & ATT_worker))
+					WorkerAttachment::decUserAtts(dbb->dbb_filename);
 
 				// Lock header page before taking database lock
 				header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
@@ -4564,7 +4587,7 @@ void JProvider::shutdown(CheckStatusWrapper* status, unsigned int timeout, const
 			}
 
 			ThreadContextHolder tdbb;
-
+			WorkerAttachment::shutdown();
 			EDS::Manager::shutdown();
 
 			ULONG attach_count, database_count, svc_count;
@@ -6815,6 +6838,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 	dpb_overwrite = false;
 	dpb_sql_dialect = 99;
 	invalid_client_SQL_dialect = false;
+	dpb_parallel_workers = Config::getParallelWorkers();
 
 	if (dpb_length == 0)
 		return;
@@ -7197,6 +7221,23 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			dpb_clear_map = rdr.getBoolean();
 			break;
 
+		case isc_dpb_parallel_workers:
+			dpb_parallel_workers = (SSHORT) rdr.getInt();
+
+			if (dpb_parallel_workers > Config::getMaxParallelWorkers() ||
+				dpb_parallel_workers < 0)
+			{
+				string str;
+				str.printf("Wrong parallel workers value %i, valid range are from 1 to %i", 
+							dpb_parallel_workers, Config::getMaxParallelWorkers());
+				ERR_post(Arg::Gds(isc_bad_dpb_content) << Arg::Gds(isc_random) << Arg::Str(str));
+			}
+			break;
+
+		case isc_dpb_worker_attach:
+			dpb_worker_attach = true;
+			break;
+
 		default:
 			break;
 		}
@@ -7204,6 +7245,12 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 
 	if (! rdr.isEof())
 		ERR_post(Arg::Gds(isc_bad_dpb_form));
+
+	if (dpb_worker_attach)
+	{
+		dpb_parallel_workers = 1;
+		dpb_no_db_triggers = true;
+	}
 }
 
 
@@ -7870,6 +7917,8 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 
 	fb_assert(!dbb->locked());
 
+	WorkerAttachment::shutdownDbb(dbb);
+
 	try
 	{
 #ifdef SUPERSERVER_V2
@@ -8337,6 +8386,9 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 		shutdownFlags |= SHUT_DBB_LINGER;
 	if (attachment->att_flags & ATT_overwrite_check)
 		shutdownFlags |= SHUT_DBB_OVERWRITE_CHECK;
+
+	if (!(attachment->att_flags & ATT_worker))
+		WorkerAttachment::decUserAtts(dbb->dbb_filename);
 
 	// Unlink attachment from database
 	release_attachment(tdbb, attachment);

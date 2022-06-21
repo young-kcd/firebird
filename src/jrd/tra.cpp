@@ -4167,12 +4167,11 @@ TraceSweepEvent::TraceSweepEvent(thread_db* tdbb)
 
 	TraceManager* trace_mgr = att->att_trace_manager;
 
+	m_start_clock = fb_utils::query_performance_counter();
 	m_need_trace = trace_mgr->needs(ITraceFactory::TRACE_EVENT_SWEEP);
 
 	if (!m_need_trace)
 		return;
-
-	m_start_clock = fb_utils::query_performance_counter();
 
 	TraceConnectionImpl conn(att);
 	trace_mgr->event_sweep(&conn, &m_sweep_info, ITracePlugin::SWEEP_STATE_STARTED);
@@ -4242,12 +4241,19 @@ void TraceSweepEvent::report(ntrace_process_state_t state)
 {
 	Attachment* att = m_tdbb->getAttachment();
 
+	const SINT64 finiTime = fb_utils::query_performance_counter() - m_start_clock;
+
 	if (state == ITracePlugin::SWEEP_STATE_FINISHED)
 	{
+		const SINT64 timeMs = finiTime * 1000 / fb_utils::query_performance_frequency();
+
 		gds__log("Sweep is finished\n"
 			"\tDatabase \"%s\" \n"
+			"\t%i workers, time %" SLONGFORMAT ".%03d sec \n"
 			"\tOIT %" SQUADFORMAT", OAT %" SQUADFORMAT", OST %" SQUADFORMAT", Next %" SQUADFORMAT,
 			att->att_filename.c_str(),
+			att->att_parallel_workers,
+			(int) timeMs / 1000, (unsigned int) timeMs % 1000,
 			m_sweep_info.getOIT(),
 			m_sweep_info.getOAT(),
 			m_sweep_info.getOST(),
@@ -4268,9 +4274,7 @@ void TraceSweepEvent::report(ntrace_process_state_t state)
 
 	jrd_tra* tran = m_tdbb->getTransaction();
 
-	TraceRuntimeStats stats(att, &m_base_stats, &att->att_stats,
-		fb_utils::query_performance_counter() - m_start_clock,
-		0);
+	TraceRuntimeStats stats(att, &m_base_stats, &att->att_stats, finiTime, 0);
 
 	m_sweep_info.setPerf(stats.getPerf());
 	trace_mgr->event_sweep(&conn, &m_sweep_info, state);

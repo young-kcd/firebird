@@ -63,6 +63,8 @@
 #include "../jrd/vio_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/Collation.h"
+#include "../common/Task.h"
+#include "../jrd/WorkerAttachment.h"
 
 using namespace Jrd;
 using namespace Ods;
@@ -228,118 +230,312 @@ bool IDX_check_master_types(thread_db* tdbb, index_desc& idx, jrd_rel* partner_r
 }
 
 
-void IDX_create_index(thread_db* tdbb,
-					  jrd_rel* relation,
-					  index_desc* idx,
-					  const TEXT* index_name,
-					  USHORT* index_id,
-					  jrd_tra* transaction,
-					  SelectivityList& selectivity)
+namespace Jrd {
+
+class IndexCreateTask : public Task
 {
-/**************************************
- *
- *	I D X _ c r e a t e _ i n d e x
- *
- **************************************
- *
- * Functional description
- *	Create and populate index.
- *
- **************************************/
-	idx_e result = idx_e_ok;
+public:
+	IndexCreateTask(thread_db* tdbb, MemoryPool* pool, IndexCreation* creation) : Task(),
+		m_pool(pool),
+		m_tdbb_flags(tdbb->tdbb_flags),
+		m_creation(creation),
+		m_sorts(*m_pool),
+		m_items(*m_pool),
+		m_stop(false),
+		m_countPP(0),
+		m_nextPP(0)
+	{
+		m_dbb = tdbb->getDatabase();
+		Attachment* att = tdbb->getAttachment();
 
-	SET_TDBB(tdbb);
+		m_exprBlob.clear();
+
+		int workers = 1;
+		if (att->att_parallel_workers > 0)
+			workers = att->att_parallel_workers;
+
+		for (int i = 0; i < workers; i++)
+			m_items.add(FB_NEW_POOL(*m_pool) Item(this));
+
+		m_items[0]->m_ownAttach = false;
+		m_items[0]->m_attStable = att->getStable();
+		m_items[0]->m_tra = m_creation->transaction;
+
+		if (m_creation)
+		{
+			m_countPP = m_creation->relation->getPages(tdbb)->rel_pages->count();
+
+			if ((m_creation->index->idx_flags & idx_expressn) && (workers > 1))
+				MET_lookup_index_expression_blr(tdbb, m_creation->index_name, m_exprBlob);
+		}
+	}
+
+	virtual ~IndexCreateTask()
+	{
+		for (Item** p = m_items.begin(); p < m_items.end(); p++)
+			delete *p;
+	}
+
+	bool handler(WorkItem& _item);
+	bool getWorkItem(WorkItem** pItem);
+	bool getResult(IStatus* status);
+	int getMaxWorkers();
+
+	class Item : public Task::WorkItem
+	{
+	public:
+		Item(IndexCreateTask* task) : Task::WorkItem(task),
+			m_inuse(false),
+			m_ownAttach(true),
+			m_tra(NULL),
+			m_sort(NULL),
+			m_ppSequence(0)
+		{}
+
+		virtual ~Item()
+		{
+			if (m_sort)
+			{
+				MutexLockGuard guard(getTask()->m_mutex, FB_FUNCTION);
+				delete m_sort;
+				m_sort = NULL;
+			}
+
+			if (!m_ownAttach || !m_attStable)
+				return;
+
+			Attachment* att = NULL;
+			{
+				AttSyncLockGuard guard(*m_attStable->getSync(), FB_FUNCTION);
+
+				att = m_attStable->getHandle();
+				if (!att)
+					return;
+				fb_assert(att->att_use_count > 0);
+			}
+
+			FbLocalStatus status;
+			if (m_tra)
+			{
+				BackgroundContextHolder tdbb(att->att_database, att, &status, FB_FUNCTION);
+				TRA_commit(tdbb, m_tra, false);
+			}
+			WorkerAttachment::releaseAttachment(&status, m_attStable);
+		}
+
+		bool init(thread_db* tdbb)
+		{
+			FbStatusVector* status = tdbb->tdbb_status_vector;
+			Attachment* att = NULL;
+
+			if (m_ownAttach && !m_attStable.hasData())
+				m_attStable = WorkerAttachment::getAttachment(status, getTask()->m_dbb);
+
+			if (m_attStable)
+				att = m_attStable->getHandle();
+
+			if (!att)
+			{
+				Arg::Gds(isc_bad_db_handle).copyTo(status);
+				return false;
+			}
+
+			IndexCreation* creation = getTask()->m_creation;
+			tdbb->setDatabase(att->att_database);
+			tdbb->setAttachment(att);
+
+			if (m_ownAttach && !m_tra)
+			{
+				try
+				{
+					WorkerContextHolder holder(tdbb, FB_FUNCTION);
+					m_tra = TRA_start(tdbb, creation->transaction->tra_flags, 
+											creation->transaction->tra_lock_timeout);
+				}
+				catch (const Exception& ex)
+				{
+					ex.stuffException(tdbb->tdbb_status_vector);
+					return false;
+				}
+			}
+
+			tdbb->setTransaction(m_tra);
+
+			if (!m_sort)
+			{
+				m_idx = *creation->index;	// copy
+				if (m_ownAttach)
+				{
+					m_idx.idx_expression = NULL;
+					m_idx.idx_expression_statement = NULL;
+					m_idx.idx_foreign_indexes = NULL;
+					m_idx.idx_foreign_primaries = NULL;
+					m_idx.idx_foreign_relations = NULL;
+				}
+
+				FPTR_REJECT_DUP_CALLBACK callback = NULL;
+				void* callback_arg = NULL;
+
+				if (m_idx.idx_flags & idx_unique)
+				{
+					callback = duplicate_key;
+					callback_arg = creation;
+				}
+
+				MutexLockGuard guard(getTask()->m_mutex, FB_FUNCTION);
+
+				m_sort = FB_NEW_POOL(getTask()->m_sorts.getPool())
+							Sort(att->att_database, &getTask()->m_sorts,
+								 creation->key_length + sizeof(index_sort_record),
+								 2, 1, creation->key_desc, callback, callback_arg);
+
+				creation->sort->addPartition(m_sort);
+			}
+
+			return true;
+		}
+
+		IndexCreateTask* getTask() const
+		{
+			return reinterpret_cast<IndexCreateTask*> (m_task);
+		}
+
+		bool m_inuse;
+		bool m_ownAttach;
+		RefPtr<StableAttachmentPart> m_attStable;
+		jrd_tra* m_tra;
+		index_desc m_idx;
+		Sort* m_sort;
+		ULONG m_ppSequence;
+	};
+
+private:
+	void setError(IStatus* status, bool stopTask)
+	{
+		const bool copyStatus = (m_status.isSuccess() && status && status->getState() == IStatus::STATE_ERRORS);
+		if (!copyStatus && (!stopTask || m_stop))
+			return;
+
+		MutexLockGuard guard(m_mutex, FB_FUNCTION);
+		if (m_status.isSuccess() && copyStatus)
+			m_status.save(status);
+		if (stopTask)
+			m_stop = true;
+	}
+
+	MemoryPool* m_pool;
+	Database* m_dbb;
+	const ULONG m_tdbb_flags;
+	IndexCreation* m_creation;
+	SortOwner m_sorts;
+	bid m_exprBlob;
+
+	Mutex m_mutex;
+	HalfStaticArray<Item*, 8> m_items;
+	StatusHolder m_status;
+
+	volatile bool m_stop;
+	ULONG m_countPP;
+	ULONG m_nextPP;
+};
+
+bool IndexCreateTask::handler(WorkItem& _item)
+{
+	Item* item = reinterpret_cast<Item*>(&_item);
+
+	ThreadContextHolder tdbb(NULL);
+	tdbb->tdbb_flags = m_tdbb_flags;
+
+	if (!item->init(tdbb))
+	{
+		setError(tdbb->tdbb_status_vector, true);
+		return false;
+	}
+
+	WorkerContextHolder holder(tdbb, FB_FUNCTION);
+
 	Database* dbb = tdbb->getDatabase();
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
+	jrd_rel* relation = MET_relation(tdbb, m_creation->relation->rel_id);
+	if (!(relation->rel_flags & REL_scanned))
+		MET_scan_relation(tdbb, relation);
 
-	if (relation->rel_file)
-	{
-		ERR_post(Arg::Gds(isc_no_meta_update) <<
-				 Arg::Gds(isc_extfile_uns_op) << Arg::Str(relation->rel_name));
-	}
-	else if (relation->isVirtual())
-	{
-		ERR_post(Arg::Gds(isc_no_meta_update) <<
-				 Arg::Gds(isc_wish_list));
-	}
+	index_desc* idx = &item->m_idx;
+	jrd_tra* transaction = item->m_tra ? item->m_tra : m_creation->transaction;
+	Sort* scb = item->m_sort;
 
-	get_root_page(tdbb, relation);
-
-	fb_assert(transaction);
-
+	idx_e result = idx_e_ok;
+	RecordStack stack;
 	record_param primary, secondary;
 	secondary.rpb_relation = relation;
-	primary.rpb_relation = relation;
+	primary.rpb_relation   = relation;
 	primary.rpb_number.setValue(BOF_NUMBER);
 	//primary.getWindow(tdbb).win_flags = secondary.getWindow(tdbb).win_flags = 0; redundant
 
-	const bool isDescending = (idx->idx_flags & idx_descending);
-	const bool isPrimary = (idx->idx_flags & idx_primary);
-	const bool isForeign = (idx->idx_flags & idx_foreign);
+	IndexErrorContext context(relation, idx, m_creation->index_name);
 
-	// hvlad: in ODS11 empty string and NULL values can have the same binary
-	// representation in index keys. BTR can distinguish it by the key_length
-	// but SORT module currently don't take it into account. Therefore add to
-	// the index key one byte prefix with 0 for NULL value and 1 for not-NULL
-	// value to produce right sorting.
-	// BTR\fast_load will remove this one byte prefix from the index key.
-	// Note that this is necessary only for single-segment ascending indexes
-	// and only for ODS11 and higher.
+	try {
 
-	const int nullIndLen = !isDescending && (idx->idx_count == 1) ? 1 : 0;
-	const USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx) + nullIndLen, sizeof(SINT64));
-
-	if (key_length >= dbb->getMaxIndexKeyLength())
+	// If scan is finished, do final sort pass over own sort
+	if (item->m_ppSequence == m_countPP)
 	{
-		ERR_post(Arg::Gds(isc_no_meta_update) <<
-				 Arg::Gds(isc_keytoobig) << Arg::Str(index_name));
+		//fb_assert((scb->scb_flags & scb_sorted) == 0);
+
+		if (item->m_ownAttach && idx->idx_expression_statement)
+		{
+			idx->idx_expression_statement->release(tdbb);
+			idx->idx_expression_statement = NULL;
+		}
+
+		if (!m_stop && m_creation->duplicates.value() == 0)
+			scb->sort(tdbb);
+
+		if (!m_stop && m_creation->duplicates.value() > 0)
+		{
+			AutoPtr<Record> error_record;
+			primary.rpb_record = NULL;
+			fb_assert(m_creation->dup_recno >= 0);
+			primary.rpb_number.setValue(m_creation->dup_recno);
+
+			if (DPM_get(tdbb, &primary, LCK_read))
+			{
+				if (primary.rpb_flags & rpb_deleted)
+					CCH_RELEASE(tdbb, &primary.getWindow(tdbb));
+				else
+				{
+					VIO_data(tdbb, &primary, dbb->dbb_permanent);
+					error_record = primary.rpb_record;
+				}
+			}
+
+			context.raise(tdbb, idx_e_duplicate, error_record);
+		}
+
+		return true;
 	}
 
-	IndexCreation creation;
-	creation.index = idx;
-	creation.relation = relation;
-	creation.transaction = transaction;
-	creation.key_length = key_length;
-	creation.dup_recno = -1;
-	creation.duplicates = 0;
-
-	BTR_reserve_slot(tdbb, creation);
-
-	if (index_id)
-		*index_id = idx->idx_id;
-
-	RecordStack stack;
-	const UCHAR pad = isDescending ? -1 : 0;
-
-	sort_key_def key_desc[2];
-	// Key sort description
-	key_desc[0].setSkdLength(SKD_bytes, key_length);
-	key_desc[0].skd_flags = SKD_ascending;
-	key_desc[0].setSkdOffset();
-	key_desc[0].skd_vary_offset = 0;
-	// RecordNumber sort description
-	key_desc[1].setSkdLength(SKD_int64, sizeof(RecordNumber));
-	key_desc[1].skd_flags = SKD_ascending;
-	key_desc[1].setSkdOffset(key_desc);
-	key_desc[1].skd_vary_offset = 0;
-
-	FPTR_REJECT_DUP_CALLBACK callback = (idx->idx_flags & idx_unique) ? duplicate_key : NULL;
-	void* callback_arg = (idx->idx_flags & idx_unique) ? &creation : NULL;
-
-	Sort* const scb = FB_NEW_POOL(transaction->tra_sorts.getPool())
-		Sort(dbb, &transaction->tra_sorts, key_length + sizeof(index_sort_record),
-				  2, 1, key_desc, callback, callback_arg);
-	creation.sort = scb;
-
-	jrd_rel* partner_relation = NULL;
+	jrd_rel* partner_relation = 0;
 	USHORT partner_index_id = 0;
-	if (isForeign)
+	if (idx->idx_flags & idx_foreign)
 	{
-		if (!MET_lookup_partner(tdbb, relation, idx, index_name))
-			BUGCHECK(173);		// msg 173 referenced index description not found
-
+//		if (!MET_lookup_partner(tdbb, relation, idx, m_creation->index_name)) {
+//			BUGCHECK(173);		// msg 173 referenced index description not found
+//		}
 		partner_relation = MET_relation(tdbb, idx->idx_primary_relation);
 		partner_index_id = idx->idx_primary_index;
+	}
+
+	if ((idx->idx_flags & idx_expressn) && (idx->idx_expression == NULL))
+	{
+		fb_assert(!m_exprBlob.isEmpty());
+
+		CompilerScratch* csb = NULL;
+		Jrd::ContextPoolHolder context(tdbb, attachment->createPool());
+
+		idx->idx_expression = static_cast<ValueExprNode*> (MET_parse_blob(tdbb, relation, &m_exprBlob, 
+			&csb, &idx->idx_expression_statement, false, false));
+
+		delete csb;
 	}
 
 	// Checkout a garbage collect record block for fetching data.
@@ -357,12 +553,29 @@ void IDX_create_index(thread_db* tdbb,
 		}
 	}
 
-	IndexErrorContext context(relation, idx, index_name);
+	const bool isDescending = (idx->idx_flags & idx_descending);
+	const bool isPrimary = (idx->idx_flags & idx_primary);
+	const bool isForeign = (idx->idx_flags & idx_foreign);
+	const UCHAR pad = isDescending ? -1 : 0;
+	bool key_is_null = false;
+
+	primary.rpb_number.compose(dbb->dbb_max_records, dbb->dbb_dp_per_pp, 0, 0, item->m_ppSequence);
+	primary.rpb_number.decrement();
+
+	RecordNumber lastRecNo;
+	lastRecNo.compose(dbb->dbb_max_records, dbb->dbb_dp_per_pp, 0, 0, item->m_ppSequence + 1);
+	lastRecNo.decrement();
 
 	// Loop thru the relation computing index keys.  If there are old versions, find them, too.
 	temporary_key key;
-	while (DPM_next(tdbb, &primary, LCK_read, false))
+	while (DPM_next(tdbb, &primary, LCK_read, DPM_next_pointer_page))
 	{
+		if (primary.rpb_number >= lastRecNo)
+		{
+			CCH_RELEASE(tdbb, &primary.getWindow(tdbb));
+			break;
+		}
+
 		if (!VIO_garbage_collect(tdbb, &primary, transaction))
 			continue;
 
@@ -389,7 +602,7 @@ void IDX_create_index(thread_db* tdbb,
 		secondary.rpb_line = primary.rpb_b_line;
 		secondary.rpb_prior = primary.rpb_prior;
 
-		while (secondary.rpb_page)
+		while (!m_stop && secondary.rpb_page)
 		{
 			if (!DPM_fetch(tdbb, &secondary, LCK_read))
 				break;			// must be garbage collected
@@ -401,7 +614,7 @@ void IDX_create_index(thread_db* tdbb,
 			secondary.rpb_line = secondary.rpb_b_line;
 		}
 
-		while (stack.hasData())
+		while (!m_stop && stack.hasData())
 		{
 			Record* record = stack.pop();
 
@@ -444,7 +657,7 @@ void IDX_create_index(thread_db* tdbb,
 				context.raise(tdbb, result, record);
 			}
 
-			if (key.key_length > key_length)
+			if (key.key_length > m_creation->key_length)
 			{
 				do {
 					if (record != gc_record)
@@ -462,7 +675,7 @@ void IDX_create_index(thread_db* tdbb,
 
 			// try to catch duplicates early
 
-			if (creation.duplicates > 0)
+			if (m_creation->duplicates.value() > 0)
 			{
 				do {
 					if (record != gc_record)
@@ -472,7 +685,7 @@ void IDX_create_index(thread_db* tdbb,
 				break;
 			}
 
-			if (nullIndLen)
+			if (m_creation->nullIndLen)
 				*p++ = (key.key_length == 0) ? 0 : 1;
 
 			if (key.key_length > 0)
@@ -481,7 +694,7 @@ void IDX_create_index(thread_db* tdbb,
 				p += key.key_length;
 			}
 
-			int l = int(key_length) - nullIndLen - key.key_length;	// must be signed
+			int l = int(m_creation->key_length) - m_creation->nullIndLen - key.key_length;	// must be signed
 
 			if (l > 0)
 			{
@@ -499,7 +712,10 @@ void IDX_create_index(thread_db* tdbb,
 				delete record;
 		}
 
-		if (creation.duplicates > 0)
+		if (m_stop)
+			break;
+
+		if (m_creation->duplicates.value() > 0)
 			break;
 
 		JRD_reschedule(tdbb);
@@ -509,18 +725,207 @@ void IDX_create_index(thread_db* tdbb,
 
 	if (primary.getWindow(tdbb).win_flags & WIN_large_scan)
 		--relation->rel_scan_count;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(tdbb->tdbb_status_vector);
+		setError(tdbb->tdbb_status_vector, true);
+		return false;
+	}
 
-	if (!creation.duplicates)
-		scb->sort(tdbb);
+	return true;
+}
 
-	// ASF: We have a callback accessing "creation", so don't join above and below if's.
+bool IndexCreateTask::getWorkItem(WorkItem** pItem)
+{
+	Item* item = reinterpret_cast<Item*> (*pItem);
 
-	if (!creation.duplicates)
+	MutexLockGuard guard(m_mutex, FB_FUNCTION);
+
+	if (m_stop)
+		return false;
+
+	if (item == NULL)
+	{
+		for (Item** p = m_items.begin(); p < m_items.end(); p++)
+			if (!(*p)->m_inuse)
+			{
+				(*p)->m_inuse = true;
+				*pItem = item = *p;
+				break;
+			}
+	}
+
+	if (!item)
+		return false;
+
+	item->m_inuse = (m_nextPP < m_countPP) || 
+		(item->m_sort && item->m_sort->isSorted()) == 0;
+
+	if (item->m_inuse)
+	{
+		item->m_ppSequence = m_nextPP;
+		if (m_nextPP < m_countPP)
+			m_nextPP += 1;
+	}
+
+	return item->m_inuse;
+}
+
+bool IndexCreateTask::getResult(IStatus* status)
+{
+	if (status)
+	{
+		status->init();
+		status->setErrors(m_status.getErrors());
+	}
+
+	return m_status.isSuccess();
+}
+
+int IndexCreateTask::getMaxWorkers()
+{
+	const int parWorkers = m_items.getCount();
+	if (parWorkers == 1 || m_countPP == 0)
+		return 1;
+
+	fb_assert(m_creation != NULL);
+
+	if (!m_creation || m_creation->relation->isTemporary())
+		return 1;
+
+	return MIN(parWorkers, m_countPP);
+}
+
+}; // namespace Jrd
+
+
+void IDX_create_index(thread_db* tdbb,
+					  jrd_rel* relation,
+					  index_desc* idx,
+					  const TEXT* index_name,
+					  USHORT* index_id,
+					  jrd_tra* transaction,
+					  SelectivityList& selectivity)
+{
+/**************************************
+ *
+ *	I D X _ c r e a t e _ i n d e x
+ *
+ **************************************
+ *
+ * Functional description
+ *	Create and populate index.
+ *
+ **************************************/
+	idx_e result = idx_e_ok;
+
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
+
+	if (relation->rel_file)
+	{
+		ERR_post(Arg::Gds(isc_no_meta_update) <<
+				 Arg::Gds(isc_extfile_uns_op) << Arg::Str(relation->rel_name));
+	}
+	else if (relation->isVirtual())
+	{
+		ERR_post(Arg::Gds(isc_no_meta_update) <<
+				 Arg::Gds(isc_wish_list));
+	}
+
+	get_root_page(tdbb, relation);
+
+	fb_assert(transaction);
+
+	const bool isDescending = (idx->idx_flags & idx_descending);
+	const bool isPrimary = (idx->idx_flags & idx_primary);
+	const bool isForeign = (idx->idx_flags & idx_foreign);
+
+	// hvlad: in ODS11 empty string and NULL values can have the same binary
+	// representation in index keys. BTR can distinguish it by the key_length
+	// but SORT module currently don't take it into account. Therefore add to
+	// the index key one byte prefix with 0 for NULL value and 1 for not-NULL
+	// value to produce right sorting.
+	// BTR\fast_load will remove this one byte prefix from the index key.
+	// Note that this is necessary only for single-segment ascending indexes
+	// and only for ODS11 and higher.
+
+	const int nullIndLen = !isDescending && (idx->idx_count == 1) ? 1 : 0;
+	const USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx) + nullIndLen, sizeof(SINT64));
+
+	if (key_length >= dbb->getMaxIndexKeyLength())
+	{
+		ERR_post(Arg::Gds(isc_no_meta_update) <<
+				 Arg::Gds(isc_keytoobig) << Arg::Str(index_name));
+	}
+
+	if (isForeign)
+	{
+		if (!MET_lookup_partner(tdbb, relation, idx, index_name)) {
+			BUGCHECK(173);		// msg 173 referenced index description not found
+		}
+	}
+
+	IndexCreation creation;
+	creation.index = idx;
+	creation.index_name = index_name;
+	creation.relation = relation;
+	creation.transaction = transaction;
+	creation.sort = NULL;
+	creation.key_length = key_length;
+	creation.nullIndLen = nullIndLen;
+	creation.dup_recno = -1;
+	creation.duplicates.setValue(0);
+
+	BTR_reserve_slot(tdbb, creation);
+
+	if (index_id)
+		*index_id = idx->idx_id;
+
+	sort_key_def key_desc[2];
+	// Key sort description
+	key_desc[0].setSkdLength(SKD_bytes, key_length);
+	key_desc[0].skd_flags = SKD_ascending;
+	key_desc[0].setSkdOffset();
+	key_desc[0].skd_vary_offset = 0;
+	// RecordNumber sort description
+	key_desc[1].setSkdLength(SKD_int64, sizeof(RecordNumber));
+	key_desc[1].skd_flags = SKD_ascending;
+	key_desc[1].setSkdOffset(key_desc);
+	key_desc[1].skd_vary_offset = 0;
+
+	creation.key_desc = key_desc;
+
+	PartitionedSort sort(dbb, &transaction->tra_sorts);
+	creation.sort = &sort;
+
+	Coordinator coord(dbb->dbb_permanent);
+	IndexCreateTask task(tdbb, dbb->dbb_permanent, &creation);
+
+	{
+		EngineCheckout cout(tdbb, FB_FUNCTION);
+
+		FbLocalStatus local_status;
+		fb_utils::init_status(&local_status);
+
+		coord.runSync(&task);
+
+		if (!task.getResult(&local_status))
+			local_status.raise();
+	}
+
+	sort.buidMergeTree();
+
+	if (creation.duplicates.value() == 0)
 		BTR_create(tdbb, creation, selectivity);
 
-	if (creation.duplicates > 0)
+	if (creation.duplicates.value() > 0)
 	{
 		AutoPtr<Record> error_record;
+		record_param primary;
+		primary.rpb_relation = relation;
 		primary.rpb_record = NULL;
 		fb_assert(creation.dup_recno >= 0);
 		primary.rpb_number.setValue(creation.dup_recno);
@@ -537,6 +942,7 @@ void IDX_create_index(thread_db* tdbb,
 
 		}
 
+		IndexErrorContext context(relation, idx, index_name);
 		context.raise(tdbb, idx_e_duplicate, error_record);
 	}
 
@@ -1519,7 +1925,7 @@ static bool duplicate_key(const UCHAR* record1, const UCHAR* record2, void* ifl_
 	if (!(rec1->isr_flags & (ISR_secondary | ISR_null)) &&
 		!(rec2->isr_flags & (ISR_secondary | ISR_null)))
 	{
-		if (!ifl_data->duplicates++)
+		if (ifl_data->duplicates.exchangeAdd(1) == 0)
 			ifl_data->dup_recno = rec2->isr_record_number;
 	}
 
