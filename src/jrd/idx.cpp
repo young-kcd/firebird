@@ -730,9 +730,6 @@ bool IndexCreateTask::handler(WorkItem& _item)
 	{
 		ex.stuffException(tdbb->tdbb_status_vector);
 		setError(tdbb->tdbb_status_vector, true);
-
-		delete scb;
-		item->m_sort = NULL;
 		return false;
 	}
 
