@@ -688,7 +688,8 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	svc_stdout_head(0), svc_stdout_tail(0), svc_service_run(NULL),
 	svc_resp_alloc(getPool()), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
 	svc_resp_len(0), svc_flags(SVC_finished), svc_user_flag(0), svc_spb_version(0),
-	svc_do_shutdown(false), svc_shutdown_in_progress(false), svc_timeout(false),
+	svc_shutdown_server(false), svc_shutdown_request(false),
+	svc_shutdown_in_progress(false), svc_timeout(false),
 	svc_username(getPool()), svc_sql_role(getPool()), svc_auth_block(getPool()),
 	svc_expected_db(getPool()), svc_trusted_role(false), svc_utf8(false),
 	svc_switches(getPool()), svc_perm_sw(getPool()), svc_address_path(getPool()),
@@ -864,7 +865,7 @@ void Service::detach()
 	}
 
 	// save it cause after call to finish() we can't access class members any more
-	const bool localDoShutdown = svc_do_shutdown;
+	const bool localDoShutdown = svc_shutdown_server;
 
 	if (svc_trace_manager->needs(ITraceFactory::TRACE_EVENT_SERVICE_DETACH))
 	{
@@ -950,7 +951,7 @@ ULONG Service::totalCount()
 
 bool Service::checkForShutdown()
 {
-	if (svcShutdown)
+	if (svcShutdown || svc_shutdown_request)
 	{
 		if (svc_shutdown_in_progress)
 		{
@@ -963,6 +964,20 @@ bool Service::checkForShutdown()
 	}
 
 	return false;
+}
+
+
+void Service::cancel(thread_db* /*tdbb*/)
+{
+	svc_shutdown_request = true;
+
+	// signal once
+	if (!(svc_flags & SVC_finished))
+		svc_detach_sem.release();
+	if (svc_stdin_size_requested)
+		svc_stdin_semaphore.release();
+
+	svc_sem_full.release();
 }
 
 
@@ -1158,7 +1173,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 			*info++ = item;
 			if (svc_user_flag & SVC_user_dba)
 			{
-				svc_do_shutdown = false;
+				svc_shutdown_server = false;
 			}
 			else
 				need_admin_privs(status, "isc_info_svc_svr_online");
@@ -1168,7 +1183,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 			*info++ = item;
 			if (svc_user_flag & SVC_user_dba)
 			{
-				svc_do_shutdown = true;
+				svc_shutdown_server = true;
 			}
 			else
 				need_admin_privs(status, "isc_info_svc_svr_offline");
@@ -1613,7 +1628,7 @@ void Service::query(USHORT			send_item_length,
 			*info++ = item;
 			if (svc_user_flag & SVC_user_dba)
 			{
-				svc_do_shutdown = false;
+				svc_shutdown_server = false;
 				*info++ = 0;	// Success
 			}
 			else
@@ -1624,7 +1639,7 @@ void Service::query(USHORT			send_item_length,
 			*info++ = item;
 			if (svc_user_flag & SVC_user_dba)
 			{
-				svc_do_shutdown = true;
+				svc_shutdown_server = true;
 				*info++ = 0;	// Success
 			}
 			else
@@ -1937,6 +1952,9 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 
 	try
 	{
+	if (!svcShutdown)
+		svc_shutdown_request = svc_shutdown_in_progress = false;
+
 	ClumpletReader spb(ClumpletReader::SpbStart, spb_data, spb_length);
 
 	// The name of the service is the first element of the buffer
