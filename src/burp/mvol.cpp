@@ -752,6 +752,10 @@ void mvol_init_read(BurpGlobals* tdgbl, const char* file_name, USHORT* format, i
 		tdgbl->mvol_io_ptr = new_buffer + (tdgbl->mvol_io_ptr - tdgbl->mvol_io_buffer);
 		tdgbl->mvol_io_buffer = new_buffer;
 	}
+	else
+	{
+		temp_buffer_size = (tdgbl->mvol_actual_buffer_size / temp_buffer_size) * temp_buffer_size;
+	}
 
 	tdgbl->mvol_actual_buffer_size = tdgbl->mvol_io_buffer_size = temp_buffer_size;
 	*cnt = tdgbl->mvol_io_cnt;

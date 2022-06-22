@@ -38,13 +38,16 @@ using namespace Firebird;
 namespace Burp
 {
 
+// IO buffer should fit at least one blob segment, two is better.
+const FB_SIZE_T MIN_IO_BUFFER_SIZE = 128 * 1024;
+
 /// class IOBuffer
 
 IOBuffer::IOBuffer(void* item, FB_SIZE_T size) :
 	m_item(item),
-	m_memory(*getDefaultMemoryPool(), size),
+	m_memory(*getDefaultMemoryPool()),
 	m_aligned(NULL),
-	m_size(size),
+	m_size(MAX(size, MIN_IO_BUFFER_SIZE)),
 	m_used(0),
 	m_recs(0),
 	m_next(NULL),
@@ -52,6 +55,7 @@ IOBuffer::IOBuffer(void* item, FB_SIZE_T size) :
 	m_locked(0)
 
 {
+	fb_assert(size >= MIN_IO_BUFFER_SIZE);
 	m_aligned = m_memory.getBuffer(m_size);
 }
 
