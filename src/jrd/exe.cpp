@@ -1365,6 +1365,19 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 	SINT64 lastPerfCounter = initialPerfCounter;
 	const StmtNode* profileNode = nullptr;
 
+	const auto profilerCallAfterPsqlLineColumn = [&] {
+		const SINT64 currentPerfCounter = fb_utils::query_performance_counter();
+
+		if (profileNode)
+		{
+			attachment->getProfilerManager(tdbb)->afterPsqlLineColumn(request,
+				profileNode->line, profileNode->column,
+				currentPerfCounter - lastPerfCounter);
+		}
+
+		return currentPerfCounter;
+	};
+
 	while (node && !(request->req_flags & req_stall))
 	{
 		try
@@ -1386,16 +1399,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 						(!profileNode ||
 						 !(node->line == profileNode->line && node->column == profileNode->column)))
 					{
-						if (profileNode)
-						{
-							const SINT64 currentPerfCounter = fb_utils::query_performance_counter();
-
-							attachment->getProfilerManager(tdbb)->afterPsqlLineColumn(request,
-								profileNode->line, profileNode->column,
-								currentPerfCounter - lastPerfCounter);
-
-							lastPerfCounter = currentPerfCounter;
-						}
+						lastPerfCounter = profilerCallAfterPsqlLineColumn();
 
 						profileNode = node;
 
@@ -1408,7 +1412,12 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 			node = node->execute(tdbb, request, &exeState);
 
 			if (exeState.exit)
+			{
+				if (attachment->isProfilerActive() && !request->hasInternalStatement())
+					request->req_profiler_time += profilerCallAfterPsqlLineColumn() - initialPerfCounter;
+
 				return node;
+			}
 		}	// try
 		catch (const Firebird::Exception& ex)
 		{
@@ -1448,18 +1457,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 	} // while()
 
 	if (attachment->isProfilerActive() && !request->hasInternalStatement())
-	{
-		const SINT64 currentPerfCounter = fb_utils::query_performance_counter();
-
-		if (profileNode)
-		{
-			attachment->getProfilerManager(tdbb)->afterPsqlLineColumn(request,
-				profileNode->line, profileNode->column,
-				currentPerfCounter - lastPerfCounter);
-		}
-
-		request->req_profiler_time += currentPerfCounter - initialPerfCounter;
-	}
+		request->req_profiler_time += profilerCallAfterPsqlLineColumn() - initialPerfCounter;
 
 	request->adjustCallerStats();
 

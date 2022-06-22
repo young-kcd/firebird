@@ -479,6 +479,11 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	virtual bool isProfileAware() const
+	{
+		return false;
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual DeclareSubFuncNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
@@ -531,6 +536,11 @@ public:
 
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+
+	virtual bool isProfileAware() const
+	{
+		return false;
+	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual DeclareSubProcNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
