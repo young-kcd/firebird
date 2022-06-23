@@ -50,6 +50,7 @@ namespace Jrd {
 class Database;
 class Attachment;
 class jrd_tra;
+class DsqlRequest;
 class Service;
 
 class TraceManager
@@ -169,6 +170,9 @@ public:
 	static void event_dsql_execute(Attachment* att, jrd_tra* transaction, Firebird::ITraceSQLStatement* statement,
 		bool started, ntrace_result_t req_result);
 
+	static void event_dsql_restart(Attachment* att, jrd_tra* transaction, DsqlRequest* statement,
+		int number);
+
 	static void shutdown();
 
 private:
@@ -254,6 +258,9 @@ private:
 	void event_dsql_execute(Firebird::ITraceDatabaseConnection* connection, Firebird::ITraceTransaction* transaction,
 		Firebird::ITraceSQLStatement* statement,
 		bool started, ntrace_result_t req_result);
+
+	void event_dsql_restart(Firebird::ITraceDatabaseConnection* connection, Firebird::ITraceTransaction* transaction, Firebird::ITraceSQLStatement* statement,
+		unsigned number);
 
 	static Firebird::GlobalPtr<StorageInstance, Firebird::InstanceControl::PRIORITY_DELETE_FIRST> storageInstance;
 

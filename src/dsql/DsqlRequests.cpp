@@ -813,6 +813,8 @@ void DsqlDmlRequest::executeReceiveWithRestarts(thread_db* tdbb, jrd_tra** traHa
 				"\tQuery:\n%s\n", numTries, request->getStatement()->sqlText->c_str() );
 		}
 
+		TraceManager::event_dsql_restart(req_dbb->dbb_attachment, req_transaction, this, numTries);
+
 		// When restart we must execute query
 		exec = true;
 	}

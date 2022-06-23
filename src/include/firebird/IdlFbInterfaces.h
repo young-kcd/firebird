@@ -5870,6 +5870,7 @@ namespace Firebird
 			FB_BOOLEAN (CLOOP_CARG *trace_event_error)(ITracePlugin* self, ITraceConnection* connection, ITraceStatusVector* status, const char* function) throw();
 			FB_BOOLEAN (CLOOP_CARG *trace_event_sweep)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceSweepInfo* sweep, unsigned sweep_state) throw();
 			FB_BOOLEAN (CLOOP_CARG *trace_func_execute)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceFunction* function, FB_BOOLEAN started, unsigned func_result) throw();
+			FB_BOOLEAN (CLOOP_CARG *trace_dsql_restart)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, unsigned number) throw();
 		};
 
 	protected:
@@ -5883,7 +5884,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static const unsigned VERSION = 4;
 
 		static const unsigned RESULT_SUCCESS = 0;
 		static const unsigned RESULT_FAILED = 1;
@@ -6016,6 +6017,16 @@ namespace Firebird
 		FB_BOOLEAN trace_func_execute(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceFunction* function, FB_BOOLEAN started, unsigned func_result)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_func_execute(this, connection, transaction, function, started, func_result);
+			return ret;
+		}
+
+		FB_BOOLEAN trace_dsql_restart(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, unsigned number)
+		{
+			if (cloopVTable->version < 4)
+			{
+				return 0;
+			}
+			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_dsql_restart(this, connection, transaction, statement, number);
 			return ret;
 		}
 	};
@@ -18158,6 +18169,7 @@ namespace Firebird
 					this->trace_event_error = &Name::clooptrace_event_errorDispatcher;
 					this->trace_event_sweep = &Name::clooptrace_event_sweepDispatcher;
 					this->trace_func_execute = &Name::clooptrace_func_executeDispatcher;
+					this->trace_dsql_restart = &Name::clooptrace_dsql_restartDispatcher;
 				}
 			} vTable;
 
@@ -18437,6 +18449,19 @@ namespace Firebird
 			}
 		}
 
+		static FB_BOOLEAN CLOOP_CARG clooptrace_dsql_restartDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, unsigned number) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::trace_dsql_restart(connection, transaction, statement, number);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<FB_BOOLEAN>(0);
+			}
+		}
+
 		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
@@ -18497,6 +18522,7 @@ namespace Firebird
 		virtual FB_BOOLEAN trace_event_error(ITraceConnection* connection, ITraceStatusVector* status, const char* function) = 0;
 		virtual FB_BOOLEAN trace_event_sweep(ITraceDatabaseConnection* connection, ITraceSweepInfo* sweep, unsigned sweep_state) = 0;
 		virtual FB_BOOLEAN trace_func_execute(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceFunction* function, FB_BOOLEAN started, unsigned func_result) = 0;
+		virtual FB_BOOLEAN trace_dsql_restart(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, unsigned number) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
