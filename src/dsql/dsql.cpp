@@ -445,7 +445,7 @@ static dsql_dbb* init(thread_db* tdbb, Jrd::Attachment* attachment)
 static DsqlRequest* prepareRequest(thread_db* tdbb, dsql_dbb* database, jrd_tra* transaction,
 	ULONG textLength, const TEXT* text, USHORT clientDialect, bool isInternalRequest)
 {
-	TraceDSQLPrepare trace(database->dbb_attachment, transaction, textLength, text);
+	TraceDSQLPrepare trace(database->dbb_attachment, transaction, textLength, text, isInternalRequest);
 
 	ntrace_result_t traceResult = ITracePlugin::RESULT_SUCCESS;
 	try
@@ -455,7 +455,7 @@ static DsqlRequest* prepareRequest(thread_db* tdbb, dsql_dbb* database, jrd_tra*
 
 		auto dsqlRequest = statement->createRequest(tdbb, database);
 
-		dsqlRequest->req_traced = true;
+		dsqlRequest->req_traced = !isInternalRequest;
 		trace.setStatement(dsqlRequest);
 		trace.prepare(traceResult);
 

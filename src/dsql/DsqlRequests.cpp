@@ -1069,8 +1069,6 @@ DsqlTransactionRequest::DsqlTransactionRequest(MemoryPool& pool, dsql_dbb* dbb, 
 	: DsqlRequest(pool, dbb, aStatement),
 	  node(aNode)
 {
-	// Don't trace anything except savepoint statements
-	req_traced = (aStatement->getType() == DsqlStatement::TYPE_SAVEPOINT);
 }
 
 // Execute a dynamic SQL statement.
