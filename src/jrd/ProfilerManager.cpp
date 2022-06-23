@@ -510,14 +510,14 @@ void ProfilerManager::prepareRecSource(thread_db* tdbb, jrd_req* request, const 
 	}
 }
 
-void ProfilerManager::onRequestFinish(jrd_req* request, FB_UINT64 runTime)
+void ProfilerManager::onRequestFinish(jrd_req* request, Stats& stats)
 {
 	if (const auto profileRequestId = getRequest(request, 0))
 	{
 		const auto timestamp = TimeZoneUtil::getCurrentTimeStamp(request->req_attachment->att_current_timezone);
 
 		LogLocalStatus status("Profiler onRequestFinish");
-		currentSession->pluginSession->onRequestFinish(&status, profileRequestId, timestamp, runTime);
+		currentSession->pluginSession->onRequestFinish(&status, profileRequestId, timestamp, &stats);
 
 		currentSession->requests.findAndRemove(profileRequestId);
 	}
@@ -529,10 +529,10 @@ void ProfilerManager::beforePsqlLineColumn(jrd_req* request, ULONG line, ULONG c
 		currentSession->pluginSession->beforePsqlLineColumn(profileRequestId, line, column);
 }
 
-void ProfilerManager::afterPsqlLineColumn(jrd_req* request, ULONG line, ULONG column, FB_UINT64 runTime)
+void ProfilerManager::afterPsqlLineColumn(jrd_req* request, ULONG line, ULONG column, Stats& stats)
 {
 	if (const auto profileRequestId = getRequest(request, IProfilerSession::FLAG_AFTER_EVENTS))
-		currentSession->pluginSession->afterPsqlLineColumn(profileRequestId, line, column, runTime);
+		currentSession->pluginSession->afterPsqlLineColumn(profileRequestId, line, column, &stats);
 }
 
 void ProfilerManager::beforeRecordSourceOpen(jrd_req* request, const RecordSource* rsb)
@@ -548,7 +548,7 @@ void ProfilerManager::beforeRecordSourceOpen(jrd_req* request, const RecordSourc
 	}
 }
 
-void ProfilerManager::afterRecordSourceOpen(jrd_req* request, const RecordSource* rsb, FB_UINT64 runTime)
+void ProfilerManager::afterRecordSourceOpen(jrd_req* request, const RecordSource* rsb, Stats& stats)
 {
 	if (const auto profileRequestId = getRequest(request, IProfilerSession::FLAG_AFTER_EVENTS))
 	{
@@ -557,7 +557,7 @@ void ProfilerManager::afterRecordSourceOpen(jrd_req* request, const RecordSource
 		fb_assert(sequencePtr);
 
 		currentSession->pluginSession->afterRecordSourceOpen(
-			profileRequestId, rsb->getCursorProfileId(), *sequencePtr, runTime);
+			profileRequestId, rsb->getCursorProfileId(), *sequencePtr, &stats);
 	}
 }
 
@@ -574,7 +574,7 @@ void ProfilerManager::beforeRecordSourceGetRecord(jrd_req* request, const Record
 	}
 }
 
-void ProfilerManager::afterRecordSourceGetRecord(jrd_req* request, const RecordSource* rsb, FB_UINT64 runTime)
+void ProfilerManager::afterRecordSourceGetRecord(jrd_req* request, const RecordSource* rsb, Stats& stats)
 {
 	if (const auto profileRequestId = getRequest(request, IProfilerSession::FLAG_AFTER_EVENTS))
 	{
@@ -583,7 +583,7 @@ void ProfilerManager::afterRecordSourceGetRecord(jrd_req* request, const RecordS
 		fb_assert(sequencePtr);
 
 		currentSession->pluginSession->afterRecordSourceGetRecord(
-			profileRequestId, rsb->getCursorProfileId(), *sequencePtr, runTime);
+			profileRequestId, rsb->getCursorProfileId(), *sequencePtr, &stats);
 	}
 }
 

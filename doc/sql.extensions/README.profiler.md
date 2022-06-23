@@ -266,7 +266,7 @@ Below is the list of tables that stores profile data.
  - `CALLER_REQUEST_ID` type `BIGINT` - Caller request ID
  - `START_TIMESTAMP` type `TIMESTAMP WITH TIME ZONE` - Moment this request was first gathered profile data
  - `FINISH_TIMESTAMP` type `TIMESTAMP WITH TIME ZONE` - Moment this request was finished
- - `TOTAL_TIME` type `BIGINT` - Accumulated execution time (in nanoseconds) of the request
+ - `TOTAL_ELAPSED_TIME` type `BIGINT` - Accumulated elapsed time (in nanoseconds) of the request
  - Primary key: `PROFILE_ID, REQUEST_ID`
 
 ## Table `PLG$PROF_PSQL_STATS`
@@ -277,9 +277,9 @@ Below is the list of tables that stores profile data.
  - `COLUMN_NUM` type `INTEGER` - Column number of the statement
  - `STATEMENT_ID` type `BIGINT` - Statement ID
  - `COUNTER` type `BIGINT` - Number of executed times of the line/column
- - `MIN_TIME` type `BIGINT` - Minimal time (in nanoseconds) of a line/column execution
- - `MAX_TIME` type `BIGINT` - Maximum time (in nanoseconds) of a line/column execution
- - `TOTAL_TIME` type `BIGINT` - Accumulated execution time (in nanoseconds) of the line/column
+ - `MIN_ELAPSED_TIME` type `BIGINT` - Minimal elapsed time (in nanoseconds) of a line/column execution
+ - `MAX_ELAPSED_TIME` type `BIGINT` - Maximum elapsed time (in nanoseconds) of a line/column execution
+ - `TOTAL_ELAPSED_TIME` type `BIGINT` - Accumulated elapsed time (in nanoseconds) of the line/column executions
  - Primary key: `PROFILE_ID, REQUEST_ID, LINE_NUM, COLUMN_NUM`
 
 ## Table `PLG$PROF_RECORD_SOURCE_STATS`
@@ -290,13 +290,13 @@ Below is the list of tables that stores profile data.
  - `RECORD_SOURCE_ID` type `BIGINT` - Record source ID
  - `STATEMENT_ID` type `BIGINT` - Statement ID
  - `OPEN_COUNTER` type `BIGINT` - Number of open times of the record source
- - `OPEN_MIN_TIME` type `BIGINT` - Minimal time (in nanoseconds) of a record source open
- - `OPEN_MAX_TIME` type `BIGINT` - Maximum time (in nanoseconds) of a record source open
- - `OPEN_TOTAL_TIME` type `BIGINT` - Accumulated open time (in nanoseconds) of the record source
+ - `OPEN_MIN_ELAPSED_TIME` type `BIGINT` - Minimal elapsed time (in nanoseconds) of a record source open
+ - `OPEN_MAX_ELAPSED_TIME` type `BIGINT` - Maximum elapsed time (in nanoseconds) of a record source open
+ - `OPEN_TOTAL_ELAPSED_TIME` type `BIGINT` - Accumulated elapsed time (in nanoseconds) of the record source openings
  - `FETCH_COUNTER` type `BIGINT` - Number of fetch times of the record source
- - `FETCH_MIN_TIME` type `BIGINT` - Minimal time (in nanoseconds) of a record source fetch
- - `FETCH_MAX_TIME` type `BIGINT` - Maximum time (in nanoseconds) of a record source fetch
- - `FETCH_TOTAL_TIME` type `BIGINT` - Accumulated fetch time (in nanoseconds) of the record source
+ - `FETCH_MIN_ELAPSED_TIME` type `BIGINT` - Minimal elapsed time (in nanoseconds) of a record source fetch
+ - `FETCH_MAX_ELAPSED_TIME` type `BIGINT` - Maximum elapsed time (in nanoseconds) of a record source fetch
+ - `FETCH_TOTAL_ELAPSED_TIME` type `BIGINT` - Accumulated elapsed time (in nanoseconds) of the record source fetches
  - Primary key: `PROFILE_ID, REQUEST_ID, CURSOR_ID, RECORD_SOURCE_ID`
 
 # Auxiliary views
@@ -323,10 +323,10 @@ select req.profile_id,
                 statement_id = coalesce(sta.parent_statement_id, req.statement_id)
        ) sql_text,
        count(*) counter,
-       min(req.total_time) min_time,
-       max(req.total_time) max_time,
-       cast(sum(req.total_time) as bigint) total_time,
-       cast(sum(req.total_time) / count(*) as bigint) avg_time
+       min(req.total_elapsed_time) min_elapsed_time,
+       max(req.total_elapsed_time) max_elapsed_time,
+       cast(sum(req.total_elapsed_time) as bigint) total_elapsed_time,
+       cast(sum(req.total_elapsed_time) / count(*) as bigint) avg_elapsed_time
   from plg$prof_requests req
   join plg$prof_statements sta
     on sta.profile_id = req.profile_id and
@@ -342,7 +342,7 @@ select req.profile_id,
            sta.parent_statement_id,
            sta_parent.statement_type,
            sta_parent.routine_name
-  order by sum(req.total_time) desc
+  order by sum(req.total_elapsed_time) desc
 ```
 
 ## View `PLG$PROF_PSQL_STATS_VIEW`
@@ -363,10 +363,10 @@ select pstat.profile_id,
        pstat.line_num,
        pstat.column_num,
        cast(sum(pstat.counter) as bigint) counter,
-       min(pstat.min_time) min_time,
-       max(pstat.max_time) max_time,
-       cast(sum(pstat.total_time) as bigint) total_time,
-       cast(sum(pstat.total_time) / nullif(sum(pstat.counter), 0) as bigint) avg_time
+       min(pstat.min_elapsed_time) min_elapsed_time,
+       max(pstat.max_elapsed_time) max_elapsed_time,
+       cast(sum(pstat.total_elapsed_time) as bigint) total_elapsed_time,
+       cast(sum(pstat.total_elapsed_time) / nullif(sum(pstat.counter), 0) as bigint) avg_elapsed_time
   from plg$prof_psql_stats pstat
   join plg$prof_statements sta
     on sta.profile_id = pstat.profile_id and
@@ -384,7 +384,7 @@ select pstat.profile_id,
            sta_parent.routine_name,
            pstat.line_num,
            pstat.column_num
-  order by sum(pstat.total_time) desc
+  order by sum(pstat.total_elapsed_time) desc
 ```
 
 ## View `PLG$PROF_RECORD_SOURCE_STATS_VIEW`
@@ -407,16 +407,16 @@ select rstat.profile_id,
        recsrc.parent_record_source_id,
        recsrc.access_path,
        cast(sum(rstat.open_counter) as bigint) open_counter,
-       min(rstat.open_min_time) open_min_time,
-       max(rstat.open_max_time) open_max_time,
-       cast(sum(rstat.open_total_time) as bigint) open_total_time,
-       cast(sum(rstat.open_total_time) / nullif(sum(rstat.open_counter), 0) as bigint) open_avg_time,
+       min(rstat.open_min_elapsed_time) open_min_elapsed_time,
+       max(rstat.open_max_elapsed_time) open_max_elapsed_time,
+       cast(sum(rstat.open_total_elapsed_time) as bigint) open_total_elapsed_time,
+       cast(sum(rstat.open_total_elapsed_time) / nullif(sum(rstat.open_counter), 0) as bigint) open_avg_elapsed_time,
        cast(sum(rstat.fetch_counter) as bigint) fetch_counter,
-       min(rstat.fetch_min_time) fetch_min_time,
-       max(rstat.fetch_max_time) fetch_max_time,
-       cast(sum(rstat.fetch_total_time) as bigint) fetch_total_time,
-       cast(sum(rstat.fetch_total_time) / nullif(sum(rstat.fetch_counter), 0) as bigint) fetch_avg_time,
-       cast(coalesce(sum(rstat.open_total_time), 0) + coalesce(sum(rstat.fetch_total_time), 0) as bigint) open_fetch_total_time
+       min(rstat.fetch_min_elapsed_time) fetch_min_elapsed_time,
+       max(rstat.fetch_max_elapsed_time) fetch_max_elapsed_time,
+       cast(sum(rstat.fetch_total_elapsed_time) as bigint) fetch_total_elapsed_time,
+       cast(sum(rstat.fetch_total_elapsed_time) / nullif(sum(rstat.fetch_counter), 0) as bigint) fetch_avg_elapsed_time,
+       cast(coalesce(sum(rstat.open_total_elapsed_time), 0) + coalesce(sum(rstat.fetch_total_elapsed_time), 0) as bigint) open_fetch_total_elapsed_time
   from plg$prof_record_source_stats rstat
   join plg$prof_record_sources recsrc
     on recsrc.profile_id = rstat.profile_id and
@@ -441,5 +441,5 @@ select rstat.profile_id,
            rstat.record_source_id,
            recsrc.parent_record_source_id,
            recsrc.access_path
-  order by coalesce(sum(rstat.open_total_time), 0) + coalesce(sum(rstat.fetch_total_time), 0) desc
+  order by coalesce(sum(rstat.open_total_elapsed_time), 0) + coalesce(sum(rstat.fetch_total_elapsed_time), 0) desc
 ```

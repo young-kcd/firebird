@@ -1005,7 +1005,10 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 		const auto attachment = request->req_attachment;
 
 		if (attachment->isProfilerActive() && !request->hasInternalStatement())
-			attachment->getProfilerManager(tdbb)->onRequestFinish(request, request->req_profiler_time);
+		{
+			ProfilerManager::Stats stats(request->req_profiler_time);
+			attachment->getProfilerManager(tdbb)->onRequestFinish(request, stats);
+		}
 	}
 
 	request->req_sorts.unlinkAll();
@@ -1370,9 +1373,11 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 
 		if (profileNode)
 		{
+			ProfilerManager::Stats stats(currentPerfCounter - lastPerfCounter);
+
 			attachment->getProfilerManager(tdbb)->afterPsqlLineColumn(request,
 				profileNode->line, profileNode->column,
-				currentPerfCounter - lastPerfCounter);
+				stats);
 		}
 
 		return currentPerfCounter;
@@ -1485,7 +1490,10 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 		release_blobs(tdbb, request);
 
 		if (attachment->isProfilerActive() && !request->hasInternalStatement())
-			attachment->getProfilerManager(tdbb)->onRequestFinish(request, request->req_profiler_time);
+		{
+			ProfilerManager::Stats stats(request->req_profiler_time);
+			attachment->getProfilerManager(tdbb)->onRequestFinish(request, stats);
+		}
 	}
 
 	request->req_next = node;

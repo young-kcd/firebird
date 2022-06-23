@@ -77,7 +77,8 @@ void RecordSource::open(thread_db* tdbb) const
 	if (profilerManager)
 	{
 		const SINT64 currentPerfCounter = fb_utils::query_performance_counter();
-		profilerManager->afterRecordSourceOpen(request, this, currentPerfCounter - lastPerfCounter);
+		ProfilerManager::Stats stats(currentPerfCounter - lastPerfCounter);
+		profilerManager->afterRecordSourceOpen(request, this, stats);
 	}
 }
 
@@ -105,7 +106,8 @@ bool RecordSource::getRecord(thread_db* tdbb) const
 	if (profilerManager)
 	{
 		const SINT64 currentPerfCounter = fb_utils::query_performance_counter();
-		profilerManager->afterRecordSourceGetRecord(request, this, currentPerfCounter - lastPerfCounter);
+		ProfilerManager::Stats stats(currentPerfCounter - lastPerfCounter);
+		profilerManager->afterRecordSourceGetRecord(request, this, stats);
 	}
 
 	return ret;

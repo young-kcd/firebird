@@ -47,6 +47,24 @@ class ProfilerManager final
 	friend class ProfilerListener;
 	friend class ProfilerPackage;
 
+public:
+	class Stats final : public Firebird::IProfilerStatsImpl<Stats, Firebird::ThrowStatusExceptionWrapper>
+	{
+	public:
+		explicit Stats(FB_UINT64 aElapsedTime)
+			: elapsedTime(aElapsedTime)
+		{}
+
+	public:
+		FB_UINT64 getElapsedTime() override
+		{
+			return elapsedTime;
+		}
+
+	private:
+		FB_UINT64 elapsedTime = 0;
+	};
+
 private:
 	class Statement final
 	{
@@ -103,13 +121,13 @@ public:
 		const Firebird::PathName& pluginName, const Firebird::string& description, const Firebird::string& options);
 
 	void prepareRecSource(thread_db* tdbb, jrd_req* request, const RecordSource* rsb);
-	void onRequestFinish(jrd_req* request, FB_UINT64 runTime);
+	void onRequestFinish(jrd_req* request, Stats& stats);
 	void beforePsqlLineColumn(jrd_req* request, ULONG line, ULONG column);
-	void afterPsqlLineColumn(jrd_req* request, ULONG line, ULONG column, FB_UINT64 runTime);
+	void afterPsqlLineColumn(jrd_req* request, ULONG line, ULONG column, Stats& stats);
 	void beforeRecordSourceOpen(jrd_req* request, const RecordSource* rsb);
-	void afterRecordSourceOpen(jrd_req* request, const RecordSource* rsb, FB_UINT64 runTime);
+	void afterRecordSourceOpen(jrd_req* request, const RecordSource* rsb, Stats& stats);
 	void beforeRecordSourceGetRecord(jrd_req* request, const RecordSource* rsb);
-	void afterRecordSourceGetRecord(jrd_req* request, const RecordSource* rsb, FB_UINT64 runTime);
+	void afterRecordSourceGetRecord(jrd_req* request, const RecordSource* rsb, Stats& stats);
 
 	bool isActive() const
 	{

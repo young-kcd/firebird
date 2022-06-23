@@ -68,22 +68,22 @@ void quote(string& name)
 
 struct Stats
 {
-	void hit(FB_UINT64 runTime)
+	void hit(FB_UINT64 elapsedTime)
 	{
-		if (counter == 0 || runTime < minTime)
-			minTime = runTime;
+		if (counter == 0 || elapsedTime < minElapsedTime)
+			minElapsedTime = elapsedTime;
 
-		if (counter == 0 || runTime > maxTime)
-			maxTime = runTime;
+		if (counter == 0 || elapsedTime > maxElapsedTime)
+			maxElapsedTime = elapsedTime;
 
-		totalTime += runTime;
+		totalElapsedTime += elapsedTime;
 		++counter;
 	}
 
 	FB_UINT64 counter = 0;
-	FB_UINT64 minTime = 0;
-	FB_UINT64 maxTime = 0;
-	FB_UINT64 totalTime = 0;
+	FB_UINT64 minElapsedTime = 0;
+	FB_UINT64 maxElapsedTime = 0;
+	FB_UINT64 totalElapsedTime = 0;
 };
 
 struct RecordSource
@@ -166,26 +166,27 @@ public:
 		SINT64 callerRequestId, ISC_TIMESTAMP_TZ timestamp) override;
 
 	void onRequestFinish(ThrowStatusExceptionWrapper* status, SINT64 requestId,
-		ISC_TIMESTAMP_TZ timestamp, FB_UINT64 runTime) override;
+		ISC_TIMESTAMP_TZ timestamp, IProfilerStats* stats) override;
 
 	void beforePsqlLineColumn(SINT64 requestId, unsigned line, unsigned column) override
 	{
 	}
 
-	void afterPsqlLineColumn(SINT64 requestId, unsigned line, unsigned column, FB_UINT64 runTime) override;
+	void afterPsqlLineColumn(SINT64 requestId, unsigned line, unsigned column, IProfilerStats* stats) override;
 
 	void beforeRecordSourceOpen(SINT64 requestId, unsigned cursorId, unsigned recSourceId) override
 	{
 	}
 
-	void afterRecordSourceOpen(SINT64 requestId, unsigned cursorId, unsigned recSourceId, FB_UINT64 runTime) override;
+	void afterRecordSourceOpen(SINT64 requestId, unsigned cursorId, unsigned recSourceId,
+		IProfilerStats* stats) override;
 
 	void beforeRecordSourceGetRecord(SINT64 requestId, unsigned cursorId, unsigned recSourceId) override
 	{
 	}
 
 	void afterRecordSourceGetRecord(SINT64 requestId, unsigned cursorId, unsigned recSourceId,
-		FB_UINT64 runTime) override;
+		IProfilerStats* stats) override;
 
 public:
 	RefPtr<ProfilerPlugin> plugin;
@@ -393,7 +394,7 @@ void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status)
 
 	constexpr auto requestSql = R"""(
 		update or insert into plg$prof_requests
-		    (profile_id, request_id, statement_id, caller_request_id, start_timestamp, finish_timestamp, total_time)
+		    (profile_id, request_id, statement_id, caller_request_id, start_timestamp, finish_timestamp, total_elapsed_time)
 		    values (?, ?, ?, ?, ?, ?, ?)
 		    matching (profile_id, request_id)
 	)""";
@@ -405,7 +406,7 @@ void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status)
 		(FB_BIGINT, callerRequestId)
 		(FB_TIMESTAMP_TZ, startTimestamp)
 		(FB_TIMESTAMP_TZ, finishTimestamp)
-		(FB_BIGINT, totalTime)
+		(FB_BIGINT, totalElapsedTime)
 	) requestMessage(status, MasterInterfacePtr());
 	requestMessage.clear();
 
@@ -417,13 +418,13 @@ void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status)
 		    record_source_id type of column plg$prof_record_source_stats.record_source_id = ?,
 		    statement_id type of column plg$prof_record_source_stats.statement_id = ?,
 		    open_counter type of column plg$prof_record_source_stats.open_counter = ?,
-		    open_min_time type of column plg$prof_record_source_stats.open_min_time = ?,
-		    open_max_time type of column plg$prof_record_source_stats.open_max_time = ?,
-		    open_total_time type of column plg$prof_record_source_stats.open_total_time = ?,
+		    open_min_elapsed_time type of column plg$prof_record_source_stats.open_min_elapsed_time = ?,
+		    open_max_elapsed_time type of column plg$prof_record_source_stats.open_max_elapsed_time = ?,
+		    open_total_elapsed_time type of column plg$prof_record_source_stats.open_total_elapsed_time = ?,
 		    fetch_counter type of column plg$prof_record_source_stats.fetch_counter = ?,
-		    fetch_min_time type of column plg$prof_record_source_stats.fetch_min_time = ?,
-		    fetch_max_time type of column plg$prof_record_source_stats.fetch_max_time = ?,
-		    fetch_total_time type of column plg$prof_record_source_stats.fetch_total_time = ?
+		    fetch_min_elapsed_time type of column plg$prof_record_source_stats.fetch_min_elapsed_time = ?,
+		    fetch_max_elapsed_time type of column plg$prof_record_source_stats.fetch_max_elapsed_time = ?,
+		    fetch_total_elapsed_time type of column plg$prof_record_source_stats.fetch_total_elapsed_time = ?
 		)
 		as
 		begin
@@ -435,21 +436,21 @@ void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status)
 		            record_source_id = :record_source_id
 		        when not matched then
 		            insert (profile_id, request_id, cursor_id, record_source_id, statement_id,
-		                    open_counter, open_min_time, open_max_time, open_total_time,
-		                    fetch_counter, fetch_min_time, fetch_max_time, fetch_total_time)
+		                    open_counter, open_min_elapsed_time, open_max_elapsed_time, open_total_elapsed_time,
+		                    fetch_counter, fetch_min_elapsed_time, fetch_max_elapsed_time, fetch_total_elapsed_time)
 		                values (:profile_id, :request_id, :cursor_id, :record_source_id, :statement_id,
-		                        :open_counter, :open_min_time, :open_max_time, :open_total_time,
-		                        :fetch_counter, :fetch_min_time, :fetch_max_time, :fetch_total_time)
+		                        :open_counter, :open_min_elapsed_time, :open_max_elapsed_time, :open_total_elapsed_time,
+		                        :fetch_counter, :fetch_min_elapsed_time, :fetch_max_elapsed_time, :fetch_total_elapsed_time)
 		        when matched then
 		            update set
 		                open_counter = open_counter + :open_counter,
-		                open_min_time = minvalue(open_min_time, :open_min_time),
-		                open_max_time = maxvalue(open_max_time, :open_max_time),
-		                open_total_time = open_total_time + :open_total_time,
+		                open_min_elapsed_time = minvalue(open_min_elapsed_time, :open_min_elapsed_time),
+		                open_max_elapsed_time = maxvalue(open_max_elapsed_time, :open_max_elapsed_time),
+		                open_total_elapsed_time = open_total_elapsed_time + :open_total_elapsed_time,
 		                fetch_counter = fetch_counter + :fetch_counter,
-		                fetch_min_time = minvalue(fetch_min_time, :fetch_min_time),
-		                fetch_max_time = maxvalue(fetch_max_time, :fetch_max_time),
-		                fetch_total_time = fetch_total_time + :fetch_total_time;
+		                fetch_min_elapsed_time = minvalue(fetch_min_elapsed_time, :fetch_min_elapsed_time),
+		                fetch_max_elapsed_time = maxvalue(fetch_max_elapsed_time, :fetch_max_elapsed_time),
+		                fetch_total_elapsed_time = fetch_total_elapsed_time + :fetch_total_elapsed_time;
 		end
 	)""";
 
@@ -460,13 +461,13 @@ void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status)
 		(FB_INTEGER, recordSourceId)
 		(FB_BIGINT, statementId)
 		(FB_BIGINT, openCounter)
-		(FB_BIGINT, openMinTime)
-		(FB_BIGINT, openMaxTime)
-		(FB_BIGINT, openTotalTime)
+		(FB_BIGINT, openMinElapsedTime)
+		(FB_BIGINT, openMaxElapsedTime)
+		(FB_BIGINT, openTotalElapsedTime)
 		(FB_BIGINT, fetchCounter)
-		(FB_BIGINT, fetchMinTime)
-		(FB_BIGINT, fetchMaxTime)
-		(FB_BIGINT, fetchTotalTime)
+		(FB_BIGINT, fetchMinElapsedTime)
+		(FB_BIGINT, fetchMaxElapsedTime)
+		(FB_BIGINT, fetchTotalElapsedTime)
 	) recSrcStatsMessage(status, MasterInterfacePtr());
 	recSrcStatsMessage.clear();
 
@@ -478,9 +479,9 @@ void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status)
 		    column_num type of column plg$prof_psql_stats.column_num = ?,
 		    statement_id type of column plg$prof_psql_stats.statement_id = ?,
 		    counter type of column plg$prof_psql_stats.counter = ?,
-		    min_time type of column plg$prof_psql_stats.min_time = ?,
-		    max_time type of column plg$prof_psql_stats.max_time = ?,
-		    total_time type of column plg$prof_psql_stats.total_time = ?
+		    min_elapsed_time type of column plg$prof_psql_stats.min_elapsed_time = ?,
+		    max_elapsed_time type of column plg$prof_psql_stats.max_elapsed_time = ?,
+		    total_elapsed_time type of column plg$prof_psql_stats.total_elapsed_time = ?
 		)
 		as
 		begin
@@ -492,15 +493,15 @@ void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status)
 		            column_num = :column_num
 		        when not matched then
 		            insert (profile_id, request_id, line_num, column_num,
-		                    statement_id, counter, min_time, max_time, total_time)
+		                    statement_id, counter, min_elapsed_time, max_elapsed_time, total_elapsed_time)
 		                values (:profile_id, :request_id, :line_num, :column_num,
-		                        :statement_id, :counter, :min_time, :max_time, :total_time)
+		                        :statement_id, :counter, :min_elapsed_time, :max_elapsed_time, :total_elapsed_time)
 		        when matched then
 		            update set
 		                counter = counter + :counter,
-		                min_time = minvalue(min_time, :min_time),
-		                max_time = maxvalue(max_time, :max_time),
-		                total_time = total_time + :total_time;
+		                min_elapsed_time = minvalue(min_elapsed_time, :min_elapsed_time),
+		                max_elapsed_time = maxvalue(max_elapsed_time, :max_elapsed_time),
+		                total_elapsed_time = total_elapsed_time + :total_elapsed_time;
 		end
 	)""";
 
@@ -511,9 +512,9 @@ void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status)
 		(FB_INTEGER, columnNum)
 		(FB_BIGINT, statementId)
 		(FB_BIGINT, counter)
-		(FB_BIGINT, minTime)
-		(FB_BIGINT, maxTime)
-		(FB_BIGINT, totalTime)
+		(FB_BIGINT, minElapsedTime)
+		(FB_BIGINT, maxElapsedTime)
+		(FB_BIGINT, totalElapsedTime)
 	) psqlStatsMessage(status, MasterInterfacePtr());
 	psqlStatsMessage.clear();
 
@@ -735,8 +736,8 @@ void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status)
 					requestMessage->finishTimestampNull = profileRequest.finishTimestamp.isUnknown();
 					requestMessage->finishTimestamp = profileRequest.finishTimestamp.value;
 
-					requestMessage->totalTimeNull = profileRequest.totalTime.isUnknown();
-					requestMessage->totalTime = profileRequest.totalTime.value;
+					requestMessage->totalElapsedTimeNull = profileRequest.totalTime.isUnknown();
+					requestMessage->totalElapsedTime = profileRequest.totalTime.value;
 
 					addBatch(requestBatch, requestBatchSize, requestMessage);
 
@@ -769,26 +770,26 @@ void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status)
 					recSrcStatsMessage->openCounterNull = FB_FALSE;
 					recSrcStatsMessage->openCounter = stats.openStats.counter;
 
-					recSrcStatsMessage->openMinTimeNull = FB_FALSE;
-					recSrcStatsMessage->openMinTime = stats.openStats.minTime;
+					recSrcStatsMessage->openMinElapsedTimeNull = FB_FALSE;
+					recSrcStatsMessage->openMinElapsedTime = stats.openStats.minElapsedTime;
 
-					recSrcStatsMessage->openMaxTimeNull = FB_FALSE;
-					recSrcStatsMessage->openMaxTime = stats.openStats.maxTime;
+					recSrcStatsMessage->openMaxElapsedTimeNull = FB_FALSE;
+					recSrcStatsMessage->openMaxElapsedTime = stats.openStats.maxElapsedTime;
 
-					recSrcStatsMessage->openTotalTimeNull = FB_FALSE;
-					recSrcStatsMessage->openTotalTime = stats.openStats.totalTime;
+					recSrcStatsMessage->openTotalElapsedTimeNull = FB_FALSE;
+					recSrcStatsMessage->openTotalElapsedTime = stats.openStats.totalElapsedTime;
 
 					recSrcStatsMessage->fetchCounterNull = FB_FALSE;
 					recSrcStatsMessage->fetchCounter = stats.fetchStats.counter;
 
-					recSrcStatsMessage->fetchMinTimeNull = FB_FALSE;
-					recSrcStatsMessage->fetchMinTime = stats.fetchStats.minTime;
+					recSrcStatsMessage->fetchMinElapsedTimeNull = FB_FALSE;
+					recSrcStatsMessage->fetchMinElapsedTime = stats.fetchStats.minElapsedTime;
 
-					recSrcStatsMessage->fetchMaxTimeNull = FB_FALSE;
-					recSrcStatsMessage->fetchMaxTime = stats.fetchStats.maxTime;
+					recSrcStatsMessage->fetchMaxElapsedTimeNull = FB_FALSE;
+					recSrcStatsMessage->fetchMaxElapsedTime = stats.fetchStats.maxElapsedTime;
 
-					recSrcStatsMessage->fetchTotalTimeNull = FB_FALSE;
-					recSrcStatsMessage->fetchTotalTime = stats.fetchStats.totalTime;
+					recSrcStatsMessage->fetchTotalElapsedTimeNull = FB_FALSE;
+					recSrcStatsMessage->fetchTotalElapsedTime = stats.fetchStats.totalElapsedTime;
 
 					addBatch(recSrcStatsBatch, recSrcStatsBatchSize, recSrcStatsMessage);
 				}
@@ -817,14 +818,14 @@ void ProfilerPlugin::flush(ThrowStatusExceptionWrapper* status)
 					psqlStatsMessage->counterNull = FB_FALSE;
 					psqlStatsMessage->counter = statsIt.second.counter;
 
-					psqlStatsMessage->minTimeNull = FB_FALSE;
-					psqlStatsMessage->minTime = statsIt.second.minTime;
+					psqlStatsMessage->minElapsedTimeNull = FB_FALSE;
+					psqlStatsMessage->minElapsedTime = statsIt.second.minElapsedTime;
 
-					psqlStatsMessage->maxTimeNull = FB_FALSE;
-					psqlStatsMessage->maxTime = statsIt.second.maxTime;
+					psqlStatsMessage->maxElapsedTimeNull = FB_FALSE;
+					psqlStatsMessage->maxElapsedTime = statsIt.second.maxElapsedTime;
 
-					psqlStatsMessage->totalTimeNull = FB_FALSE;
-					psqlStatsMessage->totalTime = statsIt.second.totalTime;
+					psqlStatsMessage->totalElapsedTimeNull = FB_FALSE;
+					psqlStatsMessage->totalElapsedTime = statsIt.second.totalElapsedTime;
 
 					addBatch(psqlStatsBatch, psqlStatsBatchSize, psqlStatsMessage);
 				}
@@ -944,7 +945,7 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		    caller_request_id bigint,
 		    start_timestamp timestamp with time zone not null,
 		    finish_timestamp timestamp with time zone,
-		    total_time bigint,
+		    total_elapsed_time bigint,
 		    constraint plg$prof_requests_pk
 		        primary key (profile_id, request_id)
 		        using index plg$prof_requests_profile_request,
@@ -972,9 +973,9 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		    column_num integer not null,
 		    statement_id bigint not null,
 		    counter bigint not null,
-		    min_time bigint not null,
-		    max_time bigint not null,
-		    total_time bigint not null,
+		    min_elapsed_time bigint not null,
+		    max_elapsed_time bigint not null,
+		    total_elapsed_time bigint not null,
 		    constraint plg$prof_psql_stats_pk
 		        primary key (profile_id, request_id, line_num, column_num)
 		        using index plg$prof_psql_stats_profile_request_line_column,
@@ -1002,13 +1003,13 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		    record_source_id bigint not null,
 		    statement_id bigint not null,
 		    open_counter bigint not null,
-		    open_min_time bigint not null,
-		    open_max_time bigint not null,
-		    open_total_time bigint not null,
+		    open_min_elapsed_time bigint not null,
+		    open_max_elapsed_time bigint not null,
+		    open_total_elapsed_time bigint not null,
 		    fetch_counter bigint not null,
-		    fetch_min_time bigint not null,
-		    fetch_max_time bigint not null,
-		    fetch_total_time bigint not null,
+		    fetch_min_elapsed_time bigint not null,
+		    fetch_max_elapsed_time bigint not null,
+		    fetch_total_elapsed_time bigint not null,
 		    constraint plg$prof_record_source_stats_pk
 		        primary key (profile_id, request_id, cursor_id, record_source_id)
 		        using index plg$prof_record_source_stats_profile_request_cursor_recsource,
@@ -1045,10 +1046,10 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		                statement_id = coalesce(sta.parent_statement_id, req.statement_id)
 		       ) sql_text,
 		       count(*) counter,
-		       min(req.total_time) min_time,
-		       max(req.total_time) max_time,
-		       cast(sum(req.total_time) as bigint) total_time,
-		       cast(sum(req.total_time) / count(*) as bigint) avg_time
+		       min(req.total_elapsed_time) min_elapsed_time,
+		       max(req.total_elapsed_time) max_elapsed_time,
+		       cast(sum(req.total_elapsed_time) as bigint) total_elapsed_time,
+		       cast(sum(req.total_elapsed_time) / count(*) as bigint) avg_elapsed_time
 		  from plg$prof_requests req
 		  join plg$prof_statements sta
 		    on sta.profile_id = req.profile_id and
@@ -1064,7 +1065,7 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		           sta.parent_statement_id,
 		           sta_parent.statement_type,
 		           sta_parent.routine_name
-		  order by sum(req.total_time) desc
+		  order by sum(req.total_elapsed_time) desc
 		)""",
 
 		"grant select on table plg$prof_statement_stats_view to plg$profiler",
@@ -1088,10 +1089,10 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		       pstat.line_num,
 		       pstat.column_num,
 		       cast(sum(pstat.counter) as bigint) counter,
-		       min(pstat.min_time) min_time,
-		       max(pstat.max_time) max_time,
-		       cast(sum(pstat.total_time) as bigint) total_time,
-		       cast(sum(pstat.total_time) / nullif(sum(pstat.counter), 0) as bigint) avg_time
+		       min(pstat.min_elapsed_time) min_elapsed_time,
+		       max(pstat.max_elapsed_time) max_elapsed_time,
+		       cast(sum(pstat.total_elapsed_time) as bigint) total_elapsed_time,
+		       cast(sum(pstat.total_elapsed_time) / nullif(sum(pstat.counter), 0) as bigint) avg_elapsed_time
 		  from plg$prof_psql_stats pstat
 		  join plg$prof_statements sta
 		    on sta.profile_id = pstat.profile_id and
@@ -1109,7 +1110,7 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		           sta_parent.routine_name,
 		           pstat.line_num,
 		           pstat.column_num
-		  order by sum(pstat.total_time) desc
+		  order by sum(pstat.total_elapsed_time) desc
 		)""",
 
 		"grant select on table plg$prof_psql_stats_view to plg$profiler",
@@ -1135,16 +1136,16 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		       recsrc.parent_record_source_id,
 		       recsrc.access_path,
 		       cast(sum(rstat.open_counter) as bigint) open_counter,
-		       min(rstat.open_min_time) open_min_time,
-		       max(rstat.open_max_time) open_max_time,
-		       cast(sum(rstat.open_total_time) as bigint) open_total_time,
-		       cast(sum(rstat.open_total_time) / nullif(sum(rstat.open_counter), 0) as bigint) open_avg_time,
+		       min(rstat.open_min_elapsed_time) open_min_elapsed_time,
+		       max(rstat.open_max_elapsed_time) open_max_elapsed_time,
+		       cast(sum(rstat.open_total_elapsed_time) as bigint) open_total_elapsed_time,
+		       cast(sum(rstat.open_total_elapsed_time) / nullif(sum(rstat.open_counter), 0) as bigint) open_avg_elapsed_time,
 		       cast(sum(rstat.fetch_counter) as bigint) fetch_counter,
-		       min(rstat.fetch_min_time) fetch_min_time,
-		       max(rstat.fetch_max_time) fetch_max_time,
-		       cast(sum(rstat.fetch_total_time) as bigint) fetch_total_time,
-		       cast(sum(rstat.fetch_total_time) / nullif(sum(rstat.fetch_counter), 0) as bigint) fetch_avg_time,
-		       cast(coalesce(sum(rstat.open_total_time), 0) + coalesce(sum(rstat.fetch_total_time), 0) as bigint) open_fetch_total_time
+		       min(rstat.fetch_min_elapsed_time) fetch_min_elapsed_time,
+		       max(rstat.fetch_max_elapsed_time) fetch_max_elapsed_time,
+		       cast(sum(rstat.fetch_total_elapsed_time) as bigint) fetch_total_elapsed_time,
+		       cast(sum(rstat.fetch_total_elapsed_time) / nullif(sum(rstat.fetch_counter), 0) as bigint) fetch_avg_elapsed_time,
+		       cast(coalesce(sum(rstat.open_total_elapsed_time), 0) + coalesce(sum(rstat.fetch_total_elapsed_time), 0) as bigint) open_fetch_total_time
 		  from plg$prof_record_source_stats rstat
 		  join plg$prof_record_sources recsrc
 		    on recsrc.profile_id = rstat.profile_id and
@@ -1169,7 +1170,7 @@ void ProfilerPlugin::createMetadata(ThrowStatusExceptionWrapper* status, RefPtr<
 		           rstat.record_source_id,
 		           recsrc.parent_record_source_id,
 		           recsrc.access_path
-		  order by coalesce(sum(rstat.open_total_time), 0) + coalesce(sum(rstat.fetch_total_time), 0) desc
+		  order by coalesce(sum(rstat.open_total_elapsed_time), 0) + coalesce(sum(rstat.fetch_total_elapsed_time), 0) desc
 		)""",
 
 		"grant select on table plg$prof_record_source_stats_view to plg$profiler"
@@ -1332,40 +1333,40 @@ void Session::onRequestStart(ThrowStatusExceptionWrapper* status, SINT64 request
 }
 
 void Session::onRequestFinish(ThrowStatusExceptionWrapper* status, SINT64 requestId,
-	ISC_TIMESTAMP_TZ timestamp, FB_UINT64 runTime)
+	ISC_TIMESTAMP_TZ timestamp, IProfilerStats* stats)
 {
 	if (auto request = requests.get(requestId))
 	{
 		request->dirty = true;
 		request->finishTimestamp = timestamp;
-		request->totalTime = runTime;
+		request->totalTime = stats->getElapsedTime();
 	}
 }
 
-void Session::afterPsqlLineColumn(SINT64 requestId, unsigned line, unsigned column, FB_UINT64 runTime)
+void Session::afterPsqlLineColumn(SINT64 requestId, unsigned line, unsigned column, IProfilerStats* stats)
 {
 	if (auto request = requests.get(requestId))
 	{
 		const auto profileStats = request->psqlStats.getOrPut({line, column});
-		profileStats->hit(runTime);
+		profileStats->hit(stats->getElapsedTime());
 	}
 }
 
-void Session::afterRecordSourceOpen(SINT64 requestId, unsigned cursorId, unsigned recSourceId, FB_UINT64 runTime)
+void Session::afterRecordSourceOpen(SINT64 requestId, unsigned cursorId, unsigned recSourceId, IProfilerStats* stats)
 {
 	if (auto request = requests.get(requestId))
 	{
-		auto stats = request->recordSourcesStats.getOrPut({cursorId, recSourceId});
-		stats->openStats.hit(runTime);
+		auto profileStats = request->recordSourcesStats.getOrPut({cursorId, recSourceId});
+		profileStats->openStats.hit(stats->getElapsedTime());
 	}
 }
 
-void Session::afterRecordSourceGetRecord(SINT64 requestId, unsigned cursorId, unsigned recSourceId, FB_UINT64 runTime)
+void Session::afterRecordSourceGetRecord(SINT64 requestId, unsigned cursorId, unsigned recSourceId, IProfilerStats* stats)
 {
 	if (auto request = requests.get(requestId))
 	{
-		auto stats = request->recordSourcesStats.getOrPut({cursorId, recSourceId});
-		stats->fetchStats.hit(runTime);
+		auto profileStats = request->recordSourcesStats.getOrPut({cursorId, recSourceId});
+		profileStats->fetchStats.hit(stats->getElapsedTime());
 	}
 }
 
