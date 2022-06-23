@@ -1531,6 +1531,11 @@ interface TracePlugin : ReferenceCounted
 	[notImplemented(true)]
 	boolean trace_func_execute (TraceDatabaseConnection connection, TraceTransaction transaction, TraceFunction function,
 			boolean started, uint func_result);
+
+version:	// 4.0.1 -> 4.0.2
+	boolean trace_dsql_restart(TraceDatabaseConnection connection, TraceTransaction transaction, TraceSQLStatement statement,
+		uint number);
+
 }
 
 // Trace plugin second level factory (this is what is known to PluginManager as "trace plugin")

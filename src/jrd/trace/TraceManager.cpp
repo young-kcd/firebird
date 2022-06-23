@@ -407,6 +407,16 @@ void TraceManager::event_dsql_execute(Attachment* att, jrd_tra* transaction,
 											   started, req_result);
 }
 
+void TraceManager::event_dsql_restart(Attachment* att, jrd_tra* transaction,
+	const dsql_req* statement, int number)
+{
+	TraceConnectionImpl conn(att);
+	TraceTransactionImpl tran(transaction);
+	TraceSQLStatementImpl stmt(statement, NULL);
+
+	att->att_trace_manager->event_dsql_restart(&conn, transaction ? &tran : NULL, &stmt,
+											   (unsigned) number);
+}
 
 #define EXECUTE_HOOKS(METHOD, PARAMS) \
 	FB_SIZE_T i = 0; \
@@ -502,6 +512,12 @@ void TraceManager::event_dsql_execute(ITraceDatabaseConnection* connection, ITra
 		(connection, transaction, statement, started, req_result));
 }
 
+void TraceManager::event_dsql_restart(ITraceDatabaseConnection* connection, ITraceTransaction* transaction,
+		ITraceSQLStatement* statement, unsigned number)
+{
+	EXECUTE_HOOKS(trace_dsql_restart,
+		(connection, transaction, statement, number));
+}
 
 void TraceManager::event_blr_compile(ITraceDatabaseConnection* connection,
 		ITraceTransaction* transaction, ITraceBLRStatement* statement,
