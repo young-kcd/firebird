@@ -126,6 +126,107 @@ class Attachment;
 class StableAttachmentPart : public Firebird::RefCounted, public Firebird::GlobalStorage
 {
 public:
+	class Sync
+	{
+	public:
+		Sync()
+			: waiters(0), threadId(0), totalLocksCounter(0), currentLocksCounter(0)
+		{ }
+
+		void enter(const char* aReason)
+		{
+			ThreadId curTid = getThreadId();
+
+			if (threadId == curTid)
+			{
+				currentLocksCounter++;
+				return;
+			}
+
+			if (threadId || !syncMutex.tryEnter(aReason))
+			{
+				// we have contention with another thread
+				waiters.fetch_add(1, std::memory_order_relaxed);
+				syncMutex.enter(aReason);
+				waiters.fetch_sub(1, std::memory_order_relaxed);
+			}
+
+			threadId = curTid;
+			totalLocksCounter++;
+			fb_assert(currentLocksCounter == 0);
+			currentLocksCounter++;
+		}
+
+		bool tryEnter(const char* aReason)
+		{
+			ThreadId curTid = getThreadId();
+
+			if (threadId == curTid)
+			{
+				currentLocksCounter++;
+				return true;
+			}
+
+			if (threadId || !syncMutex.tryEnter(aReason))
+				return false;
+
+			threadId = curTid;
+			totalLocksCounter++;
+			fb_assert(currentLocksCounter == 0);
+			currentLocksCounter++;
+			return true;
+		}
+
+		void leave()
+		{
+			fb_assert(currentLocksCounter > 0);
+
+			if (--currentLocksCounter == 0)
+			{
+				threadId = 0;
+				syncMutex.leave();
+			}
+		}
+
+		bool hasContention() const
+		{
+			return (waiters.load(std::memory_order_relaxed) > 0);
+		}
+
+		FB_UINT64 getLockCounter() const
+		{
+			return totalLocksCounter;
+		}
+
+#ifdef DEV_BUILD
+		bool locked() const
+		{
+			return threadId == getThreadId();
+		}
+#endif
+
+		~Sync()
+		{
+			if (threadId == getThreadId())
+			{
+				syncMutex.leave();
+			}
+		}
+
+	private:
+		// copying is prohibited
+		Sync(const Sync&);
+		Sync& operator=(const Sync&);
+
+		Firebird::Mutex syncMutex;
+		std::atomic<int> waiters;
+		ThreadId threadId;
+		volatile FB_UINT64 totalLocksCounter;
+		int currentLocksCounter;
+	};
+
+	typedef Firebird::RaiiLockGuard<StableAttachmentPart> SyncGuard;
+
 	explicit StableAttachmentPart(Attachment* handle)
 		: att(handle), jAtt(NULL)
 	{ }
@@ -145,13 +246,13 @@ public:
 		jAtt = ja;
 	}
 
-	Firebird::Mutex* getMutex(bool useAsync = false, bool forceAsync = false)
+	Sync* getSync(bool useAsync = false, bool forceAsync = false)
 	{
 		if (useAsync && !forceAsync)
 		{
-			fb_assert(!mainMutex.locked());
+			fb_assert(!mainSync.locked());
 		}
-		return useAsync ? &asyncMutex : &mainMutex;
+		return useAsync ? &async : &mainSync;
 	}
 
 	Firebird::Mutex* getBlockingMutex()
@@ -161,8 +262,8 @@ public:
 
 	void cancel()
 	{
-		fb_assert(asyncMutex.locked());
-		fb_assert(mainMutex.locked());
+		fb_assert(async.locked());
+		fb_assert(mainSync.locked());
 		att = NULL;
 	}
 
@@ -184,12 +285,15 @@ private:
 	Attachment* att;
 	JAttachment* jAtt;
 
-	// These mutexes guarantee attachment existence. After releasing both of them with possibly
+	// These syncs guarantee attachment existence. After releasing both of them with possibly
 	// zero att_use_count one should check does attachment still exists calling getHandle().
-	Firebird::Mutex mainMutex, asyncMutex;
+	Sync mainSync, async;
 	// This mutex guarantees attachment is not accessed by more than single external thread.
 	Firebird::Mutex blockingMutex;
 };
+
+typedef Firebird::RaiiLockGuard<StableAttachmentPart::Sync> AttSyncLockGuard;
+typedef Firebird::RaiiUnlockGuard<StableAttachmentPart::Sync> AttSyncUnlockGuard;
 
 //
 // the attachment block; one is created for each attachment to a database
@@ -215,7 +319,7 @@ public:
 		~SyncGuard()
 		{
 			if (jStable)
-				jStable->getMutex()->leave();
+				jStable->getSync()->leave();
 		}
 
 	private:
