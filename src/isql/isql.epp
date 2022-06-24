@@ -6461,7 +6461,7 @@ static processing_state print_sets()
  **************************************/
 
 	print_set("Print statistics:", setValues.Stats);
-	print_set("Print per table stats:", setValues.PerTableStats);
+	print_set("Print per-table stats:", setValues.PerTableStats);
 	print_set("Echo commands:", setValues.Echo);
 	print_set("List format:", setValues.List);
 	print_set("Show Row Count:", setValues.Docount);
@@ -9834,18 +9834,16 @@ void PerTableStats::printStats(Firebird::IAttachment* att)
 	IUTILS_printf2(Diag, "%s%s", s.c_str(), NEWLINE);
 
 	s = h;
-	USHORT relId = ~0;
+	USHORT relId = MAX_USHORT;
 	for (StatItem* item = m_stat.begin(); item < m_stat.end(); item++)
 	{
 		if (relId != item->relId)
 		{
 			IUTILS_printf2(Diag, "%s%s", s.c_str(), NEWLINE);
 
-			//s.clear();
 			relId = item->relId;
 
-			Firebird::string* relName;
-			if (relName = m_relNames.get(relId))
+			if (Firebird::string* relName = m_relNames.get(relId))
 				s.printf("%-*s|", lenTable, relName->c_str());
 			else
 				s.printf("%-*d|", lenTable, item->relId);
@@ -9858,6 +9856,7 @@ void PerTableStats::printStats(Firebird::IAttachment* att)
 		}
 
 		for (int i = 0; i < sizeof(m_items) - 1; i++)
+		{
 			if (m_items[i] == item->statId)
 			{
 				Firebird::string v;
@@ -9867,6 +9866,7 @@ void PerTableStats::printStats(Firebird::IAttachment* att)
 				pos += lenValue - v.length();
 				s.replace(pos, v.length(), v.begin(), v.length());
 			}
+		}
 	}
 
 	if (relId)
