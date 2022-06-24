@@ -745,7 +745,7 @@ namespace
 			try
 			{
 				if (!nolock)
-					sAtt->getMutex(async)->enter(from);
+					sAtt->getSync(async)->enter(from);
 
 				Jrd::Attachment* attachment = sAtt->getHandle();	// Must be done after entering mutex
 
@@ -776,7 +776,7 @@ namespace
 				catch (const Firebird::Exception&)
 				{
 					if (!nolock)
-						sAtt->getMutex(async)->leave();
+						sAtt->getSync(async)->leave();
 					throw;
 				}
 			}
@@ -800,7 +800,7 @@ namespace
 			}
 
 			if (!nolock)
-				sAtt->getMutex(async)->leave();
+				sAtt->getSync(async)->leave();
 
 			if (blocking)
 				sAtt->getBlockingMutex()->leave();
@@ -3404,12 +3404,12 @@ void JAttachment::internalDropDatabase(CheckStatusWrapper* user_status)
 	try
 	{
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION, AttachmentHolder::ATT_LOCK_ASYNC);
-		Jrd::Attachment* attachment = getHandle();
+		Attachment* attachment = getHandle();
 		Database* const dbb = tdbb->getDatabase();
 
 		try
 		{
-			MutexEnsureUnlock guard(*(getStable()->getMutex()), FB_FUNCTION);
+			EnsureUnlock<StableAttachmentPart::Sync, NotRefCounted> guard(*(getStable()->getSync()), FB_FUNCTION);
 			if (!guard.tryEnter())
 			{
 				status_exception::raise(Arg::Gds(isc_attachment_in_use));
@@ -5031,8 +5031,8 @@ void SysStableAttachment::destroy(Attachment* attachment)
 	}
 
 	// Make Attachment::destroy() happy
-	MutexLockGuard async(*getMutex(true), FB_FUNCTION);
-	MutexLockGuard sync(*getMutex(), FB_FUNCTION);
+	AttSyncLockGuard async(*getSync(true), FB_FUNCTION);
+	AttSyncLockGuard sync(*getSync(), FB_FUNCTION);
 
 	setInterface(NULL);
 	Jrd::Attachment::destroy(attachment);
@@ -8161,8 +8161,8 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
  **************************************/
 	SET_TDBB(tdbb);
 
-	Mutex* const attMutex = sAtt->getMutex();
-	fb_assert(attMutex->locked());
+	StableAttachmentPart::Sync* const attSync = sAtt->getSync();
+	fb_assert(attSync->locked());
 
 	Jrd::Attachment* attachment = sAtt->getHandle();
 
@@ -8177,10 +8177,10 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 		attachment->att_use_count--;
 
 		{ // scope
-			MutexUnlockGuard cout(*attMutex, FB_FUNCTION);
+			AttSyncUnlockGuard cout(*attSync, FB_FUNCTION);
 			// !!!!!!!!!!!!!!!!! - event? semaphore? condvar? (when ATT_purge_started / sAtt->getHandle() changes)
 
-			fb_assert(!attMutex->locked());
+			fb_assert(!attSync->locked());
 			Thread::yield();
 			Thread::sleep(1);
 		}
@@ -8204,10 +8204,10 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 		attachment->att_use_count--;
 
 		{ // scope
-			MutexUnlockGuard cout(*attMutex, FB_FUNCTION);
+			AttSyncUnlockGuard cout(*attSync, FB_FUNCTION);
 			// !!!!!!!!!!!!!!!!! - event? semaphore? condvar? (when --att_use_count)
 
-			fb_assert(!attMutex->locked());
+			fb_assert(!attSync->locked());
 			Thread::yield();
 			Thread::sleep(1);
 		}
@@ -8218,7 +8218,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 	  		attachment->att_use_count++;
 	}
 
-	fb_assert(attMutex->locked());
+	fb_assert(attSync->locked());
 
 	if (!attachment)
 		return;
@@ -8340,13 +8340,13 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 		attachment->att_trace_manager->event_detach(&conn, false);
 	}
 
-	fb_assert(attMutex->locked());
-	Mutex* asyncMutex = sAtt->getMutex(true, true);
-	MutexEnsureUnlock asyncGuard(*asyncMutex, FB_FUNCTION);
+	fb_assert(attSync->locked());
+	StableAttachmentPart::Sync* attAsync = sAtt->getSync(true, true);
+	EnsureUnlock<StableAttachmentPart::Sync, NotRefCounted> asyncGuard(*attAsync, FB_FUNCTION);
 
 	{ // scope - ensure correct order of taking both async and main mutexes
-		MutexUnlockGuard cout(*attMutex, FB_FUNCTION);
-		fb_assert(!attMutex->locked());
+		AttSyncUnlockGuard cout(*attSync, FB_FUNCTION);
+		fb_assert(!attSync->locked());
 		asyncGuard.enter();
 	}
 
@@ -8363,7 +8363,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 	release_attachment(tdbb, attachment);
 
 	asyncGuard.leave();
-	MutexUnlockGuard cout(*attMutex, FB_FUNCTION);
+	AttSyncUnlockGuard cout(*attSync, FB_FUNCTION);
 	MutexUnlockGuard coutBlocking(*sAtt->getBlockingMutex(), FB_FUNCTION);
 
 	// Try to close database if there are no attachments
@@ -8645,7 +8645,7 @@ namespace
 			{
 				StableAttachmentPart* const sAtt = *iter;
 
-				MutexLockGuard guard(*(sAtt->getMutex(true)), FB_FUNCTION);
+				AttSyncLockGuard guard(*(sAtt->getSync(true)), FB_FUNCTION);
 				Attachment* attachment = sAtt->getHandle();
 
 				if (attachment)
@@ -8660,7 +8660,7 @@ namespace
 			StableAttachmentPart* const sAtt = *iter;
 
 			MutexLockGuard guardBlocking(*(sAtt->getBlockingMutex()), FB_FUNCTION);
-			MutexLockGuard guard(*(sAtt->getMutex()), FB_FUNCTION);
+			AttSyncLockGuard guard(*(sAtt->getSync()), FB_FUNCTION);
 			Attachment* attachment = sAtt->getHandle();
 
 			if (attachment)
@@ -9079,9 +9079,18 @@ void thread_db::reschedule()
 
 	checkCancelState();
 
-	{	// checkout scope
+	StableAttachmentPart::Sync* sync = this->getAttachment()->getStable()->getSync();
+	Database* dbb = this->getDatabase();
+
+	if (sync->hasContention())
+	{
+		FB_UINT64 cnt = sync->getLockCounter();
+
 		EngineCheckout cout(this, FB_FUNCTION);
 		Thread::yield();
+
+		while (sync->hasContention() && (sync->getLockCounter() == cnt))
+			Thread::sleep(1);
 	}
 
 	checkCancelState();
