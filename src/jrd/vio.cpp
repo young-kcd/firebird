@@ -2130,16 +2130,21 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 		case rel_rfr:
 			protect_system_table_delupd(tdbb, relation, "DELETE");
+
 			EVL_field(0, rpb->rpb_record, f_rfr_rname, &desc);
 			DFW_post_work(transaction, dfw_update_format, &desc, 0);
+
 			EVL_field(0, rpb->rpb_record, f_rfr_fname, &desc2);
 			MOV_get_metaname(tdbb, &desc, object_name);
 			if ( (r2 = MET_lookup_relation(tdbb, object_name)) )
-			{
 				DFW_post_work(transaction, dfw_delete_rfr, &desc2, r2->rel_id);
-			}
+
 			EVL_field(0, rpb->rpb_record, f_rfr_sname, &desc2);
-			DFW_post_work(transaction, dfw_delete_global, &desc2, 0);
+			MOV_get_metaname(tdbb, &desc2, object_name);
+
+			if (fb_utils::implicit_domain(object_name.c_str()))
+				DFW_post_work(transaction, dfw_delete_global, &desc2, 0);
+
 			break;
 
 		case rel_prc_prms:
