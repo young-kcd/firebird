@@ -659,6 +659,7 @@ public:
 	{}
 
 	void getStats(Firebird::IAttachment* att, bool initial);
+	void reset();
 
 private:
 	void printStats(Firebird::IAttachment* att);
@@ -709,7 +710,7 @@ private:
 	Firebird::GenericMap<Firebird::Right<USHORT, Firebird::string>> m_relNames;
 
 	static const int ITEM_COUNT = 8;
-	static const unsigned char m_items[ITEM_COUNT+1];
+	static const unsigned char m_items[ITEM_COUNT + 1];
 	static const char* m_itemNames[ITEM_COUNT];
 };
 
@@ -6914,6 +6915,8 @@ static processing_state newdb(TEXT* dbname,
 		DB->cancelOperation(fbStatus, fb_cancel_disable);
 	} // scope
 
+	perTableStats->reset();
+
 	ISQL_get_version(false);
 
 	if (*local_sql_role)
@@ -9796,6 +9799,11 @@ void PerTableStats::getStats(Firebird::IAttachment* att, bool initial)
 	m_initialized = initial;
 }
 
+void PerTableStats::reset()
+{
+	m_relNames.clear();
+}
+
 void PerTableStats::printStats(Firebird::IAttachment* att)
 {
 	if (m_stat.isEmpty())
@@ -9835,6 +9843,7 @@ void PerTableStats::printStats(Firebird::IAttachment* att)
 
 	s = h;
 	USHORT relId = MAX_USHORT;
+	FB_SIZE_T lenName;
 	for (StatItem* item = m_stat.begin(); item < m_stat.end(); item++)
 	{
 		if (relId != item->relId)
@@ -9844,7 +9853,14 @@ void PerTableStats::printStats(Firebird::IAttachment* att)
 			relId = item->relId;
 
 			if (Firebird::string* relName = m_relNames.get(relId))
-				s.printf("%-*s|", lenTable, relName->c_str());
+			{
+				IcuUtil::pad(s.getBuffer(lenTable * 4 + 1), isqlGlob.att_charset, 
+							 relName->length(), relName->c_str(), 
+							 lenTable, false);
+				s.recalculate_length();
+				lenName = s.length();
+				s += '|';
+			}
 			else
 				s.printf("%-*d|", lenTable, item->relId);
 
@@ -9862,7 +9878,7 @@ void PerTableStats::printStats(Firebird::IAttachment* att)
 				Firebird::string v;
 				v.printf("%*" UQUADFORMAT, lenValue, item->value);
 
-				FB_SIZE_T pos = lenTable + 1 + (lenValue + 1) * i;
+				FB_SIZE_T pos = lenName + 1 + (lenValue + 1) * i;
 				pos += lenValue - v.length();
 				s.replace(pos, v.length(), v.begin(), v.length());
 			}
@@ -9881,7 +9897,7 @@ unsigned PerTableStats::loadRelNames(Firebird::IAttachment* att)
 	Firebird::string sIds;
 
 	unsigned maxLen = 0;
-	USHORT relId = ~0;
+	USHORT relId = MAX_USHORT;
 	for (StatItem* item = m_stat.begin(); item < m_stat.end(); item++)
 	{
 		if (relId == item->relId)
@@ -9891,7 +9907,8 @@ unsigned PerTableStats::loadRelNames(Firebird::IAttachment* att)
 
 		if (m_relNames.exist(relId))
 		{
-			const unsigned len = m_relNames.get(relId)->length();
+			const auto str = m_relNames.get(relId);
+			const unsigned len = IcuUtil::charLength(isqlGlob.att_charset, str->length(), str->c_str());
 			if (maxLen < len)
 				maxLen = len;
 
@@ -9947,7 +9964,7 @@ unsigned PerTableStats::loadRelNames(Firebird::IAttachment* att)
 
 		pRelName[relNameSize] = 0;
 		char* name = fb_utils::exact_name(pRelName);
-		const unsigned len = strlen(name);
+		const unsigned len = IcuUtil::charLength(isqlGlob.att_charset, strlen(name), pRelName);
 		if (maxLen < len)
 			maxLen = len;
 
