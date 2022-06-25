@@ -11675,7 +11675,10 @@ IBatch* WriteRelationMeta::createBatch(BurpGlobals* tdgbl, IAttachment* att)
 
 	BURP_verbose(371, m_relation->rel_name);
 	// msg 371 could not start batch when restoring table @1, trying old way
+
+#ifdef _DEBUG
 	BURP_print_status(false, fbStatus);
+#endif
 
 	// Possible reason of fail - use of keywords as fields in old backup of dialect1 DB
 	// Try to roll back to use of old version (fieldnames independent)
