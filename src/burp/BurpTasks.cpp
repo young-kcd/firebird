@@ -558,6 +558,8 @@ void BackupRelationTask::stopItems()
 
 	for (Item** p = m_items.begin(); p < m_items.end(); p++)
 		(*p)->m_cleanCond.notifyAll();
+
+	m_dirtyCond.notifyAll();
 }
 
 bool BackupRelationTask::fileWriter(Item& item)
