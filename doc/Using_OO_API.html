@@ -3,10 +3,10 @@
 <head>
 	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
 	<title></title>
-	<meta name="generator" content="LibreOffice 6.4.7.2 (Linux)"/>
+	<meta name="generator" content="LibreOffice 7.1.5.2 (Linux)"/>
 	<meta name="author" content="alex "/>
 	<meta name="created" content="2013-05-31T00:00:00.010003100"/>
-	<meta name="changed" content="2021-09-10T16:41:58.007600045"/>
+	<meta name="changed" content="2022-06-24T17:47:03.455745039"/>
 	<meta name="created" content="00:00:00">
 	<meta name="created" content="00:00:00">
 	<meta name="created" content="00:00:00">
@@ -1333,6 +1333,16 @@ finishing with services tasks do not forget to close an interface:</font></p>
 <p style="margin-bottom: 0cm"><br/>
 
 </p>
+<p style="margin-bottom: 0cm; font-variant: normal; font-style: normal">
+<font size="4" style="font-size: 14pt">IService interface also
+contains method cancel(). It’s needed to cancel wait in a query()
+and is used internally by network server. Current implementation is
+restricted – IService::cancel() is not supported by remote
+redirector, only engine provider supports it. That means one can use
+it only in embedded connections.</font></p>
+<p style="margin-bottom: 0cm"><br/>
+
+</p>
 <p style="margin-top: 0.43cm; margin-bottom: 0.51cm; page-break-after: avoid">
 <font face="Albany, sans-serif"><font size="5" style="font-size: 18pt">Writing
 plugins.</font></font></p>
@@ -1799,12 +1809,12 @@ interface – replaces isc_db_handle:</font></p>
 	<li><p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">IBatch*
 	createBatch(StatusType* status, ITransaction* transaction, unsigned
 	stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata*
-	inMetadata, unsigned parLength,
-	const unsigned char* par) – prepares sqlStmt and creates <a href="#Batch">Batch</a>
-	interface ready to accept multiple sets of input parameters in
-	inMetadata format. Leaving inMetadata NULL
-	makes batch use default format for sqlStmt. Parameters block may be
-	passed to createBatch() making it possible to adjust batch behavior.</font></p>
+	inMetadata, unsigned parLength, const unsigned char* par) –
+	prepares sqlStmt and creates <a href="#Batch">Batch</a> interface
+	ready to accept multiple sets of input parameters in inMetadata
+	format. Leaving inMetadata NULL makes batch use default format for
+	sqlStmt. Parameters block may be passed to createBatch() making it
+	possible to adjust batch behavior.</font></p>
 	<li><p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">IEvents*
 	queEvents(StatusType* status, IEventCallback* callback, unsigned
 	length, const unsigned char* events) – replaces isc_que_events()
@@ -2380,9 +2390,10 @@ with execution of SQL statements.</font></p>
 	getAlignment(StatusType* status) – returns alignment required for
 	message buffer.</font></p>
 	<li><p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">unsigned
-	getAlignedLength(StatusType* status) – returns length of message buffer taking into an account
-	alignment requirements (use it to allocate memory for an array of
-	buffers and navigate through that array).</font></p>
+	getAlignedLength(StatusType* status) – returns length of message
+	buffer taking into an account alignment requirements (use it to
+	allocate memory for an array of buffers and navigate through that
+	array).</font></p>
 </ol>
 <p style="margin-bottom: 0cm"><br/>
 
@@ -2640,8 +2651,11 @@ All fetch calls except fetchNext() work only for bidirectional
 <p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">Items
 accepted in getInfo() call:</font></p>
 <p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">INF_RECORD_COUNT
-– number of records stored inside a scrollable cursor, or -1 for a uni-directional cursor.</font></p>
+– number of records stored inside a scrollable cursor, or -1 for a
+uni-directional cursor.</font></p>
 <p style="margin-bottom: 0cm"><br/>
+
+</p>
 <ol>
 	<li><p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">int
 	fetchNext(StatusType* status, void* message) – fetch next record,
@@ -2704,6 +2718,9 @@ interface – replaces isc_svc_handle.</font></p>
 	start(StatusType* status, unsigned spbLength, const unsigned char*
 	spb) – start utility in services manager. Replaces
 	isc_service_start().</font></p>
+	<li><p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">void
+	cancel(StatusType* status) – cancel wait of current query() call.
+	Supported only for embedded connections.</font></p>
 </ol>
 <p style="margin-bottom: 0cm"><br/>
 
@@ -2760,7 +2777,7 @@ interface – replaces (partially) isc_stmt_handle.</font></p>
 	behavior.</font></p>
 	<li><p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">void
 	setCursorName(StatusType* status, const char* name) – replaces
-	isc_dsql_set_cursor_name().</font>
+	isc_dsql_set_cursor_name().</font> 
 	</p>
 	<li><p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">void
 	free(StatusType* status) – free statement, releases interface on
