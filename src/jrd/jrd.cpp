@@ -8268,7 +8268,7 @@ void JRD_shutdown_attachments(Database* dbb)
 			{
 				StableAttachmentPart* const sAtt = *iter;
 
-				MutexLockGuard guard(*(sAtt->getMutex(true)), FB_FUNCTION);
+				AttSyncLockGuard guard(*(sAtt->getSync(true)), FB_FUNCTION);
 				Attachment* const attachment = sAtt->getHandle();
 
 				if (attachment && !(attachment->att_flags & ATT_shutdown))

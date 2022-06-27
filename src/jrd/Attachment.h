@@ -146,9 +146,9 @@ public:
 			if (threadId || !syncMutex.tryEnter(aReason))
 			{
 				// we have contention with another thread
-				waiters.fetch_add(1, std::memory_order_relaxed);
+				++waiters;
 				syncMutex.enter(aReason);
-				waiters.fetch_sub(1, std::memory_order_relaxed);
+				--waiters;
 			}
 
 			threadId = curTid;
@@ -190,7 +190,7 @@ public:
 
 		bool hasContention() const
 		{
-			return (waiters.load(std::memory_order_relaxed) > 0);
+			return (waiters.value() > 0);
 		}
 
 		FB_UINT64 getLockCounter() const
@@ -219,7 +219,7 @@ public:
 		Sync& operator=(const Sync&);
 
 		Firebird::Mutex syncMutex;
-		std::atomic<int> waiters;
+		Firebird::AtomicCounter waiters;
 		ThreadId threadId;
 		volatile FB_UINT64 totalLocksCounter;
 		int currentLocksCounter;

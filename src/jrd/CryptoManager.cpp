@@ -925,7 +925,7 @@ namespace Jrd {
 			}
 
 			// Establish temp context needed to take crypt thread lock
-			ThreadContextHolder tempDbb(&dbb, nullptr, &status_vector);
+			ThreadContextHolder tempDbb(&dbb, NULL, &status_vector);
 
 			// Take exclusive threadLock
 			// If can't take that lock - nothing to do, cryptThread already runs somewhere

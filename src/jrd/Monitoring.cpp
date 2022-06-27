@@ -873,8 +873,8 @@ void Monitoring::putDatabase(thread_db* tdbb, SnapshotData::DumpRecord& record)
 	record.storeInteger(f_mon_db_backup_state, backup_state);
 
 	// crypt thread status
-	if (dbb->dbb_crypto_manager)
-		record.storeInteger(f_mon_db_crypt_page, dbb->dbb_crypto_manager->getCurrentPage(tdbb));
+	if (database->dbb_crypto_manager)
+		record.storeInteger(f_mon_db_crypt_page, database->dbb_crypto_manager->getCurrentPage(tdbb));
 
 	// database owner
 	record.storeString(f_mon_db_owner, database->dbb_owner);
