@@ -3337,15 +3337,16 @@ bool VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 
 		case rel_procedures:
 			EVL_field(0, org_rpb->rpb_record, f_prc_name, &desc1);
+
+			if (EVL_field(0, org_rpb->rpb_record, f_prc_pkg_name, &desc2))
+				MOV_get_metaname(tdbb, &desc2, package_name);
+
 			if (!check_nullify_source(tdbb, org_rpb, new_rpb, f_prc_source))
 				protect_system_table_delupd(tdbb, relation, "UPDATE");
 			else
 			{
-				if (EVL_field(0, org_rpb->rpb_record, f_prc_pkg_name, &desc2))
-				{
-					MOV_get_metaname(tdbb, &desc2, package_name);
+				if (package_name.hasData())
 					SCL_check_package(tdbb, &desc2, SCL_alter);
-				}
 				else
 					SCL_check_procedure(tdbb, &desc1, SCL_alter);
 			}
@@ -3363,15 +3364,16 @@ bool VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 
 		case rel_funs:
 			EVL_field(0, org_rpb->rpb_record, f_fun_name, &desc1);
+
+			if (EVL_field(0, org_rpb->rpb_record, f_fun_pkg_name, &desc2))
+				MOV_get_metaname(tdbb, &desc2, package_name);
+
 			if (!check_nullify_source(tdbb, org_rpb, new_rpb, f_fun_source))
 				protect_system_table_delupd(tdbb, relation, "UPDATE");
 			else
 			{
-				if (EVL_field(0, org_rpb->rpb_record, f_fun_pkg_name, &desc2))
-				{
-					MOV_get_metaname(tdbb, &desc2, package_name);
+				if (package_name.hasData())
 					SCL_check_package(tdbb, &desc2, SCL_alter);
-				}
 				else
 					SCL_check_function(tdbb, &desc1, SCL_alter);
 			}
