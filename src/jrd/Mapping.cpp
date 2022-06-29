@@ -736,8 +736,7 @@ public:
 		{
 			StaticStatusVector s;
 			ex.stuffException(s);
-			if (!fb_utils::containsErrorCode(s.begin(), isc_instance_conflict))
-				iscLogException("MappingIpc: Cannot initialize the shared memory region", ex);
+			iscLogException("MappingIpc: Cannot initialize the shared memory region", ex);
 			throw;
 		}
 		fb_assert(tempSharedMemory->getHeader()->mhb_header_version == MemoryHeader::HEADER_VERSION);
