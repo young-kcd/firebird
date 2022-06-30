@@ -7248,7 +7248,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 				dpb_parallel_workers < 0)
 			{
 				string str;
-				str.printf("Wrong parallel workers value %i, valid range are from 1 to %i", 
+				str.printf("Wrong parallel workers value %i, valid range are from 1 to %i",
 							dpb_parallel_workers, Config::getMaxParallelWorkers());
 				ERR_post(Arg::Gds(isc_bad_dpb_content) << Arg::Gds(isc_random) << Arg::Str(str));
 			}

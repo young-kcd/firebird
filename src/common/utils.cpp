@@ -558,7 +558,7 @@ bool isGlobalKernelPrefix()
 }
 
 
-// Incapsulates Windows private namespace 
+// Incapsulates Windows private namespace
 class PrivateNamespace
 {
 public:
@@ -648,7 +648,7 @@ private:
 			raiseError("ConvertStringSecurityDescriptorToSecurityDescriptor");
 		}
 
-		Firebird::Cleanup cleanSecDesc( [&sa] { 
+		Firebird::Cleanup cleanSecDesc( [&sa] {
 				LocalFree(sa.lpSecurityDescriptor);
 			});
 

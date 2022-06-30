@@ -177,7 +177,7 @@ static bool set_security_class(thread_db*, Record*, USHORT);
 static void set_system_flag(thread_db*, Record*, USHORT);
 static void verb_post(thread_db*, jrd_tra*, record_param*, Record*);
 
-namespace Jrd 
+namespace Jrd
 {
 
 class SweepTask : public Task
@@ -214,7 +214,7 @@ public:
 		m_lastRelID = att->att_relations->count();
 	};
 
-	virtual ~SweepTask() 
+	virtual ~SweepTask()
 	{
 		for (Item** p = m_items.begin(); p < m_items.end(); p++)
 			delete *p;
@@ -232,7 +232,7 @@ public:
 			m_lastPP(0)
 		{}
 
-		virtual ~Item() 
+		virtual ~Item()
 		{
 			if (!m_ownAttach || !m_attStable)
 				return;
@@ -255,7 +255,7 @@ public:
 			WorkerAttachment::releaseAttachment(&status, m_attStable);
 		}
 
-		SweepTask* getSweepTask() const 
+		SweepTask* getSweepTask() const
 		{
 			return reinterpret_cast<SweepTask*> (m_task);
 		}
@@ -334,12 +334,12 @@ public:
 	}
 
 	int getMaxWorkers()
-	{ 
-		return m_items.getCount(); 
+	{
+		return m_items.getCount();
 	}
 
 private:
-	// item is handled, get next portion of work and update RelInfo 
+	// item is handled, get next portion of work and update RelInfo
 	// also, detect if relation is handled completely
 	// return true if there is some more work to do
 	bool updateRelInfo(Item* item)

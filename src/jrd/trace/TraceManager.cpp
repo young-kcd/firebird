@@ -428,7 +428,7 @@ void TraceManager::event_dsql_execute(Attachment* att, jrd_tra* transaction,
 	TraceConnectionImpl conn(att);
 	TraceTransactionImpl tran(transaction);
 
-	att->att_trace_manager->event_dsql_execute(&conn, transaction ? &tran : NULL, statement, 
+	att->att_trace_manager->event_dsql_execute(&conn, transaction ? &tran : NULL, statement,
 											   started, req_result);
 }
 

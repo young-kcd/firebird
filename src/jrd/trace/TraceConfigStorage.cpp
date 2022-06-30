@@ -259,7 +259,7 @@ void ConfigStorage::checkAudit()
 			}
 			p[len] = 0;
 		}
-		else 
+		else
 		{
 			gds__log("Audit configuration file \"%s\" is empty", configFileName.c_str());
 			return;
@@ -444,7 +444,7 @@ struct SlotByOffset
 	static ULONG generate(const SlotByOffset& i) { return i.offset; }
 };
 
-typedef SortedArray<SlotByOffset, EmptyStorage<SlotByOffset>, ULONG, SlotByOffset> 
+typedef SortedArray<SlotByOffset, EmptyStorage<SlotByOffset>, ULONG, SlotByOffset>
 			SlotsByOffsetArray;
 
 
@@ -633,10 +633,10 @@ bool ConfigStorage::validate()
 ULONG ConfigStorage::getSessionSize(const TraceSession& session)
 {
 	ULONG ret = 1; // tagEnd
-	const ULONG sz = 1 + sizeof(ULONG);		// sizeof tag + sizeof len 
+	const ULONG sz = 1 + sizeof(ULONG);		// sizeof tag + sizeof len
 
 	ULONG len = session.ses_name.length();
-	if (len) 
+	if (len)
 		ret += sz + len;
 
 	if ((len = session.ses_auth.getCount()))
