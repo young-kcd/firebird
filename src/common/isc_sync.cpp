@@ -1659,7 +1659,6 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 					 !SetEndOfFile(file_handle) || !FlushFileBuffers(file_handle))
 			{
 				err = GetLastError();
-				CloseHandle(event_handle);
 				CloseHandle(file_handle);
 
 				if (err == ERROR_USER_MAPPED_FILE)
@@ -1667,10 +1666,14 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 					if (retry_count < 50)	// 0.5 sec
 						goto retry;
 
+					CloseHandle(event_handle);
 					Arg::Gds(isc_instance_conflict).raise();
 				}
 				else
+				{
+					CloseHandle(event_handle);
 					system_call_failed::raise("SetFilePointer", err);
+				}
 			}
 		}
 
