@@ -1234,7 +1234,7 @@ void makeBinShift(DataTypeUtilBase*, const SysFunction* function, dsc* result,
 }
 
 
-void makeBlobAppend(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, 
+void makeBlobAppend(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result,
 	int argsCount, const dsc** args)
 {
 	USHORT ttype = CS_dynamic;
@@ -2256,7 +2256,7 @@ HUGEINT getScale(impure_value* impure)
 }
 
 
-static void appendFromBlob(thread_db* tdbb, jrd_tra* transaction, blb* blob, 
+static void appendFromBlob(thread_db* tdbb, jrd_tra* transaction, blb* blob,
 	const dsc* blobDsc, const dsc* srcDsc)
 {
 	if (!srcDsc->dsc_address)
@@ -2277,7 +2277,7 @@ static void appendFromBlob(thread_db* tdbb, jrd_tra* transaction, blb* blob,
 	Database* dbb = tdbb->getDatabase();
 
 	HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
-	const SLONG buffSize = (srcBlob->getLevel() == 0) ? 
+	const SLONG buffSize = (srcBlob->getLevel() == 0) ?
 		MAX(BUFFER_LARGE, srcBlob->blb_length) : dbb->dbb_page_size - BLP_SIZE;
 
 	UCHAR* buff = buffer.getBuffer(buffSize);
@@ -2290,7 +2290,7 @@ static void appendFromBlob(thread_db* tdbb, jrd_tra* transaction, blb* blob,
 }
 
 
-dsc* evlBlobAppend(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, 
+dsc* evlBlobAppend(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
 	jrd_req* request = tdbb->getRequest();

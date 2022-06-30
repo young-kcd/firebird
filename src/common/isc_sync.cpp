@@ -1495,13 +1495,13 @@ static bool getMappedFileName(void* addr, PathName& mappedName)
 
 			ntLen = strlen(ntDevice);
 
-			if (ntLen <= mapLen && 
-				_memicmp(ntDevice, mapName, ntLen) == 0 &&				
+			if (ntLen <= mapLen &&
+				_memicmp(ntDevice, mapName, ntLen) == 0 &&
 				mapName[ntLen] == '\\')
 			{
 				mappedName.replace(0, ntLen, dosDevice);
 				return true;
-			}				
+			}
 		}
 
 	return false;
@@ -1826,8 +1826,8 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 
 		gds__log("Wrong file for memory mapping:\n"
 				 "\t      expected %s\n"
-				 "\talready mapped %s\n" 
-				 "\tCheck for presence of another Firebird instance with different lock directory", 
+				 "\talready mapped %s\n"
+				 "\tCheck for presence of another Firebird instance with different lock directory",
 				 expanded_filename, mappedName.c_str());
 
 		(Arg::Gds(isc_random) << Arg::Str("Wrong file for memory mapping, see details in firebird.log")).raise();
