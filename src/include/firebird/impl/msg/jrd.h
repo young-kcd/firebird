@@ -662,7 +662,7 @@ FB_IMPL_MSG(JRD, 660, internal_rejected_params, -104, "HY", "000", "Incorrect pa
 FB_IMPL_MSG(JRD, 661, sysf_fp_overflow, -833, "42", "000", "Floating point overflow in built-in function @1")
 FB_IMPL_MSG(JRD, 662, udf_fp_overflow, -901, "39", "000", "Floating point overflow in result from UDF @1")
 FB_IMPL_MSG(JRD, 663, udf_fp_nan, -901, "39", "000", "Invalid floating point value returned by UDF @1")
-FB_IMPL_MSG(JRD, 664, instance_conflict, -902, "42", "000", "Database is probably already opened by another engine instance in another Windows session")
+FB_IMPL_MSG(JRD, 664, instance_conflict, -902, "42", "000", "Shared memory area is probably already created by another engine instance in another Windows session")
 FB_IMPL_MSG(JRD, 665, out_of_temp_space, -901, "HY", "000", "No free space found in temporary directories")
 FB_IMPL_MSG(JRD, 666, eds_expl_tran_ctrl, -901, "42", "000", "Explicit transaction control is not allowed")
 FB_IMPL_MSG(JRD, 667, no_trusted_spb, -902, "28", "000", "Use of TRUSTED switches in spb_command_line is prohibited")
