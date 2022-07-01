@@ -1302,8 +1302,9 @@ USHORT DFW_assign_index_type(thread_db* tdbb, const MetaName& name, SSHORT field
 		return idx_boolean;
 	case dtype_dec64:
 	case dtype_dec128:
-	case dtype_int128:
 		return idx_decimal;
+	case dtype_int128:
+		return tdbb->getDatabase()->getEncodedOdsVersion() >= ODS_13_1 ? idx_bcd : idx_decimal;
 	default:
 		return idx_numeric;
 	}
