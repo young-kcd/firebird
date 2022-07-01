@@ -158,6 +158,7 @@ basic_type:
 - PACKAGE
 - USER (ability to store comment depends upon user management plugin)
 - SECURITY CLASS (not implemented because Borland hid them).
+- [GLOBAL] MAPPING
 
 
 5) Allow setting and dropping default values from table fields.

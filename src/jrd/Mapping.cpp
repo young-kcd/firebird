@@ -1725,10 +1725,11 @@ RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 		Field<Varying> from(mMap, 255);
 		Field<SSHORT> role(mMap);
 		Field<Varying> to(mMap, MAX_SQL_IDENTIFIER_SIZE);
+		Field<ISC_QUAD> desc(mMap);
 
 		curs = att->openCursor(&st, tra, 0,
 			"SELECT RDB$MAP_NAME, RDB$MAP_USING, RDB$MAP_PLUGIN, RDB$MAP_DB, "
-			"	RDB$MAP_FROM_TYPE, RDB$MAP_FROM, RDB$MAP_TO_TYPE, RDB$MAP_TO "
+			"	RDB$MAP_FROM_TYPE, RDB$MAP_FROM, RDB$MAP_TO_TYPE, RDB$MAP_TO, RDB$DESCRIPTION "
 			"FROM RDB$AUTH_MAPPING",
 			3, nullptr, nullptr, mMap.getMetadata(), nullptr, 0);
 		if (st->getState() & IStatus::STATE_ERRORS)
@@ -1796,6 +1797,20 @@ RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 			{
 				putField(tdbb, record,
 						 DumpField(f_sec_map_to, VALUE_STRING, to->len, to->data));
+			}
+
+			if (!desc.null)
+			{
+				RefPtr<IBlob> blb(REF_NO_INCR, att->openBlob(&st, tra, &desc, 0, nullptr));
+				check("IAttachment::openBlob", &st);
+				string buf;
+				const FB_SIZE_T FLD_LIMIT = MAX_COLUMN_SIZE;
+				unsigned length = 0;
+				blb->getSegment(&st, FLD_LIMIT, buf.getBuffer(FLD_LIMIT), &length);
+				check("IBlob::getSegment", &st);
+
+				putField(tdbb, record,
+					DumpField(f_sec_map_comment, VALUE_STRING, length, buf.c_str()));
 			}
 
 			buffer->store(record);
