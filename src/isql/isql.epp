@@ -699,10 +699,10 @@ private:
 	};
 
 	using StatArray = Firebird::SortedArray<
-		StatItem, 
-		Firebird::EmptyStorage<StatItem>, 
-		StatItem, 
-		Firebird::DefaultKeyValue<StatItem>, 
+		StatItem,
+		Firebird::EmptyStorage<StatItem>,
+		StatItem,
+		Firebird::DefaultKeyValue<StatItem>,
 		StatItem>;
 
 	bool m_initialized;		// initial (before) stats loaded OK
@@ -9722,8 +9722,8 @@ static const char* charset_to_string(unsigned charset)
 
 const unsigned char PerTableStats::m_items[] =
 {
-	isc_info_read_seq_count, isc_info_read_idx_count, 
-	isc_info_insert_count, isc_info_update_count, isc_info_delete_count, 
+	isc_info_read_seq_count, isc_info_read_idx_count,
+	isc_info_insert_count, isc_info_update_count, isc_info_delete_count,
 	isc_info_backout_count, isc_info_purge_count, isc_info_expunge_count,
 	isc_info_end
 };
@@ -9854,8 +9854,8 @@ void PerTableStats::printStats(Firebird::IAttachment* att)
 
 			if (Firebird::string* relName = m_relNames.get(relId))
 			{
-				IcuUtil::pad(s.getBuffer(lenTable * 4 + 1), isqlGlob.att_charset, 
-							 relName->length(), relName->c_str(), 
+				IcuUtil::pad(s.getBuffer(lenTable * 4 + 1), isqlGlob.att_charset,
+							 relName->length(), relName->c_str(),
 							 lenTable, false);
 				s.recalculate_length();
 				lenName = s.length();
@@ -9933,9 +9933,9 @@ unsigned PerTableStats::loadRelNames(Firebird::IAttachment* att)
 	sql.printf("SELECT RDB$RELATION_ID, RDB$RELATION_NAME FROM RDB$RELATIONS WHERE RDB$RELATION_ID IN (%s)",
 				sIds.c_str());
 
-	Firebird::IResultSet* rs = att->openCursor(fbStatus, fbTrans, 
-		sql.length(), sql.c_str(), SQL_DIALECT_CURRENT, 
-		NULL, NULL, NULL, NULL, 
+	Firebird::IResultSet* rs = att->openCursor(fbStatus, fbTrans,
+		sql.length(), sql.c_str(), SQL_DIALECT_CURRENT,
+		NULL, NULL, NULL, NULL,
 		Firebird::IStatement::PREPARE_PREFETCH_METADATA);
 
 	Firebird::IMessageMetadata* outMeta = rs->getMetadata(fbStatus);
