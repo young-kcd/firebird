@@ -6568,8 +6568,10 @@ static processing_state help(const TEXT* what)
 		HLP_SETECHO,			//	SET ECHO				-- toggle command echo on/off
 		HLP_SETEXPLAIN,			//	SET EXPLAIN				-- toggle display of query plan in the explained form
 		HLP_SETHEADING,			//  SET HEADING 	        -- toggle column titles display on/off
+		HLP_SETKEEPTRAN,		//	SET KEEP_TRAN_params	-- toggle to keep or not to keep text of following successful SET TRANSACTION statement
 		HLP_SETLIST,			//	SET LIST				-- toggle column or table display format
 		HLP_SETNAMES,			//	SET NAMES <csname>		-- set name of runtime character set
+		HLP_SETPERTAB,			//	SET PER_TABle_stats		-- toggle display of detailed per-table statistics
 		HLP_SETPLAN,			//	SET PLAN				-- toggle display of query access plan
 		HLP_SETPLANONLY,		//	SET PLANONLY			-- toggle display of query plan without executing
 		HLP_SETSQLDIALECT,		//	SET SQL DIALECT <n>		-- set sql dialect to <n>
