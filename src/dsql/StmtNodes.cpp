@@ -2167,7 +2167,7 @@ DmlNode* DeclareVariableNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerS
 	{
 		CompilerScratch::Dependency dependency(obj_collation);
 		dependency.number = INTL_TEXT_TYPE(node->varDesc);
-		csb->csb_dependencies.push(dependency);
+		csb->addDependency(dependency);
 	}
 
 	return node;
@@ -2797,7 +2797,7 @@ DmlNode* ErrorHandlerNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 				{
 					CompilerScratch::Dependency dependency(obj_exception);
 					dependency.number = item.code;
-					csb->csb_dependencies.push(dependency);
+					csb->addDependency(dependency);
 				}
 
 				break;
@@ -2990,7 +2990,7 @@ DmlNode* ExecProcedureNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 	{
 		CompilerScratch::Dependency dependency(obj_procedure);
 		dependency.procedure = procedure;
-		csb->csb_dependencies.push(dependency);
+		csb->addDependency(dependency);
 	}
 
 	return node;
@@ -4604,7 +4604,7 @@ DmlNode* ExceptionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 					{
 						CompilerScratch::Dependency dependency(obj_exception);
 						dependency.number = item->code;
-						csb->csb_dependencies.push(dependency);
+						csb->addDependency(dependency);
 					}
 				}
 				break;

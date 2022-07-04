@@ -891,10 +891,10 @@ template <typename T> static void makeSubRoutines(thread_db* tdbb, Statement* st
 		subStatement->parentStatement = statement;
 		subRoutine->setStatement(subStatement);
 
-		// Move dependencies and permissions from the sub routine to the parent.
+		// Dependencies should be added directly to the main routine while parsing.
+		fb_assert(subCsb->csb_dependencies.isEmpty());
 
-		for (auto& dependency : subCsb->csb_dependencies)
-			csb->csb_dependencies.push(dependency);
+		// Move permissions from the sub routine to the parent.
 
 		for (auto& access : subStatement->externalList)
 		{

@@ -473,7 +473,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, dsc* desc, ItemInfo* item
 			{
 				CompilerScratch::Dependency dependency(obj_field);
 				dependency.name = name;
-				csb->csb_dependencies.push(dependency);
+				csb->addDependency(dependency);
 			}
 
 			break;
@@ -539,7 +539,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, dsc* desc, ItemInfo* item
 				CompilerScratch::Dependency dependency(obj_relation);
 				dependency.relation = MET_lookup_relation(tdbb, *relationName);
 				dependency.subName = fieldName;
-				csb->csb_dependencies.push(dependency);
+				csb->addDependency(dependency);
 			}
 
 			break;
@@ -555,7 +555,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, dsc* desc, ItemInfo* item
 	{
 		CompilerScratch::Dependency dependency(obj_collation);
 		dependency.number = INTL_TEXT_TYPE(*desc);
-		csb->csb_dependencies.push(dependency);
+		csb->addDependency(dependency);
 	}
 
 	if (itemInfo)
@@ -907,7 +907,7 @@ void PAR_dependency(thread_db* tdbb, CompilerScratch* csb, StreamType stream, SS
 	else if (id >= 0)
 		dependency.subNumber = id;
 
-	csb->csb_dependencies.push(dependency);
+	csb->addDependency(dependency);
 }
 
 
@@ -1034,7 +1034,7 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 				{
 					CompilerScratch::Dependency dependency(obj_index);
 					dependency.name = &item.indexName;
-					csb->csb_dependencies.push(dependency);
+					csb->addDependency(dependency);
 	            }
 
 				if (csb->csb_blr_reader.peekByte() != blr_indices)
@@ -1100,7 +1100,7 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 					{
 						CompilerScratch::Dependency dependency(obj_index);
 						dependency.name = &item.indexName;
-						csb->csb_dependencies.push(dependency);
+						csb->addDependency(dependency);
 		            }
 				}
 			}

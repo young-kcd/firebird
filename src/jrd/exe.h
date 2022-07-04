@@ -488,6 +488,12 @@ public:
 		return csb_n_stream++;
 	}
 
+	void addDependency(const Dependency& dependency)
+	{
+		auto& dependencies = mainCsb ? mainCsb->csb_dependencies : csb_dependencies;
+		dependencies.add(dependency);
+	}
+
 #ifdef CMP_DEBUG
 	void dump(const char* format, ...)
 	{

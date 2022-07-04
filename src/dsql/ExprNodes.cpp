@@ -3382,7 +3382,7 @@ DmlNode* CastNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb
 	{
 		CompilerScratch::Dependency dependency(obj_collation);
 		dependency.number = INTL_TEXT_TYPE(node->castDesc);
-		csb->csb_dependencies.push(dependency);
+		csb->addDependency(dependency);
 	}
 
 	return node;
@@ -4838,7 +4838,7 @@ DmlNode* DefaultNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 		CompilerScratch::Dependency dependency(obj_relation);
 		dependency.relation = MET_lookup_relation(tdbb, relationName);
 		dependency.subName = FB_NEW_POOL(pool) MetaName(fieldName);
-		csb->csb_dependencies.push(dependency);
+		csb->addDependency(dependency);
 	}
 
 	jrd_fld* fld = NULL;
@@ -6912,7 +6912,7 @@ DmlNode* GenIdNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 	{
 		CompilerScratch::Dependency dependency(obj_generator);
 		dependency.number = node->generator.id;
-		csb->csb_dependencies.push(dependency);
+		csb->addDependency(dependency);
 	}
 
 	return node;
@@ -12802,7 +12802,7 @@ DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	{
 		CompilerScratch::Dependency dependency(obj_udf);
 		dependency.function = function;
-		csb->csb_dependencies.push(dependency);
+		csb->addDependency(dependency);
 	}
 
 	return node;
