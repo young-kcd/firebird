@@ -464,11 +464,15 @@ void TraceManager::event_attach(ITraceDatabaseConnection* connection,
 {
 	EXECUTE_HOOKS(trace_attach,
 		(connection, create_db, att_result));
+
+	trace_needs &= ~(FB_CONST64(1) << ITraceFactory::TRACE_EVENT_ATTACH);
 }
 
 void TraceManager::event_detach(ITraceDatabaseConnection* connection, bool drop_db)
 {
 	EXECUTE_HOOKS(trace_detach, (connection, drop_db));
+
+	trace_needs &= ~(FB_CONST64(1) << ITraceFactory::TRACE_EVENT_DETACH);
 }
 
 void TraceManager::event_transaction_start(ITraceDatabaseConnection* connection,

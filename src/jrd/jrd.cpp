@@ -8631,27 +8631,23 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options, const char
 static void unwindAttach(thread_db* tdbb, const char* filename, const Exception& ex,
 	FbStatusVector* userStatus, unsigned flags, const DatabaseOptions& options, Mapping& mapping, ICryptKeyCallback* callback)
 {
-	bool attTraced = false;
 	try
 	{
-		auto att = tdbb->getAttachment();
-		if (att && att->att_trace_manager && att->att_trace_manager->isActive())
+		const auto att = tdbb->getAttachment();
+		TraceManager* traceManager = att ? att->att_trace_manager : nullptr;
+		if (att && traceManager && traceManager->isActive())
 		{
-			TraceManager* traceManager = att->att_trace_manager;
 			TraceConnectionImpl conn(att);
 			TraceStatusVectorImpl traceStatus(userStatus, TraceStatusVectorImpl::TS_ERRORS);
 
 			if (traceManager->needs(ITraceFactory::TRACE_EVENT_ATTACH))
 				traceManager->event_attach(&conn, flags & UNWIND_CREATE, ITracePlugin::RESULT_FAILED);
-
-			if (traceManager->needs(ITraceFactory::TRACE_EVENT_ERROR))
-			{
-				const char* func = flags & UNWIND_CREATE ? "JProvider::createDatabase" : "JProvider::attachDatabase";
-				traceManager->event_error(&conn, &traceStatus, func);
-			}
-
-			attTraced = true;
 		}
+		else
+			trace_failed_attach(filename, options, flags & UNWIND_CREATE, userStatus, callback);
+
+		const char* func = flags & UNWIND_CREATE ? "JProvider::createDatabase" : "JProvider::attachDatabase";
+		transliterateException(tdbb, ex, userStatus, func);
 	}
 	catch (const Exception&)
 	{
@@ -8686,28 +8682,30 @@ static void unwindAttach(thread_db* tdbb, const char* filename, const Exception&
 				sAtt->manualLock(flags);
 				if (sAtt->getHandle())
 				{
+					TraceManager* traceManager = attachment->att_trace_manager;
+					TraceConnectionImpl conn(attachment);
+
+					if (traceManager->needs(ITraceFactory::TRACE_EVENT_DETACH))
+						traceManager->event_detach(&conn, false);
+
 					attachment->att_flags |= flags;
 					release_attachment(tdbb, attachment);
 				}
 				else
 				{
+					tdbb->setAttachment(nullptr);
 					sAtt->manualUnlock(flags);
 				}
 			}
 
 			JRD_shutdown_database(dbb, SHUT_DBB_RELEASE_POOLS |
 				(flags & UNWIND_INTERNAL ? SHUT_DBB_OVERWRITE_CHECK : 0));
-
-			if (!attTraced)
-				trace_failed_attach(filename, options, flags & UNWIND_CREATE, userStatus, callback);
 		}
 	}
 	catch (const Exception&)
 	{
 		// no-op
 	}
-
-	transliterateException(tdbb, ex, userStatus, NULL);
 }
 
 
