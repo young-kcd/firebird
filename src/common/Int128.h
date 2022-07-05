@@ -285,7 +285,7 @@ public:
 		return rc;
 	}
 
-	void divMod(unsigned int divisor, unsigned int* remainder)
+	void divMod(int divisor, int* remainder)
 	{
 		absl::int128 d = divisor;
 		*remainder = int(v % d);
@@ -549,7 +549,7 @@ public:
 		return rc;
 	}
 
-	void divMod(unsigned int divisor, unsigned int* remainder)
+	void divMod(int divisor, int* remainder)
 	{
 		ttmath::sint rem;
 		v.DivInt(divisor, &rem);
@@ -566,7 +566,7 @@ public:
 	}
 
 	static const unsigned BIAS = 128;
-	static const unsigned PMAX = 38;
+	static const unsigned PMAX = 39;
 
 	ULONG makeIndexKey(vary* buf, int scale);
 
