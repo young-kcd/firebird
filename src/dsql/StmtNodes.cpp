@@ -1775,19 +1775,6 @@ void DeclareSubFuncNode::genParameters(DsqlCompilerScratch* dsqlScratch,
 	}
 }
 
-DeclareSubFuncNode* DeclareSubFuncNode::pass1(thread_db* tdbb, CompilerScratch* /*csb*/)
-{
-	ContextPoolHolder context(tdbb, &subCsb->csb_pool);
-	PAR_blr(tdbb, NULL, blrStart, blrLength, NULL, &subCsb, NULL, false, 0);
-
-	return this;
-}
-
-DeclareSubFuncNode* DeclareSubFuncNode::pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
-{
-	return this;
-}
-
 const StmtNode* DeclareSubFuncNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
 	// Nothing to execute. This is the declaration node.
@@ -2116,19 +2103,6 @@ void DeclareSubProcNode::genParameters(DsqlCompilerScratch* dsqlScratch,
 	}
 }
 
-DeclareSubProcNode* DeclareSubProcNode::pass1(thread_db* tdbb, CompilerScratch* /*csb*/)
-{
-	ContextPoolHolder context(tdbb, &subCsb->csb_pool);
-	PAR_blr(tdbb, NULL, blrStart, blrLength, NULL, &subCsb, NULL, false, 0);
-
-	return this;
-}
-
-DeclareSubProcNode* DeclareSubProcNode::pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
-{
-	return this;
-}
-
 const StmtNode* DeclareSubProcNode::execute(thread_db* /*tdbb*/, Request* request, ExeState* /*exeState*/) const
 {
 	// Nothing to execute. This is the declaration node.
@@ -2163,7 +2137,7 @@ DmlNode* DeclareVariableNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerS
 		csb->csb_map_item_info.put(Item(Item::TYPE_VARIABLE, node->varId), itemInfo);
 	}
 
-	if ((csb->csb_g_flags & csb_get_dependencies) && itemInfo.explicitCollation)
+	if (csb->collectingDependencies() && itemInfo.explicitCollation)
 	{
 		CompilerScratch::Dependency dependency(obj_collation);
 		dependency.number = INTL_TEXT_TYPE(node->varDesc);
@@ -2793,7 +2767,7 @@ DmlNode* ErrorHandlerNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 				if (!MET_load_exception(tdbb, item))
 					PAR_error(csb, Arg::Gds(isc_xcpnotdef) << item.name);
 
-				if (csb->csb_g_flags & csb_get_dependencies)
+				if (csb->collectingDependencies())
 				{
 					CompilerScratch::Dependency dependency(obj_exception);
 					dependency.number = item.code;
@@ -2986,7 +2960,7 @@ DmlNode* ExecProcedureNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 	PAR_procedure_parms(tdbb, csb, procedure, node->outputMessage.getAddress(),
 		node->outputSources.getAddress(), node->outputTargets.getAddress(), false);
 
-	if ((csb->csb_g_flags & csb_get_dependencies) && !procedure->isSubRoutine())
+	if (csb->collectingDependencies() && !procedure->isSubRoutine())
 	{
 		CompilerScratch::Dependency dependency(obj_procedure);
 		dependency.procedure = procedure;
@@ -4253,7 +4227,7 @@ InitVariableNode* InitVariableNode::pass1(thread_db* /*tdbb*/, CompilerScratch* 
 	vec<DeclareVariableNode*>* vector = csb->csb_variables;
 
 	if (!vector || varId >= vector->count() || !(varDecl = (*vector)[varId]))
-		PAR_error(csb, Arg::Gds(isc_badvarnum));
+		status_exception::raise(Arg::Gds(isc_badvarnum));
 
 	return this;
 }
@@ -4600,7 +4574,7 @@ DmlNode* ExceptionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 					if (!MET_load_exception(tdbb, *item))
 						PAR_error(csb, Arg::Gds(isc_xcpnotdef) << item->name);
 
-					if (csb->csb_g_flags & csb_get_dependencies)
+					if (csb->collectingDependencies())
 					{
 						CompilerScratch::Dependency dependency(obj_exception);
 						dependency.number = item->code;
@@ -7190,30 +7164,7 @@ DmlNode* OuterMapNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 			{
 				const USHORT outerNumber = blrReader.getWord();
 				const USHORT innerNumber = blrReader.getWord();
-
 				csb->outerMessagesMap.put(innerNumber, outerNumber);
-
-				const auto outerMessage = CMP_csb_element(csb->mainCsb, outerNumber)->csb_message;
-				if (!outerMessage)
-				{
-					fb_assert(false);
-					PAR_error(csb, Arg::Gds(isc_random) <<
-						"Invalid blr_outer_map_message: outer message does not exist");
-				}
-
-				const auto tail = CMP_csb_element(csb, innerNumber);
-				if (tail->csb_message)
-				{
-					fb_assert(false);
-					PAR_error(csb, Arg::Gds(isc_random) <<
-						"Invalid blr_outer_map_message: inner message already exist");
-				}
-
-				tail->csb_message = outerMessage;
-
-				if (innerNumber > csb->csb_msg_number)
-					csb->csb_msg_number = innerNumber;
-
 				break;
 			}
 
@@ -7221,29 +7172,8 @@ DmlNode* OuterMapNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 			{
 				const USHORT outerNumber = blrReader.getWord();
 				const USHORT innerNumber = blrReader.getWord();
-
 				csb->mainCsb->csb_variables_used_in_subroutines.add(outerNumber);
 				csb->outerVarsMap.put(innerNumber, outerNumber);
-
-				auto& outerVariables = *csb->mainCsb->csb_variables;
-				if (outerNumber >= outerVariables.count() || !outerVariables[outerNumber])
-				{
-					fb_assert(false);
-					PAR_error(csb, Arg::Gds(isc_random) <<
-						"Invalid blr_outer_map_variable: outer variable does not exist");
-				}
-
-				auto& innerVariables = *(csb->csb_variables = vec<DeclareVariableNode*>::newVector(
-					*tdbb->getDefaultPool(), csb->csb_variables, innerNumber + 1));
-
-				if (innerVariables[innerNumber])
-				{
-					fb_assert(false);
-					PAR_error(csb, Arg::Gds(isc_random) <<
-						"Invalid blr_outer_map_variable: inner variable already exist");
-				}
-
-				innerVariables[innerNumber] = outerVariables[outerNumber];
 				break;
 			}
 
@@ -7253,6 +7183,68 @@ DmlNode* OuterMapNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 	}
 
 	return node;
+}
+
+OuterMapNode* OuterMapNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	fb_assert(csb->mainCsb);
+	if (!csb->mainCsb)
+		status_exception::raise(Arg::Gds(isc_random) << "Invalid blr_outer_map. Must be inside subroutine.");
+
+	for (const auto& pair : csb->outerMessagesMap)
+	{
+		const auto innerNumber = pair.first;
+		const auto outerNumber = pair.second;
+
+		const auto outerMessage = CMP_csb_element(csb->mainCsb, outerNumber)->csb_message;
+		if (!outerMessage)
+		{
+			fb_assert(false);
+			status_exception::raise(Arg::Gds(isc_random) <<
+				"Invalid blr_outer_map_message: outer message does not exist");
+		}
+
+		const auto tail = CMP_csb_element(csb, innerNumber);
+		if (tail->csb_message)
+		{
+			fb_assert(false);
+			status_exception::raise(Arg::Gds(isc_random) <<
+				"Invalid blr_outer_map_message: inner message already exist");
+		}
+
+		tail->csb_message = outerMessage;
+
+		if (innerNumber > csb->csb_msg_number)
+			csb->csb_msg_number = innerNumber;
+	}
+
+	for (const auto& pair : csb->outerVarsMap)
+	{
+		const auto innerNumber = pair.first;
+		const auto outerNumber = pair.second;
+
+		auto& outerVariables = *csb->mainCsb->csb_variables;
+		if (outerNumber >= outerVariables.count() || !outerVariables[outerNumber])
+		{
+			fb_assert(false);
+			status_exception::raise(Arg::Gds(isc_random) <<
+				"Invalid blr_outer_map_variable: outer variable does not exist");
+		}
+
+		auto& innerVariables = *(csb->csb_variables = vec<DeclareVariableNode*>::newVector(
+			*tdbb->getDefaultPool(), csb->csb_variables, innerNumber + 1));
+
+		if (innerVariables[innerNumber])
+		{
+			fb_assert(false);
+			status_exception::raise(Arg::Gds(isc_random) <<
+				"Invalid blr_outer_map_variable: inner variable already exist");
+		}
+
+		innerVariables[innerNumber] = outerVariables[outerNumber];
+	}
+
+	return this;
 }
 
 const StmtNode* OuterMapNode::execute(thread_db* tdbb, Request* request, ExeState* exeState) const

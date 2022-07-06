@@ -283,10 +283,12 @@ namespace
 			for (USHORT i = 0; i < (fromMessage->format->fmt_count / 2) * 2; i += 2)
 			{
 				ParameterNode* flag = FB_NEW_POOL(pool) ParameterNode(pool);
+				flag->messageNumber = fromMessage->messageNumber;
 				flag->message = fromMessage;
 				flag->argNumber = i + 1;
 
 				ParameterNode* param = FB_NEW_POOL(pool) ParameterNode(pool);
+				param->messageNumber = fromMessage->messageNumber;
 				param->message = fromMessage;
 				param->argNumber = i;
 				param->argFlag = flag;
@@ -296,10 +298,12 @@ namespace
 				statements.add(assign);
 
 				flag = FB_NEW_POOL(pool) ParameterNode(pool);
+				flag->messageNumber = toMessage->messageNumber;
 				flag->message = toMessage;
 				flag->argNumber = i + 1;
 
 				param = FB_NEW_POOL(pool) ParameterNode(pool);
+				param->messageNumber = toMessage->messageNumber;
 				param->message = toMessage;
 				param->argNumber = i;
 				param->argFlag = flag;
