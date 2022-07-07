@@ -286,14 +286,19 @@ public:
 	NestConst<ValueExprNode>	prm_default_value;
 	bool		prm_nullable;
 	prm_mech_t	prm_mechanism;
-	MetaName prm_name;			// asciiz name
+	MetaName prm_name;
 	MetaName prm_field_source;
+	MetaName prm_type_of_column;
+	MetaName prm_type_of_table;
+	Nullable<USHORT> prm_text_type;
 	FUN_T		prm_fun_mechanism;
 
 public:
 	explicit Parameter(MemoryPool& p)
 		: prm_name(p),
-		  prm_field_source(p)
+		  prm_field_source(p),
+		  prm_type_of_column(p),
+		  prm_type_of_table(p)
 	{
 	}
 };
