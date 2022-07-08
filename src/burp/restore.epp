@@ -1273,7 +1273,7 @@ SLONG get_compressed(BurpGlobals* tdgbl, UCHAR* buffer, SLONG length)
 				count = -length;
 			}
 			const UCHAR c = *p = get(tdgbl);
-			*p++;
+			++p;
 			length -= -count;
 		}
 	}
