@@ -9645,7 +9645,6 @@ void ParameterNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* 
 ParameterNode* ParameterNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	ParameterNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) ParameterNode(*tdbb->getDefaultPool());
-	node->messageNumber = messageNumber;
 	node->argNumber = argNumber;
 
 	// dimitr:	IMPORTANT!!!
@@ -9666,6 +9665,9 @@ ParameterNode* ParameterNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	else
 		node->message = message;
 
+	if (message)
+		node->messageNumber = message->messageNumber;
+
 	node->argFlag = copier.copy(tdbb, argFlag);
 	node->outerDecl = outerDecl;
 
@@ -9674,10 +9676,14 @@ ParameterNode* ParameterNode::copy(thread_db* tdbb, NodeCopier& copier) const
 
 ParameterNode* ParameterNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	if (messageNumber >= csb->csb_rpt.getCount() || !(message = csb->csb_rpt[messageNumber].csb_message))
-		status_exception::raise(Arg::Gds(isc_badmsgnum));
+	// If message is already defined (for example from ParameterNode::copy), we should not do anything here.
+	if (!message)
+	{
+		if (messageNumber >= csb->csb_rpt.getCount() || !(message = csb->csb_rpt[messageNumber].csb_message))
+			status_exception::raise(Arg::Gds(isc_badmsgnum));
 
-	outerDecl = csb->outerMessagesMap.exist(messageNumber);
+		outerDecl = csb->outerMessagesMap.exist(messageNumber);
+	}
 
 	const auto format = message->format;
 
