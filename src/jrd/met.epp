@@ -4045,6 +4045,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 					field->fld_default_value = NULL;
 					field->fld_validation = NULL;
 					field->fld_not_null = NULL;
+					field->fld_generator_name = NULL;
 				}
 
 				array = NULL;
