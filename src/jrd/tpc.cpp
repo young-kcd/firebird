@@ -47,12 +47,15 @@ void TipCache::MemoryInitializer::mutexBug(int osErrorCode, const char* text)
 	fb_utils::logAndDie(msg.c_str());
 }
 
-bool TipCache::GlobalTpcInitializer::initialize(Firebird::SharedMemoryBase* sm, bool initFlag)
+bool TipCache::GlobalTpcInitializer::initialize(SharedMemoryBase* sm, bool initFlag)
 {
 	GlobalTpcHeader* header = static_cast<GlobalTpcHeader*>(sm->sh_mem_header);
 
 	if (!initFlag)
 	{
+		if (!checkHeader(header, false))
+			return false;
+
 		m_cache->initTransactionsPerBlock(header->tpc_block_size);
 		m_cache->mapInventoryPages(header);
 		return true;
@@ -62,7 +65,7 @@ bool TipCache::GlobalTpcInitializer::initialize(Firebird::SharedMemoryBase* sm, 
 	Database* dbb = tdbb->getDatabase();
 
 	// Initialize the shared data header
-	header->init(SharedMemoryBase::SRAM_TPC_HEADER, TPC_VERSION);
+	initHeader(header);
 
 	header->latest_commit_number.store(CN_PREHISTORIC, std::memory_order_relaxed);
 	header->latest_statement_id.store(0, std::memory_order_relaxed);
@@ -74,7 +77,7 @@ bool TipCache::GlobalTpcInitializer::initialize(Firebird::SharedMemoryBase* sm, 
 	return true;
 }
 
-bool TipCache::SnapshotsInitializer::initialize(Firebird::SharedMemoryBase* sm, bool initFlag)
+bool TipCache::SnapshotsInitializer::initialize(SharedMemoryBase* sm, bool initFlag)
 {
 	if (!initFlag)
 		return true;
@@ -82,7 +85,7 @@ bool TipCache::SnapshotsInitializer::initialize(Firebird::SharedMemoryBase* sm, 
 	SnapshotList* header = static_cast<SnapshotList*>(sm->sh_mem_header);
 
 	// Initialize the shared data header
-	header->init(SharedMemoryBase::SRAM_TPC_SNAPSHOTS, TPC_VERSION);
+	initHeader(header);
 
 	header->slots_used.store(0, std::memory_order_relaxed);
 	header->min_free_slot = 0;
@@ -92,7 +95,7 @@ bool TipCache::SnapshotsInitializer::initialize(Firebird::SharedMemoryBase* sm, 
 	return true;
 }
 
-bool TipCache::MemBlockInitializer::initialize(Firebird::SharedMemoryBase* sm, bool initFlag)
+bool TipCache::MemBlockInitializer::initialize(SharedMemoryBase* sm, bool initFlag)
 {
 	if (!initFlag)
 		return true;
@@ -100,7 +103,7 @@ bool TipCache::MemBlockInitializer::initialize(Firebird::SharedMemoryBase* sm, b
 	TransactionStatusBlock* header = static_cast<TransactionStatusBlock*>(sm->sh_mem_header);
 
 	// Initialize the shared data header
-	header->init(SharedMemoryBase::SRAM_TPC_BLOCK, TPC_VERSION);
+	initHeader(header);
 
 	memset(header->data, 0, sm->sh_mem_length_mapped - offsetof(TransactionStatusBlock, data[0]));
 
@@ -219,6 +222,9 @@ void TipCache::initializeTpc(thread_db *tdbb)
 		fileName.printf(TPC_HDR_FILE, dbb->getUniqueFileId().c_str());
 		m_tpcHeader = FB_NEW_POOL(*dbb->dbb_permanent) SharedMemory<GlobalTpcHeader>(
 			fileName.c_str(), sizeof(GlobalTpcHeader), &globalTpcInitializer);
+
+		const auto* header = m_tpcHeader->getHeader();
+		globalTpcInitializer.checkHeader(header);
 	}
 	catch (const Exception& ex)
 	{
@@ -229,13 +235,14 @@ void TipCache::initializeTpc(thread_db *tdbb)
 		throw;
 	}
 
-	fb_assert(m_tpcHeader->getHeader()->mhb_version == TPC_VERSION);
-
 	try
 	{
 		fileName.printf(SNAPSHOTS_FILE, dbb->getUniqueFileId().c_str());
 		m_snapshots = FB_NEW_POOL(*dbb->dbb_permanent) SharedMemory<SnapshotList>(
 			fileName.c_str(), dbb->dbb_config->getSnapshotsMemSize(), &snapshotsInitializer);
+
+		const auto* header = m_snapshots->getHeader();
+		snapshotsInitializer.checkHeader(header);
 	}
 	catch (const Exception& ex)
 	{
@@ -245,8 +252,6 @@ void TipCache::initializeTpc(thread_db *tdbb)
 		finalizeTpc(tdbb);
 		throw;
 	}
-
-	fb_assert(m_snapshots->getHeader()->mhb_version == TPC_VERSION);
 
 	LCK_release(tdbb, &lock);
 }
@@ -292,7 +297,7 @@ void TipCache::loadInventoryPages(thread_db* tdbb, GlobalTpcHeader* header)
 	TraNumber base = hdr_oldest_transaction & ~TRA_MASK;
 
 	const FB_SIZE_T buffer_length = (hdr_next_transaction + 1 - base + TRA_MASK) / 4;
-	Firebird::Array<UCHAR> transactions(buffer_length);
+	Array<UCHAR> transactions(buffer_length);
 
 	UCHAR* buffer = transactions.begin();
 	TRA_get_inventory(tdbb, buffer, base, hdr_next_transaction);
@@ -352,13 +357,16 @@ TipCache::StatusBlockData::StatusBlockData(thread_db* tdbb, TipCache* tipCache, 
 
 	try
 	{
-		memory = FB_NEW_POOL(*dbb->dbb_permanent) Firebird::SharedMemory<TransactionStatusBlock>(
+		memory = FB_NEW_POOL(*dbb->dbb_permanent) SharedMemory<TransactionStatusBlock>(
 			fileName.c_str(), blockSize,
 			&cache->memBlockInitializer, true);
+
+		const auto* header = memory->getHeader();
+		cache->memBlockInitializer.checkHeader(header);
 	}
 	catch (const Exception& ex)
 	{
-		iscLogException("TPC: Cannot initialize the shared memory region (header)", ex);
+		iscLogException("TPC: Cannot initialize the shared memory region (transactions status block)", ex);
 		LCK_release(tdbb, &existenceLock);
 		throw;
 	}
@@ -667,7 +675,7 @@ void TipCache::releaseSharedMemory(thread_db* tdbb, TraNumber oldest_old, TraNum
 	// We scan for blocks to clean up in descending order, but delete them in
 	// ascending order to ensure for robust operation.
 	string fileName;
-	Firebird::HalfStaticArray<TpcBlockNumber, 16> blocksToCleanup;
+	HalfStaticArray<TpcBlockNumber, 16> blocksToCleanup;
 
 	for (TpcBlockNumber cleanupCounter = lastInterestingBlockNumber - SAFETY_GAP_BLOCKS;
 		cleanupCounter; cleanupCounter--)
@@ -932,7 +940,7 @@ void TipCache::updateActiveSnapshots(thread_db* tdbb, ActiveSnapshots* activeSna
 
 		snapshots = m_snapshots->getHeader();
 
-		Firebird::GenericMap<Pair<NonPooled<AttNumber, bool> > > att_states;
+		GenericMap<Pair<NonPooled<AttNumber, bool> > > att_states;
 
 		// We modify snapshots list only while holding a mutex
 		SharedMutexGuard guard(m_snapshots, false);
