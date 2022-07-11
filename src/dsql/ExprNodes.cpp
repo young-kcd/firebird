@@ -9665,9 +9665,7 @@ ParameterNode* ParameterNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	else
 		node->message = message;
 
-	if (message)
-		node->messageNumber = message->messageNumber;
-
+	node->messageNumber = messageNumber;
 	node->argFlag = copier.copy(tdbb, argFlag);
 	node->outerDecl = outerDecl;
 
