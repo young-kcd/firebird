@@ -116,7 +116,7 @@ private:
 
 	USHORT getType() const override { return Firebird::SharedMemoryBase::SRAM_TRACE_CONFIG; }
 	USHORT getVersion() const override { return TraceCSHeader::TRACE_STORAGE_VERSION; }
-	const char* getName() const override { return "ConfigStorage"; }
+	const char* getName() const override { return "TraceConfigStorage"; }
 
 	void checkAudit();
 
