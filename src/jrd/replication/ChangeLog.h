@@ -219,9 +219,9 @@ namespace Replication
 		bool initialize(Firebird::SharedMemoryBase* shmem, bool init) override;
 		void mutexBug(int osErrorCode, const char* text) override;
 
-		virtual USHORT getType() const override { return Firebird::SharedMemoryBase::SRAM_CHANGELOG_STATE; }
-		virtual USHORT getVersion() const override { return STATE_VERSION; };
-		virtual const char* getName() const override { return "ChangeLog"; }
+		USHORT getType() const override { return Firebird::SharedMemoryBase::SRAM_CHANGELOG_STATE; }
+		USHORT getVersion() const override { return STATE_VERSION; };
+		const char* getName() const override { return "ChangeLog"; }
 
 		bool validateSegment(const Segment* segment)
 		{

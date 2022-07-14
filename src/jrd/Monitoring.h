@@ -322,9 +322,9 @@ public:
 	bool initialize(Firebird::SharedMemoryBase*, bool) override;
 	void mutexBug(int osErrorCode, const char* text) override;
 
-	virtual USHORT getType() const override { return Firebird::SharedMemoryBase::SRAM_DATABASE_SNAPSHOT; }
-	virtual USHORT getVersion() const override { return MONITOR_VERSION; }
-	virtual const char* getName() const override { return "MonitoringData"; }
+	USHORT getType() const override { return Firebird::SharedMemoryBase::SRAM_DATABASE_SNAPSHOT; }
+	USHORT getVersion() const override { return MONITOR_VERSION; }
+	const char* getName() const override { return "MonitoringData"; }
 
 	void initSharedFile();
 
