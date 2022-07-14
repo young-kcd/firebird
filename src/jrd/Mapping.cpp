@@ -784,25 +784,12 @@ public:
 		}
 		catch (const Exception& ex)
 		{
-			StaticStatusVector s;
-			ex.stuffException(s);
 			iscLogException("MappingIpc: Cannot initialize the shared memory region", ex);
 			throw;
 		}
 
 		MappingHeader* sMem = tempSharedMemory->getHeader();
-
-		if (sMem->mhb_type != SharedMemoryBase::SRAM_MAPPING_RESET ||
-			sMem->mhb_header_version != MemoryHeader::HEADER_VERSION ||
-			sMem->mhb_version != MAPPING_VERSION)
-		{
-			string err;
-			err.printf("MappingIpc: inconsistent shared memory type/version; found %d/%d:%d, expected %d/%d:%d",
-				sMem->mhb_type, sMem->mhb_header_version, sMem->mhb_version,
-				SharedMemoryBase::SRAM_MAPPING_RESET, MemoryHeader::HEADER_VERSION, MAPPING_VERSION);
-
-			(Arg::Gds(isc_random) << Arg::Str(err)).raise();
-		}
+		checkHeader(sMem);
 
 		Guard gShared(tempSharedMemory);
 
@@ -906,14 +893,14 @@ private:
 	}
 
 	// implement pure virtual functions
-	bool initialize(SharedMemoryBase* sm, bool initFlag)
+	bool initialize(SharedMemoryBase* sm, bool initFlag) override
 	{
 		if (initFlag)
 		{
 			MappingHeader* header = reinterpret_cast<MappingHeader*>(sm->sh_mem_header);
 
 			// Initialize the shared data header
-			header->init(SharedMemoryBase::SRAM_MAPPING_RESET, MAPPING_VERSION);
+			initHeader(header);
 
 			header->processes = 0;
 			header->currentProcess = -1;
@@ -922,11 +909,15 @@ private:
 		return true;
 	}
 
-	void mutexBug(int osErrorCode, const char* text)
+	void mutexBug(int osErrorCode, const char* text) override
 	{
 		iscLogStatus("Error when working with user mapping shared memory",
 			(Arg::Gds(isc_sys_request) << text << Arg::OsError(osErrorCode)).value());
 	}
+
+	USHORT getType() const override { return SharedMemoryBase::SRAM_MAPPING_RESET; }
+	USHORT getVersion() const override { return MAPPING_VERSION; }
+	const char* getName() const override { return "MappingIpc"; }
 
 	// copying is prohibited
 	MappingIpc(const MappingIpc&);

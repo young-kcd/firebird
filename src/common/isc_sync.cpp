@@ -640,6 +640,23 @@ namespace {
 #define PTHREAD_ERR_RAISE(x) { int tmpState = (x); if (tmpState) { system_call_failed::raise(#x, tmpState); } }
 
 
+bool MemoryHeader::check(const char* name, USHORT type, USHORT version, bool raiseError) const
+{
+	if (mhb_type == type && mhb_header_version == HEADER_VERSION && mhb_version == version)
+		return true;
+
+	if (!raiseError)
+		return false;
+
+	string found, expected;
+
+	found.printf("%d/%d:%d", mhb_type, mhb_header_version, mhb_version);
+	expected.printf("%d/%d:%d", type, HEADER_VERSION, version);
+
+	// @1: inconsistent shared memory type/version; found @2, expected @3
+	(Arg::Gds(isc_wrong_shmem_ver) <<
+		Arg::Str(name) << Arg::Str(found) << Arg::Str(expected)).raise();
+}
 
 int SharedMemoryBase::eventInit(event_t* event)
 {

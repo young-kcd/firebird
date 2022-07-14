@@ -133,7 +133,7 @@ void TraceSvcJrd::startSession(TraceSession& session, bool interactive)
 			char* buff = session.ses_logfile.getBuffer(GUID_BUFF_SIZE);
 			GuidToString(buff, &guid);
 
-			session.ses_logfile.insert(0, "fb_trace.");
+			session.ses_logfile.insert(0, FB_TRACE_FILE);
 		}
 
 		storage->addSession(session);

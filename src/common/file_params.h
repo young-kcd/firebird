@@ -51,6 +51,9 @@ static const char* const USER_MAP_FILE	= "fb" COMMON_FILE_PREFIX "_user_mapping"
 // Per-log file usage (for audit logging)
 static const char* const FB_TRACE_LOG_MUTEX = "fb_trace_log_mutex";
 
+// Per-trace session usage (for interactive trace)
+static const char* const FB_TRACE_FILE = "fb_trace.";
+
 #ifdef UNIX
 static const char* const INIT_FILE		= "fb_init";
 static const char* const SEM_FILE		= "fb_sem";

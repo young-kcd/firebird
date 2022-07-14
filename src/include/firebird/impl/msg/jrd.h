@@ -958,3 +958,5 @@ FB_IMPL_MSG(JRD, 956, sysf_invalid_null_empty, -901, "22", "023", "Empty or NULL
 FB_IMPL_MSG(JRD, 957, bad_loctab_num, -901, "HY", "000", "Undefined local table number @1")
 FB_IMPL_MSG(JRD, 958, quoted_str_bad, -901, "22", "024", "Invalid text <@1> after quoted string")
 FB_IMPL_MSG(JRD, 959, quoted_str_miss, -901, "22", "024", "Missing terminating quote <@1> in the end of quoted string")
+FB_IMPL_MSG(JRD, 960, wrong_shmem_ver, -902, "08", "006", "@1: inconsistent shared memory type/version; found @2, expected @3")
+FB_IMPL_MSG(JRD, 961, wrong_shmem_bitness, -902, "08", "006", "@1-bit engine can't open database already opened by @2-bit engine")

@@ -147,6 +147,8 @@ public:
 #endif
 	}
 
+	bool check(const char* name, USHORT type, USHORT version, bool raiseError = true) const;
+
 	void markAsDeleted()
 	{
 		mhb_flags |= FLAG_DELETED;
@@ -227,6 +229,20 @@ public:
 	virtual bool initialize(SharedMemoryBase*, bool) = 0;
 	virtual void mutexBug(int osErrorCode, const char* text) = 0;
 	//virtual void eventBug(int osErrorCode, const char* text) = 0;
+
+	virtual USHORT getType() const = 0;
+	virtual USHORT getVersion() const = 0;
+	virtual const char* getName() const = 0;
+
+	virtual void initHeader(MemoryHeader* header)
+	{
+		header->init(getType(), getVersion());
+	}
+
+	virtual bool checkHeader(const MemoryHeader* header, bool raiseError = true)
+	{
+		return header->check(getName(), getType(), getVersion(), raiseError);
+	}
 };
 
 
@@ -313,7 +329,8 @@ public:
 		SRAM_TPC_HEADER = 0xF9,
 		SRAM_TPC_BLOCK = 0xF8,
 		SRAM_TPC_SNAPSHOTS = 0xF7,
-		SRAM_CHANGELOG_STATE = 0xF6
+		SRAM_CHANGELOG_STATE = 0xF6,
+		SRAM_TRACE_AUDIT_MTX = 0xF5
 	};
 
 protected:
