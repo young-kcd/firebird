@@ -105,9 +105,6 @@ if "%ERRLEV%"=="1" goto :END
 @call :msgs
 if "%ERRLEV%"=="1" goto :END
 
-@call :codes
-if "%ERRLEV%"=="1" goto :END
-
 ::=======
 @call create_msgs.bat msg
 ::=======
@@ -298,10 +295,6 @@ goto :EOF
 @echo Apply security.sql...
 @"%FB_BIN_DIR%\isql" -q %FB_GEN_DB_DIR%/dbs/security5.fdb -i %FB_ROOT_PATH%\src\dbs\security.sql
 @copy %FB_GEN_DIR%\dbs\security5.fdb %FB_GEN_DIR%\dbs\security.fdb > nul
-
-@echo Creating metadata.fdb...
-@echo create database '%FB_GEN_DB_DIR%/dbs/metadata.fdb'; | "%FB_BIN_DIR%\isql" -q -sqldialect 1
-@copy %FB_GEN_DIR%\dbs\metadata.fdb %FB_GEN_DIR%\dbs\yachts.lnk > nul
 
 @call create_msgs.bat db
 
