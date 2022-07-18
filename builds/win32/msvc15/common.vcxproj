@@ -69,6 +69,7 @@
     <ClCompile Include="..\..\..\src\common\DynamicStrings.cpp" />
     <ClCompile Include="..\..\..\src\common\enc.cpp" />
     <ClCompile Include="..\..\..\src\common\fb_exception.cpp" />
+    <ClCompile Include="..\..\..\src\common\gds.cpp" />
     <ClCompile Include="..\..\..\src\common\Int128.cpp" />
     <ClCompile Include="..\..\..\src\common\IntlParametersBlock.cpp" />
     <ClCompile Include="..\..\..\src\common\IntlUtil.cpp" />

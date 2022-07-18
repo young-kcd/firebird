@@ -30,7 +30,6 @@
     <ClCompile Include="..\..\..\src\yvalve\alt.cpp" />
     <ClCompile Include="..\..\..\src\yvalve\config\os\win32\config_root.cpp" />
     <ClCompile Include="..\..\..\src\yvalve\DistributedTransaction.cpp" />
-    <ClCompile Include="..\..\..\src\yvalve\gds.cpp" />
     <ClCompile Include="..\..\..\src\yvalve\keywordsStub.cpp" />
     <ClCompile Include="..\..\..\src\yvalve\MasterImplementation.cpp" />
     <ClCompile Include="..\..\..\src\yvalve\perf.cpp" />

@@ -188,7 +188,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\gpre\boot\gpre_meta_boot.cpp" />
-    <ClCompile Include="..\..\..\src\yvalve\gds.cpp" />
+    <ClCompile Include="..\..\..\src\common\classes\alloc.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="common.vcxproj">

@@ -246,6 +246,9 @@
     <ClCompile Include="..\..\..\src\common\keywords.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\common\gds.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\common\Int128.cpp">
       <Filter>common</Filter>
     </ClCompile>
