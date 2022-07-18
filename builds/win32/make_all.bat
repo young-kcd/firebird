@@ -52,6 +52,7 @@ if errorlevel 1 call :ERROR build failed - see make_all_%FB_TARGET_PLATFORM%.log
 @mkdir %FB_OUTPUT_DIR%\plugins\udr 2>nul
 
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\* %FB_OUTPUT_DIR% >nul
+@del %FB_OUTPUT_DIR%\*_test.exe >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\intl\* %FB_OUTPUT_DIR%\intl >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\tzdata\* %FB_OUTPUT_DIR%\tzdata >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\system32\* %FB_OUTPUT_DIR%\system32 >nul

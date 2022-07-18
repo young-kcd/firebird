@@ -13,7 +13,6 @@ for %%v in ( %* )  do (
 
 set FB_OBJ_DIR=%FB_TARGET_PLATFORM%\%FB_CONFIG%
 set FB_BIN_DIR=%FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\
-set FB_TESTS_DIR=%FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\tests\
 
 @echo    Executed %0
 @echo.

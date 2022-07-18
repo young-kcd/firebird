@@ -87,7 +87,9 @@ Engine_Objects:= $(call dirObjects,jrd) $(call dirObjects,dsql) $(call dirObject
 				 $(call dirObjects,jrd/optimizer) $(call dirObjects,jrd/recsrc) $(call dirObjects,jrd/replication) $(call dirObjects,jrd/trace) \
 				 $(call makeObjects,lock,lock.cpp)
 
-AllObjects += $(Engine_Objects)
+Engine_Test_Objects:= $(call dirObjects,jrd/tests)
+
+AllObjects += $(Engine_Objects) $(Engine_Test_Objects)
 
 
 # services

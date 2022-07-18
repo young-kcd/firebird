@@ -255,6 +255,7 @@ LIBFIREBIRD_BASENAME = $(LIB)/$(LibrarySoName)
 EngineFileName=libEngine${OdsVersion}
 EngineSoName=$(EngineFileName).${SHRLIB_EXT}
 ENGINE_SONAME = $(PLUGINS)/$(EngineSoName)
+ENGINE_TEST = $(FB_TEST_BUILD)/$(EngineFileName)_test$(EXEC_EXT)
 
 # intl will load dynamically, and having the whole soname set with version
 # confuses the dynamic load process.  So we only have the .$(SHRLIB_EXT) file
