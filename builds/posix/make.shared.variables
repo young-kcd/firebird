@@ -38,7 +38,8 @@ AllObjects += $(Common_Objects)
 
 # Common test files
 COT1:= $(call dirObjects,common/tests)
-Common_Test_Objects:= $(COT1)
+COT2:= $(call dirObjects,common/classes/tests)
+Common_Test_Objects:= $(COT1) $(COT2)
 
 AllObjects += $(Common_Test_Objects)
 

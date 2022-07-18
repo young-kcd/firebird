@@ -188,6 +188,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\common\tests\CommonTest.cpp" />
+    <ClCompile Include="..\..\..\src\common\classes\tests\AlignerTest.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="common.vcxproj">
