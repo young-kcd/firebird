@@ -172,8 +172,8 @@ jobs:
         if "%PLATFORM%" == "x86" set FB_OUTPUT_SUFFIX=win32
         call "%VS_SCRIPT%" -arch=%FB_VS_ARCH%
         cd builds\win32
-        run_all.bat JUSTBUILD
-        run_tests.bat
+        call run_all.bat JUSTBUILD
+        call run_tests.bat
 
     - name: Build (Windows, Docker)
       if: startsWith(matrix.os, 'windows-') && matrix.docker
