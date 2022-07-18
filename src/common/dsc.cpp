@@ -30,7 +30,7 @@
 #include "../common/TimeZoneUtil.h"
 #include "ibase.h"
 #include "../jrd/intl.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../common/gdsassert.h"
 #include "../common/dsc_proto.h"
 #include "../common/StatusArg.h"

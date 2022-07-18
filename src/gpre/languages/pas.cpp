@@ -38,7 +38,7 @@
 #include "../gpre/pat_proto.h"
 #include "../gpre/gpre_proto.h"
 #include "../common/prett_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../common/utils_proto.h"
 
 

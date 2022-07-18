@@ -37,7 +37,7 @@
 
 
 #include "ibase.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../common/gdsassert.h"
 #include "../jrd/svc_undoc.h"
 #include "../common/stuff.h"

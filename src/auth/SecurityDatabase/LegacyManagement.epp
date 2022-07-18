@@ -30,7 +30,7 @@
 #include "ibase.h"
 #include "../auth/SecurityDatabase/LegacyHash.h"
 #include "../common/enc_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../common/isc_proto.h"
 #include "../utilities/gsec/gsec.h"
 #include "../common/utils_proto.h"

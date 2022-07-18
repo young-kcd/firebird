@@ -57,7 +57,7 @@
 
 #include "../common/gdsassert.h"
 #include "../utilities/guard/util_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../common/isc_proto.h"
 #include "../common/utils_proto.h"
 #include "../common/os/os_utils.h"

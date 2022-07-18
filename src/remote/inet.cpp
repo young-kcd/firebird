@@ -105,7 +105,7 @@ const int INET_RETRY_CALL = 5;
 #include "../remote/inet_proto.h"
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../common/isc_proto.h"
 #include "../common/isc_f_proto.h"
 #include "../common/os/isc_i_proto.h"

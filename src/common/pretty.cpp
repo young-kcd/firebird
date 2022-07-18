@@ -34,7 +34,7 @@
 #include "ibase.h"
 #include "../jrd/constants.h"
 #include "../common/prett_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 
 static inline void ADVANCE_PTR(TEXT*& ptr)
 {

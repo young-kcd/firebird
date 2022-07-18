@@ -47,7 +47,7 @@
 #include "../gpre/gpre.h"
 #include "../gpre/gpre_proto.h"
 #include "../gpre/msc_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 
 
 struct gpre_space

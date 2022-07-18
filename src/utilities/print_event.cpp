@@ -25,7 +25,7 @@
 #include "fb_types.h"
 #include "../jrd/event.h"
 #include "../jrd/event_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../common/utils_proto.h"
 
 #define isc_print_status gds__print_status

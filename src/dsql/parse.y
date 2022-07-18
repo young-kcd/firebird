@@ -89,7 +89,7 @@
 #include "../jrd/DataTypeUtil.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/make_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../jrd/err_proto.h"
 #include "../common/intlobj_new.h"
 #include "../jrd/Attachment.h"

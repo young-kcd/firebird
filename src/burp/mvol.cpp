@@ -44,7 +44,7 @@
 #include "../burp/mvol_proto.h"
 #include "../burp/split/spit.h"
 #include "../burp/BurpTasks.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../common/gdsassert.h"
 #include "../common/os/os_utils.h"
 #include <fcntl.h>

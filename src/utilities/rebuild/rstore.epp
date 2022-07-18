@@ -27,7 +27,7 @@
 #include "../utilities/rebuild/rebuild.h"
 #include "../utilities/rebuild/rebui_proto.h"
 #include "../utilities/rebuild/rstor_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 
 DATABASE DB = STATIC FILENAME "rebuild.fdb";
 

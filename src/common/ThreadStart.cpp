@@ -32,7 +32,7 @@
 #include <errno.h>
 #include "../common/classes/alloc.h"
 #include "../common/ThreadStart.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../common/gdsassert.h"
 
 #ifdef WIN_NT

@@ -21,7 +21,7 @@
 #ifndef COMMON_GDSASSERT_H
 #define COMMON_GDSASSERT_H
 
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 
 #ifdef DEV_BUILD
 

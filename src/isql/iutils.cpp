@@ -26,7 +26,7 @@
 
 #include "iutils_proto.h"
 #include "../yvalve/keywordsStub.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 //#if defined(WIN_NT)
 //#include <windows.h>
 //#endif

@@ -41,7 +41,7 @@
 #include "../lock/lock_proto.h"
 #include "../common/gdsassert.h"
 #include "../common/db_alias.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../common/isc_proto.h"
 #include "../common/isc_s_proto.h"
 #include "../common/StatusHolder.h"

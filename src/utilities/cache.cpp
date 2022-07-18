@@ -28,7 +28,7 @@
 #include <signal.h>
 #include "ibase.h"
 #include "../jrd/license.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../yvalve/why_proto.h"
 
 #ifdef HAVE_IO_H

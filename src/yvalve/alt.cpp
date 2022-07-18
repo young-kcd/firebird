@@ -37,7 +37,7 @@
 
 #include <stdarg.h>
 #include "ibase.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../yvalve/utl_proto.h"
 #include "../yvalve/why_proto.h"
 #include "../utilities/gsec/gsec.h"

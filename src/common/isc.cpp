@@ -42,7 +42,7 @@
 
 #include "iberror.h"
 #include "ibase.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../common/isc_proto.h"
 #include "../common/os/os_utils.h"
 #include "../common/os/path_utils.h"

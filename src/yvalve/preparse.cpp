@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../yvalve/prepa_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../yvalve/YObjects.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/StatusArg.h"

@@ -95,9 +95,6 @@
     <ClInclude Include="..\..\..\src\yvalve\blob_proto.h">
       <Filter>headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\yvalve\gds_proto.h">
-      <Filter>headers</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\yvalve\keywordsStub.h">
       <Filter>headers</Filter>
     </ClInclude>

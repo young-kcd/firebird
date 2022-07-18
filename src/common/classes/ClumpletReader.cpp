@@ -35,7 +35,7 @@
 #include "firebird/Interface.h"
 
 #ifdef DEBUG_CLUMPLETS
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include <ctype.h>
 
 namespace Firebird {

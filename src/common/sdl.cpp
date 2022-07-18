@@ -26,7 +26,7 @@
 #include "ibase.h"
 #include "../common/sdl.h"
 #include "../jrd/intl.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../common/sdl_proto.h"
 #include "../common/StatusArg.h"
 

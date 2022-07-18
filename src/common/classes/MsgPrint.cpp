@@ -28,7 +28,7 @@
 #include "BaseStream.h"
 #include "MsgPrint.h"
 #include <string.h>
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../common/utils_proto.h"
 #include "../common/file_params.h"
 

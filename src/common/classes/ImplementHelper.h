@@ -32,7 +32,7 @@
 #include "firebird/Interface.h"
 #include "../common/classes/alloc.h"
 #include "iberror.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../common/classes/init.h"
 #include "../common/classes/auto.h"
 #include "../common/classes/RefCounted.h"

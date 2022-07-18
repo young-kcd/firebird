@@ -29,7 +29,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include "ibase.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../common/msg_encode.h"
 #include "../common/isc_f_proto.h"
 #include "../utilities/gsec/gsec.h"

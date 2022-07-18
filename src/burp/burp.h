@@ -36,7 +36,7 @@
 #include "../common/dsc.h"
 #include "../burp/misc_proto.h"
 #include "../burp/mvol_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../common/ThreadData.h"
 #include "../common/UtilSvc.h"
 #include "../common/classes/array.h"

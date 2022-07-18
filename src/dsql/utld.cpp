@@ -39,7 +39,7 @@
 #include "../jrd/align.h"
 #include "../jrd/constants.h"
 #include "../dsql/utld_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../common/classes/init.h"
 
 using namespace Jrd;

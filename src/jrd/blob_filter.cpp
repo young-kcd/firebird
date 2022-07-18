@@ -33,7 +33,7 @@
 #include "../common/gdsassert.h"
 #include "../jrd/blf_proto.h"
 #include "../jrd/filte_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../jrd/inf_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/err_proto.h"

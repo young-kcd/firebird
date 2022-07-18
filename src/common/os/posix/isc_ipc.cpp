@@ -41,7 +41,7 @@
 #include <stdlib.h>
 #include "../common/gdsassert.h"
 #include "iberror.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../common/isc_proto.h"
 #include "../common/os/isc_i_proto.h"
 #include "../common/isc_s_proto.h"

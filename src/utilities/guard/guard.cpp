@@ -51,7 +51,7 @@ int errno = -1;
 #include "../common/os/divorce.h"
 #include "../common/os/os_utils.h"
 #include "../common/isc_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/gds_proto.h"
 #include "../common/file_params.h"
 #include "../utilities/guard/util_proto.h"
 #include "../common/classes/fb_string.h"
