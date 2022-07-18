@@ -21,5 +21,8 @@
     <ClCompile Include="..\..\..\src\common\classes\tests\AlignerTest.cpp">
       <Filter>source</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\common\classes\tests\ArrayTest.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
