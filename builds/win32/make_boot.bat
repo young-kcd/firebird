@@ -231,8 +231,8 @@ goto :EOF
 :engine
 @echo.
 @echo Building engine (%FB_OBJ_DIR%)...
-@call compile.bat builds\win32\%VS_VER%\Firebird engine_%FB_TARGET_PLATFORM%.log engine
-@call compile.bat builds\win32\%VS_VER%\Firebird engine_%FB_TARGET_PLATFORM%.log ib_util
+@call compile.bat builds\win32\%VS_VER%\Firebird engine_%FB_TARGET_PLATFORM%.log DLLs\engine
+@call compile.bat builds\win32\%VS_VER%\Firebird engine_%FB_TARGET_PLATFORM%.log DLLs\ib_util
 if errorlevel 1 call :boot2 engine
 @goto :EOF
 
@@ -241,7 +241,7 @@ if errorlevel 1 call :boot2 engine
 :gbak
 @echo.
 @echo Building gbak (%FB_OBJ_DIR%)...
-@call compile.bat builds\win32\%VS_VER%\Firebird gbak_%FB_TARGET_PLATFORM%.log gbak
+@call compile.bat builds\win32\%VS_VER%\Firebird gbak_%FB_TARGET_PLATFORM%.log EXEs\gbak
 if errorlevel 1 call :boot2 gbak
 @goto :EOF
 
@@ -250,7 +250,7 @@ if errorlevel 1 call :boot2 gbak
 :gpre
 @echo.
 @echo Building gpre (%FB_OBJ_DIR%)...
-@call compile.bat builds\win32\%VS_VER%\Firebird gpre_%FB_TARGET_PLATFORM%.log gpre
+@call compile.bat builds\win32\%VS_VER%\Firebird gpre_%FB_TARGET_PLATFORM%.log EXEs\gpre
 if errorlevel 1 call :boot2 gpre
 @goto :EOF
 
@@ -259,7 +259,7 @@ if errorlevel 1 call :boot2 gpre
 :isql
 @echo.
 @echo Building isql (%FB_OBJ_DIR%)...
-@call compile.bat builds\win32\%VS_VER%\Firebird isql_%FB_TARGET_PLATFORM%.log isql
+@call compile.bat builds\win32\%VS_VER%\Firebird isql_%FB_TARGET_PLATFORM%.log EXEs\isql
 if errorlevel 1 call :boot2 isql
 @goto :EOF
 
