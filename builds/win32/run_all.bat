@@ -47,8 +47,6 @@ call make_boot %FBBUILD_BUILDTYPE%
 if "%ERRLEV%"=="1" goto :END
 call make_all %FBBUILD_BUILDTYPE%
 if "%ERRLEV%"=="1" goto :END
-call make_tests %FBBUILD_BUILDTYPE%
-if "%ERRLEV%"=="1" goto :END
 call make_examples %FBBUILD_BUILDTYPE%
 if "%ERRLEV%"=="1" goto :END
 
