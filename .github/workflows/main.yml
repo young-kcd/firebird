@@ -58,6 +58,8 @@ jobs:
       run: |
         CC=clang CXX=clang++ ./autogen.sh --enable-binreloc --prefix=/opt/firebird
         make -j4
+        make tests -j4
+        make run_tests
         make dist
         tar xzvf gen/Firebird-[0-9]*.tar.gz
         (cd Firebird-[0-9]*; sudo ./install.sh -silent)
@@ -82,6 +84,8 @@ jobs:
       run: |
         ./autogen.sh --enable-binreloc-threads --with-builtin-tommath --with-builtin-tomcrypt --prefix=/opt/firebird
         make -j4
+        make tests -j4
+        make run_tests
         make dist
         tar xzvf gen/Firebird-[0-9]*.tar.gz
 
@@ -128,6 +132,8 @@ jobs:
 
         LIBRARY_PATH="$ICU_INSTALL_PATH/lib:$LIBRARY_PATH" ./autogen.sh --with-builtin-tommath --with-builtin-tomcrypt
         make -j4
+        make tests -j4
+        make run_tests
 
         (cd gen; make -B -f make.platform.postfix ICU_LOC="$ICU_INSTALL_PATH/lib/")
         (cd gen; make -B -f Makefile.install)
@@ -167,6 +173,7 @@ jobs:
         call "%VS_SCRIPT%" -arch=%FB_VS_ARCH%
         cd builds\win32
         run_all.bat JUSTBUILD
+        run_tests.bat
 
     - name: Build (Windows, Docker)
       if: startsWith(matrix.os, 'windows-') && matrix.docker

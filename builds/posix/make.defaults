@@ -53,6 +53,8 @@ RE2_BUILD_FLG=@RE2_BUILD@
 SYSTEM_BOOST_FLG=@SYSTEM_BOOST@
 
 FB_BUILD=$(GEN_ROOT)/$(TARGET)/firebird
+FB_TEST_BUILD=$(GEN_ROOT)/$(TARGET)/tests
+
 ifeq ($(IsCross), Y)
   FIREBIRD=$(GEN_ROOT)/Native/firebird
 else
@@ -386,6 +388,7 @@ LINK_PLUG_LIBS = -L$(LIB) $(SO_LINK_LIBS)
 # Pay attention - we place common library into obj, not lib dir
 # It's just a set of object files, prepared to be used by ld, not an output library
 COMMON_LIB	= $(OBJ)/common.a
+COMMON_TEST = $(FB_TEST_BUILD)/common_test$(EXEC_EXT)
 
 # From utilities
 CREATE_DB	= $(RBIN)/create_db$(EXEC_EXT)

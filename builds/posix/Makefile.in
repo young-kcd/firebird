@@ -361,6 +361,8 @@ $(COMMON_LIB):	$(Common_Objects)
 	-$(RM) $@
 	$(STATICLIB_LINK) $@ $^
 
+$(COMMON_TEST): $(Common_Test_Objects) $(COMMON_LIB)
+	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ -L$(LIB) $(LINK_LIBS)
 
 #___________________________________________________________________________
 # gpre_boot
@@ -709,6 +711,24 @@ Dependencies = $(AllObjects:.o=.d)
 
 install install-embedded silent_install package packages dist:
 	$(MAKE) -f Makefile.install $@
+
+
+#___________________________________________________________________________
+# tests
+#
+
+.PHONY:	tests tests_process run_tests run_tests_process
+
+tests:
+	$(MAKE) TARGET=$(DefaultTarget) tests_process
+
+tests_process: $(COMMON_TEST)
+
+run_tests:
+	$(MAKE) TARGET=$(DefaultTarget) run_tests_process
+
+run_tests_process: tests_process
+	$(COMMON_TEST) --log_level=all
 
 
 #___________________________________________________________________________
