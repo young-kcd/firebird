@@ -371,7 +371,7 @@ $(COMMON_TEST): $(Common_Test_Objects) $(COMMON_LIB)
 boot: $(GPRE_BOOT)
 
 $(GPRE_BOOT):	$(GPRE_Boot_Objects) $(COMMON_LIB)
-	$(STATICEXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ -L$(LIB) $(LINK_LIBS)
+	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ -L$(LIB) $(LINK_LIBS)
 	-$(RM) $(GPRE_CURRENT)
 	(cd $(@D); $(LN) $(@F) $(notdir $(GPRE_CURRENT)))
 
