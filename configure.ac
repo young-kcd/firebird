@@ -1311,7 +1311,7 @@ dnl # output
 	mkdir -p gen/\$fb_tgt/firebird/include/firebird/impl
 	mkdir -p gen/\$fb_tgt/firebird/lib
 	mkdir -p gen/\$fb_tgt/firebird/misc
-	mkdir -p gen/\$fb_tgt/tests
+	mkdir -p gen/\$fb_tgt/firebird/tests
 
 dnl ### TEMP ### directories for generated .cpp, .o and .d by module name
 	for src_dir in `cd src; ls -R -1 * | grep : | tr -d : | tr "\n" " "; cd ..`; do
