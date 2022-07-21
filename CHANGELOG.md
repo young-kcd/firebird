@@ -40,6 +40,9 @@
 * [#7222](https://github.com/FirebirdSQL/firebird/issues/7222): Dependencies of packaged functions are not tracked  
   Contributor(s): Adriano dos Santos Fernandes
 
+* [#7217](https://github.com/FirebirdSQL/firebird/pull/7217): It's not allowed to execute DROP PACKAGE BODY for a package with a procedure even if a user has DROP ANY PACKAGE privilege  
+  Contributor(s): Ilya Eremin
+
 * [#7204](https://github.com/FirebirdSQL/firebird/issues/7204): Segfault in _GBAK_ when restoring a broken backup file over the wire  
   Contributor(s): Alex Peshkoff
 
@@ -151,6 +154,9 @@
 * [#7090](https://github.com/FirebirdSQL/firebird/issues/7090): Performance degradation with `CURRENT_DATE`, `LOCALTIME` and `LOCALTIMESTAMP`  
   Contributor(s): Adriano dos Santos Fernandes
 
+* [#7088](https://github.com/FirebirdSQL/firebird/pull/7088): MacOS UDR and Legacy_UserManager plugins not working due to not exported entry point  
+  Contributor(s): Adriano dos Santos Fernandes
+
 * [#7084](https://github.com/FirebirdSQL/firebird/issues/7084): Creating unique constraints on MacOS fails on larger tables  
   Contributor(s): Adriano dos Santos Fernandes
 
@@ -158,7 +164,7 @@
   Contributor(s): Alex Peshkoff
 
 * [#6947](https://github.com/FirebirdSQL/firebird/issues/6947): Query to MON$ tables does not return data when database encryption/decryption is in progress  
-  Contributor(s): Adriano dos Santos Fernandes
+  Contributor(s): Alex Peshkoff
 
 * [#4085](https://github.com/FirebirdSQL/firebird/issues/4085): _RDB$INDICES_ information stored inconsistently after a `CREATE INDEX`  
   Contributor(s): Dmitry Yemanov
