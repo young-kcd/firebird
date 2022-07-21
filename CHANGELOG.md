@@ -1,5 +1,11 @@
 # v4.0.2
 
+## New features
+
+* [#6983](https://github.com/FirebirdSQL/firebird/pull/6983): New built-in function BLOB_APPEND  
+  Reference(s): [/doc/sql.extensions/README.blob_append.md]  
+  Contributor(s): Vlad Khorsun
+
 ## Improvements
 
 * [#7208](https://github.com/FirebirdSQL/firebird/issues/7208): Trace: provide performance statistics for DDL statement  
@@ -33,6 +39,7 @@
   Contributor(s): Vlad Khorsun
 
 ## Bugfixes
+
 
 * [#7229](https://github.com/FirebirdSQL/firebird/issues/7229): `ALTER COLUMN DROP IDENTITY` does not reset generator name in metadata cache  
   Contributor(s): Adriano dos Santos Fernandes
@@ -105,6 +112,9 @@
 
 * [#7134](https://github.com/FirebirdSQL/firebird/issues/7134): Database page errors directly after _GBAK_, dissappearing after some calls of _GFIX_  
   Contributor(s): Vlad Khorsun
+
+* [#7129](https://github.com/FirebirdSQL/firebird/issues/7129): Cannot alter SQL SECURITY on package  
+  Contributor(s): Alexey Mochalov
 
 * [#7128](https://github.com/FirebirdSQL/firebird/issues/7128): Incorrect error message with _isc_sql_interprete()_  
   Contributor(s): Vlad Khorsun
