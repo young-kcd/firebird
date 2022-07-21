@@ -130,34 +130,45 @@ jobs:
         ninja -C $LIBCXX_BUILD_PATH install-cxx install-cxxabi
         popd
 
-    - name: Build ICU (MacOS)
+    - name: Cache - libicu install (MacOS)
+      id: cache-libicu-install-macos
       if: matrix.os == 'macOS-latest'
+      uses: actions/cache@v3
+      with:
+        key: ${{ runner.os }}-libicu-install-63.2
+        path: |
+          extern/libicu-macos-install
+
+    - name: Download and patch libicu sources (MacOS)
+      if: matrix.os == 'macOS-latest' && steps.cache-libicu-install-macos.outputs.cache-hit != 'true'
+      run: |
+        mkdir extern/libicu-macos
+        pushd extern/libicu-macos
+        curl -OL https://github.com/unicode-org/icu/releases/download/release-63-2/icu4c-63_2-src.tgz
+        curl -OL https://github.com/unicode-org/icu/commit/24aeb9a5a5874f4ce5db912e30670ac3ae236971.patch
+        tar xzf icu4c-63_2-src.tgz
+        cd icu/source
+        patch -p3 < ../../24aeb9a5a5874f4ce5db912e30670ac3ae236971.patch
+        popd
+
+    - name: Build libicu (MacOS)
+      if: matrix.os == 'macOS-latest' && steps.cache-libicu-install-macos.outputs.cache-hit != 'true'
       run: |
         export LIBTOOLIZE=glibtoolize
         export LIBTOOL=glibtool
 
-        mkdir extern/icu-macos
-        pushd extern/icu-macos
-        curl -OL https://github.com/unicode-org/icu/releases/download/release-63-2/icu4c-63_2-src.tgz
-        curl -OL https://github.com/unicode-org/icu/commit/24aeb9a5a5874f4ce5db912e30670ac3ae236971.patch
-        tar xzf icu4c-63_2-src.tgz
-        ICU_INSTALL_PATH=`pwd`/install
-        cd icu/source
-        patch -p3 < ../../24aeb9a5a5874f4ce5db912e30670ac3ae236971.patch
-        ./runConfigureICU MacOSX --prefix=$ICU_INSTALL_PATH
+        LIBICU_INSTALL_PATH=`pwd`/extern/libicu-macos-install
+        pushd extern/libicu-macos/icu/source
+        ./runConfigureICU MacOSX --prefix=$LIBICU_INSTALL_PATH
         make -j4
         make install
-        install_name_tool -id @rpath/lib/libicuuc.dylib $ICU_INSTALL_PATH/lib/libicuuc.dylib
-        install_name_tool -id @rpath/lib/libicui18n.dylib $ICU_INSTALL_PATH/lib/libicui18n.dylib
-        install_name_tool -id @rpath/lib/libicudata.dylib $ICU_INSTALL_PATH/lib/libicudata.dylib
-        install_name_tool -change libicudata.63.dylib @loader_path/libicudata.63.dylib $ICU_INSTALL_PATH/lib/libicuuc.63.dylib
-        install_name_tool -change libicudata.63.dylib @loader_path/libicudata.63.dylib $ICU_INSTALL_PATH/lib/libicui18n.63.dylib
-        install_name_tool -change libicuuc.63.dylib @loader_path/libicuuc.63.dylib $ICU_INSTALL_PATH/lib/libicui18n.63.dylib
+        install_name_tool -id @rpath/lib/libicuuc.dylib $LIBICU_INSTALL_PATH/lib/libicuuc.dylib
+        install_name_tool -id @rpath/lib/libicui18n.dylib $LIBICU_INSTALL_PATH/lib/libicui18n.dylib
+        install_name_tool -id @rpath/lib/libicudata.dylib $LIBICU_INSTALL_PATH/lib/libicudata.dylib
+        install_name_tool -change libicudata.63.dylib @loader_path/libicudata.63.dylib $LIBICU_INSTALL_PATH/lib/libicuuc.63.dylib
+        install_name_tool -change libicudata.63.dylib @loader_path/libicudata.63.dylib $LIBICU_INSTALL_PATH/lib/libicui18n.63.dylib
+        install_name_tool -change libicuuc.63.dylib @loader_path/libicuuc.63.dylib $LIBICU_INSTALL_PATH/lib/libicui18n.63.dylib
         popd
-        mkdir -p gen/Release/firebird/lib
-        mkdir -p gen/Debug/firebird/lib
-        cp -R $ICU_INSTALL_PATH/lib/libicu{data,i18n,uc}.*dylib gen/Release/firebird/lib/
-        cp -R $ICU_INSTALL_PATH/lib/libicu{data,i18n,uc}.*dylib gen/Debug/firebird/lib/
 
     - name: Build (MacOS)
       if: matrix.os == 'macOS-latest'
@@ -166,18 +177,21 @@ jobs:
         export LIBTOOL=glibtool
 
         LIBCXX_INSTALL_PATH=`pwd`/extern/libcxx-macos-install
-        ICU_INSTALL_PATH=`pwd`/extern/icu-macos/install
+        LIBICU_INSTALL_PATH=`pwd`/extern/libicu-macos-install
 
-        export C_INCLUDE_PATH="$ICU_INSTALL_PATH/include:`xcrun --show-sdk-path`/usr/include"
-        export CPLUS_INCLUDE_PATH="$LIBCXX_INSTALL_PATH/include/c++/v1:$ICU_INSTALL_PATH/include:`xcrun --show-sdk-path`/usr/include"
-        export LIBRARY_PATH="$LIBCXX_INSTALL_PATH/lib:$ICU_INSTALL_PATH/lib:$LIBRARY_PATH"
+        mkdir -p gen/Release/firebird/lib
+        cp -R $LIBICU_INSTALL_PATH/lib/libicu{data,i18n,uc}.*dylib gen/Release/firebird/lib/
+
+        export C_INCLUDE_PATH="$LIBICU_INSTALL_PATH/include:`xcrun --show-sdk-path`/usr/include"
+        export CPLUS_INCLUDE_PATH="$LIBCXX_INSTALL_PATH/include/c++/v1:$LIBICU_INSTALL_PATH/include:`xcrun --show-sdk-path`/usr/include"
+        export LIBRARY_PATH="$LIBCXX_INSTALL_PATH/lib:$LIBICU_INSTALL_PATH/lib:$LIBRARY_PATH"
 
         ./autogen.sh --with-builtin-tommath --with-builtin-tomcrypt
         make -j4
         make tests -j4
         make run_tests
 
-        (cd gen; make -B -f make.platform.postfix ICU_LOC="$ICU_INSTALL_PATH/lib/")
+        (cd gen; make -B -f make.platform.postfix ICU_LOC="$LIBICU_INSTALL_PATH/lib/")
         (cd gen; make -B -f Makefile.install)
 
         # Rename directory to make sure the build is relocatable.
