@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "ibase.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/timestamp.h"

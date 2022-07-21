@@ -28,7 +28,7 @@
 #include <string.h>
 #include "../common/xdr.h"
 #include "../common/xdr_proto.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/gdsassert.h"
 #include "../common/DecFloat.h"
 #include "../common/Int128.h"

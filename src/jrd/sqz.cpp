@@ -26,7 +26,7 @@
 #include "../jrd/sqz.h"
 #include "../jrd/req.h"
 #include "../jrd/err_proto.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 
 using namespace Jrd;
 

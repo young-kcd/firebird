@@ -57,7 +57,7 @@
 #include "../jrd/pag_proto.h"
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/tra_proto.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/nbak.h"

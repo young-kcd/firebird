@@ -42,7 +42,7 @@
 #include "../alice/alice_proto.h"
 #include "../alice/alice_meta.h"
 #include "../alice/tdr_proto.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/isc_proto.h"
 #include "../jrd/constants.h"
 #include "../common/classes/ClumpletWriter.h"

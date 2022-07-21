@@ -51,7 +51,7 @@
 #endif
 
 #include "iberror.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/isc_proto.h"
 #include "../common/os/isc_i_proto.h"
 #include "../common/os/os_utils.h"

@@ -30,7 +30,7 @@
 #include "../common/gdsassert.h"
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/init.h"
 #include "../common/db_alias.h"

@@ -302,9 +302,6 @@
     <ClInclude Include="..\..\..\src\common\enc_proto.h">
       <Filter>headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\common\gds_proto.h">
-      <Filter>headers</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\common\intlobj_new.h">
       <Filter>headers</Filter>
     </ClInclude>

@@ -57,7 +57,7 @@
 #include "../common/gdsassert.h"
 
 #include "../jrd/flu_proto.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/err_proto.h"
 
 #include "iberror.h"

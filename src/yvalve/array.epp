@@ -37,7 +37,7 @@
 #include <stdarg.h>
 #include "ibase.h"
 #include "../yvalve/array_proto.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/StatusArg.h"
 #include "../jrd/constants.h"
 #include "../common/utils_proto.h"

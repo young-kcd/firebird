@@ -105,7 +105,7 @@
 #include "../remote/server/os/win32/window_proto.h"
 #include "../remote/server/os/win32/window.rh"
 #include "../remote/os/win32/xnet_proto.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 
 #include "firebird/Interface.h"
 #include "../common/classes/ImplementHelper.h"

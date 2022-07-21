@@ -51,7 +51,7 @@
 #include "ibase.h"
 #include "../yvalve/msg.h"
 #include "../jrd/event.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../yvalve/utl_proto.h"
 #include "../yvalve/YObjects.h"
 #include "../yvalve/why_proto.h"

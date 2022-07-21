@@ -93,7 +93,7 @@
 #include "../dsql/utld_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/met_proto.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../yvalve/why_proto.h"

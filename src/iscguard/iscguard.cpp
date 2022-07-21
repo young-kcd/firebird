@@ -18,7 +18,7 @@
  */
 #include "firebird.h"
 #include <stdio.h>
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include <stdlib.h>
 #include <windows.h>
 #include <shellapi.h>

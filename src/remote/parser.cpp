@@ -33,7 +33,7 @@
 #include "../common/DecFloat.h"
 
 #if !defined(DEV_BUILD) || (defined(DEV_BUILD) && defined(WIN_NT))
-#include "../common/gds_proto.h"	// gds__log()
+#include "../yvalve/gds_proto.h"	// gds__log()
 #endif
 
 using namespace Firebird;

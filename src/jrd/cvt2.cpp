@@ -41,7 +41,7 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/intl_classes.h"
 #include "../jrd/Collation.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 // CVC: I needed them here.
 #include "../jrd/jrd.h"
 #include "../jrd/blb_proto.h"

@@ -27,7 +27,7 @@
 #include "../common/config/ConfigCache.h"
 #include "../common/config/dir_list.h"
 #include "../common/os/path_utils.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/isc_proto.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/Hash.h"

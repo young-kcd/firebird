@@ -45,7 +45,7 @@
 #include "../common/gdsassert.h"
 #include "../common/file_params.h"
 #include "../common/msg_encode.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/os/path_utils.h"
 #include "../common/dsc.h"
 #include "../common/TimeZoneUtil.h"

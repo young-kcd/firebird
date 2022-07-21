@@ -55,7 +55,7 @@
 #include "../jrd/cvt_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/fun_proto.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/par_proto.h"
 #include "../common/MsgUtil.h"

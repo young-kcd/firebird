@@ -26,7 +26,7 @@
 #include "../iscguard/cntlg_proto.h"
 #include "../utilities/install/install_nt.h"
 #include "../common/isc_proto.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/init.h"
 

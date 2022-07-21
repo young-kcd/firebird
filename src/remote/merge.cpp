@@ -26,7 +26,7 @@
 #include "ibase.h"
 #include "../remote/remote.h"
 #include "../remote/merge_proto.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/classes/DbImplementation.h"
 
 inline void PUT_WORD(UCHAR*& ptr, USHORT value)

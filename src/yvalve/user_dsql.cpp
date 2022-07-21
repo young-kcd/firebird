@@ -38,7 +38,7 @@
 #include "firebird.h"
 #include "../dsql/chars.h"
 #include "firebird/impl/sqlda_pub.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../yvalve/why_proto.h"
 #include "../yvalve/user__proto.h"
 #include "../yvalve/utl_proto.h"

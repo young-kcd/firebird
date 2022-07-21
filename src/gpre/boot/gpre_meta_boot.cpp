@@ -39,7 +39,7 @@
 #include "../gpre/gpre_meta.h"
 #include "../gpre/msc_proto.h"
 #include "../gpre/par_proto.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 
 /*____________________________________________________________
  *

@@ -27,7 +27,7 @@
 #include <string.h>
 #include "../jrd/flu.h"
 #include "../jrd/flu_proto.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 
 struct FN
 {

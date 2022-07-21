@@ -51,7 +51,7 @@
 //#undef BUGCHECK
 //#undef IBERROR
 
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/utils_proto.h"
 
 using namespace Jrd;

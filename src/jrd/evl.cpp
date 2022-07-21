@@ -102,7 +102,7 @@
 #include "../jrd/pag_proto.h"
 #include "../jrd/rlck_proto.h"
 #include "../jrd/scl_proto.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/align.h"
 #include "../jrd/met_proto.h"
 #include "../common/config/config.h"

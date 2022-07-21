@@ -32,7 +32,7 @@
 #include <limits.h>
 #include "ibase.h"
 #include "../yvalve/perf.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../yvalve/perf_proto.h"
 #include "../yvalve/utl_proto.h"
 #include "../yvalve/YObjects.h"

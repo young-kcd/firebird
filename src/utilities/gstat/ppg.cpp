@@ -32,7 +32,7 @@
 #include "../jrd/ods.h"
 #include "../jrd/ods_proto.h"
 #include "../common/os/guid.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/classes/DbImplementation.h"
 
 #include "../utilities/gstat/ppg_proto.h"

@@ -40,7 +40,7 @@
 #include "../jrd/req.h"
 #include "../jrd/val.h"
 #include "../jrd/err_proto.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>

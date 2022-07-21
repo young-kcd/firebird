@@ -66,7 +66,7 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/par_proto.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/DataTypeUtil.h"
 #include "../jrd/KeywordsTable.h"
 #include "../jrd/RecordSourceNodes.h"

@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include "ibase.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../gpre/gpre.h"
 #include "../gpre/pat.h"
 #include "../gpre/cmp_proto.h"

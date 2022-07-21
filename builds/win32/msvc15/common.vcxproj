@@ -182,7 +182,6 @@
     <ClInclude Include="..\..\..\src\common\dyntable.h" />
     <ClInclude Include="..\..\..\src\common\enc_proto.h" />
     <ClInclude Include="..\..\..\src\common\file_params.h" />
-    <ClInclude Include="..\..\..\src\common\gds_proto.h" />
     <ClInclude Include="..\..\..\src\common\gdsassert.h" />
     <ClInclude Include="..\..\..\src\common\Int128.h" />
     <ClInclude Include="..\..\..\src\common\intlobj_new.h" />

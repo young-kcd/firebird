@@ -37,7 +37,7 @@
 
 #include "../common/db_alias.h"
 #include "../jrd/ods.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/os/path_utils.h"
 #include "../common/os/guid.h"
 #include "ibase.h"

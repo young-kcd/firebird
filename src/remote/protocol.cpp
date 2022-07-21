@@ -37,7 +37,7 @@
 #include "../remote/parse_proto.h"
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/sdl_proto.h"
 #include "../common/StatusHolder.h"
 #include "../common/classes/stack.h"

@@ -52,7 +52,7 @@
 #include "../burp/backu_proto.h"
 #include "../burp/mvol_proto.h"
 #include "../burp/resto_proto.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/gdsassert.h"
 #include "../common/isc_f_proto.h"
 #include "../common/classes/ClumpletWriter.h"

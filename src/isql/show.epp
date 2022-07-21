@@ -40,7 +40,7 @@
 #include "../jrd/license.h"
 #include <string.h>
 
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "ibase.h"
 #include "../isql/isql.h"
 #include "../jrd/intl.h"

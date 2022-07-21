@@ -33,7 +33,7 @@
 #include "../../../remote/remot_proto.h"
 #include "../../../remote/os/win32/xnet_proto.h"
 #include "../../../remote/server/serve_proto.h"
-#include "../../../common/gds_proto.h"
+#include "../../../yvalve/gds_proto.h"
 #include "../../../common/isc_proto.h"
 #include "../../../common/isc_f_proto.h"
 #include "../../../common/classes/init.h"

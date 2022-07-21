@@ -84,7 +84,7 @@
 #include "../remote/inet_proto.h"
 #include "../remote/server/serve_proto.h"
 #include "../remote/server/ReplServer.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/fb_string.h"
 

@@ -27,7 +27,7 @@
 #include "memory_routines.h"
 #include "../common/StatusHolder.h"
 #include "firebird/impl/inf_pub.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/utils_proto.h"
 #include "firebird/impl/sqlda_pub.h"
 

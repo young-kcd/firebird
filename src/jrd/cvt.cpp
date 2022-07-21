@@ -46,7 +46,7 @@
 #include "../jrd/cvt_proto.h"
 #include "../common/dsc_proto.h"
 #include "../jrd/err_proto.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../common/classes/timestamp.h"
 #include "../common/cvt.h"

@@ -37,7 +37,7 @@
 #include "../utilities/rebuild/rmet_proto.h"
 #include "../utilities/rebuild/rstor_proto.h"
 #include "../jrd/dmp_proto.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/utils_proto.h
 
 #ifndef O_RDWR

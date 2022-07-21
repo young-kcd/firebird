@@ -28,7 +28,7 @@
 #include "../utilities/install/install_nt.h"
 #include "../remote/server/serve_proto.h"
 #include "../../remote/server/os/win32/cntl_proto.h"
-#include "../common/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/isc_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../common/classes/init.h"
