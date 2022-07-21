@@ -33,6 +33,9 @@
     <ClCompile Include="..\..\..\src\yvalve\DistributedTransaction.cpp">
       <Filter>source</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\yvalve\gds.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\yvalve\keywordsStub.cpp">
       <Filter>source</Filter>
     </ClCompile>

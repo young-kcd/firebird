@@ -18,7 +18,7 @@
     <ClCompile Include="..\..\..\src\gpre\boot\gpre_meta_boot.cpp">
       <Filter>source</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\common\gds.cpp">
+    <ClCompile Include="..\..\..\src\yvalve\gds.cpp">
       <Filter>source</Filter>
     </ClCompile>
   </ItemGroup>
