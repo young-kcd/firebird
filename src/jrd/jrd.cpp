@@ -456,7 +456,7 @@ namespace
 
 	struct AttShutParams
 	{
-		Semaphore thdStartedSem;
+		Semaphore thdStartedSem, startCallCompleteSem;
 		Thread::Handle thrHandle;
 		AttachmentsRefHolder* attachments;
 	};
@@ -7498,6 +7498,17 @@ namespace
 
 		AttShutParams* params = static_cast<AttShutParams*>(arg);
 		AttachmentsRefHolder* attachments = params->attachments;
+
+		try
+		{
+			params->startCallCompleteSem.enter();
+		}
+		catch (const Exception& ex)
+		{
+			iscLogException("attachmentShutdownThread", ex);
+			return 0;
+		}
+
 		Thread::Handle th = params->thrHandle;
 		fb_assert(th);
 
@@ -8217,6 +8228,8 @@ void JRD_shutdown_attachment(Attachment* attachment)
 		AttShutParams params;
 		params.attachments = queue;
 		Thread::start(attachmentShutdownThread, &params, THREAD_high, &params.thrHandle);
+		params.startCallCompleteSem.release();
+
 		queue.release();
 		shutThreadCollect->houseKeeping();
 		params.thdStartedSem.enter();
@@ -8278,6 +8291,8 @@ void JRD_shutdown_attachments(Database* dbb)
 			AttShutParams params;
 			params.attachments = queue;
 			Thread::start(attachmentShutdownThread, &params, THREAD_high, &params.thrHandle);
+			params.startCallCompleteSem.release();
+
 			queue.release();
 			shutThreadCollect->houseKeeping();
 			params.thdStartedSem.enter();
