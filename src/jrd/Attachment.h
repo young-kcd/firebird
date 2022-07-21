@@ -661,11 +661,6 @@ public:
 		iter.remove();
 	}
 
-	bool hasData() const
-	{
-		return m_attachments.hasData();
-	}
-
 private:
 	AttachmentsRefHolder(const AttachmentsRefHolder&);
 
