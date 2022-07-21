@@ -3,7 +3,7 @@
 ## New features
 
 * [#6983](https://github.com/FirebirdSQL/firebird/pull/6983): New built-in function BLOB_APPEND  
-  Reference(s): [/doc/sql.extensions/README.blob_append.md]  
+  Reference(s): [/doc/sql.extensions/README.blob_append.md](https://github.com/FirebirdSQL/firebird/raw/v4.0-release/doc/sql.extensions/README.blob_append.md)  
   Contributor(s): Vlad Khorsun
 
 ## Improvements
