@@ -518,6 +518,7 @@ bool BTR_description(thread_db* tdbb, jrd_rel* relation, index_root_page* root, 
 	idx->idx_expression_statement = nullptr;
 	idx->idx_condition = nullptr;
 	idx->idx_condition_statement = nullptr;
+	idx->idx_fraction = 1.0;
 
 	// pick up field ids and type descriptions for each of the fields
 	const UCHAR* ptr = (UCHAR*) root + irt_desc->irt_desc;

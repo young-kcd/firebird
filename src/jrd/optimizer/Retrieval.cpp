@@ -107,8 +107,8 @@ namespace
 } // namespace
 
 
-IndexScratch::IndexScratch(MemoryPool& p, index_desc* idx, double card)
-	: index(idx), cardinality(card), segments(p)
+IndexScratch::IndexScratch(MemoryPool& p, index_desc* idx)
+	: index(idx), segments(p), matches(p)
 {
 	segments.resize(index->idx_count);
 }
@@ -124,7 +124,8 @@ IndexScratch::IndexScratch(MemoryPool& p, const IndexScratch& other)
 	  nonFullMatchedSegments(other.nonFullMatchedSegments),
 	  usePartialKey(other.usePartialKey),
 	  useMultiStartingKeys(other.useMultiStartingKeys),
-	  segments(p, other.segments)
+	  segments(p, other.segments),
+	  matches(p, other.matches)
 {}
 
 
@@ -144,19 +145,24 @@ Retrieval::Retrieval(thread_db* aTdbb, Optimizer* opt, StreamType streamNumber,
 	  indexScratches(getPool()),
 	  inversionCandidates(getPool())
 {
-	const Database* const dbb = tdbb->getDatabase();
+	const auto dbb = tdbb->getDatabase();
 
 	const auto tail = &csb->csb_rpt[stream];
-
 	relation = tail->csb_relation;
 	fb_assert(relation);
 
 	if (!tail->csb_idx)
 		return;
 
+	MatchedBooleanList matches;
+
 	for (auto& index : *tail->csb_idx)
 	{
-		if ((index.idx_flags & idx_condition) && !checkIndexCondition(index))
+		matches.clear();
+
+		index.idx_fraction = MAXIMUM_SELECTIVITY;
+
+		if ((index.idx_flags & idx_condition) && !checkIndexCondition(index, matches))
 			continue;
 
 		const auto length = ROUNDUP(BTR_key_length(tdbb, relation, &index), sizeof(SLONG));
@@ -171,12 +177,16 @@ Retrieval::Retrieval(thread_db* aTdbb, Optimizer* opt, StreamType streamNumber,
 		// Compound indexes are generally less compressed.
 		const double factor = (index.idx_count == 1) ? 0.5 : 0.7;
 
-		double cardinality = tail->csb_cardinality;
+		double cardinality = tail->csb_cardinality * index.idx_fraction;
 		cardinality *= (2 + length * factor);
 		cardinality /= (dbb->dbb_page_size - BTR_SIZE);
 		cardinality = MAX(cardinality, MINIMUM_CARDINALITY);
 
-		indexScratches.add(IndexScratch(getPool(), &index, cardinality));
+		IndexScratch scratch(getPool(), &index);
+		scratch.cardinality = cardinality;
+		scratch.matches.assign(matches);
+
+		indexScratches.add(scratch);
 	}
 }
 
@@ -562,7 +572,7 @@ void Retrieval::analyzeNavigation(const InversionCandidateList& inversions)
 					for (const auto otherMatch : otherCandidate->matches)
 					{
 						if (candidate->matches.exist(otherMatch) &&
-							betterInversion(otherCandidate, candidate, true))
+							betterInversion(otherCandidate, candidate))
 						{
 							usableIndex = false;
 							break;
@@ -586,15 +596,14 @@ void Retrieval::analyzeNavigation(const InversionCandidateList& inversions)
 			// If no inversion candidate is found, create a fake one representing full index scan
 
 			candidate = FB_NEW_POOL(getPool()) InversionCandidate(getPool());
-			candidate->cost = indexScratch.cardinality;
+			candidate->cost = DEFAULT_INDEX_COST + indexScratch.cardinality;
 			candidate->indexes = 1;
 			candidate->scratch = &indexScratch;
-			candidate->nonFullMatchedSegments = indexScratch.segments.getCount();
 			tempCandidates.add(candidate);
 		}
 
 		if (!bestCandidate ||
-			betterInversion(candidate, bestCandidate, false))
+			betterInversion(candidate, bestCandidate))
 		{
 			bestCandidate = candidate;
 		}
@@ -611,8 +620,7 @@ void Retrieval::analyzeNavigation(const InversionCandidateList& inversions)
 }
 
 bool Retrieval::betterInversion(const InversionCandidate* inv1,
-								const InversionCandidate* inv2,
-								bool ignoreUnmatched) const
+								const InversionCandidate* inv2) const
 {
 	// Return true if inversion1 is *better* than inversion2.
 	// It's mostly about the retrieval cost, but other aspects are also taken into account.
@@ -662,24 +670,23 @@ bool Retrieval::betterInversion(const InversionCandidate* inv1,
 			{
 				// If the "same" costs then compare with the nr of unmatched segments,
 				// how many indexes and matched segments. First compare number of indexes.
-				int compareSelectivity = (inv1->indexes - inv2->indexes);
+				int diff = (inv1->indexes - inv2->indexes);
 
-				if (compareSelectivity == 0)
+				if (diff == 0)
 				{
 					// For the same number of indexes compare number of matched segments.
 					// Note the inverted condition: the more matched segments the better.
-					compareSelectivity = (inv2->matchedSegments - inv1->matchedSegments);
+					diff = (inv2->matchedSegments - inv1->matchedSegments);
 
-					if (compareSelectivity == 0 && !ignoreUnmatched)
+					if (diff == 0)
 					{
 						// For the same number of matched segments
 						// compare ones that aren't full matched
-						compareSelectivity =
-							(inv1->nonFullMatchedSegments - inv2->nonFullMatchedSegments);
+						diff = (inv1->nonFullMatchedSegments - inv2->nonFullMatchedSegments);
 					}
 				}
 
-				if (compareSelectivity < 0)
+				if (diff < 0)
 					return true;
 			}
 			else if (cost1 < cost2)
@@ -690,12 +697,14 @@ bool Retrieval::betterInversion(const InversionCandidate* inv1,
 	return false;
 }
 
-bool Retrieval::checkIndexCondition(const index_desc& idx) const
+bool Retrieval::checkIndexCondition(index_desc& idx, MatchedBooleanList& matches) const
 {
 	fb_assert(idx.idx_condition);
 
 	if (!idx.idx_condition->containsStream(0, true))
 		return false;
+
+	fb_assert(matches.isEmpty());
 
 	auto iter = optimizer->getConjuncts(outerFlag, innerFlag);
 
@@ -703,7 +712,7 @@ bool Retrieval::checkIndexCondition(const index_desc& idx) const
 	const auto conjunctCount = optimizer->decomposeBoolean(idx.idx_condition, idxConjuncts);
 	fb_assert(conjunctCount);
 
-	unsigned matchCount = 0;
+	idx.idx_fraction = MAXIMUM_SELECTIVITY;
 
 	for (BoolExprNodeStack::const_iterator idxIter(idxConjuncts);
 		idxIter.hasData(); ++idxIter)
@@ -720,7 +729,7 @@ bool Retrieval::checkIndexCondition(const index_desc& idx) const
 				if (binaryNode->arg1->sameAs(*iter, true) ||
 					binaryNode->arg2->sameAs(*iter, true))
 				{
-					matchCount++;
+					matches.add(*iter);
 					break;
 				}
 			}
@@ -741,14 +750,14 @@ bool Retrieval::checkIndexCondition(const index_desc& idx) const
 					if (cmpNode->arg1->sameAs(missingNode->arg, true) ||
 						cmpNode->arg2->sameAs(missingNode->arg, true))
 					{
-						matchCount++;
+						matches.add(*iter);
 						break;
 					}
 
 					if (cmpNode->arg3 &&
 						cmpNode->arg3->sameAs(missingNode->arg, true))
 					{
-						matchCount++;
+						matches.add(*iter);
 						break;
 					}
 				}
@@ -761,13 +770,15 @@ bool Retrieval::checkIndexCondition(const index_desc& idx) const
 		{
 			if (idxIter.object()->sameAs(*iter, true))
 			{
-				matchCount++;
+				matches.add(*iter);
 				break;
 			}
 		}
+
+		idx.idx_fraction *= optimizer->getSelectivity(boolean);
 	}
 
-	return (matchCount >= conjunctCount);
+	return (matches.getCount() >= conjunctCount);
 }
 
 bool Retrieval::checkIndexExpression(const index_desc* idx, ValueExprNode* node) const
@@ -813,13 +824,14 @@ void Retrieval::getInversionCandidates(InversionCandidateList& inversions,
 		scratch.usePartialKey = false;
 		scratch.useMultiStartingKeys = false;
 
+		const auto idx = scratch.index;
+
 		if (scratch.candidate)
 		{
-			matches.clear();
-			scratch.selectivity = MAXIMUM_SELECTIVITY;
+			matches.assign(scratch.matches);
+			scratch.selectivity = idx->idx_fraction;
 
 			bool unique = false;
-			const auto idx = scratch.index;
 
 			for (unsigned j = 0; j < scratch.segments.getCount(); j++)
 			{
@@ -987,6 +999,17 @@ void Retrieval::getInversionCandidates(InversionCandidateList& inversions,
 				invCandidate->dependencies = invCandidate->dependentFromStreams.getCount();
 				inversions.add(invCandidate);
 			}
+		}
+		else if (idx->idx_flags & idx_condition)
+		{
+			const auto invCandidate = FB_NEW_POOL(getPool()) InversionCandidate(getPool());
+			invCandidate->selectivity = idx->idx_fraction;
+			invCandidate->cost = DEFAULT_INDEX_COST + scratch.cardinality;
+			invCandidate->indexes = 1;
+			invCandidate->scratch = &scratch;
+			invCandidate->matches.assign(scratch.matches);
+
+			inversions.add(invCandidate);
 		}
 	}
 }
@@ -1338,7 +1361,7 @@ InversionCandidate* Retrieval::makeInversion(InversionCandidateList& inversions)
 						break;
 					}
 
-					if (betterInversion(currentInv, bestCandidate, false))
+					if (betterInversion(currentInv, bestCandidate))
 						bestCandidate = currentInv;
 				}
 			}
@@ -1546,6 +1569,14 @@ bool Retrieval::matchBoolean(IndexScratch* indexScratch,
 		cmpNode->arg3 : nullptr;
 
 	const auto idx = indexScratch->index;
+
+	if (idx->idx_flags & idx_condition)
+	{
+		// If index condition matches the boolean, this should not be
+		// considered a match. Full index scan will be used instead.
+		if (idx->idx_condition->sameAs(boolean, true))
+			return false;
+	}
 
 	if (idx->idx_flags & idx_expression)
 	{
