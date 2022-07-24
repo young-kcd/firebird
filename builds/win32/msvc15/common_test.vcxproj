@@ -191,6 +191,7 @@
     <ClCompile Include="..\..\..\src\common\classes\tests\AlignerTest.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\tests\ArrayTest.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\tests\DoublyLinkedListTest.cpp" />
+    <ClCompile Include="..\..\..\src\yvalve\gds.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="common.vcxproj">

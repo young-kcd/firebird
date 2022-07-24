@@ -39,7 +39,7 @@ AllObjects += $(Common_Objects)
 # Common test files
 COT1:= $(call dirObjects,common/tests)
 COT2:= $(call dirObjects,common/classes/tests)
-Common_Test_Objects:= $(COT1) $(COT2)
+Common_Test_Objects:= $(COT1) $(COT2) $(call makeObjects,yvalve,gds.cpp)
 
 AllObjects += $(Common_Test_Objects)
 
@@ -48,7 +48,7 @@ AllObjects += $(Common_Test_Objects)
 GPRE_Common_Objects:= $(call dirObjects,gpre) $(call makeObjects,gpre/languages,@GPRE_LANGUAGE_MODULES@)
 GPRE_std:= $(call dirObjects,gpre/std)
 GPRE_Objects:= $(GPRE_Common_Objects) $(GPRE_std)
-GPRE_boot:= $(call dirObjects,gpre/boot)
+GPRE_boot:= $(call dirObjects,gpre/boot) $(call makeObjects,yvalve,gds.cpp)
 GPRE_Boot_Objects:= $(GPRE_Common_Objects) $(GPRE_boot)
 
 AllObjects += $(GPRE_Common_Objects) $(GPRE_std) $(GPRE_boot)

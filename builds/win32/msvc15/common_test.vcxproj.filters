@@ -27,5 +27,8 @@
     <ClCompile Include="..\..\..\src\common\classes\tests\DoublyLinkedListTest.cpp">
       <Filter>source</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\yvalve\gds.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
