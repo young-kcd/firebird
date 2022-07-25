@@ -83,7 +83,7 @@ goto :END
 @echo    JUSTBUILD - Just build - don't create packages.
 @echo.
 @echo    SNAPSHOT  - Build and create a zip kit.
-@echo                This is intended to produce an x64 test kit
+@echo                This is intended to produce a x64 test kit
 @echo                with no dependency on Win32
 @echo.
 
