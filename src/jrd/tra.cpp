@@ -1242,7 +1242,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
 	}
 
 	// Release interest in relation/procedure existence for transaction
-	transaction->tra_resources.releaseResources(tdbb);
+	transaction->tra_resources.releaseResources(tdbb, transaction);
 
 	release_temp_tables(tdbb, transaction);
 
@@ -3756,6 +3756,8 @@ jrd_tra::~jrd_tra()
 		MemoryPool::deletePool(tra_autonomous_pool);
 
 	delete tra_sec_db_context;
+
+	tra_resources.releaseResources(nullptr, this);
 }
 
 

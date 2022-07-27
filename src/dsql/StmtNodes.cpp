@@ -1779,7 +1779,7 @@ void DeclareSubFuncNode::genParameters(DsqlCompilerScratch* dsqlScratch,
 DeclareSubFuncNode* DeclareSubFuncNode::pass1(thread_db* tdbb, CompilerScratch* /*csb*/)
 {
 	ContextPoolHolder context(tdbb, &subCsb->csb_pool);
-	PAR_blr(tdbb, NULL, blrStart, blrLength, NULL, &subCsb, NULL, false, 0);
+	PAR_blr(tdbb, nullRel, blrStart, blrLength, NULL, &subCsb, NULL, false, 0);
 
 	return this;
 }
@@ -2120,7 +2120,7 @@ void DeclareSubProcNode::genParameters(DsqlCompilerScratch* dsqlScratch,
 DeclareSubProcNode* DeclareSubProcNode::pass1(thread_db* tdbb, CompilerScratch* /*csb*/)
 {
 	ContextPoolHolder context(tdbb, &subCsb->csb_pool);
-	PAR_blr(tdbb, NULL, blrStart, blrLength, NULL, &subCsb, NULL, false, 0);
+	PAR_blr(tdbb, nullRel, blrStart, blrLength, NULL, &subCsb, NULL, false, 0);
 
 	return this;
 }

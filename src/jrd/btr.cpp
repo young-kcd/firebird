@@ -6014,16 +6014,19 @@ string print_key(thread_db* tdbb, jrd_rel* relation, index_desc* idx, Record* re
  *	Convert index key into textual representation.
  *
  **************************************/
-	fb_assert(relation && idx && record);
+	string key;
 
-	if (!(relation->rel_flags & REL_scanned) ||
-		(relation->rel_flags & REL_being_scanned))
+	fb_assert(relation && idx && record);
+	HazardPtr<jrd_rel> wrk = MET_scan_relation(tdbb, relation->rel_id);
+	if (!wrk)
 	{
-		MET_scan_relation(tdbb, relation);
+		key.printf("(target relation %s deleted)", relation->c_name());
+		return key;
 	}
+	relation = wrk.getPointer();
 
 	const FB_SIZE_T MAX_KEY_STRING_LEN = 250;
-	string key, value;
+	string value;
 
 	try
 	{

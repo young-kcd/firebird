@@ -504,8 +504,8 @@ static Format*	make_format(thread_db*, HazardPtr<jrd_rel>, USHORT *, TemporaryFi
 static void put_summary_blob(thread_db* tdbb, blb*, enum rsr_t, bid*, jrd_tra*);
 static void put_summary_record(thread_db* tdbb, blb*, enum rsr_t, const UCHAR*, ULONG);
 static void	setup_array(thread_db*, blb*, const TEXT*, USHORT, TemporaryField*);
-static blb*	setup_triggers(thread_db*, jrd_rel*, bool, TrigVectorPtr*, blb*);
-static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, TrigVectorPtr*, const TEXT*, bool);
+static blb*	setup_triggers(thread_db*, HazardPtr<jrd_rel>&, bool, TrigVectorPtr*, blb*);
+static void	setup_trigger_details(thread_db*, HazardPtr<jrd_rel>&, blb*, TrigVectorPtr*, const TEXT*, bool);
 static bool validate_text_type (thread_db*, const TemporaryField*);
 
 static void check_partners(thread_db*, const USHORT);
@@ -991,7 +991,7 @@ namespace
 
 					const MetaName depName(work->dfw_package.isEmpty() ?
 						MetaName(work->dfw_name) : work->dfw_package);
-					MET_get_dependencies(tdbb, NULL, NULL, 0, NULL, &blobId,
+					MET_get_dependencies(tdbb, nullRel, NULL, 0, NULL, &blobId,
 						(compile ? &statement : NULL),
 						NULL, depName,
 						(work->dfw_package.isEmpty() ? objType : obj_package_body),
@@ -2751,7 +2751,7 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 						if (!IDX.RDB$EXPRESSION_BLR.NULL)
 						{
 							idx.idx_expression = static_cast<ValueExprNode*>(MET_get_dependencies(
-								tdbb, relation.unsafePointer(), NULL, 0, NULL, &IDX.RDB$EXPRESSION_BLR,
+								tdbb, relation, NULL, 0, NULL, &IDX.RDB$EXPRESSION_BLR,
 								&idx.idx_expression_statement, &csb, work->dfw_name, obj_expression_index, 0,
 								transaction));
 						}
@@ -4264,7 +4264,7 @@ static bool create_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 				MemoryPool* new_pool = attachment->createPool();
 				Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-				MET_get_dependencies(tdbb, NULL, NULL, 0, NULL, &validation,
+				MET_get_dependencies(tdbb, nullRel, NULL, 0, NULL, &validation,
 					NULL, NULL, depName, obj_validation, 0, transaction, depName);
 
 				attachment->deletePool(new_pool);
@@ -4428,7 +4428,7 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 				MemoryPool* new_pool = attachment->createPool();
 				Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-				MET_get_dependencies(tdbb, NULL, NULL, 0, NULL, &validation,
+				MET_get_dependencies(tdbb, nullRel, NULL, 0, NULL, &validation,
 					NULL, NULL, depName, obj_validation, 0, transaction, depName);
 
 				attachment->deletePool(new_pool);
@@ -4656,6 +4656,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 				ERR_post(Arg::Gds(isc_random) << "Index block gone unexpestedly");
 			fb_assert(!arrVal);
 			index->idl_lock.releaseLock(tdbb, ExistenceLock::ReleaseMethod::DropObject);
+			fprintf(stderr, "delayedDelete index, replace NULL, to be reviewed\n");
 			index->delayedDelete(tdbb);
 
 			// Release index refresh lock and memory.
@@ -4891,7 +4892,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 		}
 
 		if (relation->rel_file) {
-		    EXT_fini(relation.unsafePointer(), false);
+		    EXT_fini(relation.getPointer(), false);
 		}
 
 		if (relation->isTemporary())
@@ -5411,7 +5412,7 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
 
 		Jrd::ContextPoolHolder context(tdbb, new_pool);
 		const MetaName depName(work->dfw_name);
-		MET_get_dependencies(tdbb, relation.unsafePointer(), NULL, 0, NULL, &blob_id, (compile ? &statement : NULL),
+		MET_get_dependencies(tdbb, relation, NULL, 0, NULL, &blob_id, (compile ? &statement : NULL),
 							 NULL, depName, obj_trigger, par_flags, transaction);
 
 		if (statement)
@@ -5875,7 +5876,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 						try
 						{
 							ValueExprNode* defaultNode = static_cast<ValueExprNode*>(MET_parse_blob(
-								tdbb, relation.unsafePointer(), defaultValue, NULL, &defaultStatement, false, false));
+								tdbb, relation, defaultValue, NULL, &defaultStatement, false, false));
 
 							Request* const defaultRequest = defaultStatement->findRequest(tdbb);
 
@@ -5980,7 +5981,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 			 				 Arg::Gds(isc_must_have_phys_field));
 				}
 
-				blob = setup_triggers(tdbb, relation.unsafePointer(), null_view, triggers, blob);
+				blob = setup_triggers(tdbb, relation, null_view, triggers, blob);
 
 				blob->BLB_close(tdbb);
 				USHORT version = REL.RDB$FORMAT.NULL ? 0 : REL.RDB$FORMAT;
@@ -6154,7 +6155,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 						{
 							Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-							MET_load_trigger(tdbb, relation.unsafePointer(), work->dfw_name, triggers);
+							MET_load_trigger(tdbb, relation, work->dfw_name, triggers);
 
 							for (int i = 0; i < TRIGGER_MAX; ++i)
 							{
@@ -6287,6 +6288,7 @@ static bool scan_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd
  **************************************/
 
 	SET_TDBB(tdbb);
+	HazardPtr<jrd_rel> rel;
 
 	switch (phase)
 	{
@@ -6299,11 +6301,13 @@ static bool scan_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd
 		//			appear at stage 3, so the logic would work reliably
 		//			if this line is removed (and hence we rely on the
 		//			4th stage only). But I leave it here for the time being.
-		MET_scan_relation(tdbb, MetadataCache::findRelation(tdbb, work->dfw_id));
+		rel = MetadataCache::findRelation(tdbb, work->dfw_id);
+		MET_scan_relation(tdbb, rel);
 		return true;
 
 	case 4:
-		MET_scan_relation(tdbb, MetadataCache::findRelation(tdbb, work->dfw_id));
+		rel = MetadataCache::findRelation(tdbb, work->dfw_id);
+		MET_scan_relation(tdbb, rel);
 		break;
 	}
 
@@ -6414,7 +6418,7 @@ static void setup_array(thread_db* tdbb, blb* blob, const TEXT* field_name, USHO
 }
 
 
-static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
+static blb* setup_triggers(thread_db* tdbb, HazardPtr<jrd_rel>& relation, bool null_view,
 	TrigVectorPtr* triggers, blb* blob)
 {
 /**************************************
@@ -6511,7 +6515,7 @@ static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
 
 
 static void setup_trigger_details(thread_db* tdbb,
-								  jrd_rel* relation,
+								  HazardPtr<jrd_rel>& relation,
 								  blb* blob,
 								  TrigVectorPtr* triggers,
 								  const TEXT* trigger_name,

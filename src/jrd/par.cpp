@@ -87,7 +87,7 @@ namespace
 	class BlrParseWrapper
 	{
 	public:
-		BlrParseWrapper(MemoryPool& pool, jrd_rel* relation, CompilerScratch* view_csb,
+		BlrParseWrapper(thread_db* tdbb, MemoryPool& pool, HazardPtr<jrd_rel>& relation, CompilerScratch* view_csb,
 						CompilerScratch** csb_ptr, const bool trigger, USHORT flags)
 			: m_csbPtr(csb_ptr)
 		{
@@ -97,9 +97,6 @@ namespace
 				m_csb->csb_g_flags |= flags;
 			}
 
-			if (relation)
-				m_csb->csb_resources.checkResource(Resource::rsc_relation, relation);
-
 			// If there is a request ptr, this is a trigger.  Set up contexts 0 and 1 for
 			// the target relation
 
@@ -108,20 +105,23 @@ namespace
 				StreamType stream = m_csb->nextStream();
 				CompilerScratch::csb_repeat* t1 = CMP_csb_element(m_csb, 0);
 				t1->csb_flags |= csb_used | csb_active | csb_trigger;
-				t1->csb_relation = relation;
+				t1->csb_relation = m_csb->csb_resources.registerResource(tdbb, Resource::rsc_relation,
+					relation, relation->rel_id);
 				t1->csb_stream = stream;
 
 				stream = m_csb->nextStream();
 				t1 = CMP_csb_element(m_csb, 1);
 				t1->csb_flags |= csb_used | csb_active | csb_trigger;
-				t1->csb_relation = relation;
+				t1->csb_relation = m_csb->csb_resources.registerResource(tdbb, Resource::rsc_relation,
+					relation, relation->rel_id);
 				t1->csb_stream = stream;
 			}
 			else if (relation)
 			{
 				CompilerScratch::csb_repeat* t1 = CMP_csb_element(m_csb, 0);
 				t1->csb_stream = m_csb->nextStream();
-				t1->csb_relation = relation;
+				t1->csb_relation = m_csb->csb_resources.registerResource(tdbb, Resource::rsc_relation,
+					relation, relation->rel_id);
 				t1->csb_flags = csb_used | csb_active;
 			}
 
@@ -169,7 +169,7 @@ namespace
 
 // Parse blr, returning a compiler scratch block with the results.
 // Caller must do pool handling.
-DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr_length,
+DmlNode* PAR_blr(thread_db* tdbb, HazardPtr<jrd_rel>& relation, const UCHAR* blr, ULONG blr_length,
 	CompilerScratch* view_csb, CompilerScratch** csb_ptr, Statement** statementPtr,
 	const bool trigger, USHORT flags)
 {
@@ -179,7 +179,7 @@ DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 	fb_print_blr(blr, blr_length, gds__trace_printer, 0, 0);
 #endif
 
-	BlrParseWrapper csb(*tdbb->getDefaultPool(), relation, view_csb, csb_ptr, trigger, flags);
+	BlrParseWrapper csb(tdbb, *tdbb->getDefaultPool(), relation, view_csb, csb_ptr, trigger, flags);
 
 	csb->csb_blr_reader = BlrReader(blr, blr_length);
 
@@ -199,11 +199,11 @@ DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 
 // Finish parse of memory nodes, returning a compiler scratch block with the results.
 // Caller must do pool handling.
-void PAR_preparsed_node(thread_db* tdbb, jrd_rel* relation, DmlNode* node,
+void PAR_preparsed_node(thread_db* tdbb, HazardPtr<jrd_rel>& relation, DmlNode* node,
 	CompilerScratch* view_csb, CompilerScratch** csb_ptr, Statement** statementPtr,
 	const bool trigger, USHORT flags)
 {
-	BlrParseWrapper csb(*tdbb->getDefaultPool(), relation, view_csb, csb_ptr, trigger, flags);
+	BlrParseWrapper csb(tdbb, *tdbb->getDefaultPool(), relation, view_csb, csb_ptr, trigger, flags);
 
 	csb->blrVersion = 5;	// blr_version5
 	csb->csb_node = node;
@@ -215,7 +215,7 @@ void PAR_preparsed_node(thread_db* tdbb, jrd_rel* relation, DmlNode* node,
 
 // PAR_blr equivalent for validation expressions.
 // Validation expressions are boolean expressions, but may be prefixed with a blr_stmt_expr.
-BoolExprNode* PAR_validation_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr_length,
+BoolExprNode* PAR_validation_blr(thread_db* tdbb, HazardPtr<jrd_rel>& relation, const UCHAR* blr, ULONG blr_length,
 	CompilerScratch* view_csb, CompilerScratch** csb_ptr, USHORT flags)
 {
 	SET_TDBB(tdbb);
@@ -226,7 +226,7 @@ BoolExprNode* PAR_validation_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR
 	fb_print_blr(blr, blr_length, gds__trace_printer, 0, 0);
 #endif
 
-	BlrParseWrapper csb(*tdbb->getDefaultPool(), relation, view_csb, csb_ptr, false, flags);
+	BlrParseWrapper csb(tdbb, *tdbb->getDefaultPool(), relation, view_csb, csb_ptr, false, flags);
 
 	csb->csb_blr_reader = BlrReader(blr, blr_length);
 

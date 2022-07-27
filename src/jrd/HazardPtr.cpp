@@ -39,8 +39,8 @@ HazardObject::~HazardObject()
 
 int HazardObject::delayedDelete(thread_db* tdbb)
 {
-	HazardDelayedDelete& dd = tdbb->getAttachment()->att_delayed_delete;
-	dd.delayedDelete(this);
+	HazardDelayedDelete* dd = HazardBase::getHazardDelayed(tdbb);
+	dd->delayedDelete(this);
 	return 0;
 }
 
@@ -48,7 +48,17 @@ HazardDelayedDelete* HazardBase::getHazardDelayed(thread_db* tdbb)
 {
 	if (!tdbb)
 		tdbb = JRD_get_thread_data();
-	return &tdbb->getAttachment()->att_delayed_delete;
+	fb_assert(tdbb);
+
+	Attachment* att = tdbb->getAttachment();
+	if (att)
+		return &att->att_delayed_delete;
+
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// what about locking object in database? (dbb_delayed_delete)
+	Database* dbb = tdbb->getDatabase();
+	fb_assert(dbb);
+	return &dbb->dbb_delayed_delete;
 }
 
 HazardDelayedDelete* HazardBase::getHazardDelayed(Attachment* att)
@@ -101,6 +111,8 @@ void HazardDelayedDelete::remove(const void* ptr)
 
 void HazardDelayedDelete::delayedDelete(HazardObject* mem, bool gc)
 {
+	HZ_DEB(fprintf(stderr, "HazardDelayedDelete::delayedDelete %p\n", mem));
+
 	if (mem)
 		toDelete.push(mem);
 

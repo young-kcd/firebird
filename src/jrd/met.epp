@@ -113,18 +113,18 @@ static int blocking_ast_procedure(void*);
 static int partners_ast_relation(void*);
 static int rescan_ast_relation(void*);
 static ULONG get_rel_flags_from_FLAGS(USHORT);
-static void get_trigger(thread_db*, jrd_rel*, bid*, bid*, TrigVectorPtr*, const TEXT*, FB_UINT64, bool,
+static void get_trigger(thread_db*, HazardPtr<jrd_rel>&, bid*, bid*, TrigVectorPtr*, const TEXT*, FB_UINT64, bool,
 	USHORT, const MetaName&, const string&, const bid*, Nullable<bool> ssDefiner);
 static bool get_type(thread_db*, USHORT*, const UCHAR*, const TEXT*);
-static void lookup_view_contexts(thread_db*, jrd_rel*);
+static void lookup_view_contexts(thread_db*, HazardPtr<jrd_rel>&);
 static void make_relation_scope_name(const TEXT*, const USHORT, string& str);
 static ValueExprNode* parse_field_default_blr(thread_db* tdbb, bid* blob_id);
 static BoolExprNode* parse_field_validation_blr(thread_db* tdbb, bid* blob_id, const MetaName name);
-static void save_trigger_data(thread_db*, TrigVectorPtr*, jrd_rel*, Statement*, blb*, blb*,
+static void save_trigger_data(thread_db*, TrigVectorPtr*, HazardPtr<jrd_rel>&, Statement*, blb*, blb*,
 	const TEXT*, FB_UINT64, bool, USHORT, const MetaName&, const string&,
 	const bid*, Nullable<bool> ssDefiner);
 static void scan_partners(thread_db*, jrd_rel*);
-static void store_dependencies(thread_db*, CompilerScratch*, const jrd_rel*,
+static void store_dependencies(thread_db*, CompilerScratch*, HazardPtr<jrd_rel>&,
 	const MetaName&, int, jrd_tra*);
 static bool verify_TRG_ignore_perm(thread_db*, const MetaName&);
 
@@ -1491,7 +1491,7 @@ bool MET_get_char_coll_subtype_info(thread_db* tdbb, USHORT id, SubtypeInfo* inf
 
 
 DmlNode* MET_get_dependencies(thread_db* tdbb,
-							  jrd_rel* relation,
+							  Jrd::HazardPtr<Jrd::jrd_rel>& relation,
 							  const UCHAR* blob,
 							  const ULONG blob_length,
 							  CompilerScratch* view_csb,
@@ -1755,7 +1755,7 @@ void MetadataCache::load_db_triggers(thread_db* tdbb, int type)
 			 TRG.RDB$TRIGGER_INACTIVE EQ 0
 		SORTED BY TRG.RDB$TRIGGER_SEQUENCE
 	{
-		MET_load_trigger(tdbb, NULL, TRG.RDB$TRIGGER_NAME, &mdc_triggers[type]);
+		MET_load_trigger(tdbb, nullRel, TRG.RDB$TRIGGER_NAME, &mdc_triggers[type]);
 	}
 	END_FOR
 }
@@ -1789,7 +1789,7 @@ void MetadataCache::load_ddl_triggers(thread_db* tdbb)
 	{
 		if ((TRG.RDB$TRIGGER_TYPE & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DDL)
 		{
-			MET_load_trigger(tdbb, NULL, TRG.RDB$TRIGGER_NAME, &mdc_ddl_triggers);
+			MET_load_trigger(tdbb, nullRel, TRG.RDB$TRIGGER_NAME, &mdc_ddl_triggers);
 		}
 	}
 	END_FOR
@@ -1797,7 +1797,7 @@ void MetadataCache::load_ddl_triggers(thread_db* tdbb)
 
 
 void MET_load_trigger(thread_db* tdbb,
-					  jrd_rel* relation,
+					  HazardPtr<jrd_rel>& relation,
 					  const MetaName& trigger_name,
 					  TrigVectorPtr* triggers)
 {
@@ -2445,10 +2445,12 @@ void MET_lookup_index_expression(thread_db* tdbb, jrd_rel* relation, index_desc*
 		return;
 	}
 
-	if (!(relation->rel_flags & REL_scanned) || (relation->rel_flags & REL_being_scanned))
+	HazardPtr<jrd_rel> wrk = MET_scan_relation(tdbb, relation->rel_id);
+	if (!wrk)
 	{
-		MET_scan_relation(tdbb, relation);
+		(Arg::Gds(isc_random) << "Relation was deleted").raise();
 	}
+	relation = wrk.getPointer();
 
 	CompilerScratch* csb = NULL;
 	AutoCacheRequest request(tdbb, irq_l_exp_index, IRQ_REQUESTS);
@@ -2470,9 +2472,9 @@ void MET_lookup_index_expression(thread_db* tdbb, jrd_rel* relation, index_desc*
 
 		{ // scope
 			Jrd::ContextPoolHolder context(tdbb, attachment->createPool());
-			idx->idx_expression = static_cast<ValueExprNode*>(MET_parse_blob(
+		/*	idx->idx_expression = static_cast<ValueExprNode*>(MET_parse_blob(
 				tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb,
-				&idx->idx_expression_statement, false, false));
+				&idx->idx_expression_statement, false, false));!!!!!!!!!!!!!!!!!!!*/
 		} // end scope
 	}
 	END_FOR
@@ -2976,13 +2978,13 @@ bool MetadataCache::checkRelation(thread_db* tdbb, jrd_rel* relation)
 }
 
 
-DmlNode* MET_parse_blob(thread_db*	tdbb,
-				   jrd_rel*		relation,
-				   bid*			blob_id,
-				   CompilerScratch**		csb_ptr,
-				   Statement**	statementPtr,
-				   const bool	trigger,
-				   bool validationExpr)
+DmlNode* MET_parse_blob(thread_db*					tdbb,
+				   Jrd::HazardPtr<Jrd::jrd_rel>&	relation,
+				   bid*								blob_id,
+				   CompilerScratch**				csb_ptr,
+				   Statement**						statementPtr,
+				   const bool						trigger,
+				   bool 							validationExpr)
 {
 /**************************************
  *
@@ -3023,7 +3025,7 @@ DmlNode* MET_parse_blob(thread_db*	tdbb,
 }
 
 
-void MET_parse_sys_trigger(thread_db* tdbb, jrd_rel* relation)
+void MET_parse_sys_trigger(thread_db* tdbb, HazardPtr<jrd_rel>& relation)
 {
 /**************************************
  *
@@ -3339,7 +3341,7 @@ HazardPtr<jrd_prc> MetadataCache::findProcedure(thread_db* tdbb, USHORT id, bool
 					try
 					{
 						parameter->prm_default_value = static_cast<ValueExprNode*>(
-							MET_parse_blob(tdbb, NULL, &pa_default_value, NULL, NULL, false, false));
+							MET_parse_blob(tdbb, nullRel, &pa_default_value, NULL, NULL, false, false));
 					}
 					catch (const Exception&)
 					{
@@ -3569,7 +3571,7 @@ HazardPtr<jrd_rel> MetadataCache::findRelation(thread_db* tdbb, USHORT id)
 	CHECK_DBB(dbb);
 
 	Attachment* attachment = tdbb->getAttachment();
-	MetadataCache* mdc = attachment->att_database->dbb_mdc;
+	MetadataCache* mdc = dbb->dbb_mdc;
 	MemoryPool& pool = mdc->getPool();
 
 	HazardPtr<jrd_rel> relation;
@@ -3685,12 +3687,20 @@ void MET_scan_partners(thread_db* tdbb, jrd_rel* relation)
 }
 
 
-void MET_scan_relation(thread_db* tdbb, HazardPtr<Jrd::jrd_rel> relation)
+HazardPtr<jrd_rel> MET_scan_relation(thread_db* tdbb, USHORT id)
 {
-	MET_scan_relation(tdbb, relation.getPointer());
+	HazardPtr<jrd_rel> relation = MetadataCache::lookup_relation_id(tdbb, id, false);
+
+	if (relation && (!(relation->rel_flags & REL_scanned) ||
+		(relation->rel_flags & REL_being_scanned)))
+	{
+		MET_scan_relation(tdbb, relation);
+	}
+
+	return relation;
 }
 
-void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
+void MET_scan_relation(thread_db* tdbb, HazardPtr<Jrd::jrd_rel>& relation)
 {
 /**************************************
  *
@@ -3724,7 +3734,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 	if (relation->rel_flags & (REL_scanned | REL_deleted))
 		return;
 
-	relation->rel_flags |= REL_being_scanned;
+	relation->rel_flags |= REL_being_scanned;			// !!!!!!!!!!!!!!!!! atomic, check old value
 	dependencies = (relation->rel_flags & REL_get_dependencies) ? true : false;
 	sys_triggers = (relation->rel_flags & REL_sys_triggers) ? true : false;
 	relation->rel_flags &= ~(REL_get_dependencies | REL_sys_triggers);
@@ -3908,7 +3918,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 					csb->csb_g_flags |= csb_get_dependencies;
 					field->fld_source = PAR_make_field(tdbb, csb, view_context, (TEXT*) p);
 					const MetaName depName(REL.RDB$RELATION_NAME);
-					store_dependencies(tdbb, csb, 0, depName, obj_view, depTrans);
+					store_dependencies(tdbb, csb, nullRel, depName, obj_view, depTrans);
 				}
 				else
 					field->fld_source = PAR_make_field(tdbb, csb, view_context, (TEXT*) p);
@@ -4362,7 +4372,7 @@ ULONG MET_get_rel_flags_from_TYPE(USHORT type)
 }
 
 
-static void get_trigger(thread_db* tdbb, jrd_rel* relation,
+static void get_trigger(thread_db* tdbb, HazardPtr<jrd_rel>& relation,
 						bid* blob_id, bid* debug_blob_id, TrigVectorPtr* ptr,
 						const TEXT* name, FB_UINT64 type,
 						bool sys_trigger, USHORT flags,
@@ -4452,7 +4462,7 @@ static bool get_type(thread_db* tdbb, USHORT* id, const UCHAR* name, const TEXT*
 }
 
 
-static void lookup_view_contexts( thread_db* tdbb, jrd_rel* view)
+static void lookup_view_contexts( thread_db* tdbb, HazardPtr<jrd_rel>& view)
 {
 /**************************************
  *
@@ -4531,7 +4541,7 @@ static ValueExprNode* parse_field_default_blr(thread_db* tdbb, bid* blob_id)
 
 	length = blob->BLB_get_data(tdbb, temp.getBuffer(length), length);
 
-	DmlNode* const node = PAR_blr(tdbb, NULL, temp.begin(), length, NULL, &csb, NULL, false, 0);
+	DmlNode* const node = PAR_blr(tdbb, nullRel, temp.begin(), length, NULL, &csb, NULL, false, 0);
 	return static_cast<ValueExprNode*>(node);
 }
 
@@ -4554,7 +4564,7 @@ static BoolExprNode* parse_field_validation_blr(thread_db* tdbb, bid* blob_id, c
 
 	length = blob->BLB_get_data(tdbb, temp.getBuffer(length), length);
 
-	return PAR_validation_blr(tdbb, NULL, temp.begin(), length, NULL, &csb, 0);
+	return PAR_validation_blr(tdbb, nullRel, temp.begin(), length, NULL, &csb, 0);
 }
 
 
@@ -4740,7 +4750,7 @@ bool MetadataCache::resolve_charset_and_collation(thread_db* tdbb, USHORT* id,
 }
 
 
-static void save_trigger_data(thread_db* tdbb, TrigVectorPtr* ptr, jrd_rel* relation,
+static void save_trigger_data(thread_db* tdbb, TrigVectorPtr* ptr, HazardPtr<jrd_rel>& relation,
 							  Statement* statement, blb* blrBlob, blb* debugInfoBlob,
 							  const TEXT* name, FB_UINT64 type,
 							  bool sys_trigger, USHORT flags,
@@ -4811,7 +4821,7 @@ static void save_trigger_data(thread_db* tdbb, TrigVectorPtr* ptr, jrd_rel* rela
 	t->flags = flags;
 	t->sysTrigger = sys_trigger;
 	t->statement = statement;
-	t->relation = relation;
+	t->relation = relation.getPointer();		// trigger can't exist longer than relation
 	t->engine = engine;
 	t->entryPoint = entryPoint;
 	t->ssDefiner = ssDefiner;
@@ -4990,7 +5000,7 @@ void scan_partners(thread_db* tdbb, jrd_rel* relation)
 
 static void store_dependencies(thread_db* tdbb,
 							   CompilerScratch* csb,
-							   const jrd_rel* dep_rel,
+							   HazardPtr<jrd_rel>& dep_rel,
 							   const MetaName& object_name,
 							   int dependency_type,
 							   jrd_tra* transaction)
@@ -5014,7 +5024,7 @@ static void store_dependencies(thread_db* tdbb,
 	HazardPtr<const Trigger> t;
 	const bool checkTableScope =
 		(dependency_type == obj_computed) ||
-		(dependency_type == obj_trigger) && (dep_rel != 0) &&
+		(dependency_type == obj_trigger) && dep_rel &&
 		(
 			(t = findTrigger(dep_rel->rel_pre_erase, object_name)) ||
 			(t = findTrigger(dep_rel->rel_pre_modify, object_name)) ||
@@ -5035,7 +5045,7 @@ static void store_dependencies(thread_db* tdbb,
 		}
 
 		int dpdo_type = dependency.objType;
-		jrd_rel* relation = NULL;
+		HazardPtr<jrd_rel> relation;
 		const jrd_prc* procedure = NULL;
 		const MetaName* dpdo_name = NULL;
 		MetaName packageName;
@@ -5044,7 +5054,7 @@ static void store_dependencies(thread_db* tdbb,
 		switch (dpdo_type)
 		{
 		case obj_relation:
-			relation = dependency.relation;
+			relation.safePointer(dependency.relation);
 			dpdo_name = &relation->rel_name;
 
 			fb_assert(dep_rel || !checkTableScope);
@@ -5398,43 +5408,6 @@ void MetadataCache::runDBTriggers(thread_db* tdbb, TriggerAction action)
 	}
 }
 
-// Find an inactive incarnation of a system request. If necessary, clone it.
-Request* MetadataCache::findSystemRequest(thread_db* tdbb, USHORT id, InternalRequest which)
-{
-	static const int MAX_RECURSION = 100;
-
-	// If the request hasn't been compiled or isn't active, there're nothing to do.
-
-	//Database::CheckoutLockGuard guard(this, dbb_cmp_clone_mutex);
-
-	fb_assert(which == IRQ_REQUESTS || which == DYN_REQUESTS);
-
-	Statement* statement = (which == IRQ_REQUESTS ? mdc_internal[id] : mdc_dyn_req[id]);
-
-	if (!statement)
-		return NULL;
-
-	// Look for requests until we find one that is available.
-
-	for (int n = 0;; ++n)
-	{
-		if (n > MAX_RECURSION)
-		{
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-						Arg::Gds(isc_req_depth_exceeded) << Arg::Num(MAX_RECURSION));
-			// Msg363 "request depth exceeded. (Recursive definition?)"
-		}
-
-		Request* clone = statement->getRequest(tdbb, n);
-
-		if (!(clone->req_flags & (req_active | req_reserved)))
-		{
-			clone->req_flags |= req_reserved;
-			return clone;
-		}
-	}
-}
-
 void MetadataCache::releaseRelations(thread_db* tdbb)
 {
 	for (FB_SIZE_T n = 0; n < mdc_relations.getCount(tdbb); ++n)
@@ -5445,7 +5418,7 @@ void MetadataCache::releaseRelations(thread_db* tdbb)
 			if (relation->rel_file)
 				EXT_fini(relation.getPointer(), false);
 
-			relation->delayedDelete(tdbb);
+			//relation->delayedDelete(tdbb);
 			mdc_relations.store(tdbb, n, nullptr);
 		}
 	}
@@ -5521,20 +5494,6 @@ void MetadataCache::releaseLocks(thread_db* tdbb)
 	// Release collation existence locks
 
 	releaseIntlObjects(tdbb);
-
-	// And release the system requests
-
-	for (auto* itr : mdc_internal)
-	{
-		if (itr)
-			itr->release(tdbb);
-	}
-
-	for (auto* itr : mdc_dyn_req)
-	{
-		if (itr)
-			itr->release(tdbb);
-	}
 }
 
 void MetadataCache::invalidateReplSet(thread_db* tdbb)
@@ -5638,8 +5597,10 @@ void Trigger::compile(thread_db* tdbb)
 										 *csb->csb_dbg_info);
 				}
 
+				/* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 				PAR_blr(tdbb, relation, blr.begin(), (ULONG) blr.getCount(), NULL, &csb, &statement,
 					(relation ? true : false), par_flags);
+				*/
 			}
 			else
 			{

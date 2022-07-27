@@ -175,7 +175,7 @@ void Routine::parseBlr(thread_db* tdbb, CompilerScratch* csb, bid* blob_id, bid*
 	flags &= ~Routine::FLAG_RELOAD;
 
 	Statement* statement = getStatement();
-	PAR_blr(tdbb, NULL, tmp.begin(), (ULONG) tmp.getCount(), NULL, &csb, &statement, false, 0);
+	PAR_blr(tdbb, nullRel, tmp.begin(), (ULONG) tmp.getCount(), NULL, &csb, &statement, false, 0);
 	setStatement(statement);
 
 	if (csb->csb_g_flags & csb_reload)

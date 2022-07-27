@@ -691,3 +691,6 @@ const char* IndexLock::c_name() const
 {
 	return "* unk *";
 }
+
+//extern
+HazardPtr<jrd_rel> Jrd::nullRel;

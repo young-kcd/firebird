@@ -1597,25 +1597,10 @@ static void trigger_failure(thread_db* tdbb, Request* trigger)
 	}
 }
 
-void AutoCacheRequest::reset(thread_db* tdbb, USHORT aId, InternalRequest aWhich)
-{
-	release();
-
-	id = aId;
-	which = aWhich;
-	request = tdbb->getDatabase()->dbb_mdc->findSystemRequest(tdbb, id, which);
-}
-
-AutoCacheRequest::AutoCacheRequest(thread_db* tdbb, USHORT aId, InternalRequest aWhich)
-	: id(aId),
-	  which(aWhich),
-	  request(tdbb->getDatabase()->dbb_mdc->findSystemRequest(tdbb, id, which))
-{ }
-
 void AutoCacheRequest::cacheRequest()
 {
-	Jrd::Database* dbb = JRD_get_thread_data()->getDatabase();
-	dbb->dbb_mdc->cacheRequest(which, id, request->getStatement());
+	Jrd::Attachment* att = JRD_get_thread_data()->getAttachment();
+	att->cacheRequest(which, id, request->getStatement());
 }
 
 void AutoCacheRequest::release()
@@ -1841,8 +1826,12 @@ void ResourceList::transferList(thread_db* tdbb, const InternalResourceList& fro
 	}
 }
 
-void ResourceList::raiseNotRegistered [[noreturn]] (Resource::rsc_s type, const char* name)
+void ResourceList::raiseNotRegistered(const Resource& r, Resource::rsc_s type, const char* name)
 {
+	if (r.rsc_rel && r.rsc_rel->isSystem())
+		return;
+
+	// Resource type (r.type) and actual type may differ when working with index
 	const char* typeName = nullptr;
 	switch (type)
 	{
@@ -1869,7 +1858,7 @@ void ResourceList::raiseNotRegistered [[noreturn]] (Resource::rsc_s type, const 
 
 	fb_assert(typeName);
 	string msg;
-	msg.printf("%s %s was not registered for use by request or transaction");
+	msg.printf("%s %s was not registered for use by request or transaction", typeName, name);
 	ERR_post(Arg::Gds(isc_random) << msg);
 }
 
@@ -1885,7 +1874,7 @@ void ResourceList::transferResources(thread_db* tdbb, ResourceList& from)
 	transferList(tdbb, from.list, Resource::State::Locked, ResourceTypes().setAll(), &work, &from);
 }
 
-void ResourceList::releaseResources(thread_db* tdbb)
+void ResourceList::releaseResources(thread_db* tdbb, jrd_tra* transaction)
 {
 	// 0. Get ready to run drom dtor()
 	if (!list.hasData())
@@ -1927,7 +1916,21 @@ void ResourceList::releaseResources(thread_db* tdbb)
 
 		for (auto r : list)
 		{
-			fb_assert(r.rsc_state != Resource::State::Extra);
+			if (r.rsc_state == Resource::State::Extra)
+			{
+				fb_assert(r.rsc_type == Resource::rsc_relation);
+
+				if (r.rsc_rel && r.rsc_rel->rel_file)
+				{
+					if (!transaction)
+						transaction = tdbb->getTransaction();
+
+					fb_assert(transaction);
+					if (transaction)
+						EXT_tra_detach(r.rsc_rel->rel_file, transaction);
+				}
+			}
+			r.rsc_state = Resource::State::Locked;
 
 			if (r.rsc_state == Resource::State::Posted ||
 				r.rsc_state == Resource::State::Registered ||

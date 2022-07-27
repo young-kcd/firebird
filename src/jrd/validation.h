@@ -207,7 +207,7 @@ private:
 	void walk_pip();
 	RTN walk_pointer_page(jrd_rel*, ULONG);
 	RTN walk_record(jrd_rel*, const Ods::rhd*, USHORT, RecordNumber, bool);
-	RTN walk_relation(jrd_rel*);
+	RTN walk_relation(HazardPtr<jrd_rel>&);
 	RTN walk_root(jrd_rel*);
 	RTN walk_scns();
 	RTN walk_tip(TraNumber);

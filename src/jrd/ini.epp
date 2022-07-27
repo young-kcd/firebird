@@ -760,6 +760,7 @@ void INI_init2(thread_db* tdbb)
 			delete relation->rel_current_format;
 			delete relation->rel_formats;
 			delete relation->rel_fields;
+			fprintf(stderr, "free the space allocated for RDB$ROLES %p (setRelation)\n", relation);
 			relation->delayedDelete(tdbb);
 			mdc->setRelation(tdbb, id, nullptr);
 

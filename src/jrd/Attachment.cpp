@@ -120,24 +120,23 @@ void Jrd::Attachment::destroy(Attachment* const attachment)
 		sAtt->manualUnlock(attachment->att_flags);
 	}
 
-	thread_db* tdbb = JRD_get_thread_data();
-
-	jrd_tra* sysTransaction = attachment->getSysTransaction();
-	if (sysTransaction)
-	{
-		// unwind any active system requests
-		while (sysTransaction->tra_requests)
-			EXE_unwind(tdbb, sysTransaction->tra_requests);
-
-		jrd_tra::destroy(NULL, sysTransaction);
-	}
-
 	Database* const dbb = attachment->att_database;
 	{
 		// context scope is needed here for correct GC of hazard pointers
 		ThreadContextHolder tdbb(dbb, attachment);
 
+		jrd_tra* sysTransaction = attachment->getSysTransaction();
+		if (sysTransaction)
+		{
+			// unwind any active system requests
+			while (sysTransaction->tra_requests)
+				EXE_unwind(tdbb, sysTransaction->tra_requests);
+
+			jrd_tra::destroy(NULL, sysTransaction);
+		}
+
 		attachment->att_delayed_delete.garbageCollect(HazardDelayedDelete::GarbageCollectMethod::GC_FORCE);
+		HZ_DEB(fprintf(stderr, "Attachment::destroy=>delayedDelete to DBB\n"));
 		dbb->dbb_delayed_delete.delayedDelete(attachment->att_delayed_delete.getHazardPointers());
 	}
 
@@ -236,6 +235,8 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, JProvider* provider
 	  att_active_snapshots(*pool),
 	  att_statements(*pool),
 	  att_requests(*pool),
+	  att_internal(*pool),
+	  att_dyn_req(*pool),
 	  att_lock_owner_id(Database::getLockOwnerId()),
 	  att_backup_state_counter(0),
 	  att_stats(*pool),
@@ -273,7 +274,10 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, JProvider* provider
 	  att_initial_options(*pool),
 	  att_provider(provider),
 	  att_delayed_delete(*dbb->dbb_permanent, *pool)
-{ }
+{
+	att_internal.grow(irq_MAX);
+	att_dyn_req.grow(drq_MAX);
+}
 
 
 Jrd::Attachment::~Attachment()
@@ -624,8 +628,6 @@ void Jrd::Attachment::initLocks(thread_db* tdbb)
 
 void Jrd::Attachment::releaseLocks(thread_db* tdbb)
 {
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! to database att_mdc.releaseLocks(tdbb);
-
 	// Release the DSQL cache locks
 
 	DSqlCache::Accessor accessor(&att_dsql_cache);
@@ -915,3 +917,53 @@ int Attachment::blockingAstReplSet(void* ast_object)
 
 	return 0;
 }
+
+void Attachment::cacheRequest(InternalRequest which, USHORT id, Statement* stmt)
+{
+	if (which == IRQ_REQUESTS)
+		att_internal[id] = stmt;
+	else if (which == DYN_REQUESTS)
+		att_dyn_req[id] = stmt;
+	else
+	{
+		fb_assert(false);
+	}
+}
+
+// Find an inactive incarnation of a system request. If necessary, clone it.
+Jrd::Request* Attachment::findSystemRequest(thread_db* tdbb, USHORT id, InternalRequest which)
+{
+	static const int MAX_RECURSION = 100;
+
+	// If the request hasn't been compiled or isn't active, there're nothing to do.
+
+	//Database::CheckoutLockGuard guard(this, dbb_cmp_clone_mutex);
+
+	fb_assert(which == IRQ_REQUESTS || which == DYN_REQUESTS);
+
+	Statement* statement = (which == IRQ_REQUESTS ? att_internal[id] : att_dyn_req[id]);
+
+	if (!statement)
+		return NULL;
+
+	// Look for requests until we find one that is available.
+
+	for (int n = 0;; ++n)
+	{
+		if (n > MAX_RECURSION)
+		{
+			ERR_post(Arg::Gds(isc_no_meta_update) <<
+						Arg::Gds(isc_req_depth_exceeded) << Arg::Num(MAX_RECURSION));
+			// Msg363 "request depth exceeded. (Recursive definition?)"
+		}
+
+		Request* clone = statement->getRequest(tdbb, n);
+
+		if (!(clone->req_flags & (req_active | req_reserved)))
+		{
+			clone->req_flags |= req_reserved;
+			return clone;
+		}
+	}
+}
+

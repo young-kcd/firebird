@@ -1137,6 +1137,7 @@ void Collation::release(thread_db* tdbb)
 
 void Collation::destroy(thread_db* tdbb)
 {
+	fprintf(stderr, "Collation::destroy(%p) tt=%p\n", this, tt);
 	fb_assert(useCount == 0);
 
 	if (tt->texttype_fn_destroy)
@@ -1149,6 +1150,7 @@ void Collation::destroy(thread_db* tdbb)
 	delete existenceLock;
 	existenceLock = NULL;
 
+	fprintf(stderr, "delayedDelete collation %p\n", this);
 	this->delayedDelete(tdbb);
 }
 

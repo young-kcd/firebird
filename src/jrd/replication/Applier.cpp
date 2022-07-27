@@ -523,14 +523,14 @@ void Applier::insertRecord(thread_db* tdbb, TraNumber traNum,
 
 	TRA_attach_request(transaction, m_request);
 
-	const auto rel = MetadataCache::lookup_relation(tdbb, relName);
+	auto rel = MetadataCache::lookup_relation(tdbb, relName);
 	if (!rel)
 		raiseError("Table %s is not found", relName.c_str());
 
-	const auto relation = rel.getPointer();
-	if (!(relation->rel_flags & REL_scanned))
-		MET_scan_relation(tdbb, relation);
+	if (!(rel->rel_flags & REL_scanned))
+		MET_scan_relation(tdbb, rel);
 
+	const auto relation = rel.getPointer();
 	const auto format = findFormat(tdbb, relation, length);
 
 	record_param rpb;
@@ -659,14 +659,14 @@ void Applier::updateRecord(thread_db* tdbb, TraNumber traNum,
 
 	TRA_attach_request(transaction, m_request);
 
-	const auto rel = MetadataCache::lookup_relation(tdbb, relName);
+	auto rel = MetadataCache::lookup_relation(tdbb, relName);
 	if (!rel)
 		raiseError("Table %s is not found", relName.c_str());
+
+	if (!(rel->rel_flags & REL_scanned))
+		MET_scan_relation(tdbb, rel);
+
 	const auto relation = rel.getPointer();
-
-	if (!(relation->rel_flags & REL_scanned))
-		MET_scan_relation(tdbb, relation);
-
 	const auto orgFormat = findFormat(tdbb, relation, orgLength);
 
 	record_param orgRpb;
@@ -800,14 +800,14 @@ void Applier::deleteRecord(thread_db* tdbb, TraNumber traNum,
 
 	TRA_attach_request(transaction, m_request);
 
-	const auto rel = MetadataCache::lookup_relation(tdbb, relName);
+	auto rel = MetadataCache::lookup_relation(tdbb, relName);
 	if (!rel)
 		raiseError("Table %s is not found", relName.c_str());
+
+	if (!(rel->rel_flags & REL_scanned))
+		MET_scan_relation(tdbb, rel);
+
 	const auto relation = rel.getPointer();
-
-	if (!(relation->rel_flags & REL_scanned))
-		MET_scan_relation(tdbb, relation);
-
 	const auto format = findFormat(tdbb, relation, length);
 
 	record_param rpb;

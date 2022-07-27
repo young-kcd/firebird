@@ -96,6 +96,7 @@ namespace Jrd
 	class Statement;
 	class Validation;
 	class Applier;
+	enum InternalRequest : USHORT;
 
 
 struct DSqlCacheItem
@@ -496,7 +497,10 @@ private:
 
 public:
 	Firebird::SortedArray<Statement*> att_statements;	// Statements belonging to attachment
-	Firebird::SortedArray<Request*> att_requests;	// Requests belonging to attachment
+	Firebird::SortedArray<Request*> att_requests;		// Requests belonging to attachment
+	Firebird::Array<Statement*>	att_internal;			// internal statements
+	Firebird::Array<Statement*>	att_dyn_req;			// internal dyn statements
+
 	Lock*		att_id_lock;				// Attachment lock (if any)
 	AttNumber	att_attachment_id;			// Attachment ID
 	Lock*		att_cancel_lock;			// Lock to cancel the active request
@@ -585,6 +589,9 @@ public:
 	bool locksmith(thread_db* tdbb, SystemPrivilege sp) const;
 	jrd_tra* getSysTransaction();
 	void setSysTransaction(jrd_tra* trans);	// used only by TRA_init
+
+	void cacheRequest(InternalRequest which, USHORT id, Statement* stmt);
+	Request* findSystemRequest(thread_db* tdbb, USHORT id, InternalRequest which);
 
 	bool isSystem() const
 	{

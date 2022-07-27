@@ -619,10 +619,10 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 		((node->relation->rel_flags & REL_force_scan) || !(csb->csb_g_flags & csb_internal)))
 	{
 		node->relation->rel_flags &= ~REL_force_scan;
-		MET_scan_relation(tdbb, node->relation);
+		MET_scan_relation(tdbb, rel);
 	}
 	else if (node->relation->rel_flags & REL_sys_triggers)
-		MET_parse_sys_trigger(tdbb, node->relation);
+		MET_parse_sys_trigger(tdbb, rel);
 
 	// generate a stream for the relation reference, assuming it is a real reference
 

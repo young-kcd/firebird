@@ -330,8 +330,8 @@ HazardPtr<Collation> CharSetContainer::lookupCollation(thread_db* tdbb, USHORT t
 			info.specificAttributes = specificAttributes;
 		}
 
-		Attachment* const att = tdbb->getAttachment();
-		texttype* tt = FB_NEW_POOL(*att->att_pool) texttype;
+		Database* const dbb = tdbb->getDatabase();
+		texttype* tt = FB_NEW_POOL(*dbb->dbb_permanent) texttype;
 		memset(tt, 0, sizeof(texttype));
 
 		if (!lookup_texttype(tt, &info))
@@ -359,7 +359,7 @@ HazardPtr<Collation> CharSetContainer::lookupCollation(thread_db* tdbb, USHORT t
 			}
 		}
 
-		Collation* coll = Collation::createInstance(*att->att_pool, tt_id, tt, info.attributes, charset);
+		Collation* coll = Collation::createInstance(*dbb->dbb_permanent, tt_id, tt, info.attributes, charset);
 		coll->name = info.collationName;
 
 		// we don't need a lock in the charset

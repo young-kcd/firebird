@@ -66,7 +66,12 @@ namespace Jrd
 	class AutoCacheRequest
 	{
 	public:
-		AutoCacheRequest(thread_db* tdbb, USHORT aId, InternalRequest aWhich);
+		AutoCacheRequest(thread_db* tdbb, USHORT aId, InternalRequest aWhich)
+			: id(aId),
+			  which(aWhich),
+			  request(tdbb->getAttachment()->findSystemRequest(tdbb, id, which))
+		{
+		}
 
 		AutoCacheRequest()
 			: id(0),
@@ -81,7 +86,14 @@ namespace Jrd
 		}
 
 	public:
-		void reset(thread_db* tdbb, USHORT aId, InternalRequest aWhich);
+		void reset(thread_db* tdbb, USHORT aId, InternalRequest aWhich)
+		{
+			release();
+
+			id = aId;
+			which = aWhich;
+			request = tdbb->getAttachment()->findSystemRequest(tdbb, id, which);
+		}
 
 		void compile(thread_db* tdbb, const UCHAR* blr, ULONG blrLength)
 		{

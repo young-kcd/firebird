@@ -143,7 +143,7 @@ void IDX_check_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view, jrd_
 			auto referenced = MetadataCache::findRelation(tdbb, idx.idx_primary_relation);
 			auto referenced_relation = csb->csb_resources.registerResource(tdbb, Resource::rsc_relation,
 				referenced, idx.idx_primary_relation);
-			MET_scan_relation(tdbb, referenced_relation);
+			MET_scan_relation(tdbb, referenced);
 			const USHORT index_id = idx.idx_primary_index;
 
 			// get the description of the primary key index

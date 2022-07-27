@@ -566,13 +566,15 @@ static lck_owner_t get_owner_type(enum lck_t lock_type)
 	case LCK_prc_exist:
 	case LCK_fun_exist:
 	case LCK_tt_exist:
+
+	case LCK_rel_gc:
+	case LCK_rel_partners:
+	case LCK_rel_rescan:
+	case LCK_expression:
 		owner_type = LCK_OWNER_database;
 		break;
 
 	case LCK_attachment:
-	case LCK_rel_partners:
-	case LCK_rel_rescan:
-	case LCK_expression:
 	case LCK_page_space:
 	case LCK_relation:
 	case LCK_tra:
@@ -582,7 +584,6 @@ static lck_owner_t get_owner_type(enum lck_t lock_type)
 	case LCK_cancel:
 	case LCK_monitor:
 	case LCK_btr_dont_gc:
-	case LCK_rel_gc:
 	case LCK_record_gc:
 	case LCK_alter_database:
 	case LCK_repl_tables:

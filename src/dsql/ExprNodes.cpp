@@ -5824,9 +5824,10 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 				PAR_error(csb, Arg::Gds(isc_ctxnotdef));
 
 			// make sure relation has been scanned before using it
-
-			if (!(relation->rel_flags & REL_scanned) || (relation->rel_flags & REL_being_scanned))
-				MET_scan_relation(tdbb, relation);
+			HazardPtr<jrd_rel> wrk = MET_scan_relation(tdbb, relation->rel_id);
+			if (!wrk)
+				PAR_error(csb, Arg::Gds(isc_ctxnotdef));
+			relation = wrk.getPointer();
 
 			csb->csb_blr_reader.getMetaName(name);
 

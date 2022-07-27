@@ -235,7 +235,7 @@ void EXT_erase(record_param*, jrd_tra*)
 
 
 // Third param is unused.
-ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name) //, bid* description)
+ExternalFile* EXT_file(HazardPtr<jrd_rel>& relation, const TEXT* file_name) //, bid* description)
 {
 /**************************************
  *
@@ -253,7 +253,7 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name) //, bid* descri
 	// if we already have a external file associated with this relation just
 	// return the file structure
 	if (relation->rel_file) {
-		EXT_fini(relation, false);
+		EXT_fini(relation.getPointer(), false);
 	}
 
 #ifdef WIN_NT

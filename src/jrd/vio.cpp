@@ -4988,8 +4988,6 @@ void Database::garbage_collector(Database* dbb)
 		Monitoring::cleanupAttachment(tdbb);
 		attachment->releaseLocks(tdbb);
 		LCK_fini(tdbb, LCK_OWNER_attachment);
-
-		dbb->dbb_mdc->releaseRelations(tdbb);
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{

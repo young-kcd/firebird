@@ -192,14 +192,14 @@ public:
 			r1.rsc_type = Resource::rsc_relation;
 
 			if (!list.find(r1, pos))
-				raiseNotRegistered(type, ptr->c_name());
+				raiseNotRegistered(r, type, ptr->c_name());
 
 			if (!list.find(r, pos))
 				list.insert(pos, r);
 		}
 
 		else if (!list.find(r, pos))
-			raiseNotRegistered(type, ptr->c_name());
+			raiseNotRegistered(r, type, ptr->c_name());
 
 		list[pos].rsc_state = Resource::State::Posted;
 	}
@@ -209,7 +209,7 @@ public:
 	{
 		Resource r(type, type == Resource::rsc_index ? id : object->getId(), object);
 		if (!list.exist(r))
-			raiseNotRegistered(type, object->c_name());
+			raiseNotRegistered(r, type, object->c_name());
 	}
 
 	void transferResources(thread_db* tdbb, ResourceList& from, ResourceTypes rt, NewResources& nr);
@@ -217,7 +217,7 @@ public:
 
 	void postIndex(thread_db* tdbb, jrd_rel* relation, USHORT idxId);
 
-	void releaseResources(thread_db* tdbb);
+	void releaseResources(thread_db* tdbb, jrd_tra* transaction = nullptr);
 
 //	void inc_int_use_count();
 //	void zero_int_use_count();
@@ -343,7 +343,7 @@ private:
 	bool hazardFlag;
 
 	void setResetPointersHazard(thread_db* tdbb, bool set);
-	void raiseNotRegistered [[noreturn]] (Resource::rsc_s type, const char* name);
+	void raiseNotRegistered(const Resource& r, Resource::rsc_s type, const char* name);
 	void transferList(thread_db* tdbb, const InternalResourceList& from, Resource::State resetState,
 		ResourceTypes rt, NewResources* nr, ResourceList* hazardList);
 };

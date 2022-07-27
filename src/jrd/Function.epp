@@ -334,7 +334,7 @@ HazardPtr<Function> Function::loadMetadata(thread_db* tdbb, USHORT id, bool nosc
 					try
 					{
 						parameter->prm_default_value = static_cast<ValueExprNode*>(MET_parse_blob(
-							tdbb, nullptr, &default_value, nullptr, nullptr, false, false));
+							tdbb, nullRel, &default_value, nullptr, nullptr, false, false));
 					}
 					catch (const Exception&)
 					{

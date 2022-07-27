@@ -328,20 +328,14 @@ public:
 		  mdc_procedures(getPool()),
 		  mdc_functions(getPool()),
 		  mdc_generators(getPool()),
-		  mdc_internal(getPool()),
-		  mdc_dyn_req(getPool()),
 		  mdc_charsets(getPool()),
 		  mdc_charset_ids(getPool())
 	{
-		mdc_internal.grow(irq_MAX);
-		mdc_dyn_req.grow(drq_MAX);
 		memset(mdc_triggers, 0, sizeof(mdc_triggers));
 		mdc_ddl_triggers = nullptr;
 	}
 
 	~MetadataCache();
-
-	Request* findSystemRequest(thread_db* tdbb, USHORT id, InternalRequest which);
 
 	void releaseIntlObjects(thread_db* tdbb);			// defined in intl.cpp
 	void destroyIntlObjects(thread_db* tdbb);			// defined in intl.cpp
@@ -362,18 +356,6 @@ public:
 	USHORT relCount(DDS* par)
 	{
 		return mdc_relations.getCount(par);
-	}
-
-	void cacheRequest(InternalRequest which, USHORT id, Statement* stmt)
-	{
-		if (which == IRQ_REQUESTS)
-			mdc_internal[id] = stmt;
-		else if (which == DYN_REQUESTS)
-			mdc_dyn_req[id] = stmt;
-		else
-		{
-			fb_assert(false);
-		}
 	}
 
 	HazardPtr<Function> getFunction(thread_db* tdbb, USHORT id, bool grow = false)
@@ -493,10 +475,6 @@ private:
 	TrigVectorPtr					mdc_ddl_triggers;
 	HazardArray<Function>			mdc_functions;			// User defined functions
 	HazardArray<Generator>			mdc_generators;
-
-	Firebird::Array<Statement*>	mdc_internal;				// internal statements
-	Firebird::Array<Statement*>	mdc_dyn_req;				// internal dyn statements
-
 	HazardArray<CharSetContainer>	mdc_charsets;			// intl character set descriptions
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 		MetaName, USHORT> > > mdc_charset_ids;				// Character set ids

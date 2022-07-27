@@ -109,7 +109,7 @@ class TrigVector : public HazardArray<Trigger>
 public:
 	explicit TrigVector(Firebird::MemoryPool& pool)
 		: HazardArray<Trigger>(pool),
-		  useCount(0)
+		  useCount(0), addCount(0)
 	{ }
 
 	TrigVector()
@@ -548,6 +548,8 @@ public:
 		Lock*		m_lock;
 	};
 };
+
+extern HazardPtr<jrd_rel> nullRel;
 
 // rel_flags
 

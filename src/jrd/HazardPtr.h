@@ -29,6 +29,8 @@
 #ifndef JRD_HAZARDPTR_H
 #define JRD_HAZARDPTR_H
 
+#define HZ_DEB(A)
+
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
 #include "../common/gdsassert.h"
@@ -51,7 +53,6 @@ namespace Jrd {
 		int delayedDelete(thread_db* tdbb);
 	};
 
-	class HazardDelayedDelete;
 	class HazardBase
 	{
 	protected:
@@ -115,7 +116,7 @@ namespace Jrd {
 			: HazardBase(move),
 			  hazardPointer(nullptr)
 		{
-			hazardPointer = move.hazardPointer;
+			hazardPointer = move.releasePointer();
 		}
 
 		template <class T2>
@@ -131,7 +132,7 @@ namespace Jrd {
 			: HazardBase(move),
 			  hazardPointer(nullptr)
 		{
-			hazardPointer = move.getPointer();
+			hazardPointer = move.releasePointer();
 		}
 
 		~HazardPtr()
@@ -147,6 +148,13 @@ namespace Jrd {
 		T* getPointer() const
 		{
 			return hazardPointer;
+		}
+
+		T* releasePointer()
+		{
+			T* rc = hazardPointer;
+			hazardPointer = nullptr;
+			return rc;
 		}
 
 		void set(const std::atomic<T*>& from)
@@ -227,7 +235,7 @@ namespace Jrd {
 			if (hazardPointer)
 				 remove(hazardPointer);
 			HazardBase::operator=(moveAssign);
-			hazardPointer = moveAssign.hazardPointer;
+			hazardPointer = moveAssign.releasePointer();
 			return *this;
 		}
 
@@ -244,8 +252,13 @@ namespace Jrd {
 			if (hazardPointer)
 				 remove(hazardPointer);
 			HazardBase::operator=(moveAssign);
-			hazardPointer = moveAssign.getPointer();
+			hazardPointer = moveAssign.releasePointer();
 			return *this;
+		}
+
+		void safePointer(T* ptr)
+		{
+			reset(ptr);
 		}
 
 	private:
@@ -287,6 +300,8 @@ namespace Jrd {
 
 	// Shared read here means that any thread can read from vector using HP.
 	// It can be modified only in single thread, and it's caller's responsibility that modifying thread is single.
+	// It's also callers resposibility to destroy Generation when deleting SharedReadVector:
+	// in dtor we do not have enough information to do it correctly, default delayedDelete() may be already wrong.
 
 	template <typename T, FB_SIZE_T CAP, bool GC_ENABLED = true>
 	class SharedReadVector : public Firebird::PermanentStorage
@@ -305,7 +320,7 @@ namespace Jrd {
 		public:
 			static Generation* create(MemoryPool& p, FB_SIZE_T cap)
 			{
-				return FB_NEW_RPT(p, CAP) Generation(CAP);
+				return FB_NEW_RPT(p, cap) Generation(cap);
 			}
 
 			FB_SIZE_T getCount() const
@@ -362,11 +377,6 @@ namespace Jrd {
 			: Firebird::PermanentStorage(p),
 			  v(Generation::create(getPool(), CAP))
 		{ }
-
-		~SharedReadVector()
-		{
-			delete writeAccessor();
-		}
 
 		Generation* writeAccessor()
 		{
@@ -512,6 +522,9 @@ namespace Jrd {
 
 				delete[] sub;
 			}
+
+			// directly delete Generation - no need using delayedDelete() here, at least for MetadataCache
+			delete a;
 		}
 
 		template <class DDS>
@@ -552,7 +565,10 @@ namespace Jrd {
 			while (!sub->compare_exchange_weak(oldVal, val,
 				std::memory_order_release, std::memory_order_acquire));	// empty body
 			if (oldVal)
+			{
+				HZ_DEB(fprintf(stderr, "store=>delayedDelete %p\n", oldVal));
 				oldVal->delayedDelete(tdbb);
+			}
 
 			return HazardPtr<Object>(tdbb, *sub);
 		}

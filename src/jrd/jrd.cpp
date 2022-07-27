@@ -7459,6 +7459,20 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 	Monitoring::cleanupAttachment(tdbb);
 
+	// release the system requests
+
+	for (auto* itr : attachment->att_internal)
+	{
+		if (itr)
+			itr->release(tdbb);
+	}
+
+	for (auto* itr : attachment->att_dyn_req)
+	{
+		if (itr)
+			itr->release(tdbb);
+	}
+
 	dbb->dbb_extManager->closeAttachment(tdbb, attachment);
 
 	if (dbb->dbb_config->getServerMode() == MODE_SUPER)
@@ -7471,20 +7485,12 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	while (attachment->att_requests.hasData())
 		CMP_release(tdbb, attachment->att_requests.back());
 
-	MetadataCache::clear_cache(tdbb);
-
 	attachment->releaseLocks(tdbb);
-
-	// Shut down any extern relations
-
-	dbb->dbb_mdc->releaseRelations(tdbb);
 
 	// Release any validation error vector allocated
 
 	delete attachment->att_validation;
 	attachment->att_validation = NULL;
-
-	dbb->dbb_mdc->destroyIntlObjects(tdbb);
 
 	attachment->detachLocks();
 
@@ -7761,6 +7767,8 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 
 	CCH_shutdown(tdbb);
 
+	dbb->dbb_mdc->releaseLocks(tdbb);
+
 	if (dbb->dbb_tip_cache)
 		dbb->dbb_tip_cache->finalizeTpc(tdbb);
 
@@ -7787,6 +7795,12 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 
 	delete dbb->dbb_crypto_manager;
 	dbb->dbb_crypto_manager = NULL;
+
+	//dbb->dbb_mdc->destroyIntlObjects(tdbb);
+	MetadataCache::clear_cache(tdbb);
+
+	// Shut down any extern relations
+	dbb->dbb_mdc->releaseRelations(tdbb);
 
 	LCK_fini(tdbb, LCK_OWNER_database);
 
@@ -9433,7 +9447,7 @@ bool TrigVector::hasActive() const
 {
 	for (auto t : *this)
 	{
-		if (t->isActive())
+		if (t && t->isActive())
 			return true;
 	}
 
@@ -9444,7 +9458,10 @@ bool TrigVector::hasActive() const
 void TrigVector::decompile(thread_db* tdbb)
 {
 	for (auto t : *this)
-		t->release(tdbb);
+	{
+		if (t)
+			t->release(tdbb);
+	}
 }
 
 

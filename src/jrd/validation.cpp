@@ -1658,7 +1658,7 @@ void Validation::walk_database()
 			output("%s\n", relName.c_str());
 
 			int errs = vdr_errors;
-			walk_relation(relation.getPointer());
+			walk_relation(relation);
 			errs = vdr_errors - errs;
 
 			if (!errs)
@@ -2937,7 +2937,7 @@ void Validation::checkDPinPIP(jrd_rel* relation, ULONG page_number)
 	release_page(&pip_window);
 }
 
-Validation::RTN Validation::walk_relation(jrd_rel* relation)
+Validation::RTN Validation::walk_relation(HazardPtr<jrd_rel>& rel)
 {
 /**************************************
  *
@@ -2954,10 +2954,11 @@ Validation::RTN Validation::walk_relation(jrd_rel* relation)
 
 	// If relation hasn't been scanned, do so now
 
-	if (!(relation->rel_flags & REL_scanned) || (relation->rel_flags & REL_being_scanned))
+	if (!(rel->rel_flags & REL_scanned) || (rel->rel_flags & REL_being_scanned))
 	{
-		MET_scan_relation(vdr_tdbb, relation);
+		MET_scan_relation(vdr_tdbb, rel);
 	}
+	jrd_rel* relation = rel.getPointer();
 
 	// skip deleted relations
 	if (relation->rel_flags & (REL_deleted | REL_deleting)) {
@@ -3083,16 +3084,16 @@ Validation::RTN Validation::walk_relation(jrd_rel* relation)
 	{
 		if (!(vdr_flags & VDR_online))
 		{
-			const char* msg = relation->rel_name.length() > 0 ?
+			const char* msg = rel->rel_name.length() > 0 ?
 				"bugcheck during scan of table %d (%s)" :
 				"bugcheck during scan of table %d";
-			gds__log(msg, relation->rel_id, relation->rel_name.c_str());
+			gds__log(msg, rel->rel_id, rel->rel_name.c_str());
 		}
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
 		{
 			char s[256];
-			SNPRINTF(s, sizeof(s), msg, relation->rel_id, relation->rel_name.c_str());
+			SNPRINTF(s, sizeof(s), msg, rel->rel_id, rel->rel_name.c_str());
 			fprintf(stdout, "LOG:\t%s\n", s);
 		}
 #endif
