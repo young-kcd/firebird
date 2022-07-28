@@ -7796,7 +7796,7 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 	delete dbb->dbb_crypto_manager;
 	dbb->dbb_crypto_manager = NULL;
 
-	//dbb->dbb_mdc->destroyIntlObjects(tdbb);
+	dbb->dbb_mdc->destroyIntlObjects(tdbb);
 	MetadataCache::clear_cache(tdbb);
 
 	// Shut down any extern relations

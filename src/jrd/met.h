@@ -260,14 +260,13 @@ public:
 	void destroy(thread_db* tdbb)
 	{
 		cs->destroy();
-		for (auto coll : charset_collations)
-		{
-			if (coll)
-				coll->destroy(tdbb);
-		}
+		release(tdbb);
 	}
 
-	CharSet* getCharSet() { return cs; }
+	CharSet* getCharSet()
+	{
+		return cs;
+	}
 
 	HazardPtr<Collation> lookupCollation(thread_db* tdbb, USHORT tt_id);
 	void unloadCollation(thread_db* tdbb, USHORT tt_id);
@@ -277,9 +276,9 @@ public:
 	static HazardPtr<CharSetContainer> lookupCharset(thread_db* tdbb, USHORT ttype);
 	static Lock* createCollationLock(thread_db* tdbb, USHORT ttype, void* object = NULL);
 
-	bool hasData()
+	bool hasData() const
 	{
-		return true;
+		return cs != nullptr;
 	}
 
 private:
