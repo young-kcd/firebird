@@ -105,9 +105,6 @@ if "%ERRLEV%"=="1" goto :END
 @call :msgs
 if "%ERRLEV%"=="1" goto :END
 
-@call :codes
-if "%ERRLEV%"=="1" goto :END
-
 ::=======
 @call create_msgs.bat msg
 ::=======
@@ -231,8 +228,8 @@ goto :EOF
 :engine
 @echo.
 @echo Building engine (%FB_OBJ_DIR%)...
-@call compile.bat builds\win32\%VS_VER%\Firebird engine_%FB_TARGET_PLATFORM%.log engine
-@call compile.bat builds\win32\%VS_VER%\Firebird engine_%FB_TARGET_PLATFORM%.log ib_util
+@call compile.bat builds\win32\%VS_VER%\Firebird engine_%FB_TARGET_PLATFORM%.log DLLs\engine
+@call compile.bat builds\win32\%VS_VER%\Firebird engine_%FB_TARGET_PLATFORM%.log DLLs\ib_util
 if errorlevel 1 call :boot2 engine
 @goto :EOF
 
@@ -241,7 +238,7 @@ if errorlevel 1 call :boot2 engine
 :gbak
 @echo.
 @echo Building gbak (%FB_OBJ_DIR%)...
-@call compile.bat builds\win32\%VS_VER%\Firebird gbak_%FB_TARGET_PLATFORM%.log gbak
+@call compile.bat builds\win32\%VS_VER%\Firebird gbak_%FB_TARGET_PLATFORM%.log EXEs\gbak
 if errorlevel 1 call :boot2 gbak
 @goto :EOF
 
@@ -250,7 +247,7 @@ if errorlevel 1 call :boot2 gbak
 :gpre
 @echo.
 @echo Building gpre (%FB_OBJ_DIR%)...
-@call compile.bat builds\win32\%VS_VER%\Firebird gpre_%FB_TARGET_PLATFORM%.log gpre
+@call compile.bat builds\win32\%VS_VER%\Firebird gpre_%FB_TARGET_PLATFORM%.log EXEs\gpre
 if errorlevel 1 call :boot2 gpre
 @goto :EOF
 
@@ -259,7 +256,7 @@ if errorlevel 1 call :boot2 gpre
 :isql
 @echo.
 @echo Building isql (%FB_OBJ_DIR%)...
-@call compile.bat builds\win32\%VS_VER%\Firebird isql_%FB_TARGET_PLATFORM%.log isql
+@call compile.bat builds\win32\%VS_VER%\Firebird isql_%FB_TARGET_PLATFORM%.log EXEs\isql
 if errorlevel 1 call :boot2 isql
 @goto :EOF
 
@@ -298,10 +295,6 @@ goto :EOF
 @echo Apply security.sql...
 @"%FB_BIN_DIR%\isql" -q %FB_GEN_DB_DIR%/dbs/security5.fdb -i %FB_ROOT_PATH%\src\dbs\security.sql
 @copy %FB_GEN_DIR%\dbs\security5.fdb %FB_GEN_DIR%\dbs\security.fdb > nul
-
-@echo Creating metadata.fdb...
-@echo create database '%FB_GEN_DB_DIR%/dbs/metadata.fdb'; | "%FB_BIN_DIR%\isql" -q -sqldialect 1
-@copy %FB_GEN_DIR%\dbs\metadata.fdb %FB_GEN_DIR%\dbs\yachts.lnk > nul
 
 @call create_msgs.bat db
 

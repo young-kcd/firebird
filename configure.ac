@@ -584,6 +584,7 @@ AC_ARG_WITH(system-re2,
   [RE2_BUILD=N])
 AC_SUBST(RE2_BUILD)
 
+dnl This is currently used for internal and public (API headers) needs
 SYSTEM_BOOST=N
 AC_ARG_WITH(system-boost,
   [  --with-system-boost     use system-wide boost library instead of embedded copy],
@@ -1320,6 +1321,7 @@ dnl # output
 	mkdir -p gen/\$fb_tgt/firebird/include/firebird/impl
 	mkdir -p gen/\$fb_tgt/firebird/lib
 	mkdir -p gen/\$fb_tgt/firebird/misc
+	mkdir -p gen/\$fb_tgt/firebird/tests
 
 dnl ### TEMP ### directories for generated .cpp, .o and .d by module name
 	for src_dir in `cd src; ls -R -1 * | grep : | tr -d : | tr "\n" " "; cd ..`; do

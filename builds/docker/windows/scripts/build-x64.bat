@@ -11,4 +11,6 @@ cd /d C:\firebird-build\builds\win32
 REM call run_all.bat
 call run_all.bat JUSTBUILD
 
+call run_tests.bat
+
 xcopy /h /e /i /q C:\firebird-build\output_%FB_OUTPUT_SUFFIX%\* C:\firebird-out
