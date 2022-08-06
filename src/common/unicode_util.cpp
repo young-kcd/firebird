@@ -1404,7 +1404,7 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 			continue;
 
 		fb_assert(accessor.current()->first.hasData());
-		USHORT firstCh = accessor.current()->first[0];
+		USHORT firstCh = accessor.current()->first.front();
 		USHORT lastCh = accessor.current()->first.back();
 
 		if ((firstCh >= 0xFDD0 && firstCh <= 0xFDEF) || UTF_IS_SURROGATE(lastCh))
@@ -1602,7 +1602,7 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 
 				if (keys)
 				{
-					UCHAR lastCharKey[100];
+					UCHAR lastCharKey[BUFFER_TINY];	// sort key for a single character
 					ULONG prefixLen, lastCharKeyLen;
 
 					srcLenLong -= i;
