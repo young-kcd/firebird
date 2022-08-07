@@ -40,6 +40,8 @@
 
 ## Bugfixes
 
+* [#7243](https://github.com/FirebirdSQL/firebird/issues/7243): Some _UNICODE_ characters can lead to wrong `CONTAINING` evaluation when lower/upper uses different number of bytes in its encoding  
+  Contributor(s): Adriano dos Santos Fernandes
 
 * [#7229](https://github.com/FirebirdSQL/firebird/issues/7229): `ALTER COLUMN DROP IDENTITY` does not reset generator name in metadata cache  
   Contributor(s): Adriano dos Santos Fernandes
