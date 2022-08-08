@@ -65,10 +65,10 @@ if "%FB2_SNAPSHOT%"=="1" (
 :: let's bail out now.
 
 @echo     o Checking for sed...
-(cmd /c "sed.exe --version 2>&1 | findstr version > nul ") || ( call :ERROR Could not locate sed && @goto :EOF )
+(cmd /c "sed.exe --version 2>&1 > nul ") || ( call :ERROR Could not locate sed && @goto :EOF )
 
 @echo     o Checking for unix2dos...
-(cmd /c "unix2dos.exe --version 2>&1 | findstr version > nul" ) || ( call :ERROR Could not locate unix2dos && @goto :EOF )
+(cmd /c "unix2dos.exe --version 2>&1 > nul" ) || ( call :ERROR Could not locate unix2dos && @goto :EOF )
 
 @for /f "usebackq tokens=*" %%c in (`where /f touch 2^>nul`) do set TOUCH_COMMAND=%%c
 if defined TOUCH_COMMAND (
@@ -93,7 +93,7 @@ if %FBBUILD_ZIP_PACK% EQU 1 (
 if %FBBUILD_ISX_PACK% NEQ 1 goto :SKIP_INNO
 
 if defined INNO6_SETUP_PATH (
-  set ISCC_COMMAND=%INNO6_SETUP_PATH%\iscc.exe
+  set ISCC_COMMAND="%INNO6_SETUP_PATH%\iscc.exe"
 )
 :: If the environment variable is not set let's search in PATH
 if not defined ISCC_COMMAND (
@@ -445,7 +445,7 @@ copy %FB_ROOT_PATH%\builds\install\misc\databases.conf %FB_OUTPUT_DIR%\databases
 :: that and they all have windows EOL
 ::===============================================
 for /R %FB_OUTPUT_DIR% %%W in ( *.txt *.conf *.sql *.c *.cpp *.hpp *.h *.bat *.pas *.e *.def *.rc *.md *.html ) do (
-  unix2dos -q --safe %%W || exit /b 1
+  unix2dos --safe %%W || exit /b 1
 )
 
 ::End of SET_CRLF
@@ -476,7 +476,7 @@ if exist %FBBUILD_ZIPFILE% (
   @del %FBBUILD_ZIPFILE%
 )
 
-%SEVENZIP%\7z.exe a -r -tzip -mx9 %SKIP_FILES% %FBBUILD_ZIPFILE% %FB_OUTPUT_DIR%\*
+"%SEVENZIP%\7z.exe" a -r -tzip -mx9 %SKIP_FILES% %FBBUILD_ZIPFILE% %FB_OUTPUT_DIR%\*
 
 endlocal
 
