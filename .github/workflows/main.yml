@@ -234,7 +234,6 @@ jobs:
         cd builds\win32
         call run_all.bat
         call run_tests.bat
-        ren %FB_OUTPUT_DIR% output
 
     - name: Build (Windows, Docker)
       if: startsWith(matrix.os, 'windows-') && matrix.docker
@@ -275,19 +274,17 @@ jobs:
         name: firebird-macos
         path: gen/artifacts
 
-    - name: Clean output (Windows)
+    - name: Extract zip (Windows)
       if: startsWith(matrix.os, 'windows-')
       shell: cmd
       run: |
-        del output\*_test.exe /s
-        del output\lib\*.exp /s
-        del output\*.log /s
+        7z x builds\install_images\*.zip -ooutput
 
     - name: Upload zip (Windows)
       if: startsWith(matrix.os, 'windows-') && !matrix.docker
       uses: actions/upload-artifact@main
       with:
-        name: firebird-windows-vs-${{ env.VS_VERSION }}-x64-zip
+        name: firebird-windows-vs-${{ env.VS_VERSION }}-${{ matrix.platform }}-zip
         path: output
 
     - name: Upload zip (Windows, Docker)
@@ -301,7 +298,7 @@ jobs:
       if: startsWith(matrix.os, 'windows-') && !matrix.docker
       uses: actions/upload-artifact@main
       with:
-        name: firebird-windows-vs-${{ env.VS_VERSION }}-x64-installer
+        name: firebird-windows-vs-${{ env.VS_VERSION }}-${{ matrix.platform }}-installer
         path: builds/install_images/*.exe
 
     - name: Upload installer (Windows, Docker)
