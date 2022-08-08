@@ -212,6 +212,8 @@ jobs:
       shell: cmd
       run: |
         for /r %%i in (*.bat) do unix2dos "%%i"
+        choco uninstall --no-progress --yes innosetup
+        choco install --no-progress --yes innosetup --version=6.1.2
 
     - name: Build (Windows)
       if: startsWith(matrix.os, 'windows-') && !matrix.docker
@@ -220,6 +222,8 @@ jobs:
         PLATFORM: ${{ matrix.platform }}
         VS_SCRIPT: ${{ matrix.os == 'windows-2022' && 'C:\Program Files\Microsoft Visual Studio\%VS_VERSION%\Enterprise\Common7\Tools\VsDevCmd.bat' || 'C:\Program Files (x86)\Microsoft Visual Studio\%VS_VERSION%\Enterprise\Common7\Tools\VsDevCmd.bat' }}
       run: |
+        set SEVENZIP=C:\Program Files\7-Zip
+        set INNO6_SETUP_PATH=C:\Program Files (x86)\Inno Setup 6
         if "%PLATFORM%" == "x64" set FB_VS_ARCH=amd64
         if "%PLATFORM%" == "x64" set FB_PROCESSOR_ARCHITECTURE=AMD64
         if "%PLATFORM%" == "x64" set FB_OUTPUT_SUFFIX=x64
@@ -228,7 +232,7 @@ jobs:
         if "%PLATFORM%" == "x86" set FB_OUTPUT_SUFFIX=win32
         call "%VS_SCRIPT%" -arch=%FB_VS_ARCH%
         cd builds\win32
-        call run_all.bat JUSTBUILD
+        call run_all.bat
         call run_tests.bat
         ren %FB_OUTPUT_DIR% output
 
@@ -238,7 +242,7 @@ jobs:
       env:
         PLATFORM: ${{ matrix.platform }}
       run: |
-        mkdir output
+        mkdir builds\install_images
         cd builds\docker\windows
         call build.bat
         call run.bat C:\fbscripts\build-%PLATFORM%.bat
@@ -279,16 +283,30 @@ jobs:
         del output\lib\*.exp /s
         del output\*.log /s
 
-    - name: Upload (Windows)
+    - name: Upload zip (Windows)
       if: startsWith(matrix.os, 'windows-') && !matrix.docker
       uses: actions/upload-artifact@main
       with:
-        name: firebird-windows-vs-${{ env.VS_VERSION }}-x64
+        name: firebird-windows-vs-${{ env.VS_VERSION }}-x64-zip
         path: output
 
-    - name: Upload (Windows, Docker)
+    - name: Upload zip (Windows, Docker)
       if: startsWith(matrix.os, 'windows-') && matrix.docker
       uses: actions/upload-artifact@main
       with:
-        name: firebird-windows-${{ matrix.platform }}
+        name: firebird-windows-${{ matrix.platform }}-zip
         path: output
+
+    - name: Upload installer (Windows)
+      if: startsWith(matrix.os, 'windows-') && !matrix.docker
+      uses: actions/upload-artifact@main
+      with:
+        name: firebird-windows-vs-${{ env.VS_VERSION }}-x64-installer
+        path: builds/install_images/*.exe
+
+    - name: Upload installer (Windows, Docker)
+      if: startsWith(matrix.os, 'windows-') && matrix.docker
+      uses: actions/upload-artifact@main
+      with:
+        name: firebird-windows-${{ matrix.platform }}-installer
+        path: builds/install_images/*.exe

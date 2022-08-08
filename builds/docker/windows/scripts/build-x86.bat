@@ -9,7 +9,7 @@ xcopy /h /e /i /q C:\firebird C:\firebird-build
 cd /d C:\firebird-build\builds\win32
 
 REM call run_all.bat
-call run_all.bat JUSTBUILD
+call run_all.bat
 
 call run_tests.bat
 
