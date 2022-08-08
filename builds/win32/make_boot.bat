@@ -88,7 +88,6 @@ if "%ERRLEV%"=="1" goto :END
 @copy %FB_ROOT_PATH%\extern\icu\tzdata-extract\* %FB_OUTPUT_DIR%\tzdata >nul 2>&1
 @copy %FB_ROOT_PATH%\extern\zlib\%FB_TARGET_PLATFORM%\*.dll %FB_BIN_DIR% >nul 2>&1
 
-
 ::=======
 @call :databases
 
@@ -119,59 +118,37 @@ goto :EOF
 
 ::===================
 :: BUILD LibTom
-:: NS: Note we need both debug and non-debug version as it is a static library linked to CRT
-:: and linking executable with both debug and non-debug CRT results in undefined behavior
 :LibTom
 @echo.
-@call set_build_target.bat %* RELEASE
 @echo Building LibTomMath (%FB_OBJ_DIR%)...
 @call compile.bat extern\libtommath\libtommath_MSVC%MSVC_VERSION% libtommath_%FB_CONFIG%_%FB_TARGET_PLATFORM%.log libtommath
 if errorlevel 1 call :boot2 libtommath_%FB_OBJ_DIR%
 @echo Building LibTomCrypt (%FB_OBJ_DIR%)...
 @call compile.bat extern\libtomcrypt\libtomcrypt_MSVC%MSVC_VERSION% libtomcrypt_%FB_CONFIG%_%FB_TARGET_PLATFORM%.log libtomcrypt
 if errorlevel 1 call :boot2 libtomcrypt_%FB_OBJ_DIR%
-
-@call set_build_target.bat %* DEBUG
-@echo Building LibTomMath (%FB_OBJ_DIR%)...
-@call compile.bat extern\libtommath\libtommath_MSVC%MSVC_VERSION% libtommath_%FB_CONFIG%_%FB_TARGET_PLATFORM%.log libtommath
-if errorlevel 1 call :boot2 libtommath_%FB_OBJ_DIR%
-@echo Building LibTomCrypt (%FB_OBJ_DIR%)...
-@call compile.bat extern\libtomcrypt\libtomcrypt_MSVC%MSVC_VERSION% libtomcrypt_%FB_CONFIG%_%FB_TARGET_PLATFORM%.log libtomcrypt
-if errorlevel 1 call :boot2 libtomcrypt_%FB_OBJ_DIR%
-
-@call set_build_target.bat %*
 goto :EOF
 
 ::===================
 :: BUILD decNumber
 :decNumber
 @echo.
-@call set_build_target.bat %* RELEASE
 @echo Building decNumber (%FB_OBJ_DIR%)...
 @call compile.bat extern\decNumber\msvc\decNumber_MSVC%MSVC_VERSION% decNumber_%FB_CONFIG%_%FB_TARGET_PLATFORM%.log decNumber
 if errorlevel 1 call :boot2 decNumber_%FB_OBJ_DIR%
-@call set_build_target.bat %* DEBUG
-@echo Building decNumber (%FB_OBJ_DIR%)...
-@call compile.bat extern\decNumber\msvc\decNumber_MSVC%MSVC_VERSION% decNumber_%FB_CONFIG%_%FB_TARGET_PLATFORM%.log decNumber
-if errorlevel 1 call :boot2 decNumber_%FB_OBJ_DIR%
-@call set_build_target.bat %*
 goto :EOF
 
 ::===================
 :: BUILD ttmath
 :ttmath
 @echo.
-@call set_build_target.bat %* RELEASE
 @echo Building ttmath (%FB_OBJ_DIR%)...
 @mkdir %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common 2>nul
-@ml64.exe /c /Fo %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common\ttmathuint_x86_64_msvc.obj %FB_ROOT_PATH%\extern\ttmath\ttmathuint_x86_64_msvc.asm
+if /I "%FB_CONFIG%"=="debug" (
+  @ml64.exe /c /Zi /Fo %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common\ttmathuint_x86_64_msvc.obj %FB_ROOT_PATH%\extern\ttmath\ttmathuint_x86_64_msvc.asm
+) else (
+  @ml64.exe /c /Fo %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common\ttmathuint_x86_64_msvc.obj %FB_ROOT_PATH%\extern\ttmath\ttmathuint_x86_64_msvc.asm
+)
 if errorlevel 1 call :boot2 ttmath_%FB_OBJ_DIR%
-@call set_build_target.bat %* DEBUG
-@echo Building ttmath (%FB_OBJ_DIR%)...
-@mkdir %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common 2>nul
-@ml64.exe /c /Zi /Fo %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common\ttmathuint_x86_64_msvc.obj %FB_ROOT_PATH%\extern\ttmath\ttmathuint_x86_64_msvc.asm
-if errorlevel 1 call :boot2 ttmath_%FB_OBJ_DIR%
-@call set_build_target.bat %*
 goto :EOF
 
 ::===================
@@ -183,8 +160,7 @@ goto :EOF
 @pushd %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM%
 @cmake -G "%MSVC_CMAKE_GENERATOR%" -A %FB_TARGET_PLATFORM% -S %FB_ROOT_PATH%\extern\re2
 if errorlevel 1 call :boot2 re2
-@cmake --build %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM% --target ALL_BUILD --config Release > re2_Release_%FB_TARGET_PLATFORM%.log
-@cmake --build %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM% --target ALL_BUILD --config Debug > re2_Debug_%FB_TARGET_PLATFORM%.log
+@cmake --build %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM% --target ALL_BUILD --config %FBBUILD_BUILDTYPE% > re2_%FBBUILD_BUILDTYPE%_%FB_TARGET_PLATFORM%.log
 @popd
 goto :EOF
 
