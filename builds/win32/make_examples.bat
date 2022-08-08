@@ -131,7 +131,6 @@ copy %FB_ROOT_PATH%\examples\package\* %FB_OUTPUT_DIR%\examples\package > nul
 copy %FB_ROOT_PATH%\examples\stat\* %FB_OUTPUT_DIR%\examples\stat > nul
 copy %FB_ROOT_PATH%\examples\udf\* %FB_OUTPUT_DIR%\examples\udf > nul
 copy %FB_ROOT_PATH%\examples\udr\* %FB_OUTPUT_DIR%\examples\udr > nul
-copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\plugins\udr\*.dll %FB_OUTPUT_DIR%\plugins\udr >nul
 copy %FB_ROOT_PATH%\examples\prebuilt\%FB_OBJ_DIR%\bin\*.exe %FB_OUTPUT_DIR%\examples\prebuilt\bin > nul
 copy %FB_ROOT_PATH%\examples\prebuilt\%FB_OBJ_DIR%\plugins\*.dll %FB_OUTPUT_DIR%\examples\prebuilt\plugins > nul
 

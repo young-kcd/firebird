@@ -17,6 +17,12 @@ set ERRLEV=0
 ::===========
 :MAIN
 @echo.
+
+@echo Cleaning output directory
+@rmdir /S /Q "%FB_OUTPUT_DIR%" 2>nul
+:: short delay to let OS complete actions by rmdir above
+@timeout 1 >nul
+
 @echo Creating directories
 :: Create the directory hierarchy.
 for %%v in ( alice auth burp dsql gpre isql jrd misc msgs examples yvalve utilities) do (
@@ -28,6 +34,7 @@ for %%v in ( alice auth burp dsql gpre isql jrd misc msgs examples yvalve utilit
 @mkdir %FB_GEN_DIR%\gpre\std 2>nul
 
 @mkdir %FB_OUTPUT_DIR%\include\firebird\impl 2>nul
+@mkdir %FB_OUTPUT_DIR%\tzdata 2>nul
 
 call :interfaces
 if "%ERRLEV%"=="1" goto :END
@@ -59,14 +66,11 @@ call :gpre_boot
 if "%ERRLEV%"=="1" goto :END
 
 ::=======
-@echo Preprocessing the source files needed to build gbak, gpre and isql...
+@echo Preprocessing the source files needed to build gpre and isql...
 @call preprocess.bat BOOT
 
 ::=======
 call :engine
-if "%ERRLEV%"=="1" goto :END
-
-call :gbak
 if "%ERRLEV%"=="1" goto :END
 
 call :gpre
@@ -77,21 +81,12 @@ if "%ERRLEV%"=="1" goto :END
 
 @copy %FB_ROOT_PATH%\builds\install\misc\firebird.conf %FB_BIN_DIR%\firebird.conf
 
-:: Copy ICU and zlib both to Debug and Release configurations
-
-@call set_build_target.bat %* RELEASE
+:: Copy ICU and zlib to the output directory
 @mkdir %FB_BIN_DIR%
 @copy %FB_ROOT_PATH%\extern\icu\icudt???.dat %FB_BIN_DIR% >nul 2>&1
 @copy %FB_ICU_SOURCE_BIN%\*.dll %FB_BIN_DIR% >nul 2>&1
+@copy %FB_ROOT_PATH%\extern\icu\tzdata-extract\* %FB_OUTPUT_DIR%\tzdata >nul 2>&1
 @copy %FB_ROOT_PATH%\extern\zlib\%FB_TARGET_PLATFORM%\*.dll %FB_BIN_DIR% >nul 2>&1
-
-@call set_build_target.bat %* DEBUG
-@mkdir %FB_BIN_DIR%
-@copy %FB_ROOT_PATH%\extern\icu\icudt???.dat %FB_BIN_DIR% >nul 2>&1
-@copy %FB_ICU_SOURCE_BIN%\*.dll %FB_BIN_DIR% >nul 2>&1
-@copy %FB_ROOT_PATH%\extern\zlib\%FB_TARGET_PLATFORM%\*.dll %FB_BIN_DIR% >nul 2>&1
-
-@call set_build_target.bat %*
 
 
 ::=======
@@ -234,15 +229,6 @@ if errorlevel 1 call :boot2 engine
 @goto :EOF
 
 ::===================
-:: BUILD gbak
-:gbak
-@echo.
-@echo Building gbak (%FB_OBJ_DIR%)...
-@call compile.bat builds\win32\%VS_VER%\Firebird gbak_%FB_TARGET_PLATFORM%.log EXEs\gbak
-if errorlevel 1 call :boot2 gbak
-@goto :EOF
-
-::===================
 :: BUILD gpre
 :gpre
 @echo.
@@ -295,6 +281,10 @@ goto :EOF
 @echo Apply security.sql...
 @"%FB_BIN_DIR%\isql" -q %FB_GEN_DB_DIR%/dbs/security5.fdb -i %FB_ROOT_PATH%\src\dbs\security.sql
 @copy %FB_GEN_DIR%\dbs\security5.fdb %FB_GEN_DIR%\dbs\security.fdb > nul
+
+@echo Creating metadata.fdb...
+@echo create database '%FB_GEN_DB_DIR%/dbs/metadata.fdb'; | "%FB_BIN_DIR%\isql" -q -sqldialect 1
+@copy %FB_GEN_DIR%\dbs\metadata.fdb %FB_GEN_DIR%\dbs\yachts.lnk > nul
 
 @call create_msgs.bat db
 

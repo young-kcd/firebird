@@ -458,7 +458,7 @@ for /R %FB_OUTPUT_DIR% %%W in ( *.txt *.conf *.sql *.c *.cpp *.hpp *.h *.bat *.p
 :: Forcefully disable delayed expansion because of exclamation marks in 7z switches
 setlocal DisableDelayedExpansion
 
-set SKIP_FILES=-x!installation_readme.txt
+set SKIP_FILES=-x!*.log -x!*.exp -x!*_test.exe -x!installation_readme.txt
 
 if "%FBBUILD_SHIP_PDB%" == "ship_pdb" (
     set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%-pdb%FBBUILD_FILENAME_SUFFIX%.zip

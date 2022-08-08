@@ -230,6 +230,7 @@ jobs:
         cd builds\win32
         call run_all.bat JUSTBUILD
         call run_tests.bat
+        ren %FB_OUTPUT_DIR% output
 
     - name: Build (Windows, Docker)
       if: startsWith(matrix.os, 'windows-') && matrix.docker
@@ -270,19 +271,20 @@ jobs:
         name: firebird-macos
         path: gen/artifacts
 
-    - name: Upload (Windows x64)
-      if: startsWith(matrix.os, 'windows-') && !matrix.docker && matrix.platform == 'x64'
+    - name: Clean output (Windows)
+      if: startsWith(matrix.os, 'windows-')
+      shell: cmd
+      run: |
+        del output\*_test.exe /s
+        del output\lib\*.exp /s
+        del output\*.log /s
+
+    - name: Upload (Windows)
+      if: startsWith(matrix.os, 'windows-') && !matrix.docker
       uses: actions/upload-artifact@main
       with:
         name: firebird-windows-vs-${{ env.VS_VERSION }}-x64
-        path: output_x64
-
-    - name: Upload (Windows x86)
-      if: startsWith(matrix.os, 'windows-') && !matrix.docker && matrix.platform == 'x86'
-      uses: actions/upload-artifact@main
-      with:
-        name: firebird-windows-vs-${{ env.VS_VERSION }}-x86
-        path: output_win32
+        path: output
 
     - name: Upload (Windows, Docker)
       if: startsWith(matrix.os, 'windows-') && matrix.docker
