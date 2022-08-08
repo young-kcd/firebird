@@ -1,10 +1,8 @@
 @echo off
 
 :: Set env vars
-@call setenvvar.bat
+@call setenvvar.bat %*
 @if errorlevel 1 (goto :EOF)
-
-@call set_build_target.bat %*
 
 :: verify that boot was run before
 @if not exist %FB_BIN_DIR%\isql.exe (goto :HELP_BOOT & goto :EOF)

@@ -652,7 +652,7 @@ for %%v in ( %1 %2 %3 %4 %5 %6 %7 %8 %9 )  do (
 
 pushd ..\..\..\win32
 ::This must be called from the directory it resides in.
-@call setenvvar.bat
+@call setenvvar.bat %*
 popd
 @if errorlevel 1 (goto :END)
 

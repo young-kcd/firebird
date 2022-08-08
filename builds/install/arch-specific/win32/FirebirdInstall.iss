@@ -117,8 +117,9 @@
 ;We speed up compilation (and hence testing) by not compressing contents.
 #undef compression
 
-;Default to x64 for testing
+;Default to x64_release for testing
 #define PlatformTarget "x64"
+#define ConfigurationTarget "release"
 #endif
 ;-------#ifdef iss_debug
 
@@ -216,6 +217,15 @@
 #endif
 #endif
 
+;---- If we haven't already set ConfigurationTarget then pick it up from the environment.
+#ifndef ConfigurationTarget
+#define ConfigurationTarget GetEnv("FBBUILD_BUILDTYPE")
+#endif
+#if ConfigurationTarget == ""
+;Assume release
+#define ConfigurationTarget "release"
+#endif
+
 #if FB_BUILD_TYPE == "T"
 ;If we are still under development we can ignore some missing files.
 #define SkipFileIfDevStatus " skipifsourcedoesntexist "
@@ -224,7 +234,7 @@
 #endif
 
 ;This location is relative to SourceDir (declared below)
-#define FilesDir="output_" + PlatformTarget
+#define FilesDir="output_" + PlatformTarget + "_" + ConfigurationTarget
 #if PlatformTarget == "x64"
 #define WOW64Dir="output_win32"
 #endif

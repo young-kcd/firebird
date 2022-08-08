@@ -1,8 +1,7 @@
 @echo off
 
-@call setenvvar.bat
+@call setenvvar.bat %*
 @if errorlevel 1 (goto :END)
-@if not defined FB_BOOT_BIN_DIR (@call set_build_target.bat %*)
 
 @echo Building build_msg (%FB_OBJ_DIR%)...
 @call compile.bat builds\win32\%VS_VER%\FirebirdBoot build_msg_%FB_TARGET_PLATFORM%.log build_msg

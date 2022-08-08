@@ -110,7 +110,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>..\..\..\output_$(Platform)\lib\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\output_$(Platform)_$(Configuration)\lib\</AdditionalLibraryDirectories>
       <AdditionalDependencies>fbclient_ms.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -125,7 +125,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>..\..\..\output_$(Platform)\lib\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\output_$(Platform)_$(Configuration)\lib\</AdditionalLibraryDirectories>
       <AdditionalDependencies>fbclient_ms.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -144,7 +144,7 @@
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>..\..\..\output_$(Platform)\lib\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\output_$(Platform)_$(Configuration)\lib\</AdditionalLibraryDirectories>
       <AdditionalDependencies>fbclient_ms.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -163,7 +163,7 @@
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>..\..\..\output_$(Platform)\lib\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\output_$(Platform)_$(Configuration)\lib\</AdditionalLibraryDirectories>
       <AdditionalDependencies>fbclient_ms.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

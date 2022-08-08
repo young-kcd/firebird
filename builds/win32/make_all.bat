@@ -2,7 +2,7 @@
 set ERRLEV=0
 
 :: Set env vars
-@call setenvvar.bat
+@call setenvvar.bat %*
 
 @if errorlevel 1 (call :ERROR Executing setenvvar.bat failed & goto :EOF)
 
@@ -10,8 +10,6 @@ set ERRLEV=0
 
 @if not exist %FB_BIN_DIR%\firebird.msg (goto :HELP_BOOT & goto :EOF)
 
-
-@call set_build_target.bat %*
 
 ::==========
 :: MAIN

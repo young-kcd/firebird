@@ -109,16 +109,16 @@
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>..\..\..\output_$(PlatformName)\plugins\udr\</OutDir>
+    <OutDir>..\..\..\output_$(PlatformName)_$(Configuration)\plugins\udr\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>..\..\..\output_$(PlatformName)\plugins\udr\</OutDir>
+    <OutDir>..\..\..\output_$(PlatformName)_$(Configuration)\plugins\udr\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>..\..\..\output_$(PlatformName)\plugins\udr\</OutDir>
+    <OutDir>..\..\..\output_$(PlatformName)_$(Configuration)\plugins\udr\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>..\..\..\output_$(PlatformName)\plugins\udr\</OutDir>
+    <OutDir>..\..\..\output_$(PlatformName)_$(Configuration)\plugins\udr\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>

@@ -2,9 +2,7 @@
 
 
 :: Set env vars
-@call setenvvar.bat
-
-@call set_build_target.bat %* icu
+@call setenvvar.bat %*
 
 ::==========
 :: MAIN

@@ -8,10 +8,8 @@
 set ERRLEV=0
 
 :CHECK_ENV
-@call setenvvar.bat
+@call setenvvar.bat %*
 @if errorlevel 1 (goto :END)
-
-@call set_build_target.bat %*
 
 
 ::===========
@@ -67,7 +65,7 @@ if "%ERRLEV%"=="1" goto :END
 
 ::=======
 @echo Preprocessing the source files needed to build gpre and isql...
-@call preprocess.bat BOOT
+@call preprocess.bat %FBBUILD_BUILDTYPE% BOOT
 
 ::=======
 call :engine
@@ -93,14 +91,14 @@ if "%ERRLEV%"=="1" goto :END
 
 ::=======
 @echo Preprocessing the entire source tree...
-@call preprocess.bat
+@call preprocess.bat %FBBUILD_BUILDTYPE%
 
 ::=======
 @call :msgs
 if "%ERRLEV%"=="1" goto :END
 
 ::=======
-@call create_msgs.bat msg
+@call create_msgs.bat %FBBUILD_BUILDTYPE%
 ::=======
 
 @call :NEXT_STEP
@@ -261,8 +259,6 @@ goto :EOF
 @echo Creating metadata.fdb...
 @echo create database '%FB_GEN_DB_DIR%/dbs/metadata.fdb'; | "%FB_BIN_DIR%\isql" -q -sqldialect 1
 @copy %FB_GEN_DIR%\dbs\metadata.fdb %FB_GEN_DIR%\dbs\yachts.lnk > nul
-
-@call create_msgs.bat db
 
 @goto :EOF
 
