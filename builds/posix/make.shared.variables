@@ -79,8 +79,11 @@ AllObjects += $(Remote_Common) $(Remote_Server) $(Remote_Client)
 
 # Chacha plugin
 Chacha_Objects:= $(call dirObjects,plugins/crypt/chacha)
-
 AllObjects += $(Chacha_Objects)
+
+# Profiler plugin
+Profiler_Objects:= $(call dirObjects,plugins/profiler)
+AllObjects += $(Profiler_Objects)
 
 # Engine
 Engine_Objects:= $(call dirObjects,jrd) $(call dirObjects,dsql) $(call dirObjects,jrd/extds) \
