@@ -162,6 +162,7 @@ enum ConfigKey
 	KEY_PLUG_AUTH_SERVER,
 	KEY_PLUG_AUTH_CLIENT,
 	KEY_PLUG_AUTH_MANAGE,
+	KEY_PLUG_PROFILER,
 	KEY_PLUG_TRACE,
 	KEY_SECURITY_DATABASE,
 	KEY_SERVER_MODE,
@@ -273,6 +274,7 @@ constexpr ConfigEntry entries[MAX_CONFIG_KEY] =
 	{TYPE_STRING,	"AuthClient",				false,	"Srp256, Srp, Legacy_Auth"},
 #endif
 	{TYPE_STRING,	"UserManager",				false,	"Srp"},
+	{TYPE_STRING,	"DefaultProfilerPlugin",	false,	"Default_Profiler"},
 	{TYPE_STRING,	"TracePlugin",				false,	"fbtrace"},
 	{TYPE_STRING,	"SecurityDatabase",			false,	nullptr},	// sec/db alias - rely on ConfigManager::getDefaultSecurityDb(
 	{TYPE_STRING,	"ServerMode",				true,	nullptr},	// actual value differs in boot/regular cases and set at setupDefaultConfig(

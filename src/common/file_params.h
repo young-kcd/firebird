@@ -54,6 +54,8 @@ static const char* const FB_TRACE_LOG_MUTEX = "fb_trace_log_mutex";
 // Per-trace session usage (for interactive trace)
 static const char* const FB_TRACE_FILE = "fb_trace.";
 
+static const char* const PROFILER_FILE	= "fb_profiler_%s_%" UQUADFORMAT;
+
 #ifdef UNIX
 static const char* const INIT_FILE		= "fb_init";
 static const char* const SEM_FILE		= "fb_sem";

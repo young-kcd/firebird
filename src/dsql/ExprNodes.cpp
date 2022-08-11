@@ -6812,7 +6812,7 @@ dsc* FieldNode::execute(thread_db* tdbb, Request* request) const
 	{
 		// Computed fields shouldn't be present at this point
 		jrd_fld* field = MET_get_field(relation, fieldId);
-		fb_assert(field && !field->fld_computation);
+		fb_assert(!field || !field->fld_computation);
 	}
 #endif
 

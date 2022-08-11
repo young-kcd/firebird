@@ -592,6 +592,10 @@ public:
 	ExprNode*	csb_currentAssignTarget;
 	dsc*		csb_preferredDesc;		// expected by receiving side data format
 
+	ULONG		csb_currentCursorProfileId = 0;
+	ULONG		csb_nextCursorProfileId = 1;
+	ULONG		csb_nextRecSourceProfileId = 1;
+
 	struct csb_repeat
 	{
 		// We must zero-initialize this one
