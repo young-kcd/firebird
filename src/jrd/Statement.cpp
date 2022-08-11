@@ -154,6 +154,15 @@ Statement* Statement::makeStatement(thread_db* tdbb, CompilerScratch* csb, bool 
 	Database* const dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
+	MemoryPool* defPool = tdbb->getDefaultPool();
+	for (FB_SIZE_T i = 1; i < dbb->dbb_pools.getCount(); ++i)
+	{
+		if (dbb->dbb_pools[i] == defPool)
+			goto found;
+	}
+	fb_assert(!"wrong pool in makeStatement");
+found:
+
 	Request* const old_request = tdbb->getRequest();
 	tdbb->setRequest(NULL);
 
@@ -349,11 +358,11 @@ Request* Statement::getRequest(thread_db* tdbb, USHORT level)
 
 	requests.grow(level + 1);
 
-	MemoryStats* const parentStats = (flags & FLAG_INTERNAL) ?
-		&dbb->dbb_memory_stats : &attachment->att_memory_stats;
+//	MemoryStats* const parentStats = (flags & FLAG_INTERNAL) ?
+//		&dbb->dbb_memory_stats : &attachment->att_memory_stats;
 
 	// Create the request.
-	Request* const request = FB_NEW_POOL(*pool) Request(attachment, this, parentStats);
+	Request* const request = FB_NEW_POOL(*pool) Request(attachment, this, &dbb->dbb_memory_stats);
 
 	if (level == 0)
 		pool->setStatsGroup(request->req_memory_stats);
@@ -559,17 +568,25 @@ void Statement::release(thread_db* tdbb)
 
 	const auto attachment = tdbb->getAttachment();
 
-	FB_SIZE_T pos;
-	if (attachment->att_statements.find(this, pos))
-		attachment->att_statements.remove(pos);
-	else
-		fb_assert(false);
+	if (attachment)
+	{
+		// !!!!!!!!!!!!!!!!  need to walk all attachments in database
+		// or change att_statements to dbb_statements
+		FB_SIZE_T pos;
+		if (attachment->att_statements.find(this, pos))
+			attachment->att_statements.remove(pos);
+		else
+			fb_assert(false);
+	}
 
 	sqlText = NULL;
 
 	// Sub statement pool is the same of the main statement, so don't delete it.
 	if (!parentStatement)
-		attachment->deletePool(pool);
+	{
+		Database* dbb = tdbb->getDatabase();
+		dbb->deletePool(pool);
+	}
 }
 
 // Returns a formatted textual plan for all RseNode's in the specified request

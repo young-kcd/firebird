@@ -359,23 +359,21 @@ HazardPtr<Collation> CharSetContainer::lookupCollation(thread_db* tdbb, USHORT t
 			}
 		}
 
-		Collation* coll = Collation::createInstance(*dbb->dbb_permanent, tt_id, tt, info.attributes, charset);
-		coll->name = info.collationName;
+		Collation* collation = Collation::createInstance(*dbb->dbb_permanent, tt_id, tt, info.attributes, charset);
+		collation->name = info.collationName;
 
 		// we don't need a lock in the charset
 		if (id != 0)
 		{
-			coll->existenceLock = CharSetContainer::createCollationLock(tdbb, tt_id, coll);
+			collation->existenceLock = CharSetContainer::createCollationLock(tdbb, tt_id, collation);
 
-			fb_assert(coll->useCount == 0);
-			fb_assert(!coll->obsolete);
+			fb_assert(collation->useCount == 0);
+			fb_assert(!collation->obsolete);
 		}
-
-		charset_collations.store(tdbb, id, coll);
 
 		if (id != 0)
 		{
-			LCK_lock(tdbb, coll->existenceLock, LCK_SR, LCK_WAIT);
+			LCK_lock(tdbb, collation->existenceLock, LCK_SR, LCK_WAIT);
 
 			// as we just obtained SR lock for new collation instance
 			// we could safely delete obsolete instance
@@ -385,6 +383,8 @@ HazardPtr<Collation> CharSetContainer::lookupCollation(thread_db* tdbb, USHORT t
 		//
 		// We did not delete "to_delete" when id == 0. Why??????????????????
 		//
+
+		coll = charset_collations.store(tdbb, id, collation);
 	}
 	else
 	{
@@ -447,7 +447,7 @@ static INTL_BOOL lookup_texttype(texttype* tt, const SubtypeInfo* info)
 
 void Jrd::MetadataCache::releaseIntlObjects(thread_db* tdbb)
 {
-	for (auto cs : mdc_charsets)
+	for (auto cs : mdc_charsets.snapshot())
 	{
 		if (cs)
 			cs->release(tdbb);

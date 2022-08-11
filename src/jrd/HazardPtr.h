@@ -471,14 +471,14 @@ namespace Jrd {
 	template <class Object, unsigned SUBARRAY_SHIFT = 8>
 	class HazardArray : public Firebird::PermanentStorage
 	{
-	private:
+	public:
 		static const unsigned SUBARRAY_SIZE = 1 << SUBARRAY_SHIFT;
 		static const unsigned SUBARRAY_MASK = SUBARRAY_SIZE - 1;
 
 		typedef std::atomic<Object*> SubArrayElement;
 		typedef std::atomic<SubArrayElement*> ArrayElement;
+		typedef SharedReadVector<ArrayElement, 4> Storage;
 
-	public:
 		explicit HazardArray(MemoryPool& pool)
 			: Firebird::PermanentStorage(pool),
 			  m_objects(getPool())
@@ -531,6 +531,11 @@ namespace Jrd {
 		FB_SIZE_T getCount(DDS* par) const
 		{
 			return m_objects.readAccessor(par)->getCount() << SUBARRAY_SHIFT;
+		}
+
+		static FB_SIZE_T getCount(const HazardPtr<typename Storage::Generation>& v)
+		{
+			return v->getCount() << SUBARRAY_SHIFT;
 		}
 
 		void grow(thread_db* tdbb, FB_SIZE_T reqSize)
@@ -594,9 +599,9 @@ namespace Jrd {
 		template <class DDS>
 		bool load(DDS* par, FB_SIZE_T id, HazardPtr<Object>& val) const
 		{
-			if (id < getCount(par))
+			auto a = m_objects.readAccessor(par);
+			if (id < getCount(a))
 			{
-				auto a = m_objects.readAccessor(par);
 				SubArrayElement* sub = a->value(id >> SUBARRAY_SHIFT).load(std::memory_order_acquire);
 				if (sub)
 				{
@@ -613,11 +618,20 @@ namespace Jrd {
 		HazardPtr<Object> load(DDS* par, FB_SIZE_T id) const
 		{
 			HazardPtr<Object> val;
-			load(par, id, val);
+			if (!load(par, id, val))
+				val.clear();
 			return val;
 		}
 
-		class iterator
+		template <class DDS>
+		HazardPtr<typename Storage::Generation> readAccessor(DDS* par) const
+		{
+			return m_objects.readAccessor(par);
+		}
+
+		class Snapshot;
+
+		class Iterator
 		{
 		public:
 			HazardPtr<Object> operator*()
@@ -630,27 +644,21 @@ namespace Jrd {
 				return get();
 			}
 
-			iterator& operator++()
+			Iterator& operator++()
 			{
-				++index;
+				index = snap->locateData(index + 1);
 				return *this;
 			}
 
-			iterator& operator--()
+			bool operator==(const Iterator& itr) const
 			{
-				--index;
-				return *this;
-			}
-
-			bool operator==(const iterator& itr) const
-			{
-				fb_assert(array == itr.array);
+				fb_assert(snap == itr.snap);
 				return index == itr.index;
 			}
 
-			bool operator!=(const iterator& itr) const
+			bool operator!=(const Iterator& itr) const
 			{
-				fb_assert(array == itr.array);
+				fb_assert(snap == itr.snap);
 				return index != itr.index;
 			}
 
@@ -660,33 +668,90 @@ namespace Jrd {
 
 		public:
 			enum class Location {Begin, End};
-			iterator(const HazardArray* a, Location loc = Location::Begin)
-				: array(a),
+			Iterator(const Snapshot* s, Location loc)
+				: snap(s),
 				  hd(HazardPtr<Object>::getHazardDelayed()),
-				  index(loc == Location::Begin ? 0 : array->getCount(hd))
+				  index(loc == Location::Begin ? snap->locateData(0) :
+				  	snap->data->getCount() << SUBARRAY_SHIFT)
 			{ }
 
 			HazardPtr<Object> get()
 			{
 				HazardPtr<Object> rc(hd);
-				array->load(hd, index, rc);
+				if (!snap->load(index, rc))
+					rc.clear();
 				return rc;
 			}
 
 		private:
-			const HazardArray* array;
+			const Snapshot* snap;
 			HazardDelayedDelete* hd;
 			FB_SIZE_T index;
 		};
 
-		iterator begin() const
+		class Snapshot
 		{
-			return iterator(this);
-		}
+		private:
+			void* operator new(size_t);
+			void* operator new[](size_t);
 
-		iterator end() const
+		public:
+			Snapshot(const HazardArray* array)
+				: hd(HazardPtr<Object>::getHazardDelayed()),
+				  data(array->readAccessor(hd))
+			{ }
+
+			Iterator begin() const
+			{
+				return Iterator(this, Iterator::Location::Begin);
+			}
+
+			Iterator end() const
+			{
+				return Iterator(this, Iterator::Location::End);
+			}
+
+			FB_SIZE_T locateData(FB_SIZE_T index) const
+			{
+				for (FB_SIZE_T i = index >> SUBARRAY_SHIFT; i < data->getCount(); ++i, index = 0)
+				{
+					SubArrayElement* const sub = data->value(i).load(std::memory_order_acquire);
+					if (!sub)
+						continue;
+
+					for (FB_SIZE_T j = index & SUBARRAY_MASK; j < SUBARRAY_SIZE; ++j)
+					{
+						auto p = sub[j].load(std::memory_order_acquire);
+						if (p && p->hasData())
+							return (i << SUBARRAY_SHIFT) + j;
+					}
+				}
+				return data->getCount() << SUBARRAY_SHIFT;
+			}
+
+			bool load(FB_SIZE_T id, HazardPtr<Object>& val) const
+			{
+				if (id < (data->getCount() << SUBARRAY_SHIFT))
+				{
+					SubArrayElement* sub = data->value(id >> SUBARRAY_SHIFT).load(std::memory_order_acquire);
+					if (sub)
+					{
+						val.set(sub[id & SUBARRAY_MASK]);
+						if (val && val->hasData())
+							return true;
+					}
+				}
+
+				return false;
+			}
+
+			HazardDelayedDelete* hd;
+			HazardPtr<typename Storage::Generation> data;
+		};
+
+		Snapshot snapshot() const
 		{
-			return iterator(this, iterator::Location::End);
+			return Snapshot(this);
 		}
 
 	private:

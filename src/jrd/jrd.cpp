@@ -8204,6 +8204,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 	MutexUnlockGuard coutBlocking(*sAtt->getBlockingMutex(), FB_FUNCTION);
 
 	// Try to close database if there are no attachments
+	tdbb->setAttachment(nullptr);
 	JRD_shutdown_database(dbb, shutdownFlags);
 }
 
@@ -9445,7 +9446,7 @@ void JRD_cancel_operation(thread_db* /*tdbb*/, Jrd::Attachment* attachment, int 
 
 bool TrigVector::hasActive() const
 {
-	for (auto t : *this)
+	for (auto t : snapshot())
 	{
 		if (t && t->isActive())
 			return true;
@@ -9457,7 +9458,7 @@ bool TrigVector::hasActive() const
 
 void TrigVector::decompile(thread_db* tdbb)
 {
-	for (auto t : *this)
+	for (auto t : snapshot())
 	{
 		if (t)
 			t->release(tdbb);

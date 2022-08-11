@@ -149,11 +149,11 @@ Statement* CMP_compile(thread_db* tdbb, const UCHAR* blr, ULONG blrLength, bool 
 	Statement* statement = nullptr;
 
 	SET_TDBB(tdbb);
-	const auto att = tdbb->getAttachment();
+	const auto dbb = tdbb->getDatabase();
 
 	// 26.09.2002 Nickolay Samofatov: default memory pool will become statement pool
 	// and will be freed by CMP_release
-	const auto newPool = att->createPool();
+	const auto newPool = dbb->createPool();
 
 	try
 	{
@@ -193,7 +193,7 @@ Statement* CMP_compile(thread_db* tdbb, const UCHAR* blr, ULONG blrLength, bool 
 		if (statement)
 			statement->release(tdbb);
 		else
-			att->deletePool(newPool);
+			dbb->deletePool(newPool);
 		ERR_punt();
 	}
 

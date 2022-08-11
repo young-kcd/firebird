@@ -2183,6 +2183,8 @@ MemPool::~MemPool(void)
 	}
 
 #ifdef MEM_DEBUG
+	fb_assert(!child);
+
 	if (parent)
 	{
 		MutexLockGuard unlinkGuard(parent->mutex, FB_FUNCTION);

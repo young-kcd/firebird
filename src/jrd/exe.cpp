@@ -566,7 +566,7 @@ void EXE_execute_ddl_triggers(thread_db* tdbb, jrd_tra* transaction, bool preTri
 			TrigVectorPtr triggersPtr = &triggers;
 			unsigned n = 0;
 
-			for (auto t : **cachedTriggers)
+			for (auto t : cachedTriggers->load()->snapshot())
 			{
 				if ((t->type & (1LL << action)) &&
 					((preTriggers && (t->type & 0x1) == 0) || (!preTriggers && (t->type & 0x1) == 0x1)))
@@ -1155,7 +1155,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 
 	try
 	{
-		for (TrigVector::iterator ptr = vector.load()->begin(); ptr != vector.load()->end(); ++ptr)
+		for (auto ptr : vector.load()->snapshot())
 		{
 			ptr->compile(tdbb);
 
@@ -1929,8 +1929,8 @@ void ResourceList::releaseResources(thread_db* tdbb, jrd_tra* transaction)
 					if (transaction)
 						EXT_tra_detach(r.rsc_rel->rel_file, transaction);
 				}
+				r.rsc_state = Resource::State::Locked;
 			}
-			r.rsc_state = Resource::State::Locked;
 
 			if (r.rsc_state == Resource::State::Posted ||
 				r.rsc_state == Resource::State::Registered ||

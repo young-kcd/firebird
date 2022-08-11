@@ -161,7 +161,7 @@ void MetadataCache::inc_int_use_count(TrigVector* vector)
 	if (!vector)
 		return;
 
-	for (auto t : *vector)
+	for (auto t : vector->snapshot())
 	{
 		Statement* stmt = t->statement;
 		if (stmt && !stmt->isActive())
@@ -328,7 +328,7 @@ void MetadataCache::update_partners(thread_db* tdbb)
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
 
-	for (auto relation : dbb->dbb_mdc->mdc_relations)
+	for (auto relation : dbb->dbb_mdc->mdc_relations.snapshot())
 	{
 		if (!relation)
 			continue;
@@ -360,7 +360,7 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 		return;
 	MetadataCache* mdc = dbb->dbb_mdc;
 
-	for (auto routine : mdc->mdc_procedures)
+	for (auto routine : mdc->mdc_procedures.snapshot())
 	{
 		if (routine && routine->getStatement() /*&&
 			!(routine->flags & Routine::FLAG_OBSOLETE)*/ )
@@ -369,7 +369,7 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 		}
 	}
 
-	for (auto routine : mdc->mdc_functions)
+	for (auto routine : mdc->mdc_functions.snapshot())
 	{
 		if (routine && routine->getStatement() /*&&
 			!(routine->flags & Routine::FLAG_OBSOLETE)*/ )
@@ -379,7 +379,7 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 	}
 
 	// Walk procedures and calculate internal dependencies
-	for (auto routine : mdc->mdc_procedures)
+	for (auto routine : mdc->mdc_procedures.snapshot())
 	{
 		if (routine && routine->getStatement() /*&&
 			!(routine->flags & Routine::FLAG_OBSOLETE)*/ )
@@ -388,7 +388,7 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 		}
 	}
 
-	for (auto routine : mdc->mdc_functions)
+	for (auto routine : mdc->mdc_functions.snapshot())
 	{
 		if (routine && routine->getStatement() /*&&
 			!(routine->flags & Routine::FLAG_OBSOLETE)*/ )
@@ -398,7 +398,7 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 	}
 
 	// Walk procedures again and check dependencies
-	for (auto routine : mdc->mdc_procedures)
+	for (auto routine : mdc->mdc_procedures.snapshot())
 	{
 		if (routine && routine->getStatement() && /*
 			 !(routine->flags & Routine::FLAG_OBSOLETE) && */
@@ -409,7 +409,7 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 				routine->getId(), routine->getName(),
 				routine->useCount, routine->intUseCount);
 
-			for (auto routine2 : mdc->mdc_procedures)
+			for (auto routine2 : mdc->mdc_procedures.snapshot())
 			{
 				if (routine2 && routine2->getStatement() /*&& !(routine2->flags & Routine::FLAG_OBSOLETE)*/ )
 				{
@@ -427,7 +427,7 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 				}
 			}
 
-			for (auto routine2 : mdc->mdc_functions)
+			for (auto routine2 : mdc->mdc_functions.snapshot())
 			{
 				if (routine2 && routine2->getStatement() /*&& !(routine2->flags & Routine::FLAG_OBSOLETE)*/ )
 				{
@@ -454,7 +454,7 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 	}
 
 	// Walk functions again and check dependencies
-	for (auto routine : mdc->mdc_functions)
+	for (auto routine : mdc->mdc_functions.snapshot())
 	{
 		if (routine && routine->getStatement() && /*
 			 !(routine->flags & Routine::FLAG_OBSOLETE) && */
@@ -465,7 +465,7 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 				routine->getId(), routine->getName().toString().c_str(),
 				routine->useCount, routine->intUseCount);
 
-			for (auto routine2 : mdc->mdc_procedures)
+			for (auto routine2 : mdc->mdc_procedures.snapshot())
 			{
 				if (routine2 && routine2->getStatement() /*&& !(routine2->flags & Routine::FLAG_OBSOLETE)*/ )
 				{
@@ -488,7 +488,7 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 				}
 			}
 
-			for (auto routine2 : mdc->mdc_functions)
+			for (auto routine2 : mdc->mdc_functions.snapshot())
 			{
 				if (routine2 && routine2->getStatement() /*&& !(routine2->flags & Routine::FLAG_OBSOLETE)*/ )
 				{
@@ -517,13 +517,13 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 	}
 
 	// Fix back int_use_count
-	for (auto routine : mdc->mdc_procedures)
+	for (auto routine : mdc->mdc_procedures.snapshot())
 	{
 		if (routine)
 			routine->intUseCount = 0;
 	}
 
-	for (auto routine : mdc->mdc_functions)
+	for (auto routine : mdc->mdc_functions.snapshot())
 	{
 		if (routine)
 			routine->intUseCount = 0;
@@ -559,7 +559,7 @@ void MetadataCache::clear_cache(thread_db* tdbb)
 
 	// Release relation triggers
 
-	for (auto relation : mdc->mdc_relations)
+	for (auto relation : mdc->mdc_relations.snapshot())
 	{
 		if (!relation)
 			continue;
@@ -569,7 +569,7 @@ void MetadataCache::clear_cache(thread_db* tdbb)
 
 	// Walk routines and calculate internal dependencies.
 
-	for (auto routine : mdc->mdc_procedures)
+	for (auto routine : mdc->mdc_procedures.snapshot())
 	{
 		if (routine && routine->getStatement() &&
 			!(routine->flags & Routine::FLAG_OBSOLETE) )
@@ -578,7 +578,7 @@ void MetadataCache::clear_cache(thread_db* tdbb)
 		}
 	}
 
-	for (auto routine : mdc->mdc_functions)
+	for (auto routine : mdc->mdc_functions.snapshot())
 	{
 		if (routine && routine->getStatement() &&
 			!(routine->flags & Routine::FLAG_OBSOLETE) )
@@ -589,7 +589,7 @@ void MetadataCache::clear_cache(thread_db* tdbb)
 
 	// Walk routines again and adjust dependencies for routines which will not be removed.
 
-	for (auto routine : mdc->mdc_procedures)
+	for (auto routine : mdc->mdc_procedures.snapshot())
 	{
 		if (routine && routine->getStatement() &&
 			!(routine->flags & Routine::FLAG_OBSOLETE) &&
@@ -599,7 +599,7 @@ void MetadataCache::clear_cache(thread_db* tdbb)
 		}
 	}
 
-	for (auto routine : mdc->mdc_functions)
+	for (auto routine : mdc->mdc_functions.snapshot())
 	{
 		if (routine && routine->getStatement() &&
 			!(routine->flags & Routine::FLAG_OBSOLETE) &&
@@ -611,7 +611,7 @@ void MetadataCache::clear_cache(thread_db* tdbb)
 
 	// Deallocate all used requests.
 
-	for (auto routine : mdc->mdc_procedures)
+	for (auto routine : mdc->mdc_procedures.snapshot())
 	{
 		if (routine)
 		{
@@ -635,7 +635,7 @@ void MetadataCache::clear_cache(thread_db* tdbb)
 		}
 	}
 
-	for (auto routine : mdc->mdc_functions)
+	for (auto routine : mdc->mdc_functions.snapshot())
 	{
 		if (routine)
 		{
@@ -682,7 +682,7 @@ bool MetadataCache::routine_in_use(thread_db* tdbb, HazardPtr<Routine> routine)
 
 	MetadataCache* mdc = tdbb->getDatabase()->dbb_mdc;
 
-	for (auto relation : mdc->mdc_relations)
+	for (auto relation : mdc->mdc_relations.snapshot())
 	{
 		if (!relation) {
 			continue;
@@ -697,7 +697,7 @@ bool MetadataCache::routine_in_use(thread_db* tdbb, HazardPtr<Routine> routine)
 
 	// Walk routines and calculate internal dependencies
 
-	for (auto procedure : mdc->mdc_procedures)
+	for (auto procedure : mdc->mdc_procedures.snapshot())
 	{
 		if (procedure && procedure->getStatement() &&
 			!(procedure->flags & Routine::FLAG_OBSOLETE))
@@ -706,7 +706,7 @@ bool MetadataCache::routine_in_use(thread_db* tdbb, HazardPtr<Routine> routine)
 		}
 	}
 
-	for (auto function : mdc->mdc_functions)
+	for (auto function : mdc->mdc_functions.snapshot())
 	{
 		if (function && function->getStatement() &&
 			!(function->flags & Routine::FLAG_OBSOLETE))
@@ -718,7 +718,7 @@ bool MetadataCache::routine_in_use(thread_db* tdbb, HazardPtr<Routine> routine)
 	// Walk routines again and adjust dependencies for routines
 	// which will not be removed.
 
-	for (auto procedure : mdc->mdc_procedures)
+	for (auto procedure : mdc->mdc_procedures.snapshot())
 	{
 		if (procedure && procedure->getStatement() &&
 			!(procedure->flags & Routine::FLAG_OBSOLETE) &&
@@ -728,7 +728,7 @@ bool MetadataCache::routine_in_use(thread_db* tdbb, HazardPtr<Routine> routine)
 		}
 	}
 
-	for (auto function : mdc->mdc_functions)
+	for (auto function : mdc->mdc_functions.snapshot())
 	{
 		if (function && function->getStatement() &&
 			!(function->flags & Routine::FLAG_OBSOLETE) &&
@@ -742,13 +742,13 @@ bool MetadataCache::routine_in_use(thread_db* tdbb, HazardPtr<Routine> routine)
 
 	// Fix back intUseCount
 
-	for (auto procedure : mdc->mdc_procedures)
+	for (auto procedure : mdc->mdc_procedures.snapshot())
 	{
 		if (procedure)
 			procedure->intUseCount = 0;
 	}
 
-	for (auto function : mdc->mdc_functions)
+	for (auto function : mdc->mdc_functions.snapshot())
 	{
 		if (function)
 			function->intUseCount = 0;
@@ -2630,7 +2630,7 @@ HazardPtr<jrd_prc> MetadataCache::lookup_procedure(thread_db* tdbb, const Qualif
 	HazardPtr<jrd_prc> check_procedure;
 
 	// See if we already know the procedure by name
-	for (auto procedure : mdc->mdc_procedures)
+	for (auto procedure : mdc->mdc_procedures.snapshot())
 	{
 		if (procedure && !(procedure->flags & Routine::FLAG_OBSOLETE) &&
 			!(procedure->flags & Routine::FLAG_CLEARED) &&
@@ -2764,7 +2764,7 @@ HazardPtr<jrd_rel> MetadataCache::lookup_relation(thread_db* tdbb, const MetaNam
 
 	// See if we already know the relation by name
 
-	for (auto relation : mdc->mdc_relations)
+	for (auto relation : mdc->mdc_relations.snapshot())
 	{
 		if (relation)
 		{
@@ -3116,7 +3116,7 @@ void MET_parse_sys_trigger(thread_db* tdbb, HazardPtr<jrd_rel>& relation)
 			Statement* statement = NULL;
 
 			{
-				Jrd::ContextPoolHolder context(tdbb, attachment->createPool());
+				Jrd::ContextPoolHolder context(tdbb, dbb->createPool());
 				PAR_blr(tdbb, relation, blr.begin(), length, NULL, NULL, &statement, true, par_flags);
 			}
 
@@ -4835,7 +4835,7 @@ HazardPtr<const Trigger> findTrigger(TrigVector* triggers, const MetaName& trig_
 {
 	if (triggers)
 	{
-		for (auto t : *triggers)
+		for (auto t : triggers->snapshot())
 		{
 			if (t->name.compare(trig_name) == 0)
 				return t;
@@ -5362,7 +5362,7 @@ MetadataCache::~MetadataCache()
 
 void MetadataCache::releaseGTTs(thread_db* tdbb)
 {
-	for (auto relation : mdc_relations)
+	for (auto relation : mdc_relations.snapshot())
 	{
 		if (relation && (relation->rel_flags & REL_temp_conn) &&
 			!(relation->rel_flags & (REL_deleted | REL_deleting)))
@@ -5429,7 +5429,7 @@ void MetadataCache::releaseLocks(thread_db* tdbb)
 	// Go through relations and indices and release
 	// all existence locks that might have been taken.
 
-	for (auto relation : mdc_relations)
+	for (auto relation : mdc_relations.snapshot())
 	{
 		if (relation)
 		{
@@ -5454,7 +5454,7 @@ void MetadataCache::releaseLocks(thread_db* tdbb)
 				relation->rel_flags |= REL_gc_lockneed;
 			}
 
-			for (auto index : relation->rel_index_locks)
+			for (auto index : relation->rel_index_locks.snapshot())
 			{
 				if (index)
 					index->idl_lock.releaseLock(tdbb, ExistenceLock::ReleaseMethod::CloseCache);
@@ -5470,7 +5470,7 @@ void MetadataCache::releaseLocks(thread_db* tdbb)
 
 	// Release all procedure existence locks that might have been taken
 
-	for (auto procedure : mdc_procedures)
+	for (auto procedure : mdc_procedures.snapshot())
 	{
 		if (procedure)
 		{
@@ -5485,7 +5485,7 @@ void MetadataCache::releaseLocks(thread_db* tdbb)
 
 	// Release all function existence locks that might have been taken
 
-	for (auto function : mdc_functions)
+	for (auto function : mdc_functions.snapshot())
 	{
 		if (function)
 			function->releaseLocks(tdbb);
@@ -5498,7 +5498,7 @@ void MetadataCache::releaseLocks(thread_db* tdbb)
 
 void MetadataCache::invalidateReplSet(thread_db* tdbb)
 {
-	for (auto relation : mdc_relations)
+	for (auto relation : mdc_relations.snapshot())
 	{
 		if (relation)
 			relation->rel_repl_state.invalidate();
@@ -5507,7 +5507,7 @@ void MetadataCache::invalidateReplSet(thread_db* tdbb)
 
 HazardPtr<Function> MetadataCache::lookupFunction(thread_db* tdbb, const QualifiedName& name, USHORT setBits, USHORT clearBits)
 {
-	for (auto function : mdc_functions)
+	for (auto function : mdc_functions.snapshot())
 	{
 		if (function && ((function->flags & setBits) == setBits) &&
 			((function->flags & clearBits) == 0) && (function->getName() == name))
@@ -5572,7 +5572,7 @@ void Trigger::compile(thread_db* tdbb)
 	if (!statement)
 	{
 		// Allocate statement memory pool
-		MemoryPool* new_pool = att->createPool();
+		MemoryPool* new_pool = dbb->createPool();
 		// Trigger request is not compiled yet. Lets do it now
 		USHORT par_flags = (USHORT) (flags & TRG_ignore_perm) ? csb_ignore_perm : 0;
 		if (type & 1)
@@ -5597,10 +5597,12 @@ void Trigger::compile(thread_db* tdbb)
 										 *csb->csb_dbg_info);
 				}
 
-				/* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				PAR_blr(tdbb, relation, blr.begin(), (ULONG) blr.getCount(), NULL, &csb, &statement,
+				HazardPtr<jrd_rel> rel = MetadataCache::findRelation(tdbb, relation->rel_id);
+				if (!rel)
+					fatal_exception::raiseFmt("Relation %s unexpectedly lost", relation->rel_name);
+
+				PAR_blr(tdbb, rel, blr.begin(), (ULONG) blr.getCount(), NULL, &csb, &statement,
 					(relation ? true : false), par_flags);
-				*/
 			}
 			else
 			{

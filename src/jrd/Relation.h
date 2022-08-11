@@ -68,7 +68,7 @@ public:
 
 	bool hasData() const
 	{
-		return name.hasData();
+		return name.hasData() || sysTrigger;
 	}
 
 	Key getKey() const
@@ -480,8 +480,8 @@ public:
 
 	void fillPagesSnapshot(RelPagesSnapshot&, const bool AttachmentOnly = false);
 
-	bool checkObject(thread_db* tdbb, Firebird::Arg::StatusVector&);
-	void afterUnlock(thread_db* tdbb);
+	bool checkObject(thread_db* tdbb, Firebird::Arg::StatusVector&) override;
+	void afterUnlock(thread_db* tdbb) override;
 
 private:
 	typedef Firebird::SortedArray<

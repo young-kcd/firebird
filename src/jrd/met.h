@@ -250,7 +250,7 @@ public:
 
 	void release(thread_db* tdbb)
 	{
-		for (auto coll : charset_collations)
+		for (auto coll : charset_collations.snapshot())
 		{
 			if (coll)
 				coll->release(tdbb);
