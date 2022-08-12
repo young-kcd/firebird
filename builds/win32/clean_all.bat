@@ -1,6 +1,6 @@
 @echo off
 
-@call setenvvar.bat
+@call setenvvar.bat %*
 @if errorlevel 1 (goto :END)
 
 set FB_CLEAN_SHARED=

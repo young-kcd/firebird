@@ -1,7 +1,7 @@
 temp/
 /gen/
-output_Win32/
-output_x64/
+output_Win32_*/
+output_x64_*/
 examples/prebuilt/
 .vs/
 m4/

@@ -8,15 +8,19 @@
 set ERRLEV=0
 
 :CHECK_ENV
-@call setenvvar.bat
+@call setenvvar.bat %*
 @if errorlevel 1 (goto :END)
-
-@call set_build_target.bat %*
 
 
 ::===========
 :MAIN
 @echo.
+
+@echo Cleaning output directory
+@rmdir /S /Q "%FB_OUTPUT_DIR%" 2>nul
+:: short delay to let OS complete actions by rmdir above
+@timeout 1 >nul
+
 @echo Creating directories
 :: Create the directory hierarchy.
 for %%v in ( alice auth burp dsql gpre isql jrd misc msgs examples yvalve utilities) do (
@@ -28,6 +32,7 @@ for %%v in ( alice auth burp dsql gpre isql jrd misc msgs examples yvalve utilit
 @mkdir %FB_GEN_DIR%\gpre\std 2>nul
 
 @mkdir %FB_OUTPUT_DIR%\include\firebird\impl 2>nul
+@mkdir %FB_OUTPUT_DIR%\tzdata 2>nul
 
 call :interfaces
 if "%ERRLEV%"=="1" goto :END
@@ -59,14 +64,11 @@ call :gpre_boot
 if "%ERRLEV%"=="1" goto :END
 
 ::=======
-@echo Preprocessing the source files needed to build gbak, gpre and isql...
-@call preprocess.bat BOOT
+@echo Preprocessing the source files needed to build gpre and isql...
+@call preprocess.bat %FBBUILD_BUILDTYPE% BOOT
 
 ::=======
 call :engine
-if "%ERRLEV%"=="1" goto :END
-
-call :gbak
 if "%ERRLEV%"=="1" goto :END
 
 call :gpre
@@ -77,36 +79,26 @@ if "%ERRLEV%"=="1" goto :END
 
 @copy %FB_ROOT_PATH%\builds\install\misc\firebird.conf %FB_BIN_DIR%\firebird.conf
 
-:: Copy ICU and zlib both to Debug and Release configurations
-
-@call set_build_target.bat %* RELEASE
+:: Copy ICU and zlib to the output directory
 @mkdir %FB_BIN_DIR%
 @copy %FB_ROOT_PATH%\extern\icu\icudt???.dat %FB_BIN_DIR% >nul 2>&1
 @copy %FB_ICU_SOURCE_BIN%\*.dll %FB_BIN_DIR% >nul 2>&1
+@copy %FB_ROOT_PATH%\extern\icu\tzdata-extract\* %FB_OUTPUT_DIR%\tzdata >nul 2>&1
 @copy %FB_ROOT_PATH%\extern\zlib\%FB_TARGET_PLATFORM%\*.dll %FB_BIN_DIR% >nul 2>&1
-
-@call set_build_target.bat %* DEBUG
-@mkdir %FB_BIN_DIR%
-@copy %FB_ROOT_PATH%\extern\icu\icudt???.dat %FB_BIN_DIR% >nul 2>&1
-@copy %FB_ICU_SOURCE_BIN%\*.dll %FB_BIN_DIR% >nul 2>&1
-@copy %FB_ROOT_PATH%\extern\zlib\%FB_TARGET_PLATFORM%\*.dll %FB_BIN_DIR% >nul 2>&1
-
-@call set_build_target.bat %*
-
 
 ::=======
 @call :databases
 
 ::=======
 @echo Preprocessing the entire source tree...
-@call preprocess.bat
+@call preprocess.bat %FBBUILD_BUILDTYPE%
 
 ::=======
 @call :msgs
 if "%ERRLEV%"=="1" goto :END
 
 ::=======
-@call create_msgs.bat msg
+@call create_msgs.bat %FBBUILD_BUILDTYPE%
 ::=======
 
 @call :NEXT_STEP
@@ -124,59 +116,37 @@ goto :EOF
 
 ::===================
 :: BUILD LibTom
-:: NS: Note we need both debug and non-debug version as it is a static library linked to CRT
-:: and linking executable with both debug and non-debug CRT results in undefined behavior
 :LibTom
 @echo.
-@call set_build_target.bat %* RELEASE
 @echo Building LibTomMath (%FB_OBJ_DIR%)...
 @call compile.bat extern\libtommath\libtommath_MSVC%MSVC_VERSION% libtommath_%FB_CONFIG%_%FB_TARGET_PLATFORM%.log libtommath
 if errorlevel 1 call :boot2 libtommath_%FB_OBJ_DIR%
 @echo Building LibTomCrypt (%FB_OBJ_DIR%)...
 @call compile.bat extern\libtomcrypt\libtomcrypt_MSVC%MSVC_VERSION% libtomcrypt_%FB_CONFIG%_%FB_TARGET_PLATFORM%.log libtomcrypt
 if errorlevel 1 call :boot2 libtomcrypt_%FB_OBJ_DIR%
-
-@call set_build_target.bat %* DEBUG
-@echo Building LibTomMath (%FB_OBJ_DIR%)...
-@call compile.bat extern\libtommath\libtommath_MSVC%MSVC_VERSION% libtommath_%FB_CONFIG%_%FB_TARGET_PLATFORM%.log libtommath
-if errorlevel 1 call :boot2 libtommath_%FB_OBJ_DIR%
-@echo Building LibTomCrypt (%FB_OBJ_DIR%)...
-@call compile.bat extern\libtomcrypt\libtomcrypt_MSVC%MSVC_VERSION% libtomcrypt_%FB_CONFIG%_%FB_TARGET_PLATFORM%.log libtomcrypt
-if errorlevel 1 call :boot2 libtomcrypt_%FB_OBJ_DIR%
-
-@call set_build_target.bat %*
 goto :EOF
 
 ::===================
 :: BUILD decNumber
 :decNumber
 @echo.
-@call set_build_target.bat %* RELEASE
 @echo Building decNumber (%FB_OBJ_DIR%)...
 @call compile.bat extern\decNumber\msvc\decNumber_MSVC%MSVC_VERSION% decNumber_%FB_CONFIG%_%FB_TARGET_PLATFORM%.log decNumber
 if errorlevel 1 call :boot2 decNumber_%FB_OBJ_DIR%
-@call set_build_target.bat %* DEBUG
-@echo Building decNumber (%FB_OBJ_DIR%)...
-@call compile.bat extern\decNumber\msvc\decNumber_MSVC%MSVC_VERSION% decNumber_%FB_CONFIG%_%FB_TARGET_PLATFORM%.log decNumber
-if errorlevel 1 call :boot2 decNumber_%FB_OBJ_DIR%
-@call set_build_target.bat %*
 goto :EOF
 
 ::===================
 :: BUILD ttmath
 :ttmath
 @echo.
-@call set_build_target.bat %* RELEASE
 @echo Building ttmath (%FB_OBJ_DIR%)...
 @mkdir %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common 2>nul
-@ml64.exe /c /Fo %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common\ttmathuint_x86_64_msvc.obj %FB_ROOT_PATH%\extern\ttmath\ttmathuint_x86_64_msvc.asm
+if /I "%FB_CONFIG%"=="debug" (
+  @ml64.exe /c /Zi /Fo %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common\ttmathuint_x86_64_msvc.obj %FB_ROOT_PATH%\extern\ttmath\ttmathuint_x86_64_msvc.asm
+) else (
+  @ml64.exe /c /Fo %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common\ttmathuint_x86_64_msvc.obj %FB_ROOT_PATH%\extern\ttmath\ttmathuint_x86_64_msvc.asm
+)
 if errorlevel 1 call :boot2 ttmath_%FB_OBJ_DIR%
-@call set_build_target.bat %* DEBUG
-@echo Building ttmath (%FB_OBJ_DIR%)...
-@mkdir %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common 2>nul
-@ml64.exe /c /Zi /Fo %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common\ttmathuint_x86_64_msvc.obj %FB_ROOT_PATH%\extern\ttmath\ttmathuint_x86_64_msvc.asm
-if errorlevel 1 call :boot2 ttmath_%FB_OBJ_DIR%
-@call set_build_target.bat %*
 goto :EOF
 
 ::===================
@@ -188,8 +158,7 @@ goto :EOF
 @pushd %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM%
 @cmake -G "%MSVC_CMAKE_GENERATOR%" -A %FB_TARGET_PLATFORM% -S %FB_ROOT_PATH%\extern\re2
 if errorlevel 1 call :boot2 re2
-@cmake --build %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM% --target ALL_BUILD --config Release > re2_Release_%FB_TARGET_PLATFORM%.log
-@cmake --build %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM% --target ALL_BUILD --config Debug > re2_Debug_%FB_TARGET_PLATFORM%.log
+@cmake --build %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM% --target ALL_BUILD --config %FBBUILD_BUILDTYPE% > re2_%FBBUILD_BUILDTYPE%_%FB_TARGET_PLATFORM%.log
 @popd
 goto :EOF
 
@@ -231,15 +200,6 @@ goto :EOF
 @call compile.bat builds\win32\%VS_VER%\Firebird engine_%FB_TARGET_PLATFORM%.log DLLs\engine
 @call compile.bat builds\win32\%VS_VER%\Firebird engine_%FB_TARGET_PLATFORM%.log DLLs\ib_util
 if errorlevel 1 call :boot2 engine
-@goto :EOF
-
-::===================
-:: BUILD gbak
-:gbak
-@echo.
-@echo Building gbak (%FB_OBJ_DIR%)...
-@call compile.bat builds\win32\%VS_VER%\Firebird gbak_%FB_TARGET_PLATFORM%.log EXEs\gbak
-if errorlevel 1 call :boot2 gbak
 @goto :EOF
 
 ::===================
@@ -296,7 +256,9 @@ goto :EOF
 @"%FB_BIN_DIR%\isql" -q %FB_GEN_DB_DIR%/dbs/security5.fdb -i %FB_ROOT_PATH%\src\dbs\security.sql
 @copy %FB_GEN_DIR%\dbs\security5.fdb %FB_GEN_DIR%\dbs\security.fdb > nul
 
-@call create_msgs.bat db
+@echo Creating metadata.fdb...
+@echo create database '%FB_GEN_DB_DIR%/dbs/metadata.fdb'; | "%FB_BIN_DIR%\isql" -q -sqldialect 1
+@copy %FB_GEN_DIR%\dbs\metadata.fdb %FB_GEN_DIR%\dbs\yachts.lnk > nul
 
 @goto :EOF
 
