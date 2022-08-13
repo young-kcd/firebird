@@ -265,7 +265,7 @@ public:
 		{
 			m_countPP = m_creation->relation->getPages(tdbb)->rel_pages->count();
 
-			if ((m_creation->index->idx_flags & idx_expressn) && (workers > 1))
+			if ((m_creation->index->idx_flags & idx_expression) && (workers > 1))
 				MET_lookup_index_expression_blr(tdbb, m_creation->index_name, m_exprBlob);
 		}
 	}
@@ -525,7 +525,7 @@ bool IndexCreateTask::handler(WorkItem& _item)
 		partner_index_id = idx->idx_primary_index;
 	}
 
-	if ((idx->idx_flags & idx_expressn) && (idx->idx_expression == NULL))
+	if ((idx->idx_flags & idx_expression) && (idx->idx_expression == NULL))
 	{
 		fb_assert(!m_exprBlob.isEmpty());
 
