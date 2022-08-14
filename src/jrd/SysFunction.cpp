@@ -1249,12 +1249,16 @@ void makeBinShift(DataTypeUtilBase*, const SysFunction* function, dsc* result,
 void makeBlobAppend(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result,
 	int argsCount, const dsc** args)
 {
-	USHORT ttype = CS_dynamic;
-
 	if (argsCount > 0 && args[0])
-		ttype = args[0]->getTextType();
-
-	result->makeBlob(isc_blob_text, ttype);
+	{
+		auto arg = args[0];
+		if (arg->isBlob())
+			result->makeBlob(arg->getBlobSubType(), arg->getTextType());
+		else if (arg->isText())
+			result->makeBlob(isc_blob_text, arg->getTextType());
+	}
+	else
+		result->makeBlob(isc_blob_text, CS_dynamic);
 }
 
 
