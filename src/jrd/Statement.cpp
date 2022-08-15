@@ -336,8 +336,6 @@ Statement* Statement::makeStatement(thread_db* tdbb, CompilerScratch* csb, bool 
 
 	attachment->att_statements.add(statement);
 
-	tdbb->getAttachment()->att_statements.add(statement);
-
 	return statement;
 }
 
