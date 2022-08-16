@@ -10,14 +10,17 @@
 
 @echo off
 
-set FB_DBG=
-set FB_CONFIG=release
 set FB_CLEAN=
 
 for %%v in ( %* )  do (
-  ( if /I "%%v"=="DEBUG" ( (set FB_DBG=TRUE) && (set FB_CONFIG=debug) ) )
+  ( if /I "%%v"=="DEBUG" ( (set FB_DBG=TRUE) && (set FBBUILD_BUILDTYPE=debug) ) )
   ( if /I "%%v"=="CLEAN" (set FB_CLEAN=:rebuild) )
-  ( if /I "%%v"=="RELEASE" ( (set FB_DBG=) && (set FB_CONFIG=release) ) )
+  ( if /I "%%v"=="RELEASE" ( (set FB_DBG=) && (set FBBUILD_BUILDTYPE=release) ) )
+)
+
+@if not defined FBBUILD_BUILDTYPE (
+  set FB_DBG=
+  set FBBUILD_BUILDTYPE=release
 )
 
 :: Default target CPU architecture is the native environment
@@ -130,7 +133,7 @@ for %%v in ( %* )  do (
 @if "%FB_PROCESSOR_ARCHITECTURE%"=="AMD64" (set FB_TARGET_PLATFORM=x64)
 
 
-@set FB_OUTPUT_DIR=%FB_ROOT_PATH%\output_%FB_TARGET_PLATFORM%_%FB_CONFIG%
+@set FB_OUTPUT_DIR=%FB_ROOT_PATH%\output_%FB_TARGET_PLATFORM%_%FBBUILD_BUILDTYPE%
 @set FB_TEMP_DIR=%FB_ROOT_PATH%\temp\%FB_TARGET_PLATFORM%
 @set FB_INSTALL_SCRIPTS=%FB_ROOT_PATH%\builds\install\arch-specific\win32
 @set FB_GEN_DIR=%FB_ROOT_PATH%\gen
@@ -138,7 +141,7 @@ for %%v in ( %* )  do (
 @set FB_ICU_SOURCE_BIN=%FB_ROOT_PATH%\extern\icu\%FB_TARGET_PLATFORM%\release\bin\
 @set FIREBIRD_BOOT_BUILD=1
 
-@set FB_OBJ_DIR=%FB_TARGET_PLATFORM%\%FB_CONFIG%
+@set FB_OBJ_DIR=%FB_TARGET_PLATFORM%\%FBBUILD_BUILDTYPE%
 @set FB_BOOT_BIN_DIR=%FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird
 @set FB_BIN_DIR=%FB_OUTPUT_DIR%
 

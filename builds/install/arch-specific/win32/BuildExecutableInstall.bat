@@ -27,8 +27,13 @@
 @echo off
 :: reset ERRLEV to clear error from last run in same cmd shell
 set ERRLEV=0
-:: Assume we are preparing a production build
-set FBBUILD_BUILDTYPE=release
+
+:: Assume we are preparing a production build if FBBUILD_BUILDTYPE is not defined
+if not defined FBBUILD_BUILDTYPE (
+  set FB_DBG=
+  set FBBUILD_BUILDTYPE=release
+)
+
 :: Don't ship pdb files by default
 set FBBUILD_SHIP_PDB=no_pdb
 :: Reset "make" vars to zero
