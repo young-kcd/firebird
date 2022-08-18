@@ -10,14 +10,17 @@
 
 @echo off
 
-set FB_DBG=
-set FB_CONFIG=release
 set FB_CLEAN=
 
 for %%v in ( %* )  do (
   ( if /I "%%v"=="DEBUG" ( (set FB_DBG=TRUE) && (set FB_CONFIG=debug) ) )
   ( if /I "%%v"=="CLEAN" (set FB_CLEAN=:rebuild) )
   ( if /I "%%v"=="RELEASE" ( (set FB_DBG=) && (set FB_CONFIG=release) ) )
+)
+
+@if not defined FB_CONFIG (
+  set FB_DBG=
+  set FB_CONFIG=release
 )
 
 :: Default target CPU architecture is the native environment

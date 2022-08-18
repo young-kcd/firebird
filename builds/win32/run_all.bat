@@ -32,7 +32,7 @@ for %%v in ( %* )  do (
 ( if /I "%%v"=="SNAPSHOT" (set FB2_SNAPSHOT=1) )
 )
 
-call :SETVCENV
+@call setenvvar.bat %FBBUILD_BUILDTYPE% %*
 if "%ERRLEV%"=="1" goto :END
 
 if defined FBBUILD_TEST_ONLY ( goto TEST_ENV & goto :EOF )
@@ -100,22 +100,10 @@ goto :END
 ::---------
 
 
-:SETVCENV
-::===============================
-:: Set up the compiler environment
-
-@call setenvvar.bat %*
-if "%ERRLEV%"=="1" goto :END
-
-
-goto :END
-::---------
-
-
 :TEST_ENV
 ::===============================
 :: Show variables
-call :SETVCENV
+@call setenvvar.bat %*
 if "%ERRLEV%"=="1" goto :END
 echo.
 set FB

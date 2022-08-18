@@ -65,7 +65,7 @@ if "%ERRLEV%"=="1" goto :END
 
 ::=======
 @echo Preprocessing the source files needed to build gpre and isql...
-@call preprocess.bat %FBBUILD_BUILDTYPE% BOOT
+@call preprocess.bat %FB_CONFIG% BOOT
 
 ::=======
 call :engine
@@ -91,14 +91,14 @@ if "%ERRLEV%"=="1" goto :END
 
 ::=======
 @echo Preprocessing the entire source tree...
-@call preprocess.bat %FBBUILD_BUILDTYPE%
+@call preprocess.bat %FB_CONFIG%
 
 ::=======
 @call :msgs
 if "%ERRLEV%"=="1" goto :END
 
 ::=======
-@call create_msgs.bat %FBBUILD_BUILDTYPE%
+@call create_msgs.bat %FB_CONFIG%
 ::=======
 
 @call :NEXT_STEP
@@ -158,7 +158,7 @@ goto :EOF
 @pushd %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM%
 @cmake -G "%MSVC_CMAKE_GENERATOR%" -A %FB_TARGET_PLATFORM% -S %FB_ROOT_PATH%\extern\re2
 if errorlevel 1 call :boot2 re2
-@cmake --build %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM% --target ALL_BUILD --config %FBBUILD_BUILDTYPE% > re2_%FBBUILD_BUILDTYPE%_%FB_TARGET_PLATFORM%.log
+@cmake --build %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM% --target ALL_BUILD --config %FB_CONFIG% > re2_%FB_CONFIG%_%FB_TARGET_PLATFORM%.log
 @popd
 goto :EOF
 
