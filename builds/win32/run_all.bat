@@ -5,6 +5,7 @@
 set ERRLEV=0
 set FBBUILD_NOCLEAN=
 set FBBUILD_REAL_CLEAN=
+set FBBUILD_BUILDTYPE=release
 set FBBUILD_INCLUDE_PDB=
 set FBBUILD_MAKE_KITS_ONLY=
 set FBBUILD_BUILD_ONLY=0
@@ -23,6 +24,7 @@ for %%v in ( %1 %2 %3 %4 %5 %6 %7 %8 %9 )  do (
 for %%v in ( %* )  do (
 ( if /I "%%v"=="NOCLEAN" (set FBBUILD_NOCLEAN=1) )
 ( if /I "%%v"=="REALCLEAN" (set FBBUILD_REAL_CLEAN=REALCLEAN) )
+( if /I "%%v"=="DEBUG" (set FBBUILD_BUILDTYPE=debug) )
 ( if /I "%%v"=="PDB" (set FBBUILD_INCLUDE_PDB=1) )
 ( if /I "%%v"=="REPACK" (set FBBUILD_MAKE_KITS_ONLY=1) )
 ( if /I "%%v"=="JUSTBUILD" (set FBBUILD_BUILD_ONLY=1) )
@@ -30,7 +32,7 @@ for %%v in ( %* )  do (
 ( if /I "%%v"=="SNAPSHOT" (set FB2_SNAPSHOT=1) )
 )
 
-@call setenvvar.bat %*
+@call setenvvar.bat %FBBUILD_BUILDTYPE% %*
 if "%ERRLEV%"=="1" goto :END
 
 if defined FBBUILD_TEST_ONLY ( goto TEST_ENV & goto :EOF )

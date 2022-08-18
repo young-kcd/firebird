@@ -65,7 +65,7 @@ if "%ERRLEV%"=="1" goto :END
 
 ::=======
 @echo Preprocessing the source files needed to build gpre and isql...
-@call preprocess.bat %FBBUILD_BUILDTYPE% BOOT
+@call preprocess.bat %FB_CONFIG% BOOT
 
 ::=======
 call :engine
@@ -91,14 +91,14 @@ if "%ERRLEV%"=="1" goto :END
 
 ::=======
 @echo Preprocessing the entire source tree...
-@call preprocess.bat %FBBUILD_BUILDTYPE%
+@call preprocess.bat %FB_CONFIG%
 
 ::=======
 @call :msgs
 if "%ERRLEV%"=="1" goto :END
 
 ::=======
-@call create_msgs.bat %FBBUILD_BUILDTYPE%
+@call create_msgs.bat %FB_CONFIG%
 ::=======
 
 @call :NEXT_STEP
@@ -119,10 +119,10 @@ goto :EOF
 :LibTom
 @echo.
 @echo Building LibTomMath (%FB_OBJ_DIR%)...
-@call compile.bat extern\libtommath\libtommath_MSVC%MSVC_VERSION% libtommath_%FBBUILD_BUILDTYPE%_%FB_TARGET_PLATFORM%.log libtommath
+@call compile.bat extern\libtommath\libtommath_MSVC%MSVC_VERSION% libtommath_%FB_CONFIG%_%FB_TARGET_PLATFORM%.log libtommath
 if errorlevel 1 call :boot2 libtommath_%FB_OBJ_DIR%
 @echo Building LibTomCrypt (%FB_OBJ_DIR%)...
-@call compile.bat extern\libtomcrypt\libtomcrypt_MSVC%MSVC_VERSION% libtomcrypt_%FBBUILD_BUILDTYPE%_%FB_TARGET_PLATFORM%.log libtomcrypt
+@call compile.bat extern\libtomcrypt\libtomcrypt_MSVC%MSVC_VERSION% libtomcrypt_%FB_CONFIG%_%FB_TARGET_PLATFORM%.log libtomcrypt
 if errorlevel 1 call :boot2 libtomcrypt_%FB_OBJ_DIR%
 goto :EOF
 
@@ -131,7 +131,7 @@ goto :EOF
 :decNumber
 @echo.
 @echo Building decNumber (%FB_OBJ_DIR%)...
-@call compile.bat extern\decNumber\msvc\decNumber_MSVC%MSVC_VERSION% decNumber_%FBBUILD_BUILDTYPE%_%FB_TARGET_PLATFORM%.log decNumber
+@call compile.bat extern\decNumber\msvc\decNumber_MSVC%MSVC_VERSION% decNumber_%FB_CONFIG%_%FB_TARGET_PLATFORM%.log decNumber
 if errorlevel 1 call :boot2 decNumber_%FB_OBJ_DIR%
 goto :EOF
 
@@ -140,11 +140,11 @@ goto :EOF
 :ttmath
 @echo.
 @echo Building ttmath (%FB_OBJ_DIR%)...
-@mkdir %FB_ROOT_PATH%\extern\ttmath\%FBBUILD_BUILDTYPE% 2>nul
-if /I "%FBBUILD_BUILDTYPE%"=="debug" (
-  @ml64.exe /c /Zi /Fo %FB_ROOT_PATH%\extern\ttmath\%FBBUILD_BUILDTYPE%\ttmathuint_x86_64_msvc.obj %FB_ROOT_PATH%\extern\ttmath\ttmathuint_x86_64_msvc.asm
+@mkdir %FB_ROOT_PATH%\extern\ttmath\%FB_CONFIG% 2>nul
+if /I "%FB_CONFIG%"=="debug" (
+  @ml64.exe /c /Zi /Fo %FB_ROOT_PATH%\extern\ttmath\%FB_CONFIG%\ttmathuint_x86_64_msvc.obj %FB_ROOT_PATH%\extern\ttmath\ttmathuint_x86_64_msvc.asm
 ) else (
-  @ml64.exe /c /Fo %FB_ROOT_PATH%\extern\ttmath\%FBBUILD_BUILDTYPE%\ttmathuint_x86_64_msvc.obj %FB_ROOT_PATH%\extern\ttmath\ttmathuint_x86_64_msvc.asm
+  @ml64.exe /c /Fo %FB_ROOT_PATH%\extern\ttmath\%FB_CONFIG%\ttmathuint_x86_64_msvc.obj %FB_ROOT_PATH%\extern\ttmath\ttmathuint_x86_64_msvc.asm
 )
 if errorlevel 1 call :boot2 ttmath_%FB_OBJ_DIR%
 goto :EOF
@@ -158,7 +158,7 @@ goto :EOF
 @pushd %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM%
 @cmake -G "%MSVC_CMAKE_GENERATOR%" -A %FB_TARGET_PLATFORM% -S %FB_ROOT_PATH%\extern\re2
 if errorlevel 1 call :boot2 re2
-@cmake --build %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM% --target ALL_BUILD --config %FBBUILD_BUILDTYPE% > re2_%FBBUILD_BUILDTYPE%_%FB_TARGET_PLATFORM%.log
+@cmake --build %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM% --target ALL_BUILD --config %FB_CONFIG% > re2_%FB_CONFIG%_%FB_TARGET_PLATFORM%.log
 @popd
 goto :EOF
 
