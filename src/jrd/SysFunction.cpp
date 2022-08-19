@@ -2419,12 +2419,15 @@ dsc* evlBlobAppend(thread_db* tdbb, const SysFunction* function, const NestValue
 				continue;
 		}
 
+		fb_assert(argDsc != nullptr);
+
 		if (!blobDsc.isBlob())
+		{
 			if (!makeBlobAppendBlob(&blobDsc, argDsc, &blob_id))
 				continue;
+		}
 
 		fb_assert(blobDsc.isBlob());
-		fb_assert(argDsc != nullptr);
 
 		if (!blob)
 		{
