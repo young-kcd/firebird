@@ -221,7 +221,7 @@ constexpr ConfigEntry entries[MAX_CONFIG_KEY] =
 	{TYPE_INTEGER,	"CpuAffinityMask",			true,	0},
 	{TYPE_INTEGER,	"TcpRemoteBufferSize",		true,	8192},		// bytes
 	{TYPE_BOOLEAN,	"TcpNoNagle",				false,	true},
-	{TYPE_BOOLEAN,	"TcpLoopbackFastPath",		false,	true},
+	{TYPE_BOOLEAN,	"TcpLoopbackFastPath",		false,	false},
 	{TYPE_INTEGER,	"DefaultDbCachePages",		false,	-1},		// pages
 	{TYPE_INTEGER,	"ConnectionTimeout",		false,	180},		// seconds
 	{TYPE_INTEGER,	"DummyPacketInterval",		false,	0},			// seconds
