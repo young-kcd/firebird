@@ -136,7 +136,7 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_INTEGER,		"CpuAffinityMask",			(ConfigValue) 0},
 	{TYPE_INTEGER,		"TcpRemoteBufferSize",		(ConfigValue) 8192},		// bytes
 	{TYPE_BOOLEAN,		"TcpNoNagle",				(ConfigValue) true},
-	{TYPE_BOOLEAN,		"TcpLoopbackFastPath",      (ConfigValue) true},
+	{TYPE_BOOLEAN,		"TcpLoopbackFastPath",      (ConfigValue) false},
 	{TYPE_INTEGER,		"DefaultDbCachePages",		(ConfigValue) -1},			// pages
 	{TYPE_INTEGER,		"ConnectionTimeout",		(ConfigValue) 180},			// seconds
 	{TYPE_INTEGER,		"DummyPacketInterval",		(ConfigValue) 0},			// seconds
