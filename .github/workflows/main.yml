@@ -56,7 +56,7 @@ jobs:
         if: |
           github.repository == 'FirebirdSQL/firebird' &&
           (github.event.head_commit.message == 'increment build number' || true) &&
-          github.ref_name == 'main'
+          github.ref_name == 'master'
         run: |
           mv gen/Firebird-[0-9]*.tar.gz gen/Firebird-linux-amd64.tar.gz
           mv gen/Firebird-debuginfo-*.tar.gz gen/Firebird-linux-amd64-debuginfo.tar.gz
@@ -115,7 +115,7 @@ jobs:
         if: |
           github.repository == 'FirebirdSQL/firebird' &&
           (github.event.head_commit.message == 'increment build number' || true) &&
-          github.ref_name == 'main'
+          github.ref_name == 'master'
         run: |
           mv gen/Firebird-[0-9]*.tar.gz gen/Firebird-linux-i586.tar.gz
           mv gen/Firebird-debuginfo-*.tar.gz gen/Firebird-linux-i586-debuginfo.tar.gz
@@ -285,7 +285,7 @@ jobs:
         if: |
           github.repository == 'FirebirdSQL/firebird' &&
           (github.event.head_commit.message == 'increment build number' || true) &&
-          github.ref_name == 'main'
+          github.ref_name == 'master'
         shell: cmd
         env:
           PLATFORM: ${{ matrix.platform }}
@@ -460,7 +460,7 @@ jobs:
         if: |
           github.repository == 'FirebirdSQL/firebird' &&
           (github.event.head_commit.message == 'increment build number' || true) &&
-          github.ref_name == 'main'
+          github.ref_name == 'master'
         run: |
           mv gen/artifacts/Firebird-*.pkg gen/artifacts/Firebird-macos-x86_64.pkg
           echo "::set-output name=snapshot_name::${{ github.ref_name }}"
