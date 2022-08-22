@@ -52,10 +52,9 @@ jobs:
 
       - name: Snapshot - prepare
         id: snapshot_prepare
-        # FIXME: github.event.head_commit.message == 'increment build number'
         if: |
           github.repository == 'FirebirdSQL/firebird' &&
-          (github.event.head_commit.message == 'increment build number' || true) &&
+          github.event.head_commit.message == 'increment build number' &&
           github.ref_name == 'master'
         run: |
           echo "::set-output name=snapshot_name::${{ github.ref_name }}"
@@ -121,10 +120,9 @@ jobs:
 
       - name: Snapshot - prepare
         id: snapshot_prepare
-        # FIXME: github.event.head_commit.message == 'increment build number'
         if: |
           github.repository == 'FirebirdSQL/firebird' &&
-          (github.event.head_commit.message == 'increment build number' || true) &&
+          github.event.head_commit.message == 'increment build number' &&
           github.ref_name == 'master'
         run: |
           echo "::set-output name=snapshot_name::${{ github.ref_name }}"
@@ -301,10 +299,9 @@ jobs:
 
       - name: Snapshot - prepare
         id: snapshot_prepare
-        # FIXME: github.event.head_commit.message == 'increment build number'
         if: |
           github.repository == 'FirebirdSQL/firebird' &&
-          (github.event.head_commit.message == 'increment build number' || true) &&
+          github.event.head_commit.message == 'increment build number' &&
           github.ref_name == 'master'
         shell: cmd
         env:
@@ -488,10 +485,9 @@ jobs:
 
       - name: Snapshot - prepare
         id: snapshot_prepare
-        # FIXME: github.event.head_commit.message == 'increment build number'
         if: |
           github.repository == 'FirebirdSQL/firebird' &&
-          (github.event.head_commit.message == 'increment build number' || true) &&
+          github.event.head_commit.message == 'increment build number' &&
           github.ref_name == 'master'
         run: |
           echo "::set-output name=snapshot_name::${{ github.ref_name }}"
