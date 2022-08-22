@@ -52,10 +52,9 @@ jobs:
 
       - name: Snapshot - prepare
         id: snapshot_prepare
-        # FIXME: github.event.head_commit.message == 'increment build number'
         if: |
           github.repository == 'FirebirdSQL/firebird' &&
-          (github.event.head_commit.message == 'increment build number' || true) &&
+          github.event.head_commit.message == 'increment build number' &&
           github.ref_name == 'master'
         run: |
           mv gen/Firebird-[0-9]*.tar.gz gen/Firebird-linux-amd64.tar.gz
@@ -111,10 +110,9 @@ jobs:
 
       - name: Snapshot - prepare
         id: snapshot_prepare
-        # FIXME: github.event.head_commit.message == 'increment build number'
         if: |
           github.repository == 'FirebirdSQL/firebird' &&
-          (github.event.head_commit.message == 'increment build number' || true) &&
+          github.event.head_commit.message == 'increment build number' &&
           github.ref_name == 'master'
         run: |
           mv gen/Firebird-[0-9]*.tar.gz gen/Firebird-linux-i586.tar.gz
@@ -281,10 +279,9 @@ jobs:
 
       - name: Snapshot - prepare
         id: snapshot_prepare
-        # FIXME: github.event.head_commit.message == 'increment build number'
         if: |
           github.repository == 'FirebirdSQL/firebird' &&
-          (github.event.head_commit.message == 'increment build number' || true) &&
+          github.event.head_commit.message == 'increment build number' &&
           github.ref_name == 'master'
         shell: cmd
         env:
@@ -456,10 +453,9 @@ jobs:
 
       - name: Snapshot - prepare
         id: snapshot_prepare
-        # FIXME: github.event.head_commit.message == 'increment build number'
         if: |
           github.repository == 'FirebirdSQL/firebird' &&
-          (github.event.head_commit.message == 'increment build number' || true) &&
+          github.event.head_commit.message == 'increment build number' &&
           github.ref_name == 'master'
         run: |
           mv gen/artifacts/Firebird-*.pkg gen/artifacts/Firebird-macos-x86_64.pkg
