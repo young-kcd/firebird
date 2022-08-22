@@ -50,6 +50,46 @@ jobs:
           name: firebird-linux-x64
           path: gen/Firebird-*.tar.gz
 
+      - name: Snapshot - prepare
+        id: snapshot_prepare
+        # FIXME: github.event.head_commit.message == 'increment build number'
+        if: |
+          github.repository == 'FirebirdSQL/firebird' &&
+          (github.event.head_commit.message == 'increment build number' || true) &&
+          github.ref_name == 'main'
+        run: |
+          mv gen/Firebird-[0-9]*.tar.gz gen/Firebird-linux-amd64.tar.gz
+          mv gen/Firebird-debuginfo-*.tar.gz gen/Firebird-linux-amd64-debuginfo.tar.gz
+          echo "::set-output name=snapshot_name::${{ github.ref_name }}"
+
+      - name: Snapshot - release
+        id: snapshot_release_try1
+        uses: softprops/action-gh-release@v1
+        if: steps.snapshot_prepare.outputs.snapshot_name
+        continue-on-error: true
+        with:
+          repository: FirebirdSQL/snapshots
+          name: Latest snapshot for ${{ steps.snapshot_prepare.outputs.snapshot_name }}
+          tag_name: snapshot-${{ steps.snapshot_prepare.outputs.snapshot_name }}
+          prerelease: true
+          token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
+          files: |
+            gen/Firebird-*.tar.gz
+
+      - name: Snapshot - release (retry)
+        uses: softprops/action-gh-release@v1
+        if: |
+          steps.snapshot_prepare.outputs.snapshot_name &&
+          steps.snapshot_release_try1.outcome == 'failure'
+        with:
+          repository: FirebirdSQL/snapshots
+          name: Latest snapshot for ${{ steps.snapshot_prepare.outputs.snapshot_name }}
+          tag_name: snapshot-${{ steps.snapshot_prepare.outputs.snapshot_name }}
+          prerelease: true
+          token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
+          files: |
+            gen/Firebird-*.tar.gz
+
   build-linux-docker-x86:
     runs-on: ubuntu-20.04
 
@@ -68,6 +108,46 @@ jobs:
         with:
           name: firebird-linux-x86
           path: gen/Firebird-*.tar.gz
+
+      - name: Snapshot - prepare
+        id: snapshot_prepare
+        # FIXME: github.event.head_commit.message == 'increment build number'
+        if: |
+          github.repository == 'FirebirdSQL/firebird' &&
+          (github.event.head_commit.message == 'increment build number' || true) &&
+          github.ref_name == 'main'
+        run: |
+          mv gen/Firebird-[0-9]*.tar.gz gen/Firebird-linux-i586.tar.gz
+          mv gen/Firebird-debuginfo-*.tar.gz gen/Firebird-linux-i586-debuginfo.tar.gz
+          echo "::set-output name=snapshot_name::${{ github.ref_name }}"
+
+      - name: Snapshot - release
+        id: snapshot_release_try1
+        uses: softprops/action-gh-release@v1
+        if: steps.snapshot_prepare.outputs.snapshot_name
+        continue-on-error: true
+        with:
+          repository: FirebirdSQL/snapshots
+          name: Latest snapshot for ${{ steps.snapshot_prepare.outputs.snapshot_name }}
+          tag_name: snapshot-${{ steps.snapshot_prepare.outputs.snapshot_name }}
+          prerelease: true
+          token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
+          files: |
+            gen/Firebird-*.tar.gz
+
+      - name: Snapshot - release (retry)
+        uses: softprops/action-gh-release@v1
+        if: |
+          steps.snapshot_prepare.outputs.snapshot_name &&
+          steps.snapshot_release_try1.outcome == 'failure'
+        with:
+          repository: FirebirdSQL/snapshots
+          name: Latest snapshot for ${{ steps.snapshot_prepare.outputs.snapshot_name }}
+          tag_name: snapshot-${{ steps.snapshot_prepare.outputs.snapshot_name }}
+          prerelease: true
+          token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
+          files: |
+            gen/Firebird-*.tar.gz
 
   build-alpine-x64:
     runs-on: ubuntu-20.04
@@ -199,6 +279,53 @@ jobs:
           name: firebird-windows-${{ matrix.platform }}-installer
           path: builds/install_images/*.exe
 
+      - name: Snapshot - prepare
+        id: snapshot_prepare
+        # FIXME: github.event.head_commit.message == 'increment build number'
+        if: |
+          github.repository == 'FirebirdSQL/firebird' &&
+          (github.event.head_commit.message == 'increment build number' || true) &&
+          github.ref_name == 'main'
+        shell: cmd
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          if "%PLATFORM%" == "x64" set FB_OUTPUT_SUFFIX=x64
+          if "%PLATFORM%" == "x86" set FB_OUTPUT_SUFFIX=Win32
+          ren builds\install_images\*.zip Firebird-windows-%FB_OUTPUT_SUFFIX%.zip
+          ren builds\install_images\*.exe Firebird-windows-%FB_OUTPUT_SUFFIX%.exe
+          echo ::set-output name=snapshot_name::${{ github.ref_name }}
+
+      - name: Snapshot - release
+        id: snapshot_release_try1
+        uses: softprops/action-gh-release@v1
+        if: steps.snapshot_prepare.outputs.snapshot_name
+        continue-on-error: true
+        with:
+          repository: FirebirdSQL/snapshots
+          name: Latest snapshot for ${{ steps.snapshot_prepare.outputs.snapshot_name }}
+          tag_name: snapshot-${{ steps.snapshot_prepare.outputs.snapshot_name }}
+          prerelease: true
+          token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
+          files: |
+            builds/install_images/Firebird-*.exe
+            builds/install_images/Firebird-*.zip
+
+      - name: Snapshot - release (retry)
+        uses: softprops/action-gh-release@v1
+        if: |
+          steps.snapshot_prepare.outputs.snapshot_name &&
+          steps.snapshot_release_try1.outcome == 'failure'
+        with:
+          repository: FirebirdSQL/snapshots
+          name: Latest snapshot for ${{ steps.snapshot_prepare.outputs.snapshot_name }}
+          tag_name: snapshot-${{ steps.snapshot_prepare.outputs.snapshot_name }}
+          prerelease: true
+          token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
+          files: |
+            builds/install_images/Firebird-*.exe
+            builds/install_images/Firebird-*.zip
+
   build-macos:
     runs-on: macos-latest
 
@@ -326,3 +453,42 @@ jobs:
         with:
           name: firebird-macos
           path: gen/artifacts
+
+      - name: Snapshot - prepare
+        id: snapshot_prepare
+        # FIXME: github.event.head_commit.message == 'increment build number'
+        if: |
+          github.repository == 'FirebirdSQL/firebird' &&
+          (github.event.head_commit.message == 'increment build number' || true) &&
+          github.ref_name == 'main'
+        run: |
+          mv gen/artifacts/Firebird-*.pkg gen/artifacts/Firebird-macos-x86_64.pkg
+          echo "::set-output name=snapshot_name::${{ github.ref_name }}"
+
+      - name: Snapshot - release
+        id: snapshot_release_try1
+        uses: softprops/action-gh-release@v1
+        if: steps.snapshot_prepare.outputs.snapshot_name
+        continue-on-error: true
+        with:
+          repository: FirebirdSQL/snapshots
+          name: Latest snapshot for ${{ steps.snapshot_prepare.outputs.snapshot_name }}
+          tag_name: snapshot-${{ steps.snapshot_prepare.outputs.snapshot_name }}
+          prerelease: true
+          token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
+          files: |
+            gen/artifacts/Firebird-*.pkg
+
+      - name: Snapshot - release (retry)
+        uses: softprops/action-gh-release@v1
+        if: |
+          steps.snapshot_prepare.outputs.snapshot_name &&
+          steps.snapshot_release_try1.outcome == 'failure'
+        with:
+          repository: FirebirdSQL/snapshots
+          name: Latest snapshot for ${{ steps.snapshot_prepare.outputs.snapshot_name }}
+          tag_name: snapshot-${{ steps.snapshot_prepare.outputs.snapshot_name }}
+          prerelease: true
+          token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
+          files: |
+            gen/artifacts/Firebird-*.pkg
