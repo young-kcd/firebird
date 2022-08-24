@@ -271,10 +271,14 @@ jobs:
           fetch-depth: 10
 
       - name: Build
+        id: build
         shell: cmd
         env:
           PLATFORM: ${{ matrix.platform }}
         run: |
+          if "%PLATFORM%" == "x64" set FB_OUTPUT_SUFFIX=x64
+          if "%PLATFORM%" == "x86" set FB_OUTPUT_SUFFIX=Win32
+          echo ::set-output name=arch_suffix::%FB_OUTPUT_SUFFIX%
           mkdir builds\install_images
           cd builds\docker\windows
           call build.bat
@@ -283,7 +287,7 @@ jobs:
       - name: Extract zip
         shell: cmd
         run: |
-          7z x builds\install_images\*.zip -ooutput
+          7z x builds\install_images\*-${{ steps.build.outputs.arch_suffix }}.zip -ooutput
 
       - name: Upload zip
         uses: actions/upload-artifact@main
@@ -304,12 +308,7 @@ jobs:
           github.event.head_commit.message == 'increment build number' &&
           github.ref_name == 'master'
         shell: cmd
-        env:
-          PLATFORM: ${{ matrix.platform }}
         run: |
-          if "%PLATFORM%" == "x64" set FB_OUTPUT_SUFFIX=x64
-          if "%PLATFORM%" == "x86" set FB_OUTPUT_SUFFIX=Win32
-          echo ::set-output name=arch_suffix::%FB_OUTPUT_SUFFIX%
           echo ::set-output name=snapshot_name::${{ github.ref_name }}
 
       - name: Snapshot - delete old assets
@@ -322,8 +321,8 @@ jobs:
           fail-if-no-release: false
           fail-if-no-assets: false
           assets: |
-            Firebird-*${{ steps.snapshot_prepare.outputs.arch_suffix }}*.exe
-            Firebird-*${{ steps.snapshot_prepare.outputs.arch_suffix }}*.zip
+            Firebird-*${{ steps.build.outputs.arch_suffix }}*.exe
+            Firebird-*${{ steps.build.outputs.arch_suffix }}*.zip
 
       - name: Snapshot - release
         id: snapshot_release_try1

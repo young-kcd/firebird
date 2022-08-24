@@ -8,7 +8,7 @@ set FB_OUTPUT_SUFFIX=win32
 xcopy /h /e /i /q C:\firebird C:\firebird-build
 cd /d C:\firebird-build\builds\win32
 
-call run_all.bat
+call run_all.bat PDB
 
 call run_tests.bat
 
