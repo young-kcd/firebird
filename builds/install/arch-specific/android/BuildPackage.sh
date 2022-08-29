@@ -15,13 +15,19 @@ Stripped=strip
 aStrip=${NDK}/toolchains/${cross}-4.9/prebuilt/linux-x86_64/bin/${cross}-strip
 fbRootDir=`pwd`
 
+runTar()
+{
+	tarfile=${1}
+	tar cvfz ${tarfile} --exclude '*.a' firebird
+}
+
 cd gen/Release
 rm -rf ${Stripped}
 cp ${fbRootDir}/builds/install/arch-specific/android/AfterUntar.sh firebird
 echo .
 echo .
 echo "Compress with deb-info"
-tar cvfz ../${Debug} firebird
+runTar ../${Debug}
 
 echo .
 echo .
@@ -42,5 +48,5 @@ done
 echo .
 echo .
 echo "Compress release"
-tar cvfz ../../${Release} firebird
+runTar ../../${Release}
 cd ..
