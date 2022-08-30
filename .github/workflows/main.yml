@@ -23,14 +23,14 @@ jobs:
           make tests -j4
           make run_tests
           make dist
-          tar xzvf gen/Firebird-[0-9]*.tar.gz
-          (cd Firebird-[0-9]*; sudo ./install.sh -silent)
+          tar xzvf gen/Firebird-*-linux-x64.tar.gz
+          (cd Firebird-*-linux-x64; sudo ./install.sh -silent)
 
-      - name: Upload
+      - name: Upload installer
         uses: actions/upload-artifact@main
         with:
           name: firebird-ubuntu-20.04-clang-x64
-          path: gen/Firebird-*.tar.gz
+          path: gen/Firebird-*-linux-x64.tar.gz
 
   build-linux-docker-x64:
     runs-on: ubuntu-20.04
@@ -44,11 +44,17 @@ jobs:
       - name: Build
         run: /entry.sh
 
-      - name: Upload
+      - name: Upload installer
         uses: actions/upload-artifact@main
         with:
           name: firebird-linux-x64
-          path: gen/Firebird-*.tar.gz
+          path: gen/Firebird-*-linux-x64.tar.gz
+
+      - name: Upload debug symbols
+        uses: actions/upload-artifact@main
+        with:
+          name: firebird-linux-x64-debugSymbols
+          path: gen/Firebird-*-linux-x64-debugSymbols.tar.gz
 
       - name: Snapshot - prepare
         id: snapshot_prepare
@@ -69,7 +75,7 @@ jobs:
           fail-if-no-release: false
           fail-if-no-assets: false
           assets: |
-            Firebird-*amd64.tar.gz
+            Firebird-*-linux-x64*.tar.gz
 
       - name: Snapshot - release
         id: snapshot_release_try1
@@ -83,7 +89,7 @@ jobs:
           prerelease: true
           token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
           files: |
-            gen/Firebird-*amd64.tar.gz
+            gen/Firebird-*-linux-x64*.tar.gz
 
       - name: Snapshot - release (retry)
         uses: softprops/action-gh-release@v1
@@ -97,7 +103,7 @@ jobs:
           prerelease: true
           token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
           files: |
-            gen/Firebird-*amd64.tar.gz
+            gen/Firebird-*-linux-x64*.tar.gz
 
   build-linux-docker-x86:
     runs-on: ubuntu-20.04
@@ -112,11 +118,17 @@ jobs:
           cd builds/docker/linux/i586-x86_64
           ./run-i586.sh
 
-      - name: Upload
+      - name: Upload installer
         uses: actions/upload-artifact@main
         with:
           name: firebird-linux-x86
-          path: gen/Firebird-*.tar.gz
+          path: gen/Firebird-*-linux-x86.tar.gz
+
+      - name: Upload debug symbols
+        uses: actions/upload-artifact@main
+        with:
+          name: firebird-linux-x86-debugSymbols
+          path: gen/Firebird-*-linux-x86-debugSymbols.tar.gz
 
       - name: Snapshot - prepare
         id: snapshot_prepare
@@ -137,7 +149,7 @@ jobs:
           fail-if-no-release: false
           fail-if-no-assets: false
           assets: |
-            Firebird-*i586.tar.gz
+            Firebird-*-linux-x86*.tar.gz
 
       - name: Snapshot - release
         id: snapshot_release_try1
@@ -151,7 +163,7 @@ jobs:
           prerelease: true
           token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
           files: |
-            gen/Firebird-*i586.tar.gz
+            gen/Firebird-*-linux-x86*.tar.gz
 
       - name: Snapshot - release (retry)
         uses: softprops/action-gh-release@v1
@@ -165,7 +177,7 @@ jobs:
           prerelease: true
           token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
           files: |
-            gen/Firebird-*i586.tar.gz
+            gen/Firebird-*-linux-x86*.tar.gz
 
   build-alpine-x64:
     runs-on: ubuntu-20.04
@@ -186,13 +198,13 @@ jobs:
           make tests -j4
           make run_tests
           make dist
-          tar xzvf gen/Firebird-[0-9]*.tar.gz
+          tar xzvf gen/Firebird-*-linux-x64.tar.gz
 
-      - name: Upload
+      - name: Upload installer
         uses: actions/upload-artifact@main
         with:
           name: firebird-alpine-x64
-          path: gen/Firebird-*.tar.gz
+          path: gen/Firebird-*-linux-x64.tar.gz
 
   build-windows:
     runs-on: ${{ matrix.os }}
@@ -474,7 +486,7 @@ jobs:
           mkdir gen/artifacts
           mv gen/Release/*.pkg gen/artifacts
 
-      - name: Upload
+      - name: Upload installer
         uses: actions/upload-artifact@main
         with:
           name: firebird-macos
@@ -499,7 +511,7 @@ jobs:
           fail-if-no-release: false
           fail-if-no-assets: false
           assets: |
-            Firebird-*x86_64.pkg
+            Firebird-*-macos-x64*.pkg
 
       - name: Snapshot - release
         id: snapshot_release_try1
@@ -513,7 +525,7 @@ jobs:
           prerelease: true
           token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
           files: |
-            gen/artifacts/Firebird-*x86_64.pkg
+            gen/artifacts/Firebird-*-macos-x64*.pkg
 
       - name: Snapshot - release (retry)
         uses: softprops/action-gh-release@v1
@@ -527,4 +539,4 @@ jobs:
           prerelease: true
           token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
           files: |
-            gen/artifacts/Firebird-*x86_64.pkg
+            gen/artifacts/Firebird-*-macos-x64*.pkg

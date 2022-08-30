@@ -19,7 +19,7 @@
 #  All Rights Reserved.
 #  Contributor(s): ______________________________________.
 #
-# 
+#
 #
 ROOT=..
 
@@ -53,10 +53,10 @@ Version=$(BuildVersion)-$(PackageVersion)
 
 # This means something like: FirebirdCS-*.0.0-*.i386.tar.gz
 
-TarDir= Firebird-$(Version).$(CpuType)
-TarFile=Firebird-$(Version).$(CpuType).tar.gz
-DebugDir=Firebird-debuginfo-$(Version).$(CpuType)
-DebugFile=Firebird-debuginfo-$(Version).$(CpuType).tar.gz
+TarDir=Firebird-$(Version)-linux-$(CpuType)
+TarFile=Firebird-$(Version)-linux-$(CpuType).tar.gz
+DebugDir=Firebird-$(Version)-linux-$(CpuType)-debugSymbols
+DebugFile=Firebird-$(Version)-linux-$(CpuType)-debugSymbols.tar.gz
 
 
 PkgSrcDir=$(InstallRoot)/$(ArchType)

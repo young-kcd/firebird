@@ -95,7 +95,7 @@ case "$build" in
 	XE_APPEND(-framework CoreFoundation,LIBS)
     EDITLINE_FLG=Y
     SHRLIB_EXT=dylib
-    CPU_TYPE=ARM64
+    CPU_TYPE=arm64
     EXPORT_SYMBOLS_STYLE=darwin
     RAW_DEVICES_FLG=N
     ;;
@@ -109,7 +109,7 @@ case "$build" in
 	XE_APPEND(-framework CoreFoundation,LIBS)
     EDITLINE_FLG=Y
     SHRLIB_EXT=dylib
-    CPU_TYPE=x86_64
+    CPU_TYPE=x64
     EXPORT_SYMBOLS_STYLE=darwin
     RAW_DEVICES_FLG=N
     ;;
@@ -123,7 +123,7 @@ case "$build" in
 	XE_APPEND(-framework CoreFoundation,LIBS)
     EDITLINE_FLG=Y
     SHRLIB_EXT=dylib
-    CPU_TYPE=i386
+    CPU_TYPE=x86
     EXPORT_SYMBOLS_STYLE=darwin
     ;;
 
@@ -247,7 +247,7 @@ dnl CPU_TYPE=ppc64
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     libdir=/usr/lib64
-    CPU_TYPE=amd64
+    CPU_TYPE=x64
     ;;
 
   ia64*-*-linux*)
@@ -343,6 +343,7 @@ dnl CPU_TYPE=ppc64
     AC_DEFINE(LINUX)
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
+    CPU_TYPE=x86
     ;;
 
   s390x-*-linux*)
