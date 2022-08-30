@@ -229,31 +229,24 @@ jobs:
           set INNO6_SETUP_PATH=C:\Program Files (x86)\Inno Setup 6
           if "%PLATFORM%" == "x64" set FB_VS_ARCH=amd64
           if "%PLATFORM%" == "x64" set FB_PROCESSOR_ARCHITECTURE=AMD64
-          if "%PLATFORM%" == "x64" set FB_OUTPUT_SUFFIX=x64
           if "%PLATFORM%" == "x86" set FB_VS_ARCH=x86
           if "%PLATFORM%" == "x86" set FB_PROCESSOR_ARCHITECTURE=x86
-          if "%PLATFORM%" == "x86" set FB_OUTPUT_SUFFIX=win32
           call "%VS_SCRIPT%" -arch=%FB_VS_ARCH%
           cd builds\win32
           call run_all.bat
           call run_tests.bat
 
-      - name: Extract zip
-        shell: cmd
-        run: |
-          7z x builds\install_images\*.zip -ooutput
-
       - name: Upload zip
         uses: actions/upload-artifact@main
         with:
           name: firebird-windows-vs-${{ env.VS_VERSION }}-${{ matrix.platform }}-zip
-          path: output
+          path: builds/install_images/Firebird-*-windows-${{ matrix.platform }}.zip
 
       - name: Upload installer
         uses: actions/upload-artifact@main
         with:
           name: firebird-windows-vs-${{ env.VS_VERSION }}-${{ matrix.platform }}-installer
-          path: builds/install_images/*.exe
+          path: builds/install_images/*-windows-${{ matrix.platform }}.exe
 
   build-windows-docker:
     runs-on: windows-2022
@@ -276,30 +269,35 @@ jobs:
         env:
           PLATFORM: ${{ matrix.platform }}
         run: |
-          if "%PLATFORM%" == "x64" set FB_OUTPUT_SUFFIX=x64
-          if "%PLATFORM%" == "x86" set FB_OUTPUT_SUFFIX=Win32
-          echo ::set-output name=arch_suffix::%FB_OUTPUT_SUFFIX%
+          echo ::set-output name=arch_suffix::%PLATFORM%
           mkdir builds\install_images
           cd builds\docker\windows
           call build.bat
           call run.bat C:\fbscripts\build-%PLATFORM%.bat
 
-      - name: Extract zip
-        shell: cmd
-        run: |
-          7z x builds\install_images\*-${{ steps.build.outputs.arch_suffix }}.zip -ooutput
-
       - name: Upload zip
         uses: actions/upload-artifact@main
         with:
           name: firebird-windows-${{ matrix.platform }}-zip
-          path: output
+          path: builds/install_images/Firebird-*-windows-${{ matrix.platform }}.zip
+
+      - name: Upload zip (withDebugSymbols)
+        uses: actions/upload-artifact@main
+        with:
+          name: firebird-windows-${{ matrix.platform }}-withDebugSymbols-zip
+          path: builds/install_images/Firebird-*-windows-${{ matrix.platform }}-withDebugSymbols.zip
 
       - name: Upload installer
         uses: actions/upload-artifact@main
         with:
           name: firebird-windows-${{ matrix.platform }}-installer
-          path: builds/install_images/*.exe
+          path: builds/install_images/*-windows-${{ matrix.platform }}.exe
+
+      - name: Upload installer (withDebugSymbols)
+        uses: actions/upload-artifact@main
+        with:
+          name: firebird-windows-${{ matrix.platform }}-withDebugSymbols-installer
+          path: builds/install_images/*-windows-${{ matrix.platform }}-withDebugSymbols.exe
 
       - name: Snapshot - prepare
         id: snapshot_prepare
@@ -321,8 +319,8 @@ jobs:
           fail-if-no-release: false
           fail-if-no-assets: false
           assets: |
-            Firebird-*${{ steps.build.outputs.arch_suffix }}*.exe
-            Firebird-*${{ steps.build.outputs.arch_suffix }}*.zip
+            Firebird-*-windows-${{ steps.build.outputs.arch_suffix }}*.exe
+            Firebird-*-windows-${{ steps.build.outputs.arch_suffix }}*.zip
 
       - name: Snapshot - release
         id: snapshot_release_try1
@@ -336,8 +334,8 @@ jobs:
           prerelease: true
           token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
           files: |
-            builds/install_images/Firebird-*.exe
-            builds/install_images/Firebird-*.zip
+            builds/install_images/Firebird-*-windows-*.exe
+            builds/install_images/Firebird-*-windows-*.zip
 
       - name: Snapshot - release (retry)
         uses: softprops/action-gh-release@v1
@@ -351,8 +349,8 @@ jobs:
           prerelease: true
           token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
           files: |
-            builds/install_images/Firebird-*.exe
-            builds/install_images/Firebird-*.zip
+            builds/install_images/Firebird-*windows-*.exe
+            builds/install_images/Firebird-*windows-*.zip
 
   build-macos:
     runs-on: macos-latest
