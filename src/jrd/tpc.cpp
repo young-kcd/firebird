@@ -132,6 +132,10 @@ TipCache::~TipCache()
 
 void TipCache::finalizeTpc(thread_db* tdbb)
 {
+	// check for finalizeTpc() called more than once
+	if (!m_lock.hasData())
+		return;
+
 	// To avoid race conditions, this function might only
 	// be called during database shutdown when AST delivery is already disabled
 
@@ -175,15 +179,16 @@ void TipCache::finalizeTpc(thread_db* tdbb)
 				SharedMemoryBase::unlinkFile(nmSnap.c_str());
 			if (nmHdr.hasData())
 				SharedMemoryBase::unlinkFile(nmHdr.c_str());
+
+			LCK_release(tdbb, m_lock);
 		}
 		else
-		{
 			tdbb->tdbb_status_vector->init();
-			return;
-		}
 	}
+	else
+		LCK_release(tdbb, m_lock);
 
-	LCK_release(tdbb, m_lock);
+	delete m_lock.release();
 }
 
 CommitNumber TipCache::cacheState(TraNumber number)
