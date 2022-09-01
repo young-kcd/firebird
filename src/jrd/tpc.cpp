@@ -191,7 +191,7 @@ void TipCache::finalizeTpc(thread_db* tdbb)
 	else
 		LCK_release(tdbb, m_lock);
 
-	delete m_lock.release();
+	m_lock.reset();
 }
 
 CommitNumber TipCache::cacheState(TraNumber number)
