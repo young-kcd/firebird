@@ -268,6 +268,8 @@ public:
 #endif
 	bool remapFile(Firebird::CheckStatusWrapper* status, ULONG newSize, bool truncateFlag);
 	void removeMapFile();
+	static void unlinkFile(const TEXT* expanded_filename) noexcept;
+	Firebird::PathName getMapFileName();
 
 	void mutexLock();
 	bool mutexLockCond();
