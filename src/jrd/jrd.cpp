@@ -4413,7 +4413,9 @@ void JService::cancel(CheckStatusWrapper* user_status)
 	{
 		ThreadContextHolder tdbb(user_status);
 
-		validateHandle(svc);
+		// Use class Validate here instead validateHandle() because cause
+		// global services list should be locked during cancel() call
+		Service::Validate guard(svc);
 
 		svc->cancel(tdbb);
 	}
