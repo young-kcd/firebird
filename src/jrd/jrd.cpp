@@ -8736,7 +8736,7 @@ namespace
 static void waitForShutdown(Semaphore& shutdown_semaphore)
 {
 	const int pid = getpid();
-	unsigned int timeout = 10000;	// initial value, 10 sec
+	unsigned int timeout = 10;	// initial value, 10 sec
 	bool done = false;
 
 	for (int i = 0; i < 5; i++)
