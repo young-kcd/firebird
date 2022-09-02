@@ -28,6 +28,9 @@ rm -rf ${Stripped}
 cp ${fbRootDir}/builds/install/arch-specific/android/AfterUntar.sh firebird
 chmod +x firebird/AfterUntar.sh
 cp ${fbRootDir}/src/dbs/security.sql firebird
+cp ${fbRootDir}/examples/empbuild/employe2.sql firebird
+tar -C firebird/lib --wildcards -xvf ../../extern/icu/icu_android.tar.xz icudt*.dat
+tar -C firebird/lib --wildcards --strip-components 1 -xvf ../../extern/icu/icu_android.tar.xz ${bits}/*
 echo .
 echo .
 echo "Compress with deb-info"
