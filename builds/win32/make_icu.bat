@@ -12,7 +12,6 @@
 if errorlevel 1 call :ERROR build failed - see make_icu_%FB_TARGET_PLATFORM%.log for details
 
 @echo Extracting tzdata
-mkdir %FB_OUTPUT_DIR%\tzdata
 unzip -o %FB_ROOT_PATH%\extern\icu\tzdata\le.zip -d %FB_ROOT_PATH%\extern\icu\tzdata-extract
 
 @goto :EOF
