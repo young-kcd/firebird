@@ -9575,7 +9575,12 @@ void UserSavepointNode::execute(thread_db* tdbb, DsqlRequest* request, jrd_tra**
 		{
 			// Release the savepoint
 			if (savepoint)
-				savepoint->rollforward(tdbb, previous);
+			{
+				if (savepoint == transaction->tra_save_point)
+					transaction->releaseSavepoint(tdbb);
+				else
+					savepoint->rollforward(tdbb, previous);
+			}
 
 			savepoint = transaction->startSavepoint();
 			savepoint->setName(name);
@@ -9585,7 +9590,10 @@ void UserSavepointNode::execute(thread_db* tdbb, DsqlRequest* request, jrd_tra**
 		case CMD_RELEASE_ONLY:
 		{
 			// Release the savepoint
-			savepoint->rollforward(tdbb, previous);
+			if (savepoint == transaction->tra_save_point)
+				transaction->releaseSavepoint(tdbb);
+			else
+				savepoint->rollforward(tdbb, previous);
 			break;
 		}
 
