@@ -553,8 +553,8 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       NDK: /home/runner/Android/Ndk
-      ARCH_BITS: ${{ (matrix.arch == 'arm32' && 32) || 64 }}
-      FB_PREFIX: ${{ (matrix.arch == 'arm32' && 'arme') || 'arm64' }}
+      ARCH: ${{ matrix.arch }}
+      FB_PREFIX: ${{ (matrix.arch == 'arm32' && 'arme') || (matrix.arch == 'x64' && 'x86_64') || matrix.arch }}
 
     strategy:
       fail-fast: false
@@ -562,6 +562,8 @@ jobs:
         arch:
           - arm32
           - arm64
+          - x86
+          - x64
 
     steps:
       - name: Checkout
@@ -586,7 +588,7 @@ jobs:
           ./autogen.sh --prefix=/opt/firebird --enable-binreloc --with-cross-build=android.$FB_PREFIX --without-editline
           make -j4
           make CROSS_OUT=Y tests -j4
-          builds/install/arch-specific/android/BuildPackage.sh $ARCH_BITS
+          builds/install/arch-specific/android/BuildPackage.sh $ARCH
 
       - name: Upload initial build
         uses: actions/upload-artifact@v3
@@ -601,7 +603,7 @@ jobs:
     needs: build-android-initial
     runs-on: macos-latest
     env:
-      ARCH_BITS: ${{ (matrix.arch == 'arm32' && 32) || 64 }}
+      ARCH: ${{ matrix.arch }}
 
     strategy:
       fail-fast: false
@@ -609,6 +611,8 @@ jobs:
         arch:
           - arm32
           - arm64
+          - x86
+          - x64
 
     steps:
       - name: Checkout
@@ -654,8 +658,9 @@ jobs:
           ndk: 25.1.8937393
           emulator-options: -no-snapshot-save -no-window -noaudio -no-boot-anim -camera-back none -port 5554
           script: |
+            adb wait-for-device
             adb root
-            NDK=/Users/runner/Library/Android/sdk/ndk/25.1.8937393 builds/install/arch-specific/android/BuildFinalPackage.sh $ARCH_BITS
+            NDK=/Users/runner/Library/Android/sdk/ndk/25.1.8937393 builds/install/arch-specific/android/BuildFinalPackage.sh $ARCH
 
       - name: Upload installer
         uses: actions/upload-artifact@v3
