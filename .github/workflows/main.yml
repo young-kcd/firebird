@@ -658,6 +658,7 @@ jobs:
           ndk: 25.1.8937393
           emulator-options: -no-snapshot-save -no-window -noaudio -no-boot-anim -camera-back none -port 5554
           script: |
+            sleep 20
             adb wait-for-device
             adb root
             NDK=/Users/runner/Library/Android/sdk/ndk/25.1.8937393 builds/install/arch-specific/android/BuildFinalPackage.sh $ARCH
