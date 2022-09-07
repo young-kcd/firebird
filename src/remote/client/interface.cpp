@@ -87,10 +87,6 @@
 #include "../remote/os/win32/xnet_proto.h"
 #endif
 
-#ifdef WIN_NT
-#define sleep(seconds)		Sleep ((seconds) * 1000)
-#endif // WIN_NT
-
 
 const char* const PROTOCOL_INET = "inet";
 const char* const PROTOCOL_INET4 = "inet4";
