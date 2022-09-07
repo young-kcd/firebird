@@ -415,9 +415,6 @@ ConfigFile::LineType ConfigFile::parseLine(const char* fileName, const String& i
 
 bool ConfigFile::macroParse(String& value, const char* fileName) const
 {
-	if (flags & CUSTOM_MACROS)
-		return true;
-
 	String::size_type subFrom;
 
 	while ((subFrom = value.find("$(")) != String::npos)
@@ -427,10 +424,15 @@ bool ConfigFile::macroParse(String& value, const char* fileName) const
 		{
 			String macro;
 			String m = value.substr(subFrom + 2, subTo - (subFrom + 2));
-			if (! translate(fileName, m, macro))
+
+			if (!translate(fileName, m, macro))
 			{
+				if (flags & CUSTOM_MACROS)
+					continue;
+
 				return false;
 			}
+
 			++subTo;
 
 			// Avoid incorrect slashes in pathnames
