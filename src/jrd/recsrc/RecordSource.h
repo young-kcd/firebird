@@ -417,6 +417,8 @@ namespace Jrd
 		bool internalGetRecord(thread_db* tdbb) const override;
 
 	private:
+		void process(thread_db* tdbb) const;
+
 		NestConst<RecordSource> m_next;
 		StreamList m_streams;
 	};
