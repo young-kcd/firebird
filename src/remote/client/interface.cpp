@@ -7248,7 +7248,11 @@ static void send_packet(rem_port* port, PACKET* packet)
 
 	if (port->port_flags & PORT_detached || port->port_state == rem_port::BROKEN)
 	{
-		(Arg::Gds(isc_net_write_err)<< Arg::Gds(isc_random) << "port detached").raise();
+		(Arg::Gds(isc_net_write_err)
+#ifdef DEV_BUILD
+			<< Arg::Gds(isc_random) << "port detached"
+#endif
+		).raise();
 	}
 
 	// Send packets that were deferred
@@ -7302,7 +7306,11 @@ static void send_partial_packet(rem_port* port, PACKET* packet)
 
 	if (port->port_flags & PORT_detached || port->port_state == rem_port::BROKEN)
 	{
-		(Arg::Gds(isc_net_write_err)<< Arg::Gds(isc_random) << "port detached").raise();
+		(Arg::Gds(isc_net_write_err)
+#ifdef DEV_BUILD
+			<< Arg::Gds(isc_random) << "port detached"
+#endif
+		).raise();
 	}
 
 	// Send packets that were deferred
