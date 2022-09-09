@@ -547,3 +547,184 @@ jobs:
           token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
           files: |
             gen/artifacts/Firebird-*-macos-x64*.pkg
+
+  build-android-initial:
+    name: build-android-${{ matrix.arch }}-initial
+    runs-on: ubuntu-22.04
+    env:
+      NDK: /home/runner/Android/Ndk
+      ARCH: ${{ matrix.arch }}
+      FB_PREFIX: ${{ (matrix.arch == 'arm32' && 'arme') || (matrix.arch == 'x64' && 'x86_64') || matrix.arch }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - arm32
+          - arm64
+          - x86
+          - x64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 10
+
+      - name: Prepare - install Linux tools
+        run: |
+          sudo apt-get install libtool-bin libtomcrypt1 libtomcrypt-dev libtommath1 libtommath-dev libicu-dev zlib1g-dev
+
+      - name: Prepare - Download and install Android NDK
+        run: |
+          mkdir downloads
+          pushd downloads
+          curl -OL https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
+          mkdir -p $NDK
+          unzip android-ndk-r25b-linux.zip -d $NDK && f=("$NDK"/*) && mv "$NDK"/*/* "$NDK" && rmdir "${f[@]}"
+
+      - name: Build
+        run: |
+          ./autogen.sh --prefix=/opt/firebird --enable-binreloc --with-cross-build=android.$FB_PREFIX --without-editline
+          make -j4
+          make CROSS_OUT=Y tests -j4
+          builds/install/arch-specific/android/BuildPackage.sh $ARCH
+
+      - name: Upload initial build
+        uses: actions/upload-artifact@v3
+        with:
+          name: firebird-android-initial-${{ matrix.arch }}
+          path: |
+            gen/Firebird-*-android-initial-${{ matrix.arch }}*.tar.gz
+            gen/Make.Version
+
+  build-android-final:
+    name: build-android-${{ matrix.arch }}-final
+    needs: build-android-initial
+    runs-on: macos-latest
+    env:
+      ARCH: ${{ matrix.arch }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - arm32
+          - arm64
+          - x86
+          - x64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 10
+
+      - name: Download initial build
+        uses: actions/download-artifact@v3
+        with:
+          name: firebird-android-initial-${{ matrix.arch }}
+          path: gen
+
+      - name: Cache - AVD
+        uses: actions/cache@v3
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-v3
+
+      - name: Create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          avd-name: firebird-builder
+          arch: x86_64
+          api-level: 30
+          target: google_apis
+          ndk: 25.1.8937393
+          emulator-options: -no-window -noaudio -no-boot-anim -camera-back none -port 5554
+          script: |
+            echo "Generated AVD snapshot for caching."
+
+      - name: Create necessary files in Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          avd-name: firebird-builder
+          arch: x86_64
+          api-level: 30
+          target: google_apis
+          ndk: 25.1.8937393
+          emulator-options: -no-snapshot-save -no-window -noaudio -no-boot-anim -camera-back none -port 5554
+          script: |
+            sleep 20
+            adb wait-for-device
+            adb root
+            NDK=/Users/runner/Library/Android/sdk/ndk/25.1.8937393 builds/install/arch-specific/android/BuildFinalPackage.sh $ARCH
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v3
+        with:
+          name: firebird-android-${{ matrix.arch }}
+          path: gen/Firebird-*-android-${{ matrix.arch }}.tar.gz
+
+      - name: Upload installer (withDebugSymbols)
+        uses: actions/upload-artifact@v3
+        with:
+          name: firebird-android-${{ matrix.arch }}-withDebugSymbols
+          path: gen/Firebird-*-android-${{ matrix.arch }}-withDebugSymbols.tar.gz
+
+      - name: Delete initial build
+        uses: geekyeggo/delete-artifact@v1
+        with:
+          name: firebird-android-initial-${{ matrix.arch }}
+
+      - name: Snapshot - prepare
+        id: snapshot_prepare
+        if: |
+          github.repository == 'FirebirdSQL/firebird' &&
+          github.event.head_commit.message == 'increment build number' &&
+          github.ref_name == 'master'
+        run: |
+          echo "::set-output name=snapshot_name::${{ github.ref_name }}"
+
+      - name: Snapshot - delete old assets
+        uses: asfernandes/delete-release-assets@v2
+        if: steps.snapshot_prepare.outputs.snapshot_name
+        with:
+          repository: FirebirdSQL/snapshots
+          token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
+          tag: snapshot-${{ steps.snapshot_prepare.outputs.snapshot_name }}
+          fail-if-no-release: false
+          fail-if-no-assets: false
+          assets: |
+            Firebird-*-android-${{ matrix.arch }}*.tar.gz
+
+      - name: Snapshot - release
+        id: snapshot_release_try1
+        uses: softprops/action-gh-release@v1
+        if: steps.snapshot_prepare.outputs.snapshot_name
+        continue-on-error: true
+        with:
+          repository: FirebirdSQL/snapshots
+          name: Latest snapshots for ${{ steps.snapshot_prepare.outputs.snapshot_name }}
+          tag_name: snapshot-${{ steps.snapshot_prepare.outputs.snapshot_name }}
+          prerelease: true
+          token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
+          files: |
+            gen/Firebird-*-android-${{ matrix.arch }}*.tar.gz
+
+      - name: Snapshot - release (retry)
+        uses: softprops/action-gh-release@v1
+        if: |
+          steps.snapshot_prepare.outputs.snapshot_name &&
+          steps.snapshot_release_try1.outcome == 'failure'
+        with:
+          repository: FirebirdSQL/snapshots
+          name: Latest snapshots for ${{ steps.snapshot_prepare.outputs.snapshot_name }}
+          tag_name: snapshot-${{ steps.snapshot_prepare.outputs.snapshot_name }}
+          prerelease: true
+          token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
+          files: |
+            gen/Firebird-*-android-${{ matrix.arch }}*.tar.gz

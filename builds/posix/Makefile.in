@@ -638,7 +638,7 @@ GBAK_FILES := $(subst Native,$(TARGET),$(GBAK_FILES))
 
 rest:	message_file tzdata
 
-cross_rest:
+cross_rest: tzdata
 	$(MAKE) $(BUILD_FILE)
 
 examples: include_generic
@@ -651,11 +651,11 @@ $(FIREBIRD_MSG) $(FIREBIRD)/include/firebird/impl/iberror_c.h:	$(BUILD_FILE)
 	$(BUILD_FILE) -f $(FIREBIRD_MSG) -c $(FIREBIRD)/include/firebird/impl/iberror_c.h
 	$(CHMOD_6) $(FIREBIRD_MSG)
 
-tzdata: $(FIREBIRD)/tzdata
+tzdata: $(FB_BUILD)/tzdata
 
-$(FIREBIRD)/tzdata: $(ROOT)/extern/icu/tzdata/$(TZDATA_ZIP)
-	mkdir -p $(FIREBIRD)/tzdata
-	unzip -o $(ROOT)/extern/icu/tzdata/$(TZDATA_ZIP) -d $(FIREBIRD)/tzdata
+$(FB_BUILD)/tzdata: $(ROOT)/extern/icu/tzdata/$(TZDATA_ZIP)
+	mkdir -p $(FB_BUILD)/tzdata
+	unzip -o $(ROOT)/extern/icu/tzdata/$(TZDATA_ZIP) -d $(FB_BUILD)/tzdata
 
 $(BUILD_FILE):	$(BUILD_Objects)
 	$(EXE_LINK) $(EXE_LINK_OPTIONS) $(LSB_UNDEF) $^ -o $@
