@@ -280,8 +280,12 @@ public:
 		bool m_localOnly;
 	};
 
+	class ExRefMutexUnlock;
+
 	class ExistenceRefMutex : public Firebird::RefCounted
 	{
+		friend class ExRefMutexUnlock;
+
 	public:
 		ExistenceRefMutex()
 			: exist(true)
@@ -291,11 +295,6 @@ public:
 		{ }
 
 	public:
-		void destroy()
-		{
-			exist = false;
-		}
-
 		bool doesExist() const
 		{
 			return exist;
@@ -312,8 +311,81 @@ public:
 		}
 
 	private:
+		void destroy()
+		{
+			exist = false;
+		}
+
 		Firebird::Mutex mutex;
 		bool exist;
+	};
+
+	class ExRefMutexUnlock
+	{
+	public:
+		ExRefMutexUnlock()
+			: entered(false)
+		{ }
+
+		explicit ExRefMutexUnlock(Database::ExistenceRefMutex* p)
+			: ref(p), entered(false)
+		{ }
+
+		void enter()
+		{
+			fb_assert(ref);
+			ref->enter();
+			entered = true;
+		}
+
+		void leave()
+		{
+			if (entered)
+			{
+				ref->leave();
+				entered = false;
+			}
+		}
+
+		void linkWith(Database::ExistenceRefMutex* to)
+		{
+			if (ref == to)
+				return;
+
+			leave();
+			ref = to;
+		}
+
+		void unlinkFromMutex()
+		{
+			linkWith(NULL);
+		}
+
+		void destroy()
+		{
+			fb_assert(entered);
+			ref->destroy();
+			leave();
+		}
+
+		Database::ExistenceRefMutex* operator->()
+		{
+			return ref;
+		}
+
+		bool operator!() const
+		{
+			return !ref;
+		}
+
+		~ExRefMutexUnlock()
+		{
+			leave();
+		}
+
+	private:
+		Firebird::RefPtr<ExistenceRefMutex> ref;
+		bool entered;
 	};
 
 	class Linger FB_FINAL :
