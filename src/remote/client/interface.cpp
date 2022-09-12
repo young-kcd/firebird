@@ -158,9 +158,9 @@ namespace {
 		  PortsCleanup(p)
 		{}
 
-		void closePort(rem_port* port) override;
+		void closePort(rem_port* port);
 
-		void delay() override
+		void delay()
 		{
 			Thread::sleep(50);
 		}
@@ -5993,13 +5993,13 @@ static void finalize(rem_port* port)
 		}
 		REMOTE_free_packet(port, packet);
 		delete rdb;
-		port->port_context = nullptr;
+		port->port_context = NULL;
 	}
 
 	// Cleanup the queue
 
 	delete port->port_deferred_packets;
-	port->port_deferred_packets = nullptr;
+	port->port_deferred_packets = NULL;
 
 	port->port_flags |= PORT_detached;
 }
