@@ -799,7 +799,7 @@ void PortsCleanup::closePorts()
 		delay();
 
 	Firebird::MutexLockGuard guard(m_mutex, FB_FUNCTION);
-	Firebird::AutoSetRestore cl(&closing, true);
+	Firebird::AutoSetRestore<bool> cl(&closing, true);
 
 	{ // scope
 		Firebird::MutexUnlockGuard g2(m_mutex, FB_FUNCTION);
