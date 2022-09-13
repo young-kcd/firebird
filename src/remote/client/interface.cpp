@@ -7850,8 +7850,6 @@ static void finalize(rem_port* port)
  *
  **************************************/
 
-	fb_assert(port->port_sync->locked());
-
 	// no need to do something if port already detached
 	if (port->port_flags & PORT_detached)
 		return;
