@@ -7248,7 +7248,7 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 							dbb = dbb->dbb_next;
 							continue;
 						}
- 
+
 						if (dbb->dbb_flags & DBB_bugcheck)
 						{
 							status_exception::raise(Arg::Gds(isc_bug_check) << "can't attach after bugcheck");
