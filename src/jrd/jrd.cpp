@@ -4920,10 +4920,16 @@ void SysStableAttachment::initDone()
 {
 	Jrd::Attachment* attachment = getHandle();
 	Database* dbb = attachment->att_database;
-	SyncLockGuard guard(&dbb->dbb_sys_attach, SYNC_EXCLUSIVE, "SysStableAttachment::initDone");
 
-	attachment->att_next = dbb->dbb_sys_attachments;
-	dbb->dbb_sys_attachments = attachment;
+	{ // scope
+		SyncLockGuard guard(&dbb->dbb_sys_attach, SYNC_EXCLUSIVE, "SysStableAttachment::initDone");
+
+		attachment->att_next = dbb->dbb_sys_attachments;
+		dbb->dbb_sys_attachments = attachment;
+	}
+
+	// make system attachments traceable
+	attachment->att_trace_manager->activate();
 }
 
 
@@ -7267,9 +7273,9 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 				{
 					if (attach_flag)
 					{
-						if (!dbb->dbb_init_fini->doesExist())
+						if ((!dbb->dbb_init_fini->doesExist()) || (dbb->dbb_flags & DBB_new))
 						{
-							// database is shutting down
+							// database is shutting down or not opened completely
 							dbb = dbb->dbb_next;
 							continue;
 						}
@@ -8575,7 +8581,17 @@ static void unwindAttach(thread_db* tdbb, const char* filename, const Exception&
 				traceManager->event_attach(&conn, flags & UNWIND_CREATE, ITracePlugin::RESULT_FAILED);
 		}
 		else
+		{
+			auto dbb = tdbb->getDatabase();
+			if (dbb && (dbb->dbb_flags & DBB_new))
+			{
+				// attach failed before completion of DBB initialization
+				// that's hardly recoverable error - avoid extra problems in mapping
+				dbb->dbb_flags |= DBB_bugcheck;
+			}
+
 			trace_failed_attach(filename, options, flags & UNWIND_CREATE, userStatus, callback);
+		}
 
 		const char* func = flags & UNWIND_CREATE ? "JProvider::createDatabase" : "JProvider::attachDatabase";
 		transliterateException(tdbb, ex, userStatus, func);
