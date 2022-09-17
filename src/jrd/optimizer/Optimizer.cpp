@@ -768,6 +768,27 @@ RecordSource* Optimizer::compile(BoolExprNodeStack* parentStack)
 	for (StreamList::iterator i = rseStreams.begin(); i != rseStreams.end(); ++i)
 		csb->csb_rpt[*i].deactivate();
 
+	// Find and collect booleans that are invariant in this context
+	// (i.e. independent from streams in the RseNode). We can do that
+	// easily because these streams are inactive at this point and
+	// any node that references them will be not computable.
+	// Note that we cannot do that for outer joins, as in this case boolean
+	// represents a join condition which does not filter out the rows.
+
+	BoolExprNode* invariantBoolean = nullptr;
+	if (isInnerJoin())
+	{
+		for (auto iter = getBaseConjuncts(); iter.hasData(); ++iter)
+		{
+			if (!(iter & CONJUNCT_USED) &&
+				iter->computable(csb, INVALID_STREAM, false))
+			{
+				compose(getPool(), &invariantBoolean, iter);
+				iter |= CONJUNCT_USED;
+			}
+		}
+	}
+
 	// Go through the record selection expression generating
 	// record source blocks for all streams
 
@@ -976,6 +997,12 @@ RecordSource* Optimizer::compile(BoolExprNodeStack* parentStack)
 		if (sort)
 			rsb = generateSort(bedStreams, &keyStreams, rsb, sort, favorFirstRows(), false);
 	}
+
+	// Add invariant booleans, if any. They should be evaluated before
+	// actual data retrieval happens, thus avoiding unnecessary work.
+
+	if (invariantBoolean)
+		rsb = FB_NEW_POOL(getPool()) PreFilteredStream(csb, rsb, invariantBoolean);
 
     // Handle first and/or skip.  The skip MUST (if present)
     // appear in the rsb list AFTER the first.  Since the gen_first and gen_skip
