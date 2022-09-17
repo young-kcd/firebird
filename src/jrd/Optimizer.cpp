@@ -584,6 +584,7 @@ InversionCandidate* OptimizerRetrieval::generateInversion()
 
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
 			node->computable(csb, stream, true) &&
+			node->findStream(csb, stream) &&
 			!invCandidate->matches.exist(node))
 		{
 			const ComparativeBoolNode* const cmpNode = nodeAs<ComparativeBoolNode>(node);
