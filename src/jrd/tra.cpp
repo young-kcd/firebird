@@ -4049,6 +4049,7 @@ void jrd_tra::checkBlob(thread_db* tdbb, const bid* blob_id, jrd_fld* fld, bool 
 
 	if (tra_attachment->isGbak() ||
 		(tra_attachment->locksmith(tdbb, SELECT_ANY_OBJECT_IN_DATABASE)) ||
+		(tdbb->tdbb_flags & TDBB_repl_in_progress) ||
 		rel_id == 0)
 	{
 		return;
