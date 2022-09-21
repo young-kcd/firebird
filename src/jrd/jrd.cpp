@@ -7336,15 +7336,6 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 				{
 					if (attach_flag)
 					{
-						/* here better solution what to do when DBB_new flag is set is needed
-						if ((!dbb->dbb_init_fini->doesExist()) || (dbb->dbb_flags & DBB_new))
-						{
-							// database is shutting down or not opened completely
-							dbb = dbb->dbb_next;
-							continue;
-						}
-						*******************/
-
 						if (dbb->dbb_flags & DBB_bugcheck)
 						{
 							status_exception::raise(Arg::Gds(isc_bug_check) << "can't attach after bugcheck");
