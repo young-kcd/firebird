@@ -24,6 +24,7 @@
 
 #include "firebird.h"
 #include "../jrd/Attachment.h"
+#include "../jrd/MetaName.h"
 #include "../jrd/Database.h"
 #include "../jrd/Function.h"
 #include "../jrd/nbak.h"
@@ -47,7 +48,6 @@
 #include "../jrd/replication/Manager.h"
 
 #include "../common/classes/fb_string.h"
-#include "../jrd/MetaName.h"
 #include "../common/StatusArg.h"
 #include "../common/TimeZoneUtil.h"
 #include "../common/isc_proto.h"
