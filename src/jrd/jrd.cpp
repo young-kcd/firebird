@@ -478,6 +478,68 @@ namespace
 	// This mutex protects linked list of databases
 	GlobalPtr<Mutex> databases_mutex;
 
+	// Holder for per-database init/fini mutex
+	class RefMutexUnlock
+	{
+	public:
+		RefMutexUnlock()
+			: entered(false)
+		{ }
+
+		explicit RefMutexUnlock(Database::ExistenceRefMutex* p)
+			: ref(p), entered(false)
+		{ }
+
+		void enter()
+		{
+			fb_assert(ref);
+			ref->enter();
+			entered = true;
+		}
+
+		void leave()
+		{
+			if (entered)
+			{
+				ref->leave();
+				entered = false;
+			}
+		}
+
+		void linkWith(Database::ExistenceRefMutex* to)
+		{
+			if (ref == to)
+				return;
+
+			leave();
+			ref = to;
+		}
+
+		void unlinkFromMutex()
+		{
+			linkWith(NULL);
+		}
+
+		Database::ExistenceRefMutex* operator->()
+		{
+			return ref;
+		}
+
+		bool operator!() const
+		{
+			return !ref;
+		}
+
+		~RefMutexUnlock()
+		{
+			leave();
+		}
+
+	private:
+		RefPtr<Database::ExistenceRefMutex> ref;
+		bool entered;
+	};
+
 	// We have 2 more related types of mutexes in database and attachment.
 	// Attachment is using reference counted mutex in JAtt, also making it possible
 	// to check does object still exist after locking a mutex. This makes great use when
@@ -1009,7 +1071,7 @@ static VdnResult	verifyDatabaseName(const PathName&, FbStatusVector*, bool);
 static void		unwindAttach(thread_db* tdbb, const Exception& ex, FbStatusVector* userStatus,
 	Jrd::Attachment* attachment, Database* dbb, bool internalFlag);
 static JAttachment*	initAttachment(thread_db*, const PathName&, const PathName&, RefPtr<const Config>, bool,
-	const DatabaseOptions&, Database::ExRefMutexUnlock&, IPluginConfig*, JProvider*);
+	const DatabaseOptions&, RefMutexUnlock&, IPluginConfig*, JProvider*);
 static JAttachment*	create_attachment(const PathName&, Database*, JProvider* provider, const DatabaseOptions&, bool newDb);
 static void		prepare_tra(thread_db*, jrd_tra*, USHORT, const UCHAR*);
 static void		start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra_handle,
@@ -1475,7 +1537,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 #endif
 
 			// Unless we're already attached, do some initialization
-			Database::ExRefMutexUnlock initGuard;
+			RefMutexUnlock initGuard;
 			JAttachment* jAtt = initAttachment(tdbb, expanded_name,
 				is_alias ? org_filename : expanded_name,
 				config, true, options, initGuard, pluginConfig, this);
@@ -2496,7 +2558,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 #endif
 
 			// Unless we're already attached, do some initialization
-			Database::ExRefMutexUnlock initGuard;
+			RefMutexUnlock initGuard;
 			JAttachment* jAtt = initAttachment(tdbb, expanded_name,
 				is_alias ? org_filename : expanded_name,
 				config, false, options, initGuard, pluginConfig, this);
@@ -5993,7 +6055,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 
 static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_name,
 	const PathName& alias_name, RefPtr<const Config> config, bool attach_flag,
-	const DatabaseOptions& options, Database::ExRefMutexUnlock& initGuard, IPluginConfig* pConf,
+	const DatabaseOptions& options, RefMutexUnlock& initGuard, IPluginConfig* pConf,
 	JProvider* provider)
 {
 /**************************************
@@ -6065,13 +6127,6 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 				{
 					if (attach_flag)
 					{
-						if (!dbb->dbb_init_fini->doesExist())
-						{
-							// database is shutting down
-							dbb = dbb->dbb_next;
-							continue;
-						}
- 
 						if (dbb->dbb_flags & DBB_bugcheck)
 						{
 							status_exception::raise(Arg::Gds(isc_bug_check) << "can't attach after bugcheck");
@@ -6579,7 +6634,7 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
  **************************************/
 	ThreadContextHolder tdbb(dbb, NULL);
 
-	Database::ExRefMutexUnlock finiGuard;
+	RefMutexUnlock finiGuard;
 
 	{ // scope
 		fb_assert((flags & SHUT_DBB_OVERWRITE_CHECK) || (!databases_mutex->locked()));
@@ -6643,7 +6698,7 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 
 	// Deactivate dbb_init_fini lock
 	// Since that moment dbb becomes not reusable
-	finiGuard.destroy();
+	dbb->dbb_init_fini->destroy();
 
 	fb_assert(!dbb->locked());
 
@@ -6759,24 +6814,22 @@ void JRD_enum_attachments(PathNameList* dbList, ULONG& atts, ULONG& dbs, ULONG& 
 		{
 			SyncLockGuard dbbGuard(&dbb->dbb_sync, SYNC_SHARED, "JRD_enum_attachments");
 
-			if (dbb->dbb_flags & DBB_bugcheck)
-				continue;
-			if (!dbb->dbb_init_fini->doesExist())
-				continue;
-
-			bool found = false;	// look for user attachments only
-			for (const Jrd::Attachment* attach = dbb->dbb_attachments; attach;
-				 attach = attach->att_next)
+			if (!(dbb->dbb_flags & DBB_bugcheck))
 			{
-				if (!(attach->att_flags & ATT_security_db))
+				bool found = false;	// look for user attachments only
+				for (const Jrd::Attachment* attach = dbb->dbb_attachments; attach;
+					 attach = attach->att_next)
 				{
-					atts++;
-					found = true;
+					if (!(attach->att_flags & ATT_security_db))
+					{
+						atts++;
+						found = true;
+					}
 				}
-			}
 
-			if (found && !dbFiles.exist(dbb->dbb_filename))
-				dbFiles.add(dbb->dbb_filename);
+				if (found && !dbFiles.exist(dbb->dbb_filename))
+					dbFiles.add(dbb->dbb_filename);
+			}
 		}
 
 		dbs = (ULONG) dbFiles.getCount();
