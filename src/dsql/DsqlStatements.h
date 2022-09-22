@@ -209,6 +209,11 @@ public:
 		return statement;
 	}
 
+	bool shouldPreserveScratch() const override
+	{
+		return false;
+	}
+
 	unsigned getSize() const override;
 
 	void dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch, ntrace_result_t* traceResult) override;
