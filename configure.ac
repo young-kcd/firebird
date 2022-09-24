@@ -794,6 +794,8 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
+AC_CHECK_TOOL([OBJCOPY], [objcopy])
+AC_CHECK_TOOL([READELF], [readelf])
 LT_INIT([dlopen win32-dll])
 
 dnl Check for system header files
@@ -1283,7 +1285,7 @@ AC_SUBST(SFIO_LDFLAGS)
 AC_SUBST(SFIO_EXAMPLES)
 
 dnl The following file defines the version number strings. Specially for install/uninstall routines
-. ./src/misc/writeBuildNum.sh
+CXX="$CXX" . ./src/misc/writeBuildNum.sh
 
 AC_SUBST(FIREBIRD_VERSION)
 AC_SUBST(FIREBIRD_PACKAGE_VERSION)

@@ -181,9 +181,12 @@ RANLIB=			@RANLIB@
 BTYACC=$(ROOT)/extern/btyacc/btyacc
 CLOOP=$(GEN_ROOT)/$(TARGET)/cloop/release/bin/cloop
 
+AR =	@AR@
 CC =	@CC@
 CXX =	@CXX@
 LD =	@CXX@
+OBJCOPY = @OBJCOPY@
+READELF = @READELF@
 
 AC_CFLAGS = @CFLAGS@
 AC_CXXFLAGS = @CXXFLAGS@
