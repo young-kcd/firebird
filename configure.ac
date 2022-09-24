@@ -601,6 +601,11 @@ AC_ARG_WITH(system-boost,
   [SYSTEM_BOOST=Y])
 AC_SUBST(SYSTEM_BOOST)
 
+ATOMICLIB=atomic
+AC_ARG_WITH(atomiclib,
+  [  --with-atomiclib        build with explicitly specified atomic support library],
+  [ATOMICLIB=${withval}])
+
 dnl Avoid dumb '-g -O2' autoconf's default
 dnl Debugging information and optimization flags should be set in prefix.$platform file
 dnl Should be replaced with AC_PROG_GCC_DEFAULT_FLAGS() when available
@@ -940,7 +945,7 @@ dnl Check for libraries
 AC_SEARCH_LIBS(dlopen, dl)
 AC_CHECK_LIB(m, main)
 AC_SEARCH_LIBS(inet_aton, resolv)
-AC_CHECK_LIB(atomic, main)
+AC_CHECK_LIB($ATOMICLIB, main)
 
 dnl Check for libraries for static C++ runtime linking
 AC_CHECK_LIB(supc++, main, XE_APPEND(-lsupc++, STATIC_CXXSUPPORT_LIB))
