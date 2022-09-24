@@ -781,6 +781,11 @@ JAttachment* Attachment::getInterface() throw()
 	return att_stable->getInterface();
 }
 
+void Attachment::setInterface(JAttachment* iface) throw()
+{
+	att_stable->setInterface(iface);
+}
+
 UserId* Attachment::getUserId(const string& userName)
 {
 	// It's necessary to keep specified sql role of user

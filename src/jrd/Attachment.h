@@ -490,6 +490,7 @@ public:
 	}
 
 	JAttachment* getInterface() throw();
+	void setInterface(JAttachment* iface) throw();
 	UserId* getUserId(const Firebird::string &userName);
 
 	JProvider* getProvider()
