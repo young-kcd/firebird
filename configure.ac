@@ -268,6 +268,7 @@ dnl CPU_TYPE=ppc64
     AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
+    CPU_TYPE=arm32
     STD_EDITLINE=true
     ;;
 
@@ -278,6 +279,7 @@ dnl CPU_TYPE=ppc64
     AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
+    CPU_TYPE=arm64
     STD_EDITLINE=true
     STD_ICU=true
     libdir=/usr/lib64
