@@ -35,7 +35,7 @@ jobs:
 
   build-linux-docker-x64:
     runs-on: ubuntu-20.04
-    container: asfernandes/firebird-builder:x86_64-5
+    container: asfernandes/firebird-builder:fb5-x64-ng-v1
 
     steps:
       - name: Checkout
@@ -118,8 +118,8 @@ jobs:
 
       - name: Build
         run: |
-          cd builds/docker/linux/i586-x86_64
-          ./run-i586.sh
+          cd builds/docker/linux/x32-x64
+          ./run-x32.sh
 
       - name: Upload installer
         uses: actions/upload-artifact@main

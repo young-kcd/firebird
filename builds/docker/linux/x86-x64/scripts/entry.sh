@@ -1,4 +1,4 @@
 #!/bin/sh
 trap exit INT TERM
-/build.sh &
+setarch $SET_ARCH /build.sh &
 wait $!
