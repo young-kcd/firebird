@@ -45,6 +45,7 @@ jobs:
         arch:
           - x86
           - x64
+          - arm32
           - arm64
 
     steps:
