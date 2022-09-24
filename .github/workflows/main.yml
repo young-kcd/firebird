@@ -35,7 +35,7 @@ jobs:
 
   build-linux-docker:
     name: build-linux-docker-${{ matrix.arch }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       FB_DOCKER_PATH: ${{ (startsWith(matrix.arch, 'arm') && 'arm32-arm64') || 'x86-x64' }}
 
