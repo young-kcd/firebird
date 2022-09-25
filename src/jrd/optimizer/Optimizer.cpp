@@ -410,7 +410,8 @@ namespace
 		// If there were none indices, this is a sequential retrieval.
 
 		const auto relation = tail->csb_relation;
-		fb_assert(relation);
+		if (!relation)
+			return;
 
 		if (!tail->csb_idx)
 			return;
@@ -1528,6 +1529,8 @@ void Optimizer::checkIndices()
 			continue;
 
 		const auto relation = tail->csb_relation;
+		if (!relation)
+			return;
 
 		// If there were no indices fetched at all but the user specified some,
 		// error out using the first index specified
@@ -2187,7 +2190,10 @@ void Optimizer::formRivers(const StreamList& streams,
 		// the stream into the river
 		fb_assert(planNode->type == PlanNode::TYPE_RETRIEVE);
 
-		const StreamType stream = planNode->relationNode->getStream();
+		if (!nodeIs<RelationSourceNode>(planNode->recordSourceNode))
+			continue;
+
+		const auto stream = planNode->recordSourceNode->getStream();
 
 		// dimitr:	the plan may contain more retrievals than the "streams"
 		//			array (some streams could already be joined to the active
