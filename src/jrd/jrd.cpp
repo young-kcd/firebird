@@ -8622,6 +8622,10 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options, const char
 static void unwindAttach(thread_db* tdbb, const char* filename, const Exception& ex,
 	FbStatusVector* userStatus, unsigned flags, const DatabaseOptions& options, Mapping& mapping, ICryptKeyCallback* callback)
 {
+	FbLocalStatus savUserStatus;		// Required to save status before transliterate
+	bool traced = false;
+
+	// Trace almost completed attachment
 	try
 	{
 		const auto att = tdbb->getAttachment();
@@ -8633,6 +8637,8 @@ static void unwindAttach(thread_db* tdbb, const char* filename, const Exception&
 
 			if (traceManager->needs(ITraceFactory::TRACE_EVENT_ATTACH))
 				traceManager->event_attach(&conn, flags & UNWIND_CREATE, ITracePlugin::RESULT_FAILED);
+
+			traced = true;
 		}
 		else
 		{
@@ -8644,7 +8650,7 @@ static void unwindAttach(thread_db* tdbb, const char* filename, const Exception&
 				flags |= UNWIND_NEW;
 			}
 
-			trace_failed_attach(filename, options, flags, userStatus, callback);
+			savUserStatus.loadFrom(userStatus);
 		}
 
 		const char* func = flags & UNWIND_CREATE ? "JProvider::createDatabase" : "JProvider::attachDatabase";
@@ -8655,6 +8661,7 @@ static void unwindAttach(thread_db* tdbb, const char* filename, const Exception&
 		// no-op
 	}
 
+	// Actual unwind
 	try
 	{
 		mapping.clearMainHandle();
@@ -8706,6 +8713,19 @@ static void unwindAttach(thread_db* tdbb, const char* filename, const Exception&
 	catch (const Exception&)
 	{
 		// no-op
+	}
+
+	// Trace attachment that failed before enough for normal trace context of it was established
+	if (!traced)
+	{
+		try
+		{
+			trace_failed_attach(filename, options, flags, &savUserStatus, callback);
+		}
+		catch (const Exception&)
+		{
+			// no-op
+		}
 	}
 }
 
