@@ -802,6 +802,8 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_CHECK_TOOL([OBJCOPY], [objcopy])
+AC_CHECK_TOOL([OBJDUMP], [objdump])
+AC_CHECK_TOOL([RANLIB], [ranlib])
 AC_CHECK_TOOL([READELF], [readelf])
 LT_INIT([dlopen win32-dll])
 
