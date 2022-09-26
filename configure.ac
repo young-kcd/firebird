@@ -268,6 +268,7 @@ dnl CPU_TYPE=ppc64
     AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
+    CPU_TYPE=arm32
     STD_EDITLINE=true
     ;;
 
@@ -278,6 +279,7 @@ dnl CPU_TYPE=ppc64
     AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
+    CPU_TYPE=arm64
     STD_EDITLINE=true
     STD_ICU=true
     libdir=/usr/lib64
@@ -601,6 +603,11 @@ AC_ARG_WITH(system-boost,
   [SYSTEM_BOOST=Y])
 AC_SUBST(SYSTEM_BOOST)
 
+ATOMICLIB=atomic
+AC_ARG_WITH(atomiclib,
+  [  --with-atomiclib        build with explicitly specified atomic support library],
+  [ATOMICLIB=${withval}])
+
 dnl Avoid dumb '-g -O2' autoconf's default
 dnl Debugging information and optimization flags should be set in prefix.$platform file
 dnl Should be replaced with AC_PROG_GCC_DEFAULT_FLAGS() when available
@@ -794,6 +801,10 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
+AC_CHECK_TOOL([OBJCOPY], [objcopy])
+AC_CHECK_TOOL([OBJDUMP], [objdump])
+AC_CHECK_TOOL([RANLIB], [ranlib])
+AC_CHECK_TOOL([READELF], [readelf])
 LT_INIT([dlopen win32-dll])
 
 dnl Check for system header files
@@ -938,7 +949,7 @@ dnl Check for libraries
 AC_SEARCH_LIBS(dlopen, dl)
 AC_CHECK_LIB(m, main)
 AC_SEARCH_LIBS(inet_aton, resolv)
-AC_CHECK_LIB(atomic, main)
+AC_CHECK_LIB($ATOMICLIB, main)
 
 dnl Check for libraries for static C++ runtime linking
 AC_CHECK_LIB(supc++, main, XE_APPEND(-lsupc++, STATIC_CXXSUPPORT_LIB))
@@ -1283,7 +1294,7 @@ AC_SUBST(SFIO_LDFLAGS)
 AC_SUBST(SFIO_EXAMPLES)
 
 dnl The following file defines the version number strings. Specially for install/uninstall routines
-. ./src/misc/writeBuildNum.sh
+CXX="$CXX" . ./src/misc/writeBuildNum.sh
 
 AC_SUBST(FIREBIRD_VERSION)
 AC_SUBST(FIREBIRD_PACKAGE_VERSION)

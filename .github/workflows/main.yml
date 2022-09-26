@@ -33,9 +33,20 @@ jobs:
           name: firebird-ubuntu-20.04-clang-x64
           path: gen/Firebird-*-linux-x64.tar.gz
 
-  build-linux-docker-x64:
-    runs-on: ubuntu-20.04
-    container: asfernandes/firebird-builder:x86_64-5
+  build-linux-docker:
+    name: build-linux-docker-${{ matrix.arch }}
+    runs-on: ubuntu-22.04
+    env:
+      FB_DOCKER_PATH: ${{ (startsWith(matrix.arch, 'arm') && 'arm32-arm64') || 'x86-x64' }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - x86
+          - x64
+          - arm32
+          - arm64
 
     steps:
       - name: Checkout
@@ -43,95 +54,26 @@ jobs:
         with:
           fetch-depth: 10
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        if: ${{ startsWith(matrix.arch, 'arm') }}
+
       - name: Build
-        run: /entry.sh
+        run: |
+          cd builds/docker/linux/$FB_DOCKER_PATH
+          ./run-${{ matrix.arch }}.sh
 
       - name: Upload installer
         uses: actions/upload-artifact@main
         with:
-          name: firebird-linux-x64
-          path: gen/Firebird-*-linux-x64.tar.gz
+          name: firebird-linux-${{ matrix.arch }}
+          path: gen/Firebird-*-linux-${{ matrix.arch }}.tar.gz
 
       - name: Upload debug symbols
         uses: actions/upload-artifact@main
         with:
-          name: firebird-linux-x64-debugSymbols
-          path: gen/Firebird-*-linux-x64-debugSymbols.tar.gz
-
-      - name: Snapshot - prepare
-        id: snapshot_prepare
-        if: |
-          github.repository == 'FirebirdSQL/firebird' &&
-          github.event.head_commit.message == 'increment build number' &&
-          github.ref_name == 'master'
-        run: |
-          echo "::set-output name=snapshot_name::${{ github.ref_name }}"
-
-      - name: Snapshot - delete old assets
-        uses: mknejp/delete-release-assets@v1
-        if: steps.snapshot_prepare.outputs.snapshot_name
-        with:
-          repository: FirebirdSQL/snapshots
-          token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
-          tag: snapshot-${{ steps.snapshot_prepare.outputs.snapshot_name }}
-          fail-if-no-release: false
-          fail-if-no-assets: false
-          assets: |
-            Firebird-*-linux-x64*.tar.gz
-
-      - name: Snapshot - release
-        id: snapshot_release_try1
-        uses: softprops/action-gh-release@v1
-        if: steps.snapshot_prepare.outputs.snapshot_name
-        continue-on-error: true
-        with:
-          repository: FirebirdSQL/snapshots
-          name: Latest snapshots for ${{ steps.snapshot_prepare.outputs.snapshot_name }}
-          tag_name: snapshot-${{ steps.snapshot_prepare.outputs.snapshot_name }}
-          prerelease: true
-          token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
-          files: |
-            gen/Firebird-*-linux-x64*.tar.gz
-
-      - name: Snapshot - release (retry)
-        uses: softprops/action-gh-release@v1
-        if: |
-          steps.snapshot_prepare.outputs.snapshot_name &&
-          steps.snapshot_release_try1.outcome == 'failure'
-        with:
-          repository: FirebirdSQL/snapshots
-          name: Latest snapshots for ${{ steps.snapshot_prepare.outputs.snapshot_name }}
-          tag_name: snapshot-${{ steps.snapshot_prepare.outputs.snapshot_name }}
-          prerelease: true
-          token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
-          files: |
-            gen/Firebird-*-linux-x64*.tar.gz
-
-  build-linux-docker-x86:
-    runs-on: ubuntu-20.04
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 10
-
-      - name: Build
-        run: |
-          cd builds/docker/linux/i586-x86_64
-          ./run-i586.sh
-
-      - name: Upload installer
-        uses: actions/upload-artifact@main
-        with:
-          name: firebird-linux-x86
-          path: gen/Firebird-*-linux-x86.tar.gz
-
-      - name: Upload debug symbols
-        uses: actions/upload-artifact@main
-        with:
-          name: firebird-linux-x86-debugSymbols
-          path: gen/Firebird-*-linux-x86-debugSymbols.tar.gz
+          name: firebird-linux-${{ matrix.arch }}-debugSymbols
+          path: gen/Firebird-*-linux-${{ matrix.arch }}-debugSymbols.tar.gz
 
       - name: Snapshot - prepare
         id: snapshot_prepare
@@ -152,7 +94,7 @@ jobs:
           fail-if-no-release: false
           fail-if-no-assets: false
           assets: |
-            Firebird-*-linux-x86*.tar.gz
+            Firebird-*-linux-${{ matrix.arch }}*.tar.gz
 
       - name: Snapshot - release
         id: snapshot_release_try1
@@ -166,7 +108,7 @@ jobs:
           prerelease: true
           token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
           files: |
-            gen/Firebird-*-linux-x86*.tar.gz
+            gen/Firebird-*-linux-${{ matrix.arch }}*.tar.gz
 
       - name: Snapshot - release (retry)
         uses: softprops/action-gh-release@v1
@@ -180,7 +122,7 @@ jobs:
           prerelease: true
           token: ${{ secrets.SNAPSHOT_RELEASE_TOKEN }}
           files: |
-            gen/Firebird-*-linux-x86*.tar.gz
+            gen/Firebird-*-linux-${{ matrix.arch }}*.tar.gz
 
   build-alpine-x64:
     runs-on: ubuntu-20.04

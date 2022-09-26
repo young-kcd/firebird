@@ -93,13 +93,13 @@ buildDebugInfo: buildRoot
 	for x in `(cd $(GEN_ROOT)/buildroot; find)`; do \
         FIL=$(GEN_ROOT)/buildroot/$$x; \
         D_FIL=$(GEN_ROOT)/$(DebugDir)/`dirname $${x}`/.debug/`basename $${x}`.debug; \
-        if [ ! -h $$FIL ] && readelf -h $$FIL > /dev/null 2> /dev/null; then \
+        if [ ! -h $$FIL ] && $(READELF) -h $$FIL > /dev/null 2> /dev/null; then \
             mkdir -p $(GEN_ROOT)/$(DebugDir)/`dirname $$x`/.debug; \
             echo Generating external debug info for $$x; \
             cp $${FIL} $${D_FIL}; \
-            objcopy --add-gnu-debuglink=$${D_FIL} $${FIL}; \
+            $(OBJCOPY) --add-gnu-debuglink=$${D_FIL} $${FIL}; \
             echo Stripping unneeded symbols from $${x}; \
-            objcopy --strip-debug --strip-unneeded $${FIL}; \
+            $(OBJCOPY) --strip-debug --strip-unneeded $${FIL}; \
         fi; \
     done
 	(cd $(GEN_ROOT)/$(DebugDir); mkdir -p ./$(MiscDir); \
