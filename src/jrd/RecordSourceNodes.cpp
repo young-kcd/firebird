@@ -217,6 +217,9 @@ PlanNode* PlanNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		///fb_assert(node->recordSourceNode);
 	}
 
+	if (node->recordSourceNode)
+		node->recordSourceNode->dsqlFlags |= RecordSourceNode::DFLAG_PLAN_ITEM;
+
 	return node;
 }
 
@@ -566,7 +569,7 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 		*tdbb->getDefaultPool());
 
 	// Find relation either by id or by name
-	string* aliasString = NULL;
+	AutoPtr<string> aliasString;
 	MetaName name;
 
 	switch (blrOp)
@@ -633,13 +636,11 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 		node->stream = PAR_context(csb, &node->context);
 
 		csb->csb_rpt[node->stream].csb_relation = node->relation;
-		csb->csb_rpt[node->stream].csb_alias = aliasString;
+		csb->csb_rpt[node->stream].csb_alias = aliasString.release();
 
 		if (csb->collectingDependencies())
 			PAR_dependency(tdbb, csb, node->stream, (SSHORT) -1, "");
 	}
-	else
-		delete aliasString;
 
 	return node;
 }
@@ -898,8 +899,8 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 	SET_TDBB(tdbb);
 
 	const auto blrStartPos = csb->csb_blr_reader.getPos();
-	jrd_prc* procedure = NULL;
-	string* aliasString = NULL;
+	jrd_prc* procedure = nullptr;
+	AutoPtr<string> aliasString;
 	QualifiedName name;
 
 	switch (blrOp)
@@ -937,10 +938,7 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 				csb->csb_blr_reader.getString(*aliasString);
 
 				if (blrOp == blr_subproc && aliasString->isEmpty())
-				{
-					delete aliasString;
-					aliasString = NULL;
-				}
+					aliasString.reset();
 			}
 
 			if (blrOp == blr_subproc)
@@ -1001,12 +999,15 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 	node->isSubRoutine = procedure->isSubRoutine();
 	node->procedureId = node->isSubRoutine ? 0 : procedure->getId();
 
+	if (aliasString)
+		node->alias = *aliasString;
+
 	if (parseContext)
 	{
 		node->stream = PAR_context(csb, &node->context);
 
 		csb->csb_rpt[node->stream].csb_procedure = procedure;
-		csb->csb_rpt[node->stream].csb_alias = aliasString;
+		csb->csb_rpt[node->stream].csb_alias = aliasString.release();
 
 		PAR_procedure_parms(tdbb, csb, procedure, node->in_msg.getAddress(),
 			node->sourceList.getAddress(), node->targetList.getAddress(), true);
@@ -1014,8 +1015,6 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 		if (csb->collectingDependencies())
 			PAR_dependency(tdbb, csb, node->stream, (SSHORT) -1, "");
 	}
-	else
-		delete aliasString;
 
 	return node;
 }
@@ -1141,7 +1140,7 @@ void ProcedureSourceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 	ValueListNode* inputs = dsqlContext->ctx_proc_inputs;
 
-	if (inputs)
+	if (inputs && !(dsqlFlags & DFLAG_PLAN_ITEM))
 	{
 		dsqlScratch->appendUShort(inputs->items.getCount());
 
