@@ -572,13 +572,27 @@ namespace
 	{
 		if (rpb->rpb_flags & rpb_not_packed)
 		{
-			if (outLength < rpb->rpb_length)
-				BUGCHECK(179);	// msg 179 decompression overran buffer
-
 			rpb->rpb_flags &= ~rpb_not_packed;
 
-			memcpy(output, rpb->rpb_address, rpb->rpb_length);
-			output += rpb->rpb_length;
+			const auto length = MIN(rpb->rpb_length, outLength);
+
+			memcpy(output, rpb->rpb_address, length);
+			output += length;
+
+			if (rpb->rpb_length > length)
+			{
+				// Short records may be zero-padded up to the fragmented header size.
+				// Take it into account while checking for a possible buffer overrun.
+
+				auto tail = rpb->rpb_address + length;
+				const auto end = rpb->rpb_address + rpb->rpb_length;
+
+				while (tail < end)
+				{
+					if (*tail++)
+						BUGCHECK(179);	// msg 179 decompression overran buffer
+				}
+			}
 
 			return output;
 		}
