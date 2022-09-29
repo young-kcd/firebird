@@ -1836,12 +1836,6 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				dbb->dbb_tip_cache = FB_NEW_POOL(*dbb->dbb_permanent) TipCache(dbb);
 				dbb->dbb_tip_cache->initializeTpc(tdbb);
 
-				if (options.dpb_upgrade_db)
-				{
-					validateAccess(tdbb, attachment, USE_GFIX_UTILITY);
-					INI_upgrade(tdbb);
-				}
-
 				// linger
 				dbb->dbb_linger_seconds = MET_get_linger(tdbb);
 
@@ -2063,6 +2057,18 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 					attachment->att_utility == Attachment::UTIL_GBAK ? USE_GBAK_UTILITY :
 					attachment->att_utility == Attachment::UTIL_GFIX ? USE_GFIX_UTILITY :
 					USE_GSTAT_UTILITY);
+			}
+
+			if (options.dpb_upgrade_db)
+			{
+				validateAccess(tdbb, attachment, USE_GFIX_UTILITY);
+				if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD, NULL))
+				{
+					ERR_post(Arg::Gds(isc_lock_timeout) <<
+							 Arg::Gds(isc_obj_in_use) << Arg::Str(org_filename));
+				}
+
+				INI_upgrade(tdbb);
 			}
 
 			if (options.dpb_verify)
@@ -3079,7 +3085,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 				PAG_set_no_reserve(tdbb, options.dpb_no_reserve);
 
 			fb_assert(attachment->att_user);	// set by UserId::sclInit()
-			INI_format(attachment->getUserName().c_str(), options.dpb_set_db_charset.c_str());
+			INI_format(tdbb, options.dpb_set_db_charset);
 
 			// If we have not allocated first TIP page, do it now.
 			if (!dbb->dbb_t_pages || !dbb->dbb_t_pages->count())

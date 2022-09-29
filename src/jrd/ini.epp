@@ -51,6 +51,7 @@
 #include "../jrd/ini_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/met_proto.h"
+#include "../jrd/tra_proto.h"
 #include "../jrd/obj.h"
 #include "../jrd/acl.h"
 #include "../jrd/dyn.h"
@@ -223,7 +224,7 @@ static const trigger_msg trigger_messages[] =
 
 
 
-void INI_format(const char* owner, const char* charset)
+void INI_format(thread_db* tdbb, const string& charset)
 {
 /**************************************
  *
@@ -237,17 +238,18 @@ void INI_format(const char* owner, const char* charset)
  *	stored here.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* const dbb = tdbb->getDatabase();
+	const auto dbb = tdbb->getDatabase();
+	const auto attachment = tdbb->getAttachment();
+	const auto transaction = attachment->getSysTransaction();
 
-	fb_assert(owner && owner[0]);
+	tdbb->setTransaction(transaction);
 
 	// Uppercase owner name
-	MetaName ownerName(owner);
+	const auto ownerName = attachment->getUserName();
+	fb_assert(ownerName.hasData());
 
 	// Uppercase charset name
-	MetaName charSetName(charset && charset[0] ? charset : DEFAULT_DB_CHARACTER_SET_NAME);
+	MetaName charSetName(charset.hasData() ? charset : DEFAULT_DB_CHARACTER_SET_NAME);
 
 	const int* fld;
 
@@ -256,15 +258,11 @@ void INI_format(const char* owner, const char* charset)
 	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
 		if (relfld[RFLD_R_TYPE] == rel_persistent)
-		{
 			DPM_create_relation(tdbb, MET_relation(tdbb, relfld[RFLD_R_ID]));
-		}
 
 		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
 			;
 	}
-
-	jrd_tra* transaction = attachment->getSysTransaction();
 
 	// Store RELATIONS and RELATION_FIELDS
 
@@ -308,9 +306,11 @@ void INI_format(const char* owner, const char* charset)
 	handle1.reset();
 
 	STORE(REQUEST_HANDLE handle1) X IN RDB$DATABASE
+	{
 		X.RDB$RELATION_ID = (int) USER_DEF_REL_INIT_ID;
 		PAD(charSetName.c_str(), X.RDB$CHARACTER_SET_NAME);
 		X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
+	}
 	END_STORE
 
 	// Store default publication
@@ -356,11 +356,13 @@ void INI_format(const char* owner, const char* charset)
 		// this STORE should be compatible with one above and below,
 		// as they use the same compiled request
 		STORE(REQUEST_HANDLE handle1) X IN RDB$TYPES
+		{
 			PAD(names[nam_charset_name], X.RDB$FIELD_NAME);
 			PAD(charSet->name, X.RDB$TYPE_NAME);
 			X.RDB$TYPE = charSet->id;
 			X.RDB$SYSTEM_FLAG = RDB_system;
 			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+		}
 		END_STORE;
 	}
 
@@ -370,11 +372,13 @@ void INI_format(const char* owner, const char* charset)
 		// this STORE should be compatible with two above,
 		// as they use the same compiled request
 		STORE(REQUEST_HANDLE handle1) X IN RDB$TYPES
+		{
 			PAD(names[nam_charset_name], X.RDB$FIELD_NAME);
 			PAD(alias->name, X.RDB$TYPE_NAME);
 			X.RDB$TYPE = alias->charSetId;
 			X.RDB$SYSTEM_FLAG = RDB_system;
 			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+		}
 		END_STORE;
 	}
 
@@ -593,29 +597,29 @@ void INI_format(const char* owner, const char* charset)
 	for (const trigger_msg* message = trigger_messages; message->trigmsg_name; ++message)
 		store_message(tdbb, message, handle1);
 
-	handle1.reset();
-
 	// Add additional grants
 
 	MetaName buf;
 
 	buf.printf("%d", USE_NBACKUP_UTILITY);
 	store_admin_grant(tdbb, buf.c_str(), obj_privilege, "RDB$BACKUP_HISTORY", obj_relation, "SIUDR");
-	GRANT_privileges(tdbb, "RDB$BACKUP_HISTORY", obj_relation, attachment->getSysTransaction());
+	GRANT_privileges(tdbb, "RDB$BACKUP_HISTORY", obj_relation, transaction);
 
 	buf.printf("%d", CREATE_USER_TYPES);
 	store_admin_grant(tdbb, buf.c_str(), obj_privilege, "RDB$TYPES", obj_relation, "SIUDR");
-	GRANT_privileges(tdbb, "RDB$TYPES", obj_relation, attachment->getSysTransaction());
+	GRANT_privileges(tdbb, "RDB$TYPES", obj_relation, transaction);
 
 	buf.printf("%d", GRANT_REVOKE_ANY_DDL_RIGHT);
 	store_admin_grant(tdbb, buf.c_str(), obj_privilege, "RDB$DB_CREATORS", obj_relation, "SIUDR");
-	GRANT_privileges(tdbb, "RDB$DB_CREATORS", obj_relation, attachment->getSysTransaction());
+	GRANT_privileges(tdbb, "RDB$DB_CREATORS", obj_relation, transaction);
 
 	DFW_perform_system_work(tdbb);
+
+	tdbb->setTransaction(nullptr);
 }
 
 
-USHORT INI_get_trig_flags(const TEXT* trig_name)
+USHORT INI_get_trig_flags(const MetaName& triggerName)
 {
 /*********************************************
  *
@@ -629,13 +633,11 @@ USHORT INI_get_trig_flags(const TEXT* trig_name)
  **************************************/
 	for (const jrd_trg* trig = triggers; trig->trg_length > 0; trig++)
 	{
-		if (!strcmp(trig->trg_name, trig_name))
-		{
-			return (trig->trg_flags);
-		}
+		if (triggerName == trig->trg_name)
+			return trig->trg_flags;
 	}
 
-	return (0);
+	return 0;
 }
 
 
@@ -655,11 +657,9 @@ void INI_init(thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
-	CHECK_DBB(dbb);
-
-	Jrd::Attachment* attachment = tdbb->getAttachment();
-	MemoryPool* pool = attachment->att_pool;
+	const auto dbb = tdbb->getDatabase();
+	const auto attachment = tdbb->getAttachment();
+	const auto pool = attachment->att_pool;
 
 	const int* fld;
 	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
@@ -741,7 +741,7 @@ void INI_init2(thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
+	const auto dbb = tdbb->getDatabase();
 
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_version = dbb->dbb_minor_version;
@@ -801,8 +801,8 @@ void INI_init2(thread_db* tdbb)
 void INI_init_dsql(thread_db* tdbb, dsql_dbb* database)
 {
 	SET_TDBB(tdbb);
+	const auto dbb = tdbb->getDatabase();
 
-	Database* const dbb = tdbb->getDatabase();
 	const USHORT majorVersion = dbb->dbb_ods_version;
 	const USHORT minorVersion = dbb->dbb_minor_version;
 	const int* fld;
@@ -956,15 +956,19 @@ void INI_upgrade(thread_db* tdbb)
 
 	const int* fld;
 
+	const auto transaction = TRA_start(tdbb, TRA_no_auto_undo, 0);
+	tdbb->setTransaction(transaction);
+
+	const char* context = "tables";
+
+	try {
+
 	// Make sure relations exist already
 
 	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
-		if (relfld[RFLD_R_TYPE] == rel_persistent &&
-			relfld[RFLD_R_ODS] > odsVersion)
-		{
+		if (relfld[RFLD_R_TYPE] == rel_persistent && relfld[RFLD_R_ODS] > odsVersion)
 			DPM_create_relation(tdbb, MET_relation(tdbb, relfld[RFLD_R_ID]));
-		}
 
 		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
 			;
@@ -974,19 +978,22 @@ void INI_upgrade(thread_db* tdbb)
 
 	// Get the database owner
 
-	MetaName ownerName;
-
-	FOR(REQUEST_HANDLE handle1)
-		FIRST 1 REL IN RDB$RELATIONS
-		WITH REL.RDB$RELATION_NAME EQ "RDB$DATABASE"
+	auto ownerName = dbb->dbb_owner;
+	if (ownerName.isEmpty())
 	{
-		fb_assert(!REL.RDB$OWNER_NAME.NULL);
-		ownerName = REL.RDB$OWNER_NAME;
+		FOR(REQUEST_HANDLE handle1)
+			FIRST 1 REL IN RDB$RELATIONS
+			WITH REL.RDB$RELATION_NAME EQ "RDB$DATABASE"
+		{
+			fb_assert(!REL.RDB$OWNER_NAME.NULL);
+			ownerName = REL.RDB$OWNER_NAME;
+		}
+		END_FOR
 	}
-	END_FOR
 
 	// Create global fields added after the original minor ODS
 
+	context = "domains";
 	handle1.reset();
 
 	for (const gfld* gfield = gfields; gfield->gfld_name; gfield++)
@@ -997,6 +1004,7 @@ void INI_upgrade(thread_db* tdbb)
 
 	// Create new system relations and new relation fields
 
+	context = "tables";
 	handle1.reset();
 
 	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
@@ -1034,10 +1042,12 @@ void INI_upgrade(thread_db* tdbb)
 
 	// Create new system indexes
 
+	context = "indices";
 	add_index_set(tdbb, odsVersion);
 
 	// Create new system triggers and their trigger messages
 
+	context = "triggers";
 	handle1.reset();
 
 	for (const jrd_trg* trigger = triggers; trigger->trg_relation; ++trigger)
@@ -1046,6 +1056,7 @@ void INI_upgrade(thread_db* tdbb)
 			store_trigger(tdbb, trigger, handle1);
 	}
 
+	context = "trigger messages";
 	handle1.reset();
 
 	for (const trigger_msg* message = trigger_messages; message->trigmsg_name; ++message)
@@ -1056,6 +1067,7 @@ void INI_upgrade(thread_db* tdbb)
 
 	// Create new system generators
 
+	context = "generators";
 	handle1.reset();
 
 	for (const gen* generator = generators; generator->gen_name; generator++)
@@ -1064,13 +1076,47 @@ void INI_upgrade(thread_db* tdbb)
 			store_generator(tdbb, generator, handle1, ownerName);
 	}
 
+	// Adjust the value of the hidden generator RDB$GENERATORS
+	DPM_gen_id(tdbb, 0, true, FB_NELEM(generators) - 1);
+
 	// Create new system packages
 
+	context = "packages";
 	store_packages(tdbb, ownerName, odsVersion);
 
-	// Should we also add new types? They are collected from multiple sources and
-	// don't have their corresponding ODS defined.
-	// The same for new charsets/collations.
+	// There are no new built-in charsets and collations introduced in ODS 13.1.
+	// But if it happens in some future minor ODS, the corresponding INTL structures
+	// should have the ODS field added and here we need code that conditionally adds
+	// the missing charsets/collations.
+	//
+	// The same about the new types being introduced in minor ODS versions.
+
+	TRA_commit(tdbb, transaction, false);
+
+	}
+	catch (const Exception& ex)
+	{
+		TRA_rollback(tdbb, transaction, false, true);
+
+		// Delete relations we've just created
+
+		for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
+		{
+			if (relfld[RFLD_R_TYPE] == rel_persistent && relfld[RFLD_R_ODS] > odsVersion)
+			{
+				const auto relation = MET_relation(tdbb, relfld[RFLD_R_ID]);
+				if (relation && relation->getBasePages()->rel_pages)
+					DPM_delete_relation(tdbb, relation);
+			}
+
+			for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
+				;
+		}
+
+		Arg::StatusVector error(ex);
+		error.prepend(Arg::Gds(isc_ods_upgrade_err) << Arg::Str(context));
+		error.raise();
+	}
 
 	// If the database was successfully updated, mark it with the current minor ODS
 
@@ -1080,8 +1126,6 @@ void INI_upgrade(thread_db* tdbb)
 
 	dbb->dbb_minor_version = header->hdr_ods_minor = ODS_CURRENT;
 	CCH_RELEASE(tdbb, &window);
-
-	DFW_perform_system_work(tdbb);
 }
 
 
@@ -1099,7 +1143,8 @@ static void add_index_set(thread_db* tdbb, USHORT odsVersion)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	const auto attachment = tdbb->getAttachment();
+	const auto transaction = tdbb->getTransaction();
 
 	index_desc idx;
 
@@ -1116,7 +1161,9 @@ static void add_index_set(thread_db* tdbb, USHORT odsVersion)
 		MetaName indexName;
 		indexName.printf("RDB$INDEX_%d", index->ini_idx_index_id);
 
-		STORE(REQUEST_HANDLE handle1) X IN RDB$INDICES
+		STORE(REQUEST_HANDLE handle1 TRANSACTION_HANDLE transaction)
+			X IN RDB$INDICES
+		{
 			PAD(relation->rel_name.c_str(), X.RDB$RELATION_NAME);
 			PAD(indexName.c_str(), X.RDB$INDEX_NAME);
 			X.RDB$UNIQUE_FLAG = index->ini_idx_flags & idx_unique;
@@ -1138,8 +1185,11 @@ static void add_index_set(thread_db* tdbb, USHORT odsVersion)
 			index_desc::idx_repeat* tail = idx.idx_rpt;
 			for (USHORT position = 0; position < index->ini_idx_segment_count; position++, tail++)
 			{
-				const ini_idx_t::ini_idx_segment_t* segment = &index->ini_idx_segment[position];
-				STORE(REQUEST_HANDLE handle2) Y IN RDB$INDEX_SEGMENTS
+				const auto segment = &index->ini_idx_segment[position];
+
+				STORE(REQUEST_HANDLE handle2 TRANSACTION_HANDLE transaction)
+					Y IN RDB$INDEX_SEGMENTS
+				{
 					jrd_fld* field = (*relation->rel_fields)[segment->ini_idx_rfld_id];
 
 					Y.RDB$FIELD_POSITION = position;
@@ -1148,6 +1198,7 @@ static void add_index_set(thread_db* tdbb, USHORT odsVersion)
 					tail->idx_field = segment->ini_idx_rfld_id;
 					tail->idx_itype = segment->ini_idx_type;
 				    tail->idx_selectivity = 0;
+				}
 				END_STORE
 			}
 
@@ -1156,20 +1207,24 @@ static void add_index_set(thread_db* tdbb, USHORT odsVersion)
 			SelectivityList selectivity(*tdbb->getDefaultPool());
 
 			IDX_create_index(tdbb, relation, &idx, indexName.c_str(), NULL,
-				attachment->getSysTransaction(), selectivity);
+				transaction, selectivity);
 
 			X.RDB$INDEX_ID = idx.idx_id + 1;
+		}
 		END_STORE
 
 		if (index->ini_idx_flags & idx_unique)
 		{
-			STORE(REQUEST_HANDLE handle3) RC IN RDB$RELATION_CONSTRAINTS
+			STORE(REQUEST_HANDLE handle3 TRANSACTION_HANDLE transaction)
+				RC IN RDB$RELATION_CONSTRAINTS
+			{
 				PAD(indexName.c_str(), RC.RDB$CONSTRAINT_NAME);
 				PAD(indexName.c_str(), RC.RDB$INDEX_NAME);
 				PAD(relation->rel_name.c_str(), RC.RDB$RELATION_NAME);
 				strcpy(RC.RDB$CONSTRAINT_TYPE, UNIQUE_CNSTRT);
 				strcpy(RC.RDB$DEFERRABLE, "NO");
 				strcpy(RC.RDB$INITIALLY_DEFERRED, "NO");
+			}
 			END_STORE
 		}
 	}
@@ -1202,10 +1257,11 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
  *      privilege.
  *
  **************************************/
-	MetaName security_class, default_class;
-
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	const auto attachment = tdbb->getAttachment();
+	const auto transaction = tdbb->getTransaction();
+
+	MetaName security_class, default_class;
 
 	security_class.printf("%s%" SQUADFORMAT, SQL_SECCLASS_PREFIX,
 						  DPM_gen_id(tdbb, MET_lookup_generator(tdbb, SQL_SECCLASS_GENERATOR), false, 1));
@@ -1217,7 +1273,8 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 	add_security_class(tdbb, reqAddSC, security_class, acl_length, acl);
 	add_security_class(tdbb, reqAddSC, default_class, acl_length, acl);
 
-	FOR(REQUEST_HANDLE reqModObjSC) REL IN RDB$RELATIONS
+	FOR(REQUEST_HANDLE reqModObjSC TRANSACTION_HANDLE transaction)
+		REL IN RDB$RELATIONS
 		WITH REL.RDB$RELATION_NAME EQ rel_name
 	{
 		MODIFY REL USING
@@ -1232,7 +1289,9 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 
 	for (int cnt = 0; cnt < 6; cnt++)
 	{
-		STORE(REQUEST_HANDLE reqInsUserPriv) PRIV IN RDB$USER_PRIVILEGES
+		STORE(REQUEST_HANDLE reqInsUserPriv TRANSACTION_HANDLE transaction)
+			PRIV IN RDB$USER_PRIVILEGES
+		{
 			switch (cnt)
 			{
 			case 0:
@@ -1272,6 +1331,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 			PRIV.RDB$FIELD_NAME.NULL = TRUE;
 			PRIV.RDB$USER_TYPE = obj_user;
 			PRIV.RDB$OBJECT_TYPE = obj_relation;
+		}
 		END_STORE
 	}
 }
@@ -1289,7 +1349,8 @@ static void add_security_to_sys_obj(thread_db* tdbb,
 									const UCHAR* acl)
 {
 	SET_TDBB(tdbb);
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
+	const auto attachment = tdbb->getAttachment();
+	const auto transaction = tdbb->getTransaction();
 
 	MetaName security_class;
 	security_class.printf("%s%" SQUADFORMAT, SQL_SECCLASS_PREFIX,
@@ -1301,7 +1362,8 @@ static void add_security_to_sys_obj(thread_db* tdbb,
 
 	if (obj_type == obj_field)
 	{
-		FOR(REQUEST_HANDLE reqModObjSC) FLD IN RDB$FIELDS
+		FOR(REQUEST_HANDLE reqModObjSC TRANSACTION_HANDLE transaction)
+			FLD IN RDB$FIELDS
 			WITH FLD.RDB$FIELD_NAME EQ obj_name.c_str()
 		{
 			MODIFY FLD USING
@@ -1315,7 +1377,8 @@ static void add_security_to_sys_obj(thread_db* tdbb,
 	}
 	else if (obj_type == obj_charset)
 	{
-		FOR(REQUEST_HANDLE reqModObjSC) CS IN RDB$CHARACTER_SETS
+		FOR(REQUEST_HANDLE reqModObjSC TRANSACTION_HANDLE transaction)
+			CS IN RDB$CHARACTER_SETS
 			WITH CS.RDB$CHARACTER_SET_NAME EQ obj_name.c_str()
 		{
 			MODIFY CS USING
@@ -1329,7 +1392,8 @@ static void add_security_to_sys_obj(thread_db* tdbb,
 	}
 	else if (obj_type == obj_collation)
 	{
-		FOR(REQUEST_HANDLE reqModObjSC) COLL IN RDB$COLLATIONS
+		FOR(REQUEST_HANDLE reqModObjSC TRANSACTION_HANDLE transaction)
+			COLL IN RDB$COLLATIONS
 			WITH COLL.RDB$COLLATION_NAME EQ obj_name.c_str()
 		{
 			MODIFY COLL USING
@@ -1343,7 +1407,8 @@ static void add_security_to_sys_obj(thread_db* tdbb,
 	}
 	else if (obj_type == obj_exception)
 	{
-		FOR(REQUEST_HANDLE reqModObjSC) XCP IN RDB$EXCEPTIONS
+		FOR(REQUEST_HANDLE reqModObjSC TRANSACTION_HANDLE transaction)
+			XCP IN RDB$EXCEPTIONS
 			WITH XCP.RDB$EXCEPTION_NAME EQ obj_name.c_str()
 		{
 			MODIFY XCP USING
@@ -1357,7 +1422,8 @@ static void add_security_to_sys_obj(thread_db* tdbb,
 	}
 	else if (obj_type == obj_generator)
 	{
-		FOR(REQUEST_HANDLE reqModObjSC) GEN IN RDB$GENERATORS
+		FOR(REQUEST_HANDLE reqModObjSC TRANSACTION_HANDLE transaction)
+			GEN IN RDB$GENERATORS
 			WITH GEN.RDB$GENERATOR_NAME EQ obj_name.c_str()
 		{
 			MODIFY GEN USING
@@ -1371,7 +1437,8 @@ static void add_security_to_sys_obj(thread_db* tdbb,
 	}
 	else if (obj_type == obj_sql_role)
 	{
-		FOR(REQUEST_HANDLE reqModObjSC) R IN RDB$ROLES
+		FOR(REQUEST_HANDLE reqModObjSC TRANSACTION_HANDLE transaction)
+			R IN RDB$ROLES
 			WITH R.RDB$ROLE_NAME EQ obj_name.c_str()
 		{
 			MODIFY R USING
@@ -1383,7 +1450,8 @@ static void add_security_to_sys_obj(thread_db* tdbb,
 	}
 	else if (obj_type == obj_package_header)
 	{
-		FOR(REQUEST_HANDLE reqModObjSC) PKG IN RDB$PACKAGES
+		FOR(REQUEST_HANDLE reqModObjSC TRANSACTION_HANDLE transaction)
+			PKG IN RDB$PACKAGES
 			WITH PKG.RDB$PACKAGE_NAME EQ obj_name.c_str()
 		{
 			MODIFY PKG USING
@@ -1397,7 +1465,8 @@ static void add_security_to_sys_obj(thread_db* tdbb,
 	}
 	else if (obj_type == obj_database)
 	{
-		FOR(REQUEST_HANDLE reqModObjSC) DB IN RDB$DATABASE
+		FOR(REQUEST_HANDLE reqModObjSC TRANSACTION_HANDLE transaction)
+			DB IN RDB$DATABASE
 		{
 			MODIFY DB USING
 				DB.RDB$SECURITY_CLASS.NULL = FALSE;
@@ -1421,7 +1490,9 @@ static void add_security_to_sys_obj(thread_db* tdbb,
 
 		for (const char* p = privileges; *p; ++p)
 		{
-			STORE(REQUEST_HANDLE reqInsUserPriv) PRIV IN RDB$USER_PRIVILEGES
+			STORE(REQUEST_HANDLE reqInsUserPriv TRANSACTION_HANDLE transaction)
+				PRIV IN RDB$USER_PRIVILEGES
+			{
 				PAD(user_name.c_str(), PRIV.RDB$USER);
 				PAD(obj_name.c_str(), PRIV.RDB$RELATION_NAME);
 				PRIV.RDB$PRIVILEGE[0] = *p;
@@ -1430,6 +1501,7 @@ static void add_security_to_sys_obj(thread_db* tdbb,
 				PRIV.RDB$USER_TYPE = obj_user;
 				PRIV.RDB$OBJECT_TYPE = obj_type;
 				PRIV.RDB$GRANTOR.NULL = TRUE;
+			}
 			END_STORE
 		}
 	}
@@ -1439,12 +1511,16 @@ static void add_security_to_sys_obj(thread_db* tdbb,
 static void store_admin_grant(thread_db* tdbb, const char* user, USHORT user_type,
 	const char* object, USHORT object_type, const char* prvl, USHORT option, bool dflt)
 {
-	Attachment* attachment = tdbb->getAttachment();		// needed for preprocessed code
+	const auto attachment = tdbb->getAttachment();
+	const auto transaction = tdbb->getTransaction();
+
 	AutoRequest handle;
 
 	while (*prvl)
 	{
-		STORE(REQUEST_HANDLE handle) PRIV IN RDB$USER_PRIVILEGES
+		STORE(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+			PRIV IN RDB$USER_PRIVILEGES
+		{
 			PAD(user, PRIV.RDB$USER);
 			PAD(object, PRIV.RDB$RELATION_NAME);
 
@@ -1463,6 +1539,7 @@ static void store_admin_grant(thread_db* tdbb, const char* user, USHORT user_typ
 			PRIV.RDB$USER_TYPE = user_type;
 			PRIV.RDB$OBJECT_TYPE = object_type;
 			PRIV.RDB$GRANTOR.NULL = TRUE;
+		}
 		END_STORE
 	}
 }
@@ -1490,8 +1567,9 @@ static void store_admin_role(thread_db* tdbb, const MetaName& roleName, MetaName
 	sql << "insert into rdb$roles(rdb$role_name, rdb$owner_name, rdb$system_flag, rdb$system_privileges)"
 		<< "values (" << roleName << "," << ownerName << ", 1," << p << ")";
 
-	Attachment* attachment = tdbb->getAttachment();
-	jrd_tra* transaction = attachment->getSysTransaction();
+	const auto attachment = tdbb->getAttachment();
+	const auto transaction = tdbb->getTransaction();
+
 	AutoPreparedStatement ps(attachment->prepareStatement(tdbb, transaction, sql));
 	ps->execute(tdbb, transaction);
 }
@@ -1499,10 +1577,13 @@ static void store_admin_role(thread_db* tdbb, const MetaName& roleName, MetaName
 
 static void store_default_pub(thread_db* tdbb, const MetaName& ownerName)
 {
-	Attachment* const attachment = tdbb->getAttachment();
+	const auto attachment = tdbb->getAttachment();
+	const auto transaction = tdbb->getTransaction();
+
 	AutoRequest handle;
 
-	STORE(REQUEST_HANDLE handle) PUB IN RDB$PUBLICATIONS
+	STORE(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+		PUB IN RDB$PUBLICATIONS
 	{
 		PAD(DEFAULT_PUBLICATION, PUB.RDB$PUBLICATION_NAME);
 		PUB.RDB$PUBLICATION_NAME.NULL = FALSE;
@@ -1527,13 +1608,13 @@ static void store_default_pub(thread_db* tdbb, const MetaName& ownerName)
 static void add_security_class(thread_db* tdbb, AutoRequest& handle, const MetaName& class_name, USHORT acl_length, const UCHAR* acl)
 {
 	SET_TDBB(tdbb);
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
+	const auto attachment = tdbb->getAttachment();
+	const auto transaction = tdbb->getTransaction();
 
 	bid blob_id;
-	attachment->storeBinaryBlob(tdbb, attachment->getSysTransaction(), &blob_id,
-		ByteChunk(acl, acl_length));
+	attachment->storeBinaryBlob(tdbb, transaction, &blob_id, ByteChunk(acl, acl_length));
 
-	STORE(REQUEST_HANDLE handle)
+	STORE(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		CLS IN RDB$SECURITY_CLASSES
 	{
 		PAD(class_name.c_str(), CLS.RDB$SECURITY_CLASS);
@@ -1558,9 +1639,11 @@ static void store_generator(thread_db* tdbb, const gen* generator, AutoRequest& 
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	const auto attachment = tdbb->getAttachment();
+	const auto transaction = tdbb->getTransaction();
 
-	STORE(REQUEST_HANDLE handle) X IN RDB$GENERATORS
+	STORE(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+		X IN RDB$GENERATORS
 	{
 		PAD(generator->gen_name, X.RDB$GENERATOR_NAME);
 		X.RDB$GENERATOR_ID = generator->gen_id;
@@ -1572,7 +1655,7 @@ static void store_generator(thread_db* tdbb, const gen* generator, AutoRequest& 
 		X.RDB$INITIAL_VALUE.NULL = FALSE;
 		if (generator->gen_description)
 		{
-		    attachment->storeMetaDataBlob(tdbb, attachment->getSysTransaction(), &X.RDB$DESCRIPTION,
+		    attachment->storeMetaDataBlob(tdbb, transaction, &X.RDB$DESCRIPTION,
 				generator->gen_description);
 			X.RDB$DESCRIPTION.NULL = FALSE;
 		}
@@ -1600,9 +1683,11 @@ static void store_global_field(thread_db* tdbb, const gfld* gfield, AutoRequest&
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	const auto attachment = tdbb->getAttachment();
+	const auto transaction = tdbb->getTransaction();
 
-	STORE(REQUEST_HANDLE handle) X IN RDB$FIELDS
+	STORE(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+		X IN RDB$FIELDS
 	{
 		PAD(names[(USHORT)gfield->gfld_name], X.RDB$FIELD_NAME);
 		X.RDB$FIELD_LENGTH = gfield->gfld_length;
@@ -1618,7 +1703,7 @@ static void store_global_field(thread_db* tdbb, const gfld* gfield, AutoRequest&
 		X.RDB$CHARACTER_LENGTH.NULL = TRUE;
 		if (gfield->gfld_dflt_blr)
 		{
-		    attachment->storeBinaryBlob(tdbb, attachment->getSysTransaction(), &X.RDB$DEFAULT_VALUE,
+		    attachment->storeBinaryBlob(tdbb, transaction, &X.RDB$DEFAULT_VALUE,
 				ByteChunk(gfield->gfld_dflt_blr, gfield->gfld_dflt_len));
 			X.RDB$DEFAULT_VALUE.NULL = FALSE;
 		}
@@ -1756,14 +1841,16 @@ static void store_intlnames(thread_db* tdbb, const MetaName& owner)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	const auto attachment = tdbb->getAttachment();
+	const auto transaction = tdbb->getTransaction();
 
 	AutoRequest handle;
 
 	for (const IntlManager::CharSetDefinition* charSet = IntlManager::defaultCharSets;
 		 charSet->name; ++charSet)
 	{
-		STORE(REQUEST_HANDLE handle) X IN RDB$CHARACTER_SETS USING
+		STORE(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+			X IN RDB$CHARACTER_SETS USING
 		{
 			PAD(charSet->name, X.RDB$CHARACTER_SET_NAME);
 			PAD(charSet->name, X.RDB$DEFAULT_COLLATE_NAME);
@@ -1782,7 +1869,8 @@ static void store_intlnames(thread_db* tdbb, const MetaName& owner)
 	for (const IntlManager::CollationDefinition* collation = IntlManager::defaultCollations;
 		collation->name; ++collation)
 	{
-		STORE(REQUEST_HANDLE handle) X IN RDB$COLLATIONS USING
+		STORE(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+			X IN RDB$COLLATIONS USING
 		{
 			PAD(collation->name, X.RDB$COLLATION_NAME);
 
@@ -1804,7 +1892,7 @@ static void store_intlnames(thread_db* tdbb, const MetaName& owner)
 
 			if (collation->specificAttributes)
 			{
-				attachment->storeMetaDataBlob(tdbb, attachment->getSysTransaction(),
+				attachment->storeMetaDataBlob(tdbb, transaction,
 					&X.RDB$SPECIFIC_ATTRIBUTES, collation->specificAttributes);
 				X.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
 			}
@@ -1829,11 +1917,13 @@ static void store_message(thread_db* tdbb, const trigger_msg* message, AutoReque
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	const auto attachment = tdbb->getAttachment();
+	const auto transaction = tdbb->getTransaction();
 
 	// store the trigger
 
-	STORE(REQUEST_HANDLE handle) X IN RDB$TRIGGER_MESSAGES
+	STORE(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+		X IN RDB$TRIGGER_MESSAGES
 	{
 		PAD(message->trigmsg_name, X.RDB$TRIGGER_NAME);
 		X.RDB$MESSAGE_NUMBER = message->trigmsg_number;
@@ -1853,8 +1943,11 @@ static void store_relation(thread_db* tdbb,
 {
 	SET_TDBB(tdbb);
 	const auto attachment = tdbb->getAttachment();
+	const auto transaction = tdbb->getTransaction();
 
-	STORE(REQUEST_HANDLE handle) X IN RDB$RELATIONS
+	STORE(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+		X IN RDB$RELATIONS
+	{
 		X.RDB$RELATION_ID = relId;
 		PAD(relName, X.RDB$RELATION_NAME);
 		PAD(ownerName, X.RDB$OWNER_NAME);
@@ -1863,7 +1956,7 @@ static void store_relation(thread_db* tdbb,
 		X.RDB$FORMAT = 0;
 		X.RDB$SYSTEM_FLAG = RDB_system;
 		X.RDB$DBKEY_LENGTH = 8;
-
+	}
 	END_STORE;
 }
 
@@ -1887,9 +1980,11 @@ static void store_relation_field(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	const auto attachment = tdbb->getAttachment();
+	const auto transaction = tdbb->getTransaction();
 
-	STORE(REQUEST_HANDLE handle) X IN RDB$RELATION_FIELDS
+	STORE(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+		X IN RDB$RELATION_FIELDS
 	{
 		PAD(relName, X.RDB$RELATION_NAME);
 		PAD(fieldName, X.RDB$FIELD_NAME);
@@ -1908,8 +2003,9 @@ static void store_relation_field(thread_db* tdbb,
 static void store_packages(thread_db* tdbb, const MetaName& owner, USHORT odsVersion)
 {
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* const dbb = tdbb->getDatabase();
+	const auto dbb = tdbb->getDatabase();
+	const auto attachment = tdbb->getAttachment();
+	const auto transaction = tdbb->getTransaction();
 
 	AutoRequest packageHandle, procedureHandle, procedureParameterHandle;
 	AutoRequest functionHandle, functionReturnHandle, functionArgumentHandle;
@@ -1918,10 +2014,11 @@ static void store_packages(thread_db* tdbb, const MetaName& owner, USHORT odsVer
 
 	for (auto& systemPackage : SystemPackage::get())
 	{
-		if (odsVersion && systemPackage.odsVersion < odsVersion)
+		if (odsVersion && systemPackage.odsVersion <= odsVersion)
 			continue;
 
-		STORE (REQUEST_HANDLE packageHandle) PKG IN RDB$PACKAGES
+		STORE (REQUEST_HANDLE packageHandle TRANSACTION_HANDLE transaction)
+			PKG IN RDB$PACKAGES
 		{
 			PAD(systemPackage.name, PKG.RDB$PACKAGE_NAME);
 
@@ -1933,7 +2030,8 @@ static void store_packages(thread_db* tdbb, const MetaName& owner, USHORT odsVer
 
 		for (auto& procedure : systemPackage.procedures)
 		{
-			STORE (REQUEST_HANDLE procedureHandle) PRC IN RDB$PROCEDURES
+			STORE (REQUEST_HANDLE procedureHandle TRANSACTION_HANDLE transaction)
+				PRC IN RDB$PROCEDURES
 			{
 				PAD(systemPackage.name, PRC.RDB$PACKAGE_NAME);
 				PAD(procedure.name, PRC.RDB$PROCEDURE_NAME);
@@ -1960,7 +2058,8 @@ static void store_packages(thread_db* tdbb, const MetaName& owner, USHORT odsVer
 				{
 					++paramNumber;
 
-					STORE (REQUEST_HANDLE procedureParameterHandle) PP IN RDB$PROCEDURE_PARAMETERS
+					STORE (REQUEST_HANDLE procedureParameterHandle TRANSACTION_HANDLE transaction)
+						PP IN RDB$PROCEDURE_PARAMETERS
 					{
 						PAD(systemPackage.name, PP.RDB$PACKAGE_NAME);
 						PAD(procedure.name, PP.RDB$PROCEDURE_NAME);
@@ -1979,7 +2078,7 @@ static void store_packages(thread_db* tdbb, const MetaName& owner, USHORT odsVer
 
 						if (parameter.defaultBlr.hasData())
 						{
-							attachment->storeMetaDataBlob(tdbb, attachment->getSysTransaction(), &PP.RDB$DEFAULT_SOURCE,
+							attachment->storeMetaDataBlob(tdbb, transaction, &PP.RDB$DEFAULT_SOURCE,
 								string("default ") + parameter.defaultText);
 							PP.RDB$DEFAULT_SOURCE.NULL = FALSE;
 
@@ -1988,7 +2087,7 @@ static void store_packages(thread_db* tdbb, const MetaName& owner, USHORT odsVer
 							blrData.append(parameter.defaultBlr);
 							blrData.push(blr_eoc);
 
-							attachment->storeBinaryBlob(tdbb, attachment->getSysTransaction(), &PP.RDB$DEFAULT_VALUE,
+							attachment->storeBinaryBlob(tdbb, transaction, &PP.RDB$DEFAULT_VALUE,
 								blrData);
 							PP.RDB$DEFAULT_VALUE.NULL = FALSE;
 						}
@@ -2005,7 +2104,8 @@ static void store_packages(thread_db* tdbb, const MetaName& owner, USHORT odsVer
 
 		for (auto& function : systemPackage.functions)
 		{
-			STORE (REQUEST_HANDLE functionHandle) FUN IN RDB$FUNCTIONS
+			STORE (REQUEST_HANDLE functionHandle TRANSACTION_HANDLE transaction)
+				FUN IN RDB$FUNCTIONS
 			{
 				PAD(systemPackage.name, FUN.RDB$PACKAGE_NAME);
 				PAD(function.name, FUN.RDB$FUNCTION_NAME);
@@ -2024,7 +2124,8 @@ static void store_packages(thread_db* tdbb, const MetaName& owner, USHORT odsVer
 
 			SSHORT paramNumber = 0;
 
-			STORE (REQUEST_HANDLE functionReturnHandle) ARG IN RDB$FUNCTION_ARGUMENTS
+			STORE (REQUEST_HANDLE functionReturnHandle TRANSACTION_HANDLE transaction)
+				ARG IN RDB$FUNCTION_ARGUMENTS
 			{
 				PAD(systemPackage.name, ARG.RDB$PACKAGE_NAME);
 				PAD(function.name, ARG.RDB$FUNCTION_NAME);
@@ -2042,7 +2143,8 @@ static void store_packages(thread_db* tdbb, const MetaName& owner, USHORT odsVer
 			{
 				++paramNumber;
 
-				STORE (REQUEST_HANDLE functionArgumentHandle) ARG IN RDB$FUNCTION_ARGUMENTS
+				STORE (REQUEST_HANDLE functionArgumentHandle TRANSACTION_HANDLE transaction)
+					ARG IN RDB$FUNCTION_ARGUMENTS
 				{
 					PAD(systemPackage.name, ARG.RDB$PACKAGE_NAME);
 					PAD(function.name, ARG.RDB$FUNCTION_NAME);
@@ -2059,7 +2161,7 @@ static void store_packages(thread_db* tdbb, const MetaName& owner, USHORT odsVer
 
 					if (parameter.defaultBlr.hasData())
 					{
-						attachment->storeMetaDataBlob(tdbb, attachment->getSysTransaction(), &ARG.RDB$DEFAULT_SOURCE,
+						attachment->storeMetaDataBlob(tdbb, transaction, &ARG.RDB$DEFAULT_SOURCE,
 							string("default ") + parameter.defaultText);
 						ARG.RDB$DEFAULT_SOURCE.NULL = FALSE;
 
@@ -2068,7 +2170,7 @@ static void store_packages(thread_db* tdbb, const MetaName& owner, USHORT odsVer
 						blrData.append(parameter.defaultBlr);
 						blrData.push(blr_eoc);
 
-						attachment->storeBinaryBlob(tdbb, attachment->getSysTransaction(), &ARG.RDB$DEFAULT_VALUE,
+						attachment->storeBinaryBlob(tdbb, transaction, &ARG.RDB$DEFAULT_VALUE,
 							blrData);
 						ARG.RDB$DEFAULT_VALUE.NULL = FALSE;
 					}
@@ -2099,7 +2201,8 @@ static void store_trigger(thread_db* tdbb, const jrd_trg* trigger, AutoRequest& 
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Attachment* attachment = tdbb->getAttachment();
+	const auto attachment = tdbb->getAttachment();
+	const auto transaction = tdbb->getTransaction();
 
 	// indicate that the relation format needs revising
 	dsc desc;
@@ -2109,7 +2212,8 @@ static void store_trigger(thread_db* tdbb, const jrd_trg* trigger, AutoRequest& 
 
 	// store the trigger
 
-	STORE(REQUEST_HANDLE handle) X IN RDB$TRIGGERS
+	STORE(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+		X IN RDB$TRIGGERS
 	{
 		PAD(trigger->trg_name, X.RDB$TRIGGER_NAME);
 		PAD(names[trigger->trg_relation], X.RDB$RELATION_NAME);
@@ -2118,7 +2222,7 @@ static void store_trigger(thread_db* tdbb, const jrd_trg* trigger, AutoRequest& 
 		X.RDB$SYSTEM_FLAG.NULL = FALSE;
 		X.RDB$TRIGGER_TYPE = trigger->trg_type;
 		X.RDB$FLAGS = trigger->trg_flags;
-		attachment->storeBinaryBlob(tdbb, attachment->getSysTransaction(), &X.RDB$TRIGGER_BLR,
+		attachment->storeBinaryBlob(tdbb, transaction, &X.RDB$TRIGGER_BLR,
 			ByteChunk(trigger->trg_blr, trigger->trg_length));
 	}
 	END_STORE

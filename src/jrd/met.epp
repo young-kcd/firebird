@@ -5561,10 +5561,8 @@ static bool verify_TRG_ignore_perm(thread_db* tdbb, const MetaName& trig_name)
 
 	// See if this is a system trigger, with the flag set as TRG_ignore_perm
 
-	if (INI_get_trig_flags(trig_name.c_str()) & TRG_ignore_perm)
-	{
+	if (INI_get_trig_flags(trig_name) & TRG_ignore_perm)
 		return true;
-	}
 
 	// See if this is a RI trigger
 

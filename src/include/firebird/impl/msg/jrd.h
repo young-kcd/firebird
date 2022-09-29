@@ -961,3 +961,4 @@ FB_IMPL_MSG(JRD, 959, quoted_str_miss, -901, "22", "024", "Missing terminating q
 FB_IMPL_MSG(JRD, 960, wrong_shmem_ver, -902, "08", "006", "@1: inconsistent shared memory type/version; found @2, expected @3")
 FB_IMPL_MSG(JRD, 961, wrong_shmem_bitness, -902, "08", "006", "@1-bit engine can't open database already opened by @2-bit engine")
 FB_IMPL_MSG(JRD, 962, wrong_proc_plan, -281, "HY", "000", "Procedures cannot specify access type other than NATURAL in the plan")
+FB_IMPL_MSG(JRD, 963, ods_upgrade_err, -901, "HY", "000", "ODS upgrade failed while adding new system %s")

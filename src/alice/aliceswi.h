@@ -262,8 +262,8 @@ static const Switches::in_sw_tab_t alice_in_sw_table[] =
 	// msg 115: 	-trusted	use trusted authentication
 #endif
 	{IN_SW_ALICE_UPGRADE, isc_spb_rpr_upgrade_db, "UPGRADE", sw_upgrade,
-		0, ~(sw_upgrade | sw_user | sw_password | sw_nolinger | sw_role), false, true, 136, 2, NULL},
-	// msg 136: \t-upgrade\t\tupgrade database ODS
+		0, ~(sw_upgrade | sw_user | sw_password | sw_nolinger | sw_role), false, true, 137, 2, NULL},
+	// msg 137: \t-upgrade\t\tupgrade database ODS
 	{IN_SW_ALICE_NO_RESERVE, 0, "USE", sw_no_reserve,
 		0, ~(sw_no_reserve | sw_auth_set | sw_nolinger), false, false, 49, 1, NULL},
 	// msg 49: \t-use\t\tuse full or reserve space for versions
