@@ -3488,6 +3488,10 @@ void rem_port::batch_create(P_BATCH_CREATE* batch, PACKET* sendL)
 	getHandle(statement, batch->p_batch_statement);
 	statement->checkIface();
 
+	// Check for previously opened batch for the statement
+	if (statement->rsr_batch)
+		Arg::Gds(isc_batch_open).raise();
+
 	const ULONG blr_length = batch->p_batch_blr.cstr_length;
 	const UCHAR* blr = batch->p_batch_blr.cstr_address;
 	if (!blr)
