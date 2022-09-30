@@ -180,11 +180,12 @@ void IscConnection::attach(thread_db* tdbb)
 				break;
 
 			case isc_info_error:
+				if (p.getClumpLength() > 1)
 				{
-					const ULONG err = m_iscProvider.isc_vax_integer(p.getBytes() + 1, p.getClumpLength() - 1);
+					const ULONG err = m_iscProvider.isc_vax_integer(b + 1, p.getClumpLength() - 1);
 					if (err == isc_infunk)
 					{
-						if (p.getBytes()[0] == fb_info_features)
+						if (b[0] == fb_info_features)
 						{
 							// Used provider follow Firebird error reporting conventions but is not aware of
 							// this info item. Assume Firebird 3 or earlier.
@@ -194,8 +195,8 @@ void IscConnection::attach(thread_db* tdbb)
 						}
 						break;
 					}
-					ERR_post(Arg::Gds(isc_random) << Arg::Str("Unexpected error in isc_database_info"));
 				}
+				ERR_post(Arg::Gds(isc_random) << Arg::Str("Unexpected error in isc_database_info"));
 
 			case isc_info_truncated:
 				ERR_post(Arg::Gds(isc_random) << Arg::Str("Result truncation in isc_database_info"));

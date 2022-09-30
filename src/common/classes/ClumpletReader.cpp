@@ -686,7 +686,6 @@ void ClumpletReader::moveNext()
 {
 	if (isEof())
 		return;		// no need to raise useless exceptions
-	FB_SIZE_T cs = getClumpletSize(true, true, true);
 
 	switch (kind)
 	{
@@ -701,6 +700,7 @@ void ClumpletReader::moveNext()
 		}
 	}
 
+	FB_SIZE_T cs = getClumpletSize(true, true, true);
 	adjustSpbState();
 	cur_offset += cs;
 }
