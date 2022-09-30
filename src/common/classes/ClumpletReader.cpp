@@ -456,7 +456,11 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 				return StringSpb;
 			case isc_spb_nbk_level:
 			case isc_spb_options:
+			case isc_spb_nbk_keep_days:
+			case isc_spb_nbk_keep_rows:
 				return IntSpb;
+			case isc_spb_nbk_clean_history:
+				return SingleTpb;
 			}
 			invalid_structure("unknown parameter for nbackup", tag);
 			break;

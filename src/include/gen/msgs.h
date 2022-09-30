@@ -1462,6 +1462,11 @@ Data source : @4"},		/* eds_statement */
 	{337117259, "Too complex decompress command (> @1 arguments)"},		/* nbackup_deco_parse */
 	{337117261, "Cannot find record for database \"@1\" backup GUID @2 in the backup history"},		/* nbackup_lostrec_guid_db */
 	{337117265, "Switch -SEQ(UENCE) can be used only with -FIXUP or -RESTORE"},		/* nbackup_seq_misuse */
+	{337117269, "Wrong parameter value for switch @1"},		/* nbackup_wrong_param */
+	{337117270, "Switch -CLEAN_HISTORY can be used only with -BACKUP"},		/* nbackup_clean_hist_misuse */
+	{337117271, "-KEEP_DAYS or -KEEP_ROWS can be used only with -CLEAN_HISTORY"},		/* nbackup_clean_hist_missed */
+	{337117272, "-KEEP_DAYS or -KEEP_ROWS is required with -CLEAN_HISTORY"},		/* nbackup_keep_hist_missed */
+	{337117273, "-KEEP_DAYS and/or -KEEP_ROWS could be used one time only"},		/* nbackup_second_keep_switch */
 	{337182750, "conflicting actions \"@1\" and \"@2\" found"},		/* trace_conflict_acts */
 	{337182751, "action switch not found"},		/* trace_act_notfound */
 	{337182752, "switch \"@1\" must be set only once"},		/* trace_switch_once */

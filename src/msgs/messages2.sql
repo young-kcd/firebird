@@ -3605,6 +3605,14 @@ Analyzing database pages ...', NULL, NULL);
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 79, NULL, '  -INPLACE option could corrupt the database that has changed since previous restore.', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 80, NULL, '  -SEQ(UENCE)                            Preserve original replication sequence', NULL, NULL)
 ('nbackup_seq_misuse', 'nbackup', 'nbackup.cpp', NULL, 24, 81, NULL, 'Switch -SEQ(UENCE) can be used only with -FIXUP or -RESTORE', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 82, NULL, '  -CLEAN_HIST(ORY)                       Clean old records from backup history', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 83, NULL, '  -KEEP_D(AYS) <N>                       How many days back from today should be kept in the history', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 84, NULL, '  -KEEP_R(OWS) <N>                       How many most recent rows in the history should be kept', NULL, NULL)
+('nbackup_wrong_param', 'nbackup', 'nbackup.cpp', NULL, 24, 85, NULL, 'Wrong parameter value for switch @1', NULL, NULL)
+('nbackup_clean_hist_misuse', 'nbackup', 'nbackup.cpp', NULL, 24, 86, NULL, 'Switch -CLEAN_HISTORY can be used only with -BACKUP', NULL, NULL)
+('nbackup_clean_hist_missed', 'nbackup', 'nbackup.cpp', NULL, 24, 87, NULL, '-KEEP_DAYS or -KEEP_ROWS can be used only with -CLEAN_HISTORY', NULL, NULL)
+('nbackup_keep_hist_missed', 'nbackup', 'nbackup.cpp', NULL, 24, 88, NULL, '-KEEP_DAYS or -KEEP_ROWS is required with -CLEAN_HISTORY', NULL, NULL)
+('nbackup_second_keep_switch', 'nbackup', 'nbackup.cpp', NULL, 24, 89, NULL, '-KEEP_DAYS and/or -KEEP_ROWS could be used one time only', NULL, NULL)
 -- FBTRACEMGR
 -- All messages use the new format.
 (NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 1, NULL, 'Firebird Trace Manager version @1', NULL, NULL)
