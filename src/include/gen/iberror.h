@@ -1493,11 +1493,11 @@ const ISC_STATUS isc_nbackup_user_stop                = 337117257L;
 const ISC_STATUS isc_nbackup_deco_parse               = 337117259L;
 const ISC_STATUS isc_nbackup_lostrec_guid_db          = 337117261L;
 const ISC_STATUS isc_nbackup_seq_misuse               = 337117265L;
-const ISC_STATUS isc_nbackup_wrong_param              = 337117269L;
-const ISC_STATUS isc_nbackup_clean_hist_misuse        = 337117270L;
-const ISC_STATUS isc_nbackup_clean_hist_missed        = 337117271L;
-const ISC_STATUS isc_nbackup_keep_hist_missed         = 337117272L;
-const ISC_STATUS isc_nbackup_second_keep_switch       = 337117273L;
+const ISC_STATUS isc_nbackup_wrong_param              = 337117268L;
+const ISC_STATUS isc_nbackup_clean_hist_misuse        = 337117269L;
+const ISC_STATUS isc_nbackup_clean_hist_missed        = 337117270L;
+const ISC_STATUS isc_nbackup_keep_hist_missed         = 337117271L;
+const ISC_STATUS isc_nbackup_second_keep_switch       = 337117272L;
 const ISC_STATUS isc_trace_conflict_acts              = 337182750L;
 const ISC_STATUS isc_trace_act_notfound               = 337182751L;
 const ISC_STATUS isc_trace_switch_once                = 337182752L;
@@ -2972,11 +2972,11 @@ const ISC_STATUS isc_err_max                          = 1453;
 #define isc_nbackup_deco_parse               337117259L
 #define isc_nbackup_lostrec_guid_db          337117261L
 #define isc_nbackup_seq_misuse               337117265L
-#define isc_nbackup_wrong_param              337117269L
-#define isc_nbackup_clean_hist_misuse        337117270L
-#define isc_nbackup_clean_hist_missed        337117271L
-#define isc_nbackup_keep_hist_missed         337117272L
-#define isc_nbackup_second_keep_switch       337117273L
+#define isc_nbackup_wrong_param              337117268L
+#define isc_nbackup_clean_hist_misuse        337117269L
+#define isc_nbackup_clean_hist_missed        337117270L
+#define isc_nbackup_keep_hist_missed         337117271L
+#define isc_nbackup_second_keep_switch       337117272L
 #define isc_trace_conflict_acts              337182750L
 #define isc_trace_act_notfound               337182751L
 #define isc_trace_switch_once                337182752L

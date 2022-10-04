@@ -2108,8 +2108,7 @@ void nbackup(UtilSvc* uSvc)
 			cleanHistory = true;
 			break;
 
-		case IN_SW_NBK_KEEP_DAYS:
-		case IN_SW_NBK_KEEP_ROWS:
+		case IN_SW_NBK_KEEP:
 			if (cleanHistKind != NBackup::CLEAN_HISTORY_KIND::NONE)
 				usage(uSvc, isc_nbackup_second_keep_switch);
 
@@ -2120,9 +2119,20 @@ void nbackup(UtilSvc* uSvc)
 			if (keepHistValue < 1)
 				usage(uSvc, isc_nbackup_wrong_param, argv[itr - 1]);
 
-			cleanHistKind = (rc->in_sw == IN_SW_NBK_KEEP_DAYS) ?
-				NBackup::CLEAN_HISTORY_KIND::DAYS :
-				NBackup::CLEAN_HISTORY_KIND::ROWS;
+			if (++itr >= argc)
+				missingParameterForSwitch(uSvc, argv[itr - 1]);
+
+			{ // scope
+				string keepUnit = argv[itr];
+				keepUnit.upper();
+
+				if (string("DAYS").find(keepUnit) == 0)
+					cleanHistKind = NBackup::CLEAN_HISTORY_KIND::DAYS;
+				else if (string("ROWS").find(keepUnit) == 0)
+					cleanHistKind = NBackup::CLEAN_HISTORY_KIND::ROWS;
+				else
+					usage(uSvc, isc_nbackup_wrong_param, argv[itr - 2]);
+			}
 			break;
 
 		default:

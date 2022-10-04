@@ -2688,11 +2688,9 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				{
 					(Arg::Gds(isc_unexp_spb_form) << Arg::Str("only one isc_spb_nbk_keep_days or isc_spb_nbk_keep_rows")).raise();
 				}
-				if (!get_action_svc_parameter(spb.getClumpTag(), nbackup_action_in_sw_table, switches))
-				{
-					return false;
-				}
+				switches += "-KEEP ";
 				get_action_svc_data(spb, switches, false);
+				switches += spb.getClumpTag() == isc_spb_nbk_keep_days ? "DAYS " : "ROWS ";
 				keepHistory = true;
 				break;
 
