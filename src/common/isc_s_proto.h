@@ -181,11 +181,14 @@ public:
 #endif
 
 class CountedFd;
+class CountedRWLock;
 
 class FileLock
 {
+	friend class CountedRWLock;
+
 public:
-	enum LockMode {FLM_EXCLUSIVE, FLM_TRY_EXCLUSIVE, FLM_SHARED, FLM_TRY_SHARED};
+	enum LockMode {FLM_EXCLUSIVE, FLM_TRY_EXCLUSIVE, FLM_SHARED};
 
 	typedef void InitFunction(int fd);
 	explicit FileLock(const char* fileName, InitFunction* init = NULL);		// main ctor
