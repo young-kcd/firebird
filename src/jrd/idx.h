@@ -52,6 +52,7 @@ using Jrd::idx_metadata;
 using Jrd::idx_numeric;
 using Jrd::idx_string;
 using Jrd::idx_descending;
+using Jrd::idx_timestamp_tz;
 
 #define INDEX(id, rel, unique, count) {(id), (UCHAR) (rel), (unique), (count), {
 #define SEGMENT(fld, type) {(fld), (type)}
@@ -303,6 +304,10 @@ static const struct ini_idx_t indices[] =
 	INDEX(56, rel_pub_tables, idx_unique, 2)
 		SEGMENT(f_pubtab_tab_name, idx_string),		// table name
 		SEGMENT(f_pubtab_pub_name, idx_string)		// publication name
+	}},
+	// define index RDB$INDEX_57 for RDB$BACKUP_HISTORY RDB$TIMESTAMP;
+	INDEX(57, rel_backup_history, idx_descending, 1)
+		SEGMENT(f_backup_time, idx_timestamp_tz)		// backup timestamp
 	}},
 };
 

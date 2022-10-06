@@ -4256,6 +4256,9 @@ const
 	isc_spb_nbk_file = byte(6);
 	isc_spb_nbk_direct = byte(7);
 	isc_spb_nbk_guid = byte(8);
+	isc_spb_nbk_clean_history = byte(9);
+	isc_spb_nbk_keep_days = byte(10);
+	isc_spb_nbk_keep_rows = byte(11);
 	isc_spb_nbk_no_triggers = $01;
 	isc_spb_nbk_inplace = $02;
 	isc_spb_nbk_sequence = $04;
@@ -5780,6 +5783,11 @@ const
 	 isc_nbackup_deco_parse = 337117259;
 	 isc_nbackup_lostrec_guid_db = 337117261;
 	 isc_nbackup_seq_misuse = 337117265;
+	 isc_nbackup_wrong_param = 337117268;
+	 isc_nbackup_clean_hist_misuse = 337117269;
+	 isc_nbackup_clean_hist_missed = 337117270;
+	 isc_nbackup_keep_hist_missed = 337117271;
+	 isc_nbackup_second_keep_switch = 337117272;
 	 isc_trace_conflict_acts = 337182750;
 	 isc_trace_act_notfound = 337182751;
 	 isc_trace_switch_once = 337182752;
