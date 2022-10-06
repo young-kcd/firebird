@@ -2264,7 +2264,7 @@ bool Optimizer::generateEquiJoin(RiverList& orgRivers)
 		NestConst<ValueExprNode> node1;
 		NestConst<ValueExprNode> node2;
 
-		if (!getEquiJoinKeys(*iter, &node1, &node2, true))
+		if (!getEquiJoinKeys(*iter, &node1, &node2))
 			continue;
 
 		for (unsigned i = 0; i < orgRivers.getCount(); i++)
@@ -2861,10 +2861,18 @@ RecordSource* Optimizer::generateRetrieval(StreamType stream,
 // Check whether the given boolean can be involved in a equi-join relationship
 //
 
+bool Optimizer::checkEquiJoin(BoolExprNode* boolean)
+{
+	auto cmpNode = nodeAs<ComparativeBoolNode>(boolean);
+	if (!cmpNode || (cmpNode->blrOp != blr_eql && cmpNode->blrOp != blr_equiv))
+		return false;
+
+	return getEquiJoinKeys(cmpNode->arg1, cmpNode->arg2, false);
+}
+
 bool Optimizer::getEquiJoinKeys(BoolExprNode* boolean,
 								NestConst<ValueExprNode>* node1,
-								NestConst<ValueExprNode>* node2,
-								bool needCast)
+								NestConst<ValueExprNode>* node2)
 {
 	auto cmpNode = nodeAs<ComparativeBoolNode>(boolean);
 	if (!cmpNode || (cmpNode->blrOp != blr_eql && cmpNode->blrOp != blr_equiv))
@@ -2873,7 +2881,7 @@ bool Optimizer::getEquiJoinKeys(BoolExprNode* boolean,
 	auto arg1 = cmpNode->arg1;
 	auto arg2 = cmpNode->arg2;
 
-	if (!getEquiJoinKeys(arg1, arg2, needCast))
+	if (!getEquiJoinKeys(arg1, arg2, true))
 		return false;
 
 	*node1 = arg1;

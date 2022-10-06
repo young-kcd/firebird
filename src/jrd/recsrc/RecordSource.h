@@ -1184,7 +1184,8 @@ namespace Jrd
 
 	public:
 		HashJoin(thread_db* tdbb, CompilerScratch* csb, FB_SIZE_T count,
-				 RecordSource* const* args, NestValueArray* const* keys);
+				 RecordSource* const* args, NestValueArray* const* keys,
+				 double selectivity = 0);
 
 		void close(thread_db* tdbb) const override;
 

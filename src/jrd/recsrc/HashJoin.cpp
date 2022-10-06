@@ -48,7 +48,7 @@ static const ULONG BUCKET_PREALLOCATE_SIZE = 32;	// 256 bytes per slot
 unsigned HashJoin::maxCapacity()
 {
 	// Binary search across 1000 collisions is computationally similar to
-	// linear searc across 10 collisions. We use this number as a rough
+	// linear search across 10 collisions. We use this number as a rough
 	// estimation of whether the lookup performance is likely to be acceptable.
 	return HASH_SIZE * 1000;
 }
@@ -218,20 +218,22 @@ private:
 
 
 HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, FB_SIZE_T count,
-				   RecordSource* const* args, NestValueArray* const* keys)
+				   RecordSource* const* args, NestValueArray* const* keys,
+				   double selectivity)
 	: RecordSource(csb),
 	  m_args(csb->csb_pool, count - 1)
 {
 	fb_assert(count >= 2);
 
 	m_impure = csb->allocImpure<Impure>();
-	m_cardinality = args[0]->getCardinality();
 
 	m_leader.source = args[0];
 	m_leader.keys = keys[0];
 	const FB_SIZE_T leaderKeyCount = m_leader.keys->getCount();
 	m_leader.keyLengths = FB_NEW_POOL(csb->csb_pool) ULONG[leaderKeyCount];
 	m_leader.totalKeyLength = 0;
+
+	m_cardinality = m_leader.source->getCardinality();
 
 	for (FB_SIZE_T j = 0; j < leaderKeyCount; j++)
 	{
@@ -261,8 +263,6 @@ HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, FB_SIZE_T count,
 		fb_assert(sub_rsb);
 
 		m_cardinality *= sub_rsb->getCardinality();
-		for (auto keyCount = keys[i]->getCount(); keyCount; keyCount--)
-			m_cardinality *= REDUCE_SELECTIVITY_FACTOR_EQUALITY;
 
 		SubStream sub;
 		sub.buffer = FB_NEW_POOL(csb->csb_pool) BufferedStream(csb, sub_rsb);
@@ -295,6 +295,15 @@ HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, FB_SIZE_T count,
 
 		m_args.add(sub);
 	}
+
+	if (!selectivity)
+	{
+		selectivity = MAXIMUM_SELECTIVITY;
+		for (auto keyCount = m_leader.keys->getCount(); keyCount; keyCount--)
+			selectivity *= REDUCE_SELECTIVITY_FACTOR_EQUALITY;
+	}
+
+	m_cardinality *= selectivity;
 }
 
 void HashJoin::internalOpen(thread_db* tdbb) const

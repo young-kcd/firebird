@@ -415,13 +415,10 @@ public:
 		return (rse->flags & RseNode::FLAG_OPT_FIRST_ROWS) != 0;
 	}
 
+	bool checkEquiJoin(BoolExprNode* boolean);
 	bool getEquiJoinKeys(BoolExprNode* boolean,
 						 NestConst<ValueExprNode>* node1,
-						 NestConst<ValueExprNode>* node2,
-						 bool needCast = false);
-	bool getEquiJoinKeys(NestConst<ValueExprNode>& node1,
-						 NestConst<ValueExprNode>& node2,
-						 bool needCast = false);
+						 NestConst<ValueExprNode>* node2);
 
 	Firebird::string getStreamName(StreamType stream);
 	Firebird::string makeAlias(StreamType stream);
@@ -454,6 +451,9 @@ private:
 	RecordSource* generateOuterJoin(RiverList& rivers,
 								    SortNode** sortClause);
 	RecordSource* generateResidualBoolean(RecordSource* rsb);
+	bool getEquiJoinKeys(NestConst<ValueExprNode>& node1,
+						 NestConst<ValueExprNode>& node2,
+						 bool needCast);
 	BoolExprNode* makeInferenceNode(BoolExprNode* boolean,
 									ValueExprNode* arg1,
 									ValueExprNode* arg2);
@@ -689,8 +689,8 @@ class InnerJoin : private Firebird::PermanentStorage
 	class StreamInfo
 	{
 	public:
-		StreamInfo(MemoryPool& p, StreamType streamNumber)
-			: stream(streamNumber), indexedRelationships(p)
+		StreamInfo(MemoryPool& p, StreamType num)
+			: number(num), indexedRelationships(p)
 		{}
 
 		bool isIndependent() const
@@ -727,7 +727,7 @@ class InnerJoin : private Firebird::PermanentStorage
 			return false;
 		}
 
-		const StreamType stream;
+		const StreamType number;
 
 		bool baseUnique = false;
 		double baseCost = 0;
@@ -744,9 +744,18 @@ class InnerJoin : private Firebird::PermanentStorage
 
 	struct JoinedStreamInfo
 	{
-		// Streams and their options
-		StreamType bestStream;			// stream in best join order seen so far
-		StreamType number;				// stream in position of join order
+		static const unsigned MAX_EQUI_MATCHES = 4;
+
+		void reset (StreamType num)
+		{
+			number = num;
+			selectivity = 0.0;
+			equiMatches.clear();
+		}
+
+		StreamType number;			// stream in position of join order
+		double selectivity = 0.0;	// position selectivity
+		Firebird::Vector<BoolExprNode*, MAX_EQUI_MATCHES> equiMatches;
 	};
 
 	typedef Firebird::HalfStaticArray<JoinedStreamInfo, OPT_STATIC_ITEMS> JoinedStreamList;
@@ -767,7 +776,7 @@ public:
 
 protected:
 	void calculateStreamInfo();
-	void estimateCost(unsigned position, const StreamInfo* stream, double* cost, double* resultingCardinality) const;
+	void estimateCost(unsigned position, const StreamInfo* stream, double& cost, double& cardinality);
 	void findBestOrder(unsigned position, StreamInfo* stream,
 		IndexedRelationships& processList, double cost, double cardinality);
 	void getIndexedRelationships(StreamInfo* testStream);
@@ -793,7 +802,7 @@ private:
 
 	StreamInfoList innerStreams;
 	JoinedStreamList joinedStreams;
-	StreamList bestStreams;
+	JoinedStreamList bestStreams;
 };
 
 } // namespace Jrd
