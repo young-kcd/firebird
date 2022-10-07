@@ -358,7 +358,9 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 	Database* dbb = tdbb->getDatabase();
 	if (!dbb)
 		return;
+
 	MetadataCache* mdc = dbb->dbb_mdc;
+	MutexLockGuard guard(mdc->mdc_use_mutex, FB_FUNCTION);
 
 	for (auto routine : mdc->mdc_procedures.snapshot())
 	{
@@ -2471,10 +2473,10 @@ void MET_lookup_index_expression(thread_db* tdbb, jrd_rel* relation, index_desc*
 		// with the index block in the "permanent" metadata cache
 
 		{ // scope
-			Jrd::ContextPoolHolder context(tdbb, attachment->createPool());
-		/*	idx->idx_expression = static_cast<ValueExprNode*>(MET_parse_blob(
-				tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb,
-				&idx->idx_expression_statement, false, false));!!!!!!!!!!!!!!!!!!!*/
+			Jrd::ContextPoolHolder context(tdbb, tdbb->getDatabase()->createPool());
+			idx->idx_expression = static_cast<ValueExprNode*>(MET_parse_blob(
+				tdbb, wrk, &IDX.RDB$EXPRESSION_BLR, &csb,
+				&idx->idx_expression_statement, false, false));
 		} // end scope
 	}
 	END_FOR
@@ -2548,7 +2550,7 @@ bool MET_lookup_partner(thread_db* tdbb, jrd_rel* relation, index_desc* idx, con
 					IND.RDB$UNIQUE_FLAG = 1
 			{
 				//// ASF: Hack fix for CORE-4304, until nasty interactions between dfw and met are not resolved.
-				HazardPtr<jrd_rel> foundRel;
+				HazardPtr<jrd_rel> foundRel(FB_FUNCTION);
 				const jrd_rel* partner_relation = relation;
 				if (relation->rel_name != IND.RDB$RELATION_NAME)
 				{
@@ -2627,7 +2629,7 @@ HazardPtr<jrd_prc> MetadataCache::lookup_procedure(thread_db* tdbb, const Qualif
 	SET_TDBB(tdbb);
 	Attachment* attachment = tdbb->getAttachment();
 	MetadataCache* mdc = attachment->att_database->dbb_mdc;
-	HazardPtr<jrd_prc> check_procedure;
+	HazardPtr<jrd_prc> check_procedure(FB_FUNCTION);
 
 	// See if we already know the procedure by name
 	for (auto procedure : mdc->mdc_procedures.snapshot())
@@ -2654,7 +2656,7 @@ HazardPtr<jrd_prc> MetadataCache::lookup_procedure(thread_db* tdbb, const Qualif
 
 	// We need to look up the procedure name in RDB$PROCEDURES
 
-	HazardPtr<jrd_prc> procedure;
+	HazardPtr<jrd_prc> procedure(FB_FUNCTION);
 
 	AutoCacheRequest request(tdbb, irq_l_procedure, IRQ_REQUESTS);
 
@@ -2697,7 +2699,7 @@ HazardPtr<jrd_prc> MetadataCache::lookup_procedure_id(thread_db* tdbb, USHORT id
 	SET_TDBB(tdbb);
 	Attachment* attachment = tdbb->getAttachment();
 	MetadataCache* mdc = attachment->att_database->dbb_mdc;
-	HazardPtr<jrd_prc> check_procedure, procedure;
+	HazardPtr<jrd_prc> check_procedure(FB_FUNCTION), procedure(FB_FUNCTION);
 
 	if (mdc->mdc_procedures.load(tdbb, id, procedure) &&
 		procedure->getId() == id &&
@@ -2760,7 +2762,7 @@ HazardPtr<jrd_rel> MetadataCache::lookup_relation(thread_db* tdbb, const MetaNam
 	SET_TDBB(tdbb);
 	Attachment* attachment = tdbb->getAttachment();
 	MetadataCache* mdc = attachment->att_database->dbb_mdc;
-	HazardPtr<jrd_rel> check_relation;
+	HazardPtr<jrd_rel> check_relation(FB_FUNCTION);
 
 	// See if we already know the relation by name
 
@@ -2799,7 +2801,7 @@ HazardPtr<jrd_rel> MetadataCache::lookup_relation(thread_db* tdbb, const MetaNam
 
 	// We need to look up the relation name in RDB$RELATIONS
 
-	HazardPtr<jrd_rel> relation;
+	HazardPtr<jrd_rel> relation(FB_FUNCTION);
 
 	AutoCacheRequest request(tdbb, irq_l_relation, IRQ_REQUESTS);
 
@@ -2863,7 +2865,7 @@ HazardPtr<jrd_rel> MetadataCache::lookup_relation_id(thread_db* tdbb, SLONG id, 
 		return findRelation(tdbb, (USHORT) id);
 	}
 
-	HazardPtr<jrd_rel> relation, check_relation;
+	HazardPtr<jrd_rel> relation(FB_FUNCTION), check_relation(FB_FUNCTION);
 	if (mdc->mdc_relations.load(tdbb, id, relation))
 	{
 		if (relation->rel_flags & REL_deleting)
@@ -2948,7 +2950,7 @@ bool MetadataCache::checkRelation(thread_db* tdbb, jrd_rel* relation)
 	Attachment* const attachment = tdbb->getAttachment();
 	MetadataCache* mdc = attachment->att_database->dbb_mdc;
 
-	HazardPtr<jrd_rel> check_relation;
+	HazardPtr<jrd_rel> check_relation(FB_FUNCTION);
 	if ((!mdc->mdc_relations.load(tdbb, relation->rel_id, check_relation)) ||
 		(relation != check_relation))
 	{
@@ -3185,7 +3187,7 @@ HazardPtr<jrd_prc> MetadataCache::findProcedure(thread_db* tdbb, USHORT id, bool
 	if (id >= mdc->mdc_procedures.getCount(tdbb))
 		mdc->mdc_procedures.grow(tdbb, id + 10);
 
-	HazardPtr<jrd_prc> procedure;
+	HazardPtr<jrd_prc> procedure(FB_FUNCTION);
 
 	if (mdc->mdc_procedures.load(tdbb, id, procedure) && !(procedure->flags & Routine::FLAG_OBSOLETE))
 	{
@@ -3335,7 +3337,7 @@ HazardPtr<jrd_prc> MetadataCache::findProcedure(thread_db* tdbb, USHORT id, bool
 					 (fb_utils::implicit_domain(F.RDB$FIELD_NAME) && !F.RDB$DEFAULT_VALUE.NULL)))
 				{
 					procedure->setDefaultCount(procedure->getDefaultCount() + 1);
-					MemoryPool* pool = attachment->createPool();
+					MemoryPool* pool = dbb->createPool();
 					Jrd::ContextPoolHolder context(tdbb, pool);
 
 					try
@@ -3389,7 +3391,7 @@ HazardPtr<jrd_prc> MetadataCache::findProcedure(thread_db* tdbb, USHORT id, bool
 
 			if (external || !P.RDB$PROCEDURE_BLR.NULL)
 			{
-				MemoryPool* const csb_pool = attachment->createPool();
+				MemoryPool* const csb_pool = dbb->createPool();
 				Jrd::ContextPoolHolder context(tdbb, csb_pool);
 
 				try
@@ -3518,7 +3520,7 @@ bool jrd_prc::reload(thread_db* tdbb)
 	FOR(REQUEST_HANDLE request)
 		P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_ID EQ this->getId()
 	{
-		MemoryPool* const csb_pool = attachment->createPool();
+		MemoryPool* const csb_pool = tdbb->getDatabase()->createPool();
 		Jrd::ContextPoolHolder context(tdbb, csb_pool);
 
 		try
@@ -3574,7 +3576,7 @@ HazardPtr<jrd_rel> MetadataCache::findRelation(thread_db* tdbb, USHORT id)
 	MetadataCache* mdc = dbb->dbb_mdc;
 	MemoryPool& pool = mdc->getPool();
 
-	HazardPtr<jrd_rel> relation;
+	HazardPtr<jrd_rel> relation(FB_FUNCTION);
 	if (mdc->mdc_relations.load(tdbb, id, relation))
 		return relation;
 
@@ -4587,7 +4589,7 @@ void MetadataCache::releaseTrigger(thread_db* tdbb, USHORT triggerId, const Meta
 		return;
 
 	SET_TDBB(tdbb);
-	HazardPtr<Trigger> trigger;
+	HazardPtr<Trigger> trigger(FB_FUNCTION);
 	SLONG n = vector->load()->lookup(tdbb, name, &trigger);
 	if (n < 0)
 		return;
@@ -4842,7 +4844,7 @@ HazardPtr<const Trigger> findTrigger(TrigVector* triggers, const MetaName& trig_
 		}
 	}
 
-	return HazardPtr<const Trigger>();
+	return HazardPtr<const Trigger>(FB_FUNCTION);
 }
 
 
@@ -4895,7 +4897,7 @@ void scan_partners(thread_db* tdbb, jrd_rel* relation)
 	{
 		//// ASF: Hack fix for CORE-4304, until nasty interactions between dfw and met are not resolved.
 		const jrd_rel* partner_relation = relation;
-		HazardPtr<jrd_rel> rel;
+		HazardPtr<jrd_rel> rel(FB_FUNCTION);
 		if (relation->rel_name != IND.RDB$RELATION_NAME)
 		{
 			rel = MetadataCache::lookup_relation(tdbb, IND.RDB$RELATION_NAME);
@@ -4961,7 +4963,7 @@ void scan_partners(thread_db* tdbb, jrd_rel* relation)
 	{
 		//// ASF: Hack fix for CORE-4304, until nasty interactions between dfw and met are not resolved.
 		const jrd_rel* partner_relation = relation;
-		HazardPtr<jrd_rel> rel;
+		HazardPtr<jrd_rel> rel(FB_FUNCTION);
 		if (relation->rel_name != IND.RDB$RELATION_NAME)
 		{
 			rel = MetadataCache::lookup_relation(tdbb, IND.RDB$RELATION_NAME);
@@ -5021,7 +5023,7 @@ static void store_dependencies(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 
-	HazardPtr<const Trigger> t;
+	HazardPtr<const Trigger> t(FB_FUNCTION);
 	const bool checkTableScope =
 		(dependency_type == obj_computed) ||
 		(dependency_type == obj_trigger) && dep_rel &&
@@ -5045,7 +5047,7 @@ static void store_dependencies(thread_db* tdbb,
 		}
 
 		int dpdo_type = dependency.objType;
-		HazardPtr<jrd_rel> relation;
+		HazardPtr<jrd_rel> relation(FB_FUNCTION);
 		const jrd_prc* procedure = NULL;
 		const MetaName* dpdo_name = NULL;
 		MetaName packageName;
@@ -5412,7 +5414,7 @@ void MetadataCache::releaseRelations(thread_db* tdbb)
 {
 	for (FB_SIZE_T n = 0; n < mdc_relations.getCount(tdbb); ++n)
 	{
-		HazardPtr<jrd_rel> relation(tdbb);
+		HazardPtr<jrd_rel> relation(tdbb, FB_FUNCTION);
 		if (mdc_relations.load(tdbb, n, relation))
 		{
 			if (relation->rel_file)
@@ -5516,19 +5518,19 @@ HazardPtr<Function> MetadataCache::lookupFunction(thread_db* tdbb, const Qualifi
 		}
 	}
 
-	return HazardPtr<Function>();
+	return HazardPtr<Function>(FB_FUNCTION);
 }
 
 HazardPtr<jrd_rel> MetadataCache::getRelation(thread_db* tdbb, ULONG rel_id)
 {
-	HazardPtr<jrd_rel> rc(tdbb);
+	HazardPtr<jrd_rel> rc(tdbb, FB_FUNCTION);
 	mdc_relations.load(tdbb, rel_id, rc);
 	return rc;
 }
 
 HazardPtr<jrd_rel> MetadataCache::getRelation(Attachment* att, ULONG rel_id)
 {
-	HazardPtr<jrd_rel> rc(att);
+	HazardPtr<jrd_rel> rc(att, FB_FUNCTION);
 	mdc_relations.load(att, rel_id, rc);
 	return rc;
 }

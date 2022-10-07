@@ -66,8 +66,9 @@ HazardDelayedDelete* HazardBase::getHazardDelayed(Attachment* att)
 	return &att->att_delayed_delete;
 }
 
-void HazardDelayedDelete::add(const void* ptr)
+void HazardDelayedDelete::add(const void* ptr, const char* from)
 {
+	HZ_DEB(fprintf(stderr, "HazardDelayedDelete::add %s %p\n", from, ptr));
 	// as long as we access our own hazard pointers use of write accessor is always OK
 	auto hp = hazardPointers.writeAccessor();
 
@@ -91,8 +92,9 @@ void HazardDelayedDelete::add(const void* ptr)
 	*(hp->add()) = ptr;
 }
 
-void HazardDelayedDelete::remove(const void* ptr)
+void HazardDelayedDelete::remove(const void* ptr, const char* from)
 {
+	HZ_DEB(fprintf(stderr, "HazardDelayedDelete::remove %s %p\n", from, ptr));
 	// as long as we access our own hazard pointers use of write accessor is always OK
 	auto hp = hazardPointers.writeAccessor();
 
@@ -187,7 +189,7 @@ void HazardDelayedDelete::garbageCollect(GarbageCollectMethod gcMethod)
 	database->dbb_delayed_delete.garbageCollect(GarbageCollectMethod::GC_NORMAL);
 	for (unsigned i = 0; i < toDelete.getCount(); ++i)
 	{
-		database->dbb_delayed_delete.add(toDelete[i]);
+		database->dbb_delayed_delete.add(toDelete[i], FB_FUNCTION);
 		toDelete[i] = nullptr;
 	}
 	toDelete.shrink(0);

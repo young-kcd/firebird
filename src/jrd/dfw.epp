@@ -394,36 +394,40 @@ public:
 
 	void lock()
 	{
-		relLock* item = m_locks.begin();
-		const relLock* const end = m_locks.end();
-		for (; item < end; item++)
-			item->takeLock(m_tdbb, m_transaction);
+		for (auto item : m_locks)
+			item.takeLock(m_tdbb, m_transaction);
 	}
 
 	void unlock()
 	{
-		relLock* item = m_locks.begin();
-		const relLock* const end = m_locks.end();
-		for (; item < end; item++)
-			item->releaseLock(m_tdbb, m_transaction);
+		for (auto item : m_locks)
+			item.releaseLock(m_tdbb, m_transaction);
 	}
 
 private:
 	struct relLock
 	{
-		relLock(HazardPtr<jrd_rel> relation = HazardPtr<jrd_rel>()) :
+		relLock(HazardPtr<jrd_rel> relation = HazardPtr<jrd_rel>(FB_FUNCTION)) :
 			m_relation(relation),
 			m_lock(NULL),
 			m_release(false)
 		{
 		}
 
+		relLock(MemoryPool&, const Jrd::ProtectRelations::relLock& l) :
+			m_relation(l.m_relation),
+			m_lock(l.m_lock),
+			m_release(l.m_release)
+		{
+			fb_assert(!m_lock);
+		}
+
 		void takeLock(thread_db* tdbb, jrd_tra* transaction);
 		void releaseLock(thread_db* tdbb, jrd_tra* transaction);
 
-		static const USHORT generate(const relLock& item)
+		static const USHORT* generate(const relLock* item)
 		{
-			return item.m_relation->rel_id;
+			return &item->m_relation->rel_id;
 		}
 
 		HazardPtr<jrd_rel> m_relation;
@@ -433,7 +437,7 @@ private:
 
 	thread_db* m_tdbb;
 	jrd_tra* m_transaction;
-	SortedArray<relLock, InlineStorage<relLock, 2>, USHORT, relLock> m_locks;
+	SortedObjectsArray<relLock, InlineStorage<relLock*, 2>, USHORT, relLock> m_locks;
 };
 
 } // namespace Jrd
@@ -713,7 +717,7 @@ namespace
 		{
 			SET_TDBB(tdbb);
 			const QualifiedName name(work->dfw_name, work->dfw_package);
-			HazardPtr<Routine> routine;
+			HazardPtr<Routine> routine(FB_FUNCTION);
 
 			switch (phase)
 			{
@@ -866,7 +870,7 @@ namespace
 		{
 			SET_TDBB(tdbb);
 			const QualifiedName name(work->dfw_name, work->dfw_package);
-			HazardPtr<T> routine;
+			HazardPtr<T> routine(FB_FUNCTION);
 
 			switch (phase)
 			{
@@ -1055,7 +1059,7 @@ namespace
 	{
 		Jrd::Attachment* attachment = tdbb->getAttachment();
 		AutoCacheRequest handle(tdbb, irq_c_fun_dpd, IRQ_REQUESTS);
-		HazardPtr<Routine> routine(tdbb);
+		HazardPtr<Routine> routine(tdbb, FB_FUNCTION);
 
 		FOR(REQUEST_HANDLE handle)
 			X IN RDB$FUNCTIONS WITH
@@ -1100,7 +1104,7 @@ namespace
 	{
 		Attachment* attachment = tdbb->getAttachment();
 		AutoCacheRequest handle(tdbb, irq_c_prc_dpd, IRQ_REQUESTS);
-		HazardPtr<Routine> routine(tdbb);
+		HazardPtr<Routine> routine(tdbb, FB_FUNCTION);
 
 		FOR(REQUEST_HANDLE handle)
 			X IN RDB$PROCEDURES WITH
@@ -2683,7 +2687,7 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 
 	case 3:
 		{
-			HazardPtr<jrd_rel> relation;
+			HazardPtr<jrd_rel> relation(FB_FUNCTION);
 			index_desc idx;
 			MemoryPool* new_pool = NULL;
 
@@ -2743,7 +2747,7 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 
 					CompilerScratch* csb = NULL;
 					// allocate a new pool to contain the expression tree for the expression index
-					new_pool = attachment->createPool();
+					new_pool = dbb->createPool();
 					{ // scope
 						Jrd::ContextPoolHolder context(tdbb, new_pool);
 						MET_scan_relation(tdbb, relation);
@@ -3075,7 +3079,7 @@ static void cleanup_index_creation(thread_db* tdbb, DeferredWork* work, jrd_tra*
 				idx.idx_id = idx_invalid;
 				idx.idx_flags = idx_foreign;
 
-				HazardPtr<jrd_rel> partner_relation;
+				HazardPtr<jrd_rel> partner_relation(FB_FUNCTION);
 				if (MET_lookup_partner(tdbb, relation.unsafePointer(), &idx, work->dfw_name.c_str()))
 				{
 					partner_relation = MetadataCache::lookup_relation_id(tdbb, idx.idx_primary_relation, true);
@@ -3233,7 +3237,7 @@ static bool modify_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 	}
 
 	bool gtt_preserve = false;
-	HazardPtr<jrd_rel> relation;
+	HazardPtr<jrd_rel> relation(FB_FUNCTION);
 
 	if (is_create)
 	{
@@ -3299,8 +3303,8 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
  *
  **************************************/
 	AutoCacheRequest request;
-	HazardPtr<jrd_rel> relation;
-	HazardPtr<jrd_rel> partner_relation;
+	HazardPtr<jrd_rel> relation(FB_FUNCTION);
+	HazardPtr<jrd_rel> partner_relation(FB_FUNCTION);
 	index_desc idx;
 	int key_count;
 
@@ -3328,6 +3332,8 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 		// it.  If the index inactive flag is set, don't create the index
 
 		request.reset(tdbb, irq_c_index, IRQ_REQUESTS);
+
+		fprintf(stderr, "create_index %s\n", work->dfw_name.c_str());
 
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 			IDX IN RDB$INDICES CROSS
@@ -3620,7 +3626,7 @@ static bool create_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
  *
  **************************************/
 	AutoCacheRequest request;
-	HazardPtr<jrd_rel> relation;
+	HazardPtr<jrd_rel> relation(FB_FUNCTION);
 	USHORT rel_id, external_flag;
 	bid blob_id;
 	AutoRequest handle;
@@ -4261,7 +4267,7 @@ static bool create_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 			if (!validation.isEmpty())
 			{
-				MemoryPool* new_pool = attachment->createPool();
+				MemoryPool* new_pool = tdbb->getDatabase()->createPool();
 				Jrd::ContextPoolHolder context(tdbb, new_pool);
 
 				MET_get_dependencies(tdbb, nullRel, NULL, 0, NULL, &validation,
@@ -4425,7 +4431,7 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 			if (!validation.isEmpty())
 			{
-				MemoryPool* new_pool = attachment->createPool();
+				MemoryPool* new_pool = tdbb->getDatabase()->createPool();
 				Jrd::ContextPoolHolder context(tdbb, new_pool);
 
 				MET_get_dependencies(tdbb, nullRel, NULL, 0, NULL, &validation,
@@ -4528,7 +4534,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
  * Functional description
  *
  **************************************/
-	HazardPtr<IndexLock> index;
+	HazardPtr<IndexLock> index(FB_FUNCTION);
 
 	SET_TDBB(tdbb);
 
@@ -4737,7 +4743,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
  *
  **************************************/
 	AutoRequest request;
-	HazardPtr<jrd_rel> relation;
+	HazardPtr<jrd_rel> relation(FB_FUNCTION);
 	Resource* rsc;
 	USHORT view_count;
 	bool adjusted;
@@ -4979,7 +4985,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tr
 	int rel_exists, field_count;
 	AutoRequest handle;
 	MetaName f;
-	HazardPtr<jrd_rel> relation;
+	HazardPtr<jrd_rel> relation(FB_FUNCTION);
 
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
@@ -5378,7 +5384,7 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
 	if (compile)
 		compile = !tdbb->getAttachment()->isGbak();
 
-	HazardPtr<jrd_rel> relation;
+	HazardPtr<jrd_rel> relation(FB_FUNCTION);
 	bid blob_id;
 	blob_id.clear();
 
@@ -5402,7 +5408,7 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
 	{
 		Statement* statement = NULL;
 		// Nickolay Samofatov: allocate statement memory pool...
-		MemoryPool* new_pool = attachment->createPool();
+		MemoryPool* new_pool = tdbb->getDatabase()->createPool();
 		USHORT par_flags;
 
 		if ((type & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DML)
@@ -5618,7 +5624,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
  **************************************/
 	TemporaryField* stack;
 	TemporaryField* external;
-	HazardPtr<jrd_rel> relation;
+	HazardPtr<jrd_rel> relation(FB_FUNCTION);
 	//bid blob_id;
 	//blob_id.clear();
 
@@ -5871,7 +5877,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 					if (notNull && !defaultValue->isEmpty())
 					{
-						Jrd::ContextPoolHolder context(tdbb, attachment->createPool());
+						Jrd::ContextPoolHolder context(tdbb, dbb->createPool());
 						Statement* defaultStatement = NULL;
 						try
 						{
@@ -6150,7 +6156,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 						for (int i = 0; i < TRIGGER_MAX; ++i)
 							triggers[i] = NULL;
 
-						MemoryPool* new_pool = attachment->createPool();
+						MemoryPool* new_pool = dbb->createPool();
 						try
 						{
 							Jrd::ContextPoolHolder context(tdbb, new_pool);
@@ -6161,7 +6167,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 							{
 								if (triggers[i])
 								{
-									HazardPtr<Trigger> trig(tdbb);
+									HazardPtr<Trigger> trig(tdbb, FB_FUNCTION);
 									for (FB_SIZE_T j = 0; j < triggers[i].load()->getCount(tdbb); ++j)
 									{
 										if (triggers[i].load()->load(tdbb, j, trig))
@@ -6288,7 +6294,7 @@ static bool scan_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd
  **************************************/
 
 	SET_TDBB(tdbb);
-	HazardPtr<jrd_rel> rel;
+	HazardPtr<jrd_rel> rel(FB_FUNCTION);
 
 	switch (phase)
 	{

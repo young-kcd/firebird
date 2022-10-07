@@ -387,7 +387,7 @@ void Statement::verifyAccess(thread_db* tdbb)
 
 	for (ExternalAccess* item = external.begin(); item != external.end(); ++item)
 	{
-		HazardPtr<Routine> routine(tdbb);
+		HazardPtr<Routine> routine(tdbb, FB_FUNCTION);
 		int aclType;
 
 		if (item->exa_action == ExternalAccess::exa_procedure)
@@ -614,7 +614,7 @@ void Statement::verifyTriggerAccess(thread_db* tdbb, const HazardPtr<jrd_rel>& o
 
 	for (FB_SIZE_T i = 0; i < triggers->getCount(tdbb); i++)
 	{
-		HazardPtr<Trigger> t(tdbb);
+		HazardPtr<Trigger> t(tdbb, FB_FUNCTION);
 		if (!triggers->load(tdbb, i, t))
 			continue;
 
@@ -679,7 +679,7 @@ inline void Statement::triggersExternalAccess(thread_db* tdbb, ExternalAccessLis
 
 	for (FB_SIZE_T i = 0; i < tvec->getCount(tdbb); i++)
 	{
-		HazardPtr<Trigger> t(tdbb);
+		HazardPtr<Trigger> t(tdbb, FB_FUNCTION);
 		if (!tvec->load(tdbb, i, t))
 			continue;
 

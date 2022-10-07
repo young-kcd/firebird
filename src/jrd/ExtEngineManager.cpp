@@ -1621,7 +1621,7 @@ void ExtEngineManager::makeTrigger(thread_db* tdbb, CompilerScratch* csb, Jrd::T
 			trg->extTrigger);
 		mainNode->statements.add(extTriggerNode);
 
-		HazardPtr<jrd_rel> rel;
+		HazardPtr<jrd_rel> rel(FB_FUNCTION);
 		rel.safePointer(trg->relation);
 		PAR_preparsed_node(tdbb, rel, mainNode, NULL, &csb, &trg->statement, true, 0);
 	}

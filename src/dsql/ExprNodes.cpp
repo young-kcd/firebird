@@ -12759,7 +12759,7 @@ DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 		}
 	}
 
-	HazardPtr<Function> func;
+	HazardPtr<Function> func(FB_FUNCTION);
 	if (!node->function)
 	{
 		func = Function::lookup(tdbb, name, false);

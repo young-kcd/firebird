@@ -72,8 +72,8 @@ namespace Jrd {
 			: hazardDelayed(nullptr)
 		{ }
 
-		inline void add(const void* hazardPointer);
-		inline void remove(const void* hazardPointer);
+		inline void add(const void* hazardPointer, const char* from);
+		inline void remove(const void* hazardPointer, const char* from);
 
 	private:
 		HazardDelayedDelete* hazardDelayed;
@@ -87,42 +87,49 @@ namespace Jrd {
 	class HazardPtr : public HazardBase
 	{
 	public:
-		HazardPtr()
-			: hazardPointer(nullptr)
+		HazardPtr(const char* F)
+			: hazardPointer(nullptr),
+			  frm(F)
 		{ }
 
 		template <class DDS>
-		explicit HazardPtr(DDS* par)
+		explicit HazardPtr(DDS* par, const char* F)
 			: HazardBase(par),
-			  hazardPointer(nullptr)
+			  hazardPointer(nullptr),
+			  frm(F)
 		{ }
 
 		template <class DDS>
-		HazardPtr(DDS* par, const std::atomic<T*>& from)
+		HazardPtr(DDS* par, const std::atomic<T*>& from, const char* F)
 			: HazardBase(par),
-			  hazardPointer(nullptr)
+			  hazardPointer(nullptr),
+			  frm(F)
 		{
 			set(from);
 		}
 
-		HazardPtr(HazardPtr& copy)
+		HazardPtr(const HazardPtr& copy)
 			: HazardBase(copy),
-			  hazardPointer(nullptr)
+			  hazardPointer(nullptr),
+			  frm(copy.frm)
 		{
 			reset(copy.hazardPointer);
+			frm = copy.frm;
 		}
 
 		HazardPtr(HazardPtr&& move)
 			: HazardBase(move),
-			  hazardPointer(nullptr)
+			  hazardPointer(nullptr),
+			  frm(move.frm)
 		{
 			hazardPointer = move.releasePointer();
 		}
 
 		template <class T2>
-		HazardPtr(HazardPtr<T2>& copy)
+		HazardPtr(const HazardPtr<T2>& copy)
 			: HazardBase(copy),
-			  hazardPointer(nullptr)
+			  hazardPointer(nullptr),
+			  frm(copy.frm)
 		{
 			reset(copy.getPointer());
 		}
@@ -130,7 +137,8 @@ namespace Jrd {
 		template <class T2>
 		HazardPtr(HazardPtr<T2>&& move)
 			: HazardBase(move),
-			  hazardPointer(nullptr)
+			  hazardPointer(nullptr),
+			  frm(move.frm)
 		{
 			hazardPointer = move.releasePointer();
 		}
@@ -233,7 +241,7 @@ namespace Jrd {
 		HazardPtr& operator=(HazardPtr&& moveAssign)
 		{
 			if (hazardPointer)
-				 remove(hazardPointer);
+				 remove(hazardPointer, frm);
 			HazardBase::operator=(moveAssign);
 			hazardPointer = moveAssign.releasePointer();
 			return *this;
@@ -250,7 +258,7 @@ namespace Jrd {
 		HazardPtr& operator=(HazardPtr<T2>&& moveAssign)
 		{
 			if (hazardPointer)
-				 remove(hazardPointer);
+				 remove(hazardPointer, FB_FUNCTION);
 			HazardBase::operator=(moveAssign);
 			hazardPointer = moveAssign.releasePointer();
 			return *this;
@@ -267,16 +275,19 @@ namespace Jrd {
 			if (newPtr != hazardPointer)
 			{
 				if (hazardPointer)
-					remove(hazardPointer);
+					remove(hazardPointer, frm);
 				if (newBase)
 					HazardBase::operator=(*newBase);
 				if (newPtr)
-					add(newPtr);
+					add(newPtr, frm);
 				hazardPointer = newPtr;
 			}
 		}
 
 		T* hazardPointer;
+
+	public:
+		const char* frm;
 	};
 
 	template <typename T>
@@ -300,7 +311,7 @@ namespace Jrd {
 
 	// Shared read here means that any thread can read from vector using HP.
 	// It can be modified only in single thread, and it's caller's responsibility that modifying thread is single.
-	// It's also callers resposibility to destroy Generation when deleting SharedReadVector:
+	// It's also callers responsibility to destroy Generation when deleting SharedReadVector:
 	// in dtor we do not have enough information to do it correctly, default delayedDelete() may be already wrong.
 
 	template <typename T, FB_SIZE_T CAP, bool GC_ENABLED = true>
@@ -386,7 +397,7 @@ namespace Jrd {
 		template <class DDS>
 		HazardPtr<Generation> readAccessor(DDS* par) const
 		{
-			return HazardPtr<Generation>(par, v);
+			return HazardPtr<Generation>(par, v, FB_FUNCTION);
 		}
 
 		inline void grow(HazardDelayedDelete* dd, FB_SIZE_T newSize = 0);
@@ -416,8 +427,8 @@ namespace Jrd {
 			  hazardPointers(getPool())
 		{ }
 
-		void add(const void* ptr);
-		void remove(const void* ptr);
+		void add(const void* ptr, const char* from);
+		void remove(const void* ptr, const char* from);
 
 		void delayedDelete(HazardObject* mem, bool gc = true);
 		void garbageCollect(GarbageCollectMethod gcMethod);
@@ -434,18 +445,18 @@ namespace Jrd {
 	};
 
 
-	inline void HazardBase::add(const void* hazardPointer)
+	inline void HazardBase::add(const void* hazardPointer, const char* from)
 	{
 		if (!hazardDelayed)
 			hazardDelayed = getHazardDelayed();
-		hazardDelayed->add(hazardPointer);
+		hazardDelayed->add(hazardPointer, from);
 	}
 
-	inline void HazardBase::remove(const void* hazardPointer)
+	inline void HazardBase::remove(const void* hazardPointer, const char* from)
 	{
 		if (!hazardDelayed)
 			hazardDelayed = getHazardDelayed();
-		hazardDelayed->remove(hazardPointer);
+		hazardDelayed->remove(hazardPointer, from);
 	}
 
 	template <typename T, FB_SIZE_T CAP, bool GC_ENABLED>
@@ -495,7 +506,7 @@ namespace Jrd {
 
 				for (SubArrayElement* end = &sub[SUBARRAY_SIZE]; sub < end--;)
 				{
-					HazardPtr<Object> val(tdbb, *end);
+					HazardPtr<Object> val(tdbb, *end, FB_FUNCTION);
 					if (val.hasData() && val->getKey() == key)
 					{
 						if (object)
@@ -575,7 +586,7 @@ namespace Jrd {
 				oldVal->delayedDelete(tdbb);
 			}
 
-			return HazardPtr<Object>(tdbb, *sub);
+			return HazardPtr<Object>(tdbb, *sub, FB_FUNCTION);
 		}
 
 		bool replace(thread_db* tdbb, FB_SIZE_T id, HazardPtr<Object>& oldVal, Object* const newVal)
@@ -617,7 +628,7 @@ namespace Jrd {
 		template <class DDS>
 		HazardPtr<Object> load(DDS* par, FB_SIZE_T id) const
 		{
-			HazardPtr<Object> val;
+			HazardPtr<Object> val(FB_FUNCTION);
 			if (!load(par, id, val))
 				val.clear();
 			return val;
@@ -677,7 +688,7 @@ namespace Jrd {
 
 			HazardPtr<Object> get()
 			{
-				HazardPtr<Object> rc(hd);
+				HazardPtr<Object> rc(hd, FB_FUNCTION);
 				if (!snap->load(index, rc))
 					rc.clear();
 				return rc;

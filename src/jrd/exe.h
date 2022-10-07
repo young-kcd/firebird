@@ -171,7 +171,7 @@ public:
 		if (!list.find(r, pos))
 		{
 			list.insert(pos, r);
-			HazardPtr<T>::getHazardDelayed(tdbb)->add(ptr);
+			HazardPtr<T>::getHazardDelayed(tdbb)->add(ptr, FB_FUNCTION);
 		}
 
 		return ptr;

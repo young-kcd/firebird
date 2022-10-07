@@ -667,7 +667,7 @@ HazardPtr<IndexLock> jrd_rel::getIndexLock(thread_db* tdbb, USHORT id)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	HazardPtr<IndexLock> indexLock;
+	HazardPtr<IndexLock> indexLock(FB_FUNCTION);
 	if (rel_id < (USHORT) rel_MAX)
 		return indexLock;
 
@@ -693,4 +693,4 @@ const char* IndexLock::c_name() const
 }
 
 //extern
-HazardPtr<jrd_rel> Jrd::nullRel;
+HazardPtr<jrd_rel> Jrd::nullRel(FB_FUNCTION);

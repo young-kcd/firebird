@@ -292,7 +292,7 @@ HazardPtr<Collation> CharSetContainer::lookupCollation(thread_db* tdbb, USHORT t
 {
 	const USHORT id = TTYPE_TO_COLLATION(tt_id);
 
-	HazardPtr<Collation> coll;
+	HazardPtr<Collation> coll(FB_FUNCTION);
 	if (charset_collations.load(tdbb, id, coll))
 	{
 		if (!coll->obsolete)
@@ -301,7 +301,7 @@ HazardPtr<Collation> CharSetContainer::lookupCollation(thread_db* tdbb, USHORT t
 
 	CheckoutLockGuard guard(tdbb, createCollationMtx, FB_FUNCTION); // do we need it ?
 
-	HazardPtr<Collation> to_delete;
+	HazardPtr<Collation> to_delete(FB_FUNCTION);
 	if (charset_collations.load(tdbb, id, coll))
 	{
 		if (!coll->obsolete)
@@ -406,7 +406,7 @@ void CharSetContainer::unloadCollation(thread_db* tdbb, USHORT tt_id)
 	const USHORT id = TTYPE_TO_COLLATION(tt_id);
 	fb_assert(id != 0);
 
-	HazardPtr<Collation> coll;
+	HazardPtr<Collation> coll(FB_FUNCTION);
 	if (charset_collations.load(tdbb, id, coll))
 	{
 		MutexLockGuard g(tdbb->getDatabase()->dbb_mdc->mdc_use_mutex, FB_FUNCTION);
@@ -459,7 +459,7 @@ void Jrd::MetadataCache::destroyIntlObjects(thread_db* tdbb)
 {
 	for (FB_SIZE_T i = 0; i < mdc_charsets.getCount(tdbb); i++)
 	{
-		HazardPtr<CharSetContainer> cs;
+		HazardPtr<CharSetContainer> cs(FB_FUNCTION);
 		if (mdc_charsets.load(tdbb, i, cs))
 		{
 			cs->destroy(tdbb);

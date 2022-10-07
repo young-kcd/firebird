@@ -334,7 +334,7 @@ void IDX_create_index(thread_db* tdbb,
 				  2, 1, key_desc, callback, callback_arg);
 	creation.sort = scb;
 
-	HazardPtr<jrd_rel> partner_relation(tdbb);
+	HazardPtr<jrd_rel> partner_relation(tdbb, FB_FUNCTION);
 	USHORT partner_index_id = 0;
 	if (isForeign)
 	{
@@ -1282,7 +1282,7 @@ static idx_e check_foreign_key(thread_db* tdbb,
 	if (!MET_lookup_partner(tdbb, relation, idx, 0))
 		return result;
 
-	HazardPtr<jrd_rel> partner_relation(tdbb);
+	HazardPtr<jrd_rel> partner_relation(tdbb, FB_FUNCTION);
 	USHORT index_id = 0;
 
 	if (idx->idx_flags & idx_foreign)

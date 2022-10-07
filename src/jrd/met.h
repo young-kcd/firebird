@@ -359,7 +359,7 @@ public:
 
 	HazardPtr<Function> getFunction(thread_db* tdbb, USHORT id, bool grow = false)
 	{
-		HazardPtr<Function> rc(tdbb);
+		HazardPtr<Function> rc(tdbb, FB_FUNCTION);
 
 		if (id >= mdc_functions.getCount(tdbb))
 		{
@@ -379,7 +379,7 @@ public:
 
 	HazardPtr<jrd_prc> getProcedure(thread_db* tdbb, USHORT id, bool grow = false)
 	{
-		HazardPtr<jrd_prc> rc(tdbb);
+		HazardPtr<jrd_prc> rc(tdbb, FB_FUNCTION);
 
 		if (id >= mdc_procedures.getCount(tdbb))
 		{
@@ -404,7 +404,7 @@ public:
 
 	bool getSequence(thread_db* tdbb, SLONG id, MetaName& name)
 	{
-		HazardPtr<Generator> hp(tdbb);
+		HazardPtr<Generator> hp(tdbb, FB_FUNCTION);
 
 		if (!mdc_generators.load(tdbb, id, hp))
 			return false;
@@ -421,7 +421,7 @@ public:
 
 	HazardPtr<CharSetContainer> getCharSet(thread_db* tdbb, USHORT id)
 	{
-		HazardPtr<CharSetContainer> rc;
+		HazardPtr<CharSetContainer> rc(FB_FUNCTION);
 		mdc_charsets.load(tdbb, id, rc);
 		return rc;
 	}

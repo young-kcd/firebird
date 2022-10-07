@@ -62,7 +62,7 @@ HazardPtr<Function> Function::lookup(thread_db* tdbb, USHORT id, bool return_del
 {
 	Attachment* const attachment = tdbb->getAttachment();
 	Database* const dbb = tdbb->getDatabase();
-	HazardPtr<Function> check_function(tdbb);
+	HazardPtr<Function> check_function(tdbb, FB_FUNCTION);
 
 	HazardPtr<Function> function = dbb->dbb_mdc->getFunction(tdbb, id);
 

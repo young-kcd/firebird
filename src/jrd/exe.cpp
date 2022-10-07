@@ -1656,9 +1656,9 @@ void ResourceList::setResetPointersHazard(thread_db* tdbb, bool set)
 			if (hazardPointer)
 			{
 				if (set)
-					hazardDelayed->add(hazardPointer);
+					hazardDelayed->add(hazardPointer, FB_FUNCTION);
 				else
-					hazardDelayed->remove(hazardPointer);
+					hazardDelayed->remove(hazardPointer, FB_FUNCTION);
 			}
 		}
 

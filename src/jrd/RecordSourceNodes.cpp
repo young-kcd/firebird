@@ -561,7 +561,7 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 	// Find relation either by id or by name
 	string* aliasString = NULL;
 	MetaName name;
-	HazardPtr<jrd_rel> rel;
+	HazardPtr<jrd_rel> rel(FB_FUNCTION);
 
 	switch (blrOp)
 	{
@@ -898,7 +898,7 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 	jrd_prc* procedure = NULL;
 	string* aliasString = NULL;
 	QualifiedName name;
-	HazardPtr<jrd_prc> proc;
+	HazardPtr<jrd_prc> proc(FB_FUNCTION);
 
 	switch (blrOp)
 	{
