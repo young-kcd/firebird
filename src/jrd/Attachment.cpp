@@ -969,28 +969,28 @@ int Jrd::Attachment::blockingAstCancel(void* ast_object)
 
 int Jrd::Attachment::blockingAstMonitor(void* ast_object)
 {
-	Jrd::Attachment* const attachment = static_cast<Jrd::Attachment*>(ast_object);
+	const auto attachment = static_cast<Jrd::Attachment*>(ast_object);
 
 	try
 	{
-		Database* const dbb = attachment->att_database;
+		const auto dbb = attachment->att_database;
 
 		AsyncContextHolder tdbb(dbb, FB_FUNCTION, attachment->att_monitor_lock);
 
-		if (!(attachment->att_flags & ATT_monitor_done))
+		if (const auto generation = Monitoring::checkGeneration(dbb, attachment))
 		{
 			try
 			{
-				Monitoring::dumpAttachment(tdbb, attachment);
+				Monitoring::dumpAttachment(tdbb, attachment, generation);
 			}
 			catch (const Exception& ex)
 			{
 				iscLogException("Cannot dump the monitoring data", ex);
 			}
-
-			LCK_downgrade(tdbb, attachment->att_monitor_lock);
-			attachment->att_flags |= ATT_monitor_done;
 		}
+
+		LCK_downgrade(tdbb, attachment->att_monitor_lock);
+		attachment->att_flags |= ATT_monitor_disabled;
 	}
 	catch (const Exception&)
 	{} // no-op

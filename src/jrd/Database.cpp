@@ -102,6 +102,19 @@ namespace Jrd
 		return dbb_tip_cache->getLatestStatementId();
 	}
 
+	ULONG Database::getMonitorGeneration() const
+	{
+		if (!dbb_tip_cache)
+			return 0;
+		return dbb_tip_cache->getMonitorGeneration();
+	}
+
+	ULONG Database::newMonitorGeneration() const
+	{
+		fb_assert(dbb_tip_cache);
+		return dbb_tip_cache->newMonitorGeneration();
+	}
+
 	const Firebird::string& Database::getUniqueFileId()
 	{
 		if (dbb_file_id.isEmpty())

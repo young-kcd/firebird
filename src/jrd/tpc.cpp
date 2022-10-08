@@ -69,6 +69,7 @@ bool TipCache::GlobalTpcInitializer::initialize(SharedMemoryBase* sm, bool initF
 
 	header->latest_commit_number.store(CN_PREHISTORIC, std::memory_order_relaxed);
 	header->latest_statement_id.store(0, std::memory_order_relaxed);
+	header->monitor_generation.store(0, std::memory_order_relaxed);
 	header->tpc_block_size = dbb->dbb_config->getTipCacheBlockSize();
 
 	m_cache->initTransactionsPerBlock(header->tpc_block_size);
