@@ -60,6 +60,7 @@
 #include "../jrd/Attachment.h"
 #include "firebird/Interface.h"
 
+#include <cds/threading/model.h>	// cds::threading::Manager
 
 #define BUGCHECK(number)		ERR_bugcheck(number, __FILE__, __LINE__)
 #define SOFT_BUGCHECK(number)	ERR_soft_bugcheck(number, __FILE__, __LINE__)
@@ -772,6 +773,9 @@ public:
 	{
 		context.putSpecific();
 		currentStatus->init();
+
+		if (!cds::threading::Manager::isThreadAttached())
+			cds::threading::Manager::attachThread();
 	}
 
 	ThreadContextHolder(Database* dbb, Jrd::Attachment* att, FbStatusVector* status = NULL)
@@ -781,6 +785,9 @@ public:
 		context.setDatabase(dbb);
 		context.setAttachment(att);
 		currentStatus->init();
+
+		if (!cds::threading::Manager::isThreadAttached())
+			cds::threading::Manager::attachThread();
 	}
 
 	~ThreadContextHolder()
