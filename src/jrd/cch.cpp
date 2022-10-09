@@ -3700,14 +3700,9 @@ static BufferDesc* get_oldest_buffer(thread_db* tdbb, BufferControl* bcb)
 		if (!(bcb->bcb_flags & BCB_writer_active))
 			bcb->bcb_writer_sem.release();
 
-		if (walk)
-		{
-			bdb->release(tdbb, true);
-//			if (!--walk)
-//				return nullptr;
-			bdb = nullptr;
-			--walk;
-		}
+		bdb->release(tdbb, true);
+		bdb = nullptr;
+		--walk;
 	}
 
 	lruSync.unlock();
@@ -4287,15 +4282,15 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, ULONG number)
 			if (!(bcb->bcb_flags & BCB_exclusive))
 			{
 				// first lock block is after last BufferDesc
-				fb_assert((char*)bdb->bdb_lock >= (char*)tail);
+				fb_assert((char*) bdb->bdb_lock >= (char*) tail);
 
 				// first page buffer is after last lock block
-				fb_assert((char*)bdb->bdb_buffer >= (char*)tail[-1].bdb_lock + lock_size);
+				fb_assert((char*) bdb->bdb_buffer >= (char*) tail[-1].bdb_lock + lock_size);
 			}
 			else
 			{
 				// first page buffer is after last BufferDesc
-				fb_assert((char*)bdb->bdb_buffer >= (char*)tail);
+				fb_assert((char*) bdb->bdb_buffer >= (char*) tail);
 			}
 
 			memory = nullptr;
