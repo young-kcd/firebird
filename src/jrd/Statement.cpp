@@ -705,10 +705,7 @@ void Statement::release(thread_db* tdbb)
 
 	const auto attachment = tdbb->getAttachment();
 
-	FB_SIZE_T pos;
-	if (attachment->att_statements.find(this, pos))
-		attachment->att_statements.remove(pos);
-	else
+	if (!attachment->att_statements.findAndRemove(this))
 		fb_assert(false);
 
 	sqlText = NULL;
@@ -726,7 +723,7 @@ string Statement::getPlan(thread_db* tdbb, bool detailed) const
 	for (const auto rsb : fors)
 	{
 		plan += detailed ? "\nSelect Expression" : "\nPLAN ";
-		rsb->print(tdbb, plan, detailed, 0);
+		rsb->print(tdbb, plan, detailed, 0, true);
 	}
 
 	return plan;

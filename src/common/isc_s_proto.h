@@ -181,11 +181,14 @@ public:
 #endif
 
 class CountedFd;
+class CountedRWLock;
 
 class FileLock
 {
+	friend class CountedRWLock;
+
 public:
-	enum LockMode {FLM_EXCLUSIVE, FLM_TRY_EXCLUSIVE, FLM_SHARED, FLM_TRY_SHARED};
+	enum LockMode {FLM_EXCLUSIVE, FLM_TRY_EXCLUSIVE, FLM_SHARED};
 
 	typedef void InitFunction(int fd);
 	explicit FileLock(const char* fileName, InitFunction* init = NULL);		// main ctor
@@ -268,6 +271,8 @@ public:
 #endif
 	bool remapFile(Firebird::CheckStatusWrapper* status, ULONG newSize, bool truncateFlag);
 	void removeMapFile();
+	static void unlinkFile(const TEXT* expanded_filename) noexcept;
+	Firebird::PathName getMapFileName();
 
 	void mutexLock();
 	bool mutexLockCond();
@@ -330,7 +335,8 @@ public:
 		SRAM_TPC_BLOCK = 0xF8,
 		SRAM_TPC_SNAPSHOTS = 0xF7,
 		SRAM_CHANGELOG_STATE = 0xF6,
-		SRAM_TRACE_AUDIT_MTX = 0xF5
+		SRAM_TRACE_AUDIT_MTX = 0xF5,
+		SRAM_PROFILER = 0XF4
 	};
 
 protected:

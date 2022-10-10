@@ -845,7 +845,7 @@ const StmtNode* CompoundStmtNode::execute(thread_db* tdbb, Request* request, Exe
 {
 	const NestConst<StmtNode>* end = statements.end();
 
-	if (onlyAssignments)
+	if (onlyAssignments && !request->req_attachment->isProfilerActive())
 	{
 		if (request->req_operation == Request::req_evaluate)
 		{
@@ -8705,6 +8705,10 @@ string ReturnNode::internalPrint(NodePrinter& printer) const
 void ReturnNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->appendUChar(blr_begin);
+
+	if (hasLineColumn)
+		dsqlScratch->putDebugSrcInfo(line, column);
+
 	dsqlScratch->appendUChar(blr_assignment);
 	GEN_expr(dsqlScratch, value);
 	dsqlScratch->appendUChar(blr_variable);
@@ -9571,7 +9575,12 @@ void UserSavepointNode::execute(thread_db* tdbb, DsqlRequest* request, jrd_tra**
 		{
 			// Release the savepoint
 			if (savepoint)
-				savepoint->rollforward(tdbb, previous);
+			{
+				if (savepoint == transaction->tra_save_point)
+					transaction->releaseSavepoint(tdbb);
+				else
+					savepoint->rollforward(tdbb, previous);
+			}
 
 			savepoint = transaction->startSavepoint();
 			savepoint->setName(name);
@@ -9581,7 +9590,10 @@ void UserSavepointNode::execute(thread_db* tdbb, DsqlRequest* request, jrd_tra**
 		case CMD_RELEASE_ONLY:
 		{
 			// Release the savepoint
-			savepoint->rollforward(tdbb, previous);
+			if (savepoint == transaction->tra_save_point)
+				transaction->releaseSavepoint(tdbb);
+			else
+				savepoint->rollforward(tdbb, previous);
 			break;
 		}
 

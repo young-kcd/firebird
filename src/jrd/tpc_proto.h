@@ -26,6 +26,7 @@
 
 #include <atomic>
 #include "../common/classes/array.h"
+#include "../common/classes/fb_string.h"
 #include "../common/classes/SyncObject.h"
 
 namespace Ods {
@@ -147,6 +148,16 @@ public:
 		return m_tpcHeader->getHeader()->latest_commit_number.load(std::memory_order_acquire);
 	}
 
+	ULONG getMonitorGeneration() const
+	{
+		return m_tpcHeader->getHeader()->monitor_generation.load(std::memory_order_acquire);
+	}
+
+	ULONG newMonitorGeneration() const
+	{
+		return m_tpcHeader->getHeader()->monitor_generation++ + 1;
+	}
+
 private:
 	class GlobalTpcHeader : public Firebird::MemoryHeader
 	{
@@ -168,6 +179,9 @@ private:
 		std::atomic<TraNumber> latest_transaction_id;
 		std::atomic<AttNumber> latest_attachment_id;
 		std::atomic<StmtNumber> latest_statement_id;
+
+		// Monitor state generation
+		std::atomic<ULONG> monitor_generation;
 
 		// Size of memory chunk with TransactionStatusBlock
 		ULONG tpc_block_size; // final
@@ -218,7 +232,9 @@ private:
 			return item->blockNumber;
 		}
 
-		void clear(Jrd::thread_db* tdbb);
+		void clear(thread_db* tdbb);
+
+		static Firebird::PathName makeSharedMemoryFileName(Database* dbb, TpcBlockNumber n, bool fullPath);
 	};
 
 	class MemoryInitializer : public Firebird::IpcObject
@@ -263,12 +279,14 @@ private:
 
 	typedef Firebird::BePlusTree<StatusBlockData*, TpcBlockNumber, Firebird::MemoryPool, StatusBlockData> BlocksMemoryMap;
 
-	static const ULONG TPC_VERSION = 1;
+	static const ULONG TPC_VERSION = 2;
 	static const int SAFETY_GAP_BLOCKS = 1;
 
 	Firebird::SharedMemory<GlobalTpcHeader>* m_tpcHeader; // final
 	Firebird::SharedMemory<SnapshotList>* m_snapshots; // final
 	ULONG m_transactionsPerBlock; // final. When set, we assume TPC has been initialized.
+
+	Firebird::AutoPtr<Lock> m_lock;
 
 	GlobalTpcInitializer globalTpcInitializer;
 	SnapshotsInitializer snapshotsInitializer;

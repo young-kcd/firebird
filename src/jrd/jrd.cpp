@@ -722,118 +722,6 @@ namespace
 		validateHandle(tdbb, applier->getAttachment());
 	}
 
-	class AttachmentHolder
-	{
-	public:
-		static const unsigned ATT_LOCK_ASYNC			= 1;
-		static const unsigned ATT_DONT_LOCK				= 2;
-		static const unsigned ATT_NO_SHUTDOWN_CHECK		= 4;
-		static const unsigned ATT_NON_BLOCKING			= 8;
-
-		AttachmentHolder(thread_db* tdbb, StableAttachmentPart* sa, unsigned lockFlags, const char* from)
-			: sAtt(sa),
-			  async(lockFlags & ATT_LOCK_ASYNC),
-			  nolock(lockFlags & ATT_DONT_LOCK),
-			  blocking(!(lockFlags & ATT_NON_BLOCKING))
-		{
-			if (!sa)
-				Arg::Gds(isc_att_shutdown).raise();
-
-			if (blocking)
-				sAtt->getBlockingMutex()->enter(from);
-
-			try
-			{
-				if (!nolock)
-					sAtt->getSync(async)->enter(from);
-
-				Jrd::Attachment* attachment = sAtt->getHandle();	// Must be done after entering mutex
-
-				try
-				{
-					if (!attachment || (engineShutdown && !(lockFlags & ATT_NO_SHUTDOWN_CHECK)))
-					{
-						// This shutdown check is an optimization, threads can still enter engine
-						// with the flag set cause shutdownMutex mutex is not locked here.
-						// That's not a danger cause check of att_use_count
-						// in shutdown code makes it anyway safe.
-						Arg::Gds err(isc_att_shutdown);
-						if (sAtt->getShutError())
-							err << Arg::Gds(sAtt->getShutError());
-
-						err.raise();
-					}
-
-					tdbb->setAttachment(attachment);
-					tdbb->setDatabase(attachment->att_database);
-
-					if (!async)
-					{
-						attachment->att_use_count++;
-						attachment->setupIdleTimer(true);
-					}
-				}
-				catch (const Firebird::Exception&)
-				{
-					if (!nolock)
-						sAtt->getSync(async)->leave();
-					throw;
-				}
-			}
-			catch (const Firebird::Exception&)
-			{
-				if (blocking)
-					sAtt->getBlockingMutex()->leave();
-				throw;
-			}
-		}
-
-		~AttachmentHolder()
-		{
-			Jrd::Attachment* attachment = sAtt->getHandle();
-
-			if (attachment && !async)
-			{
-				attachment->att_use_count--;
-				if (!attachment->att_use_count)
-					attachment->setupIdleTimer(false);
-			}
-
-			if (!nolock)
-				sAtt->getSync(async)->leave();
-
-			if (blocking)
-				sAtt->getBlockingMutex()->leave();
-		}
-
-	private:
-		RefPtr<StableAttachmentPart> sAtt;
-		bool async;			// async mutex should be locked instead normal
-		bool nolock; 		// if locked manually, no need to take lock recursively
-		bool blocking;		// holder instance is blocking other instances
-
-	private:
-		// copying is prohibited
-		AttachmentHolder(const AttachmentHolder&);
-		AttachmentHolder& operator =(const AttachmentHolder&);
-	};
-
-	class EngineContextHolder : public ThreadContextHolder, private AttachmentHolder,
-		private DatabaseContextHolder
-	{
-	public:
-		template <typename I>
-		EngineContextHolder(CheckStatusWrapper* status, I* interfacePtr, const char* from,
-							unsigned lockFlags = 0)
-			: ThreadContextHolder(status),
-			  AttachmentHolder(*this, interfacePtr->getAttachment(), lockFlags, from),
-			  DatabaseContextHolder(operator thread_db*())
-		{
-			validateHandle(*this, interfacePtr->getHandle());
-		}
-
-	};
-
 	void validateAccess(thread_db* tdbb, Jrd::Attachment* attachment, SystemPrivilege sp)
 	{
 		if (!attachment->locksmith(tdbb, sp))
@@ -875,6 +763,98 @@ namespace
 		return callback ? callback : &defCallback;
 	}
 } // anonymous
+
+
+AttachmentHolder::AttachmentHolder(thread_db* tdbb, StableAttachmentPart* sa, unsigned lockFlags, const char* from)
+	: sAtt(sa),
+	  async(lockFlags & ATT_LOCK_ASYNC),
+	  nolock(lockFlags & ATT_DONT_LOCK),
+	  blocking(!(lockFlags & ATT_NON_BLOCKING))
+{
+	if (!sa)
+		Arg::Gds(isc_att_shutdown).raise();
+
+	if (blocking)
+		sAtt->getBlockingMutex()->enter(from);
+
+	try
+	{
+		if (!nolock)
+			sAtt->getSync(async)->enter(from);
+
+		Jrd::Attachment* attachment = sAtt->getHandle();	// Must be done after entering mutex
+
+		try
+		{
+			if (!attachment || (engineShutdown && !(lockFlags & ATT_NO_SHUTDOWN_CHECK)))
+			{
+				// This shutdown check is an optimization, threads can still enter engine
+				// with the flag set cause shutdownMutex mutex is not locked here.
+				// That's not a danger cause check of att_use_count
+				// in shutdown code makes it anyway safe.
+				Arg::Gds err(isc_att_shutdown);
+				if (sAtt->getShutError())
+					err << Arg::Gds(sAtt->getShutError());
+
+				err.raise();
+			}
+
+			tdbb->setAttachment(attachment);
+			tdbb->setDatabase(attachment->att_database);
+
+			if (!async)
+			{
+				attachment->att_use_count++;
+				attachment->setupIdleTimer(true);
+			}
+		}
+		catch (const Firebird::Exception&)
+		{
+			if (!nolock)
+				sAtt->getSync(async)->leave();
+			throw;
+		}
+	}
+	catch (const Firebird::Exception&)
+	{
+		if (blocking)
+			sAtt->getBlockingMutex()->leave();
+		throw;
+	}
+}
+
+AttachmentHolder::~AttachmentHolder()
+{
+	Jrd::Attachment* attachment = sAtt->getHandle();
+
+	if (attachment && !async)
+	{
+		attachment->att_use_count--;
+		if (!attachment->att_use_count)
+			attachment->setupIdleTimer(false);
+	}
+
+	if (!nolock)
+		sAtt->getSync(async)->leave();
+
+	if (blocking)
+		sAtt->getBlockingMutex()->leave();
+}
+
+
+template <typename I>
+EngineContextHolder::EngineContextHolder(CheckStatusWrapper* status, I* interfacePtr, const char* from,
+			unsigned lockFlags)
+	: ThreadContextHolder(status),
+	  AttachmentHolder(*this, interfacePtr->getAttachment(), lockFlags, from),
+	  DatabaseContextHolder(operator thread_db*())
+{
+	validateHandle(*this, interfacePtr->getHandle());
+}
+
+// Used in ProfilerManager.cpp
+template EngineContextHolder::EngineContextHolder(
+	CheckStatusWrapper* status, JAttachment* interfacePtr, const char* from, unsigned lockFlags);
 
 
 #ifdef  WIN_NT
@@ -956,7 +936,7 @@ void Trigger::compile(thread_db* tdbb)
 			statement->triggerInvoker = att->getUserId(owner);
 
 		if (sysTrigger)
-			statement->flags |= Statement::FLAG_SYS_TRIGGER;
+			statement->flags |= Statement::FLAG_SYS_TRIGGER | Statement::FLAG_INTERNAL;
 
 		if (flags & TRG_ignore_perm)
 			statement->flags |= Statement::FLAG_IGNORE_PERM;
@@ -1336,6 +1316,7 @@ namespace {
 
 	const unsigned UNWIND_INTERNAL = 1;
 	const unsigned UNWIND_CREATE = 2;
+	const unsigned UNWIND_NEW = 4;
 }
 static VdnResult	verifyDatabaseName(const PathName&, FbStatusVector*, bool);
 
@@ -1558,7 +1539,7 @@ static void trace_warning(thread_db* tdbb, FbStatusVector* userStatus, const cha
 
 // Report to Trace API that attachment has not been created
 static void trace_failed_attach(const char* filename, const DatabaseOptions& options,
-	bool create, FbStatusVector* status, ICryptKeyCallback* callback)
+	unsigned flags, FbStatusVector* status, ICryptKeyCallback* callback)
 {
 	// Avoid uncontrolled recursion
 	if (options.dpb_map_attach)
@@ -1575,13 +1556,13 @@ static void trace_failed_attach(const char* filename, const DatabaseOptions& opt
 	ISC_STATUS s = status->getErrors()[1];
 	const ntrace_result_t result = (s == isc_login || s == isc_no_priv) ?
 		ITracePlugin::RESULT_UNAUTHORIZED : ITracePlugin::RESULT_FAILED;
-	const char* func = create ? "JProvider::createDatabase" : "JProvider::attachDatabase";
+	const char* func = flags & UNWIND_CREATE ? "JProvider::createDatabase" : "JProvider::attachDatabase";
 
 	// Perform actual trace
-	TraceManager tempMgr(origFilename, callback);
+	TraceManager tempMgr(origFilename, callback, flags & UNWIND_NEW);
 
 	if (tempMgr.needs(ITraceFactory::TRACE_EVENT_ATTACH))
-		tempMgr.event_attach(&conn, create, result);
+		tempMgr.event_attach(&conn, flags & UNWIND_CREATE, result);
 
 	if (tempMgr.needs(ITraceFactory::TRACE_EVENT_ERROR))
 		tempMgr.event_error(&conn, &traceStatus, func);
@@ -1707,7 +1688,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 		catch (const Exception& ex)
 		{
 			ex.stuffException(user_status);
-			trace_failed_attach(filename, options, false, user_status, cryptCallback);
+			trace_failed_attach(filename, options, 0, user_status, cryptCallback);
 			throw;
 		}
 
@@ -1715,7 +1696,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 		const VdnResult vdn = verifyDatabaseName(expanded_name, tdbb->tdbb_status_vector, is_alias);
 		if (!is_alias && vdn == VDN_FAIL)
 		{
-			trace_failed_attach(filename, options, false, tdbb->tdbb_status_vector, cryptCallback);
+			trace_failed_attach(filename, options, 0, tdbb->tdbb_status_vector, cryptCallback);
 			status_exception::raise(tdbb->tdbb_status_vector);
 		}
 
@@ -2868,7 +2849,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 		catch (const Exception& ex)
 		{
 			ex.stuffException(user_status);
-			trace_failed_attach(filename, options, true, user_status, cryptCallback);
+			trace_failed_attach(filename, options, UNWIND_CREATE, user_status, cryptCallback);
 			throw;
 		}
 
@@ -2876,7 +2857,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 		const VdnResult vdn = verifyDatabaseName(expanded_name, tdbb->tdbb_status_vector, is_alias);
 		if (!is_alias && vdn == VDN_FAIL)
 		{
-			trace_failed_attach(filename, options, true, tdbb->tdbb_status_vector, cryptCallback);
+			trace_failed_attach(filename, options, UNWIND_CREATE, tdbb->tdbb_status_vector, cryptCallback);
 			status_exception::raise(tdbb->tdbb_status_vector);
 		}
 
@@ -4408,7 +4389,9 @@ void JService::cancel(CheckStatusWrapper* user_status)
 	{
 		ThreadContextHolder tdbb(user_status);
 
-		validateHandle(svc);
+		// Use class Validate here instead validateHandle() because
+		// global services list should be locked during cancel() call
+		Service::Validate guard(svc);
 
 		svc->cancel(tdbb);
 	}
@@ -5000,10 +4983,16 @@ void SysStableAttachment::initDone()
 {
 	Jrd::Attachment* attachment = getHandle();
 	Database* dbb = attachment->att_database;
-	SyncLockGuard guard(&dbb->dbb_sys_attach, SYNC_EXCLUSIVE, "SysStableAttachment::initDone");
 
-	attachment->att_next = dbb->dbb_sys_attachments;
-	dbb->dbb_sys_attachments = attachment;
+	{ // scope
+		SyncLockGuard guard(&dbb->dbb_sys_attach, SYNC_EXCLUSIVE, "SysStableAttachment::initDone");
+
+		attachment->att_next = dbb->dbb_sys_attachments;
+		dbb->dbb_sys_attachments = attachment;
+	}
+
+	// make system attachments traceable
+	attachment->att_trace_manager->activate();
 }
 
 
@@ -5188,7 +5177,7 @@ ITransaction* JAttachment::execute(CheckStatusWrapper* user_status, ITransaction
 			DSQL_execute_immediate(tdbb, getHandle(), &tra, length, string, dialect,
 				inMetadata, static_cast<UCHAR*>(inBuffer),
 				outMetadata, static_cast<UCHAR*>(outBuffer),
-				false);
+				getHandle()->att_in_system_routine);
 
 			jt = checkTranIntf(getStable(), jt, tra);
 		}
@@ -5628,7 +5617,7 @@ JStatement* JAttachment::prepare(CheckStatusWrapper* user_status, ITransaction* 
 			StatementMetadata::buildInfoItems(items, flags);
 
 			statement = DSQL_prepare(tdbb, getHandle(), tra, stmtLength, sqlStmt, dialect, flags,
-				&items, &buffer, false);
+				&items, &buffer, getHandle()->att_in_system_routine);
 			rc = FB_NEW JStatement(statement, getStable(), buffer);
 			rc->addRef();
 
@@ -7642,6 +7631,8 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment, XThreadEns
 	if (!attachment)
 		return;
 
+	attachment->releaseProfilerManager();
+
 	attachment->att_replicator = nullptr;
 
 	if (attachment->att_dsql_instance)
@@ -8631,6 +8622,10 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options, const char
 static void unwindAttach(thread_db* tdbb, const char* filename, const Exception& ex,
 	FbStatusVector* userStatus, unsigned flags, const DatabaseOptions& options, Mapping& mapping, ICryptKeyCallback* callback)
 {
+	FbLocalStatus savUserStatus;		// Required to save status before transliterate
+	bool traced = false;
+
+	// Trace almost completed attachment
 	try
 	{
 		const auto att = tdbb->getAttachment();
@@ -8642,9 +8637,21 @@ static void unwindAttach(thread_db* tdbb, const char* filename, const Exception&
 
 			if (traceManager->needs(ITraceFactory::TRACE_EVENT_ATTACH))
 				traceManager->event_attach(&conn, flags & UNWIND_CREATE, ITracePlugin::RESULT_FAILED);
+
+			traced = true;
 		}
 		else
-			trace_failed_attach(filename, options, flags & UNWIND_CREATE, userStatus, callback);
+		{
+			auto dbb = tdbb->getDatabase();
+			if (dbb && (dbb->dbb_flags & DBB_new))
+			{
+				// attach failed before completion of DBB initialization
+				// that's hardly recoverable error - avoid extra problems in mapping
+				flags |= UNWIND_NEW;
+			}
+
+			savUserStatus.loadFrom(userStatus);
+		}
 
 		const char* func = flags & UNWIND_CREATE ? "JProvider::createDatabase" : "JProvider::attachDatabase";
 		transliterateException(tdbb, ex, userStatus, func);
@@ -8654,6 +8661,7 @@ static void unwindAttach(thread_db* tdbb, const char* filename, const Exception&
 		// no-op
 	}
 
+	// Actual unwind
 	try
 	{
 		mapping.clearMainHandle();
@@ -8705,6 +8713,19 @@ static void unwindAttach(thread_db* tdbb, const char* filename, const Exception&
 	catch (const Exception&)
 	{
 		// no-op
+	}
+
+	// Trace attachment that failed before enough for normal trace context of it was established
+	if (!traced)
+	{
+		try
+		{
+			trace_failed_attach(filename, options, flags, &savUserStatus, callback);
+		}
+		catch (const Exception&)
+		{
+			// no-op
+		}
 	}
 }
 
@@ -8816,7 +8837,7 @@ namespace
 static void waitForShutdown(Semaphore& shutdown_semaphore)
 {
 	const int pid = getpid();
-	unsigned int timeout = 10000;	// initial value, 10 sec
+	unsigned int timeout = 10;	// initial value, 10 sec
 	bool done = false;
 
 	for (int i = 0; i < 5; i++)

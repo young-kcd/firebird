@@ -635,6 +635,9 @@ public:
 	AttNumber getLatestAttachmentId() const;
 	StmtNumber getLatestStatementId() const;
 
+	ULONG getMonitorGeneration() const;
+	ULONG newMonitorGeneration() const;
+
 	USHORT getMaxIndexKeyLength() const
 	{
 		return dbb_page_size / 4;

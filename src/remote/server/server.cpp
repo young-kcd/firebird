@@ -2026,9 +2026,9 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: accept_connection: calls createPluginsItr\n"));
 			port->port_srv_auth_block->createPluginsItr();
 
-			if (port->port_srv_auth_block->plugins)		// We have all required data and iterator was created
+			AuthServerPlugins* const plugins = port->port_srv_auth_block->plugins;
+			if (plugins && plugins->hasData())		// We have all required data and iterator was created
 			{
-				AuthServerPlugins* const plugins = port->port_srv_auth_block->plugins;
 				NoCaseString clientPluginName(port->port_srv_auth_block->getPluginName());
 				// If there is plugin matching client's one it will be
 				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: accept_connection: client plugin='%s' server='%s'\n",
@@ -2754,11 +2754,11 @@ static USHORT check_statement_type( Rsr* statement)
 
 	if (!(local_status.getState() & Firebird::IStatus::STATE_ERRORS))
 	{
-		for (const UCHAR* info = buffer; (*info != isc_info_end) && !done;)
+		for (ClumpletReader p(ClumpletReader::InfoResponse, buffer, sizeof(buffer)); !p.isEof(); p.moveNext())
 		{
-			const USHORT l = (USHORT) gds__vax_integer(info + 1, 2);
-			const USHORT type = (USHORT) gds__vax_integer(info + 3, l);
-			switch (*info)
+			const USHORT type = (USHORT) p.getInt();
+
+			switch (p.getClumpTag())
 			{
 			case isc_info_sql_stmt_type:
 				switch (type)
@@ -2773,17 +2773,12 @@ static USHORT check_statement_type( Rsr* statement)
 					break;
 				}
 				break;
+
 			case isc_info_sql_batch_fetch:
 				if (type == 0)
 					ret |= STMT_NO_BATCH;
 				break;
-			case isc_info_error:
-			case isc_info_truncated:
-				done = true;
-				break;
-
 			}
-			info += 3 + l;
 		}
 	}
 
@@ -3009,6 +3004,8 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 
 	if (rdb->rdb_svc.hasData() && rdb->rdb_svc->svc_iface)
 	{
+		RefMutexGuard portGuard(*port_cancel_sync, FB_FUNCTION);
+
 		rdb->rdb_svc->svc_iface->detach(&status_vector);
 		rdb->rdb_svc->svc_iface = NULL;
 	}
@@ -3491,6 +3488,10 @@ void rem_port::batch_create(P_BATCH_CREATE* batch, PACKET* sendL)
 	Rsr* statement;
 	getHandle(statement, batch->p_batch_statement);
 	statement->checkIface();
+
+	// Check for previously opened batch for the statement
+	if (statement->rsr_batch)
+		Arg::Gds(isc_batch_open).raise();
 
 	const ULONG blr_length = batch->p_batch_blr.cstr_length;
 	const UCHAR* blr = batch->p_batch_blr.cstr_address;
@@ -6255,12 +6256,15 @@ ISC_STATUS rem_port::service_end(P_RLSE* /*release*/, PACKET* sendL)
 	if (bad_service(&status_vector, rdb))
 		return this->send_response(sendL, 0, 0, &status_vector, false);
 
-	rdb->rdb_svc->svc_iface->detach(&status_vector);
+	{ // scope
+		RefMutexGuard portGuard(*port_cancel_sync, FB_FUNCTION);
+		rdb->rdb_svc->svc_iface->detach(&status_vector);
 
-	if (!(status_vector.getState() & Firebird::IStatus::STATE_ERRORS))
-	{
-		port_flags |= PORT_detached;
-		rdb->rdb_svc->svc_iface = NULL;
+		if (!(status_vector.getState() & Firebird::IStatus::STATE_ERRORS))
+		{
+			port_flags |= PORT_detached;
+			rdb->rdb_svc->svc_iface = NULL;
+		}
 	}
 
 	return this->send_response(sendL, 0, 0, &status_vector, false);

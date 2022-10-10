@@ -410,7 +410,8 @@ namespace
 		// If there were none indices, this is a sequential retrieval.
 
 		const auto relation = tail->csb_relation;
-		fb_assert(relation);
+		if (!relation)
+			return;
 
 		if (!tail->csb_idx)
 			return;
@@ -768,6 +769,27 @@ RecordSource* Optimizer::compile(BoolExprNodeStack* parentStack)
 	for (StreamList::iterator i = rseStreams.begin(); i != rseStreams.end(); ++i)
 		csb->csb_rpt[*i].deactivate();
 
+	// Find and collect booleans that are invariant in this context
+	// (i.e. independent from streams in the RseNode). We can do that
+	// easily because these streams are inactive at this point and
+	// any node that references them will be not computable.
+	// Note that we cannot do that for outer joins, as in this case boolean
+	// represents a join condition which does not filter out the rows.
+
+	BoolExprNode* invariantBoolean = nullptr;
+	if (isInnerJoin())
+	{
+		for (auto iter = getBaseConjuncts(); iter.hasData(); ++iter)
+		{
+			if (!(iter & CONJUNCT_USED) &&
+				iter->computable(csb, INVALID_STREAM, false))
+			{
+				compose(getPool(), &invariantBoolean, iter);
+				iter |= CONJUNCT_USED;
+			}
+		}
+	}
+
 	// Go through the record selection expression generating
 	// record source blocks for all streams
 
@@ -976,6 +998,12 @@ RecordSource* Optimizer::compile(BoolExprNodeStack* parentStack)
 		if (sort)
 			rsb = generateSort(bedStreams, &keyStreams, rsb, sort, favorFirstRows(), false);
 	}
+
+	// Add invariant booleans, if any. They should be evaluated before
+	// actual data retrieval happens, thus avoiding unnecessary work.
+
+	if (invariantBoolean)
+		rsb = FB_NEW_POOL(getPool()) PreFilteredStream(csb, rsb, invariantBoolean);
 
     // Handle first and/or skip.  The skip MUST (if present)
     // appear in the rsb list AFTER the first.  Since the gen_first and gen_skip
@@ -1599,6 +1627,8 @@ void Optimizer::checkIndices()
 			continue;
 
 		const auto relation = tail->csb_relation;
+		if (!relation)
+			return;
 
 		// If there were no indices fetched at all but the user specified some,
 		// error out using the first index specified
@@ -2160,7 +2190,10 @@ void Optimizer::formRivers(const StreamList& streams,
 		// the stream into the river
 		fb_assert(planNode->type == PlanNode::TYPE_RETRIEVE);
 
-		const StreamType stream = planNode->relationNode->getStream();
+		if (!nodeIs<RelationSourceNode>(planNode->recordSourceNode))
+			continue;
+
+		const auto stream = planNode->recordSourceNode->getStream();
 
 		// dimitr:	the plan may contain more retrievals than the "streams"
 		//			array (some streams could already be joined to the active
@@ -2231,7 +2264,7 @@ bool Optimizer::generateEquiJoin(RiverList& orgRivers)
 		NestConst<ValueExprNode> node1;
 		NestConst<ValueExprNode> node2;
 
-		if (!getEquiJoinKeys(*iter, &node1, &node2, true))
+		if (!getEquiJoinKeys(*iter, &node1, &node2))
 			continue;
 
 		for (unsigned i = 0; i < orgRivers.getCount(); i++)
@@ -2828,10 +2861,18 @@ RecordSource* Optimizer::generateRetrieval(StreamType stream,
 // Check whether the given boolean can be involved in a equi-join relationship
 //
 
+bool Optimizer::checkEquiJoin(BoolExprNode* boolean)
+{
+	auto cmpNode = nodeAs<ComparativeBoolNode>(boolean);
+	if (!cmpNode || (cmpNode->blrOp != blr_eql && cmpNode->blrOp != blr_equiv))
+		return false;
+
+	return getEquiJoinKeys(cmpNode->arg1, cmpNode->arg2, false);
+}
+
 bool Optimizer::getEquiJoinKeys(BoolExprNode* boolean,
 								NestConst<ValueExprNode>* node1,
-								NestConst<ValueExprNode>* node2,
-								bool needCast)
+								NestConst<ValueExprNode>* node2)
 {
 	auto cmpNode = nodeAs<ComparativeBoolNode>(boolean);
 	if (!cmpNode || (cmpNode->blrOp != blr_eql && cmpNode->blrOp != blr_equiv))
@@ -2840,7 +2881,7 @@ bool Optimizer::getEquiJoinKeys(BoolExprNode* boolean,
 	auto arg1 = cmpNode->arg1;
 	auto arg2 = cmpNode->arg2;
 
-	if (!getEquiJoinKeys(arg1, arg2, needCast))
+	if (!getEquiJoinKeys(arg1, arg2, true))
 		return false;
 
 	*node1 = arg1;
@@ -3000,10 +3041,12 @@ BoolExprNode* Optimizer::makeInferenceNode(BoolExprNode* boolean,
 
 	// Share impure area for cached invariant value used to hold pre-compiled
 	// pattern for new LIKE and CONTAINING algorithms.
+	// Cached pattern matcher also should be shared by both nodes, else new node
+	// could overwrite impure area at offset zero. See bug GH-7276.
 	// Proper cloning of impure area for this node would require careful accounting
 	// of new invariant dependencies - we avoid such hassles via using single
 	// cached pattern value for all node clones. This is faster too.
-	if (newCmpNode->nodFlags & ExprNode::FLAG_INVARIANT)
+	if (newCmpNode->nodFlags & (ExprNode::FLAG_INVARIANT | ExprNode::FLAG_PATTERN_MATCHER_CACHE))
 		newCmpNode->impureOffset = cmpNode->impureOffset;
 
 	// But substitute new values for some of the predicate arguments

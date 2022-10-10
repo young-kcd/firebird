@@ -189,9 +189,9 @@ Service::Validate::Validate(Service* svc)
 {
 	sharedGuard.enter();
 
-	if (!svc->locateInAllServices())
+	if (! (svc && svc->locateInAllServices()))
 	{
-		// Service is so old that it's even missing in allServices array
+		// Service is null or so old that it's even missing in allServices array
 		Arg::Gds(isc_bad_svc_handle).raise();
 	}
 
@@ -2606,6 +2606,8 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 	string nbk_database, nbk_file, nbk_guid;
 	int nbk_level = -1;
 
+	bool cleanHistory = false, keepHistory = false;
+
 	bool val_database = false;
 	bool found = false;
 	string::size_type userPos = string::npos;
@@ -2674,6 +2676,30 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					return false;
 				}
 				get_action_svc_string(spb, switches);
+				break;
+
+			case isc_spb_nbk_clean_history:
+				if (cleanHistory)
+				{
+					(Arg::Gds(isc_unexp_spb_form) << Arg::Str("only one isc_spb_nbk_clean_history")).raise();
+				}
+				if (!get_action_svc_parameter(spb.getClumpTag(), nbackup_action_in_sw_table, switches))
+				{
+					return false;
+				}
+				cleanHistory = true;
+				break;
+
+			case isc_spb_nbk_keep_days:
+			case isc_spb_nbk_keep_rows:
+				if (keepHistory)
+				{
+					(Arg::Gds(isc_unexp_spb_form) << Arg::Str("only one isc_spb_nbk_keep_days or isc_spb_nbk_keep_rows")).raise();
+				}
+				switches += "-KEEP ";
+				get_action_svc_data(spb, switches, false);
+				switches += spb.getClumpTag() == isc_spb_nbk_keep_days ? "DAYS " : "ROWS ";
+				keepHistory = true;
 				break;
 
 			default:
@@ -3175,6 +3201,16 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 			}
 			else
 				switches += nbk_guid;
+
+			if (!cleanHistory && keepHistory)
+			{
+				(Arg::Gds(isc_missing_required_spb) << Arg::Str("isc_spb_nbk_clean_history")).raise();
+			}
+
+			if (cleanHistory && !keepHistory)
+			{
+				(Arg::Gds(isc_missing_required_spb) << Arg::Str("isc_spb_nbk_keep_days or isc_spb_nbk_keep_rows")).raise();
+			}
 		}
 		switches += nbk_database;
 		switches += nbk_file;

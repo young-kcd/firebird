@@ -1111,6 +1111,7 @@ public:
 	static const USHORT DFLAG_DT_CTE_USED				= 0x20;
 	static const USHORT DFLAG_CURSOR					= 0x40;
 	static const USHORT DFLAG_LATERAL					= 0x80;
+	static const USHORT DFLAG_PLAN_ITEM					= 0x100;
 
 	RecordSourceNode(Type aType, MemoryPool& pool)
 		: ExprNode(aType, pool),
@@ -1530,6 +1531,11 @@ public:
 			Firebird::Arg::Num(int(getType())));
 
 		return NULL;
+	}
+
+	virtual bool isProfileAware() const
+	{
+		return true;
 	}
 
 	virtual const StmtNode* execute(thread_db* tdbb, Request* request, ExeState* exeState) const = 0;

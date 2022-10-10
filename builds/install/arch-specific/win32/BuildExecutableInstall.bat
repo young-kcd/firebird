@@ -27,8 +27,10 @@
 @echo off
 :: reset ERRLEV to clear error from last run in same cmd shell
 set ERRLEV=0
+
 :: Assume we are preparing a production build
 set FBBUILD_BUILDTYPE=release
+
 :: Don't ship pdb files by default
 set FBBUILD_SHIP_PDB=no_pdb
 :: Reset "make" vars to zero
@@ -65,10 +67,10 @@ if "%FB2_SNAPSHOT%"=="1" (
 :: let's bail out now.
 
 @echo     o Checking for sed...
-(cmd /c "sed.exe --version 2>&1 | findstr version > nul ") || ( call :ERROR Could not locate sed && @goto :EOF )
+(cmd /c "sed.exe --version 2>&1 > nul ") || ( call :ERROR Could not locate sed && @goto :EOF )
 
 @echo     o Checking for unix2dos...
-(cmd /c "unix2dos.exe --version 2>&1 | findstr version > nul" ) || ( call :ERROR Could not locate unix2dos && @goto :EOF )
+(cmd /c "unix2dos.exe --version 2>&1 > nul" ) || ( call :ERROR Could not locate unix2dos && @goto :EOF )
 
 @for /f "usebackq tokens=*" %%c in (`where /f touch 2^>nul`) do set TOUCH_COMMAND=%%c
 if defined TOUCH_COMMAND (
@@ -85,6 +87,9 @@ if defined MD5_COMMAND (
 
 if %FBBUILD_ZIP_PACK% EQU 1 (
   if not defined SEVENZIP (
+    if exist "%ProgramW6432%\7-Zip\7z.exe" set SEVENZIP=%ProgramW6432%\7-Zip
+  )
+  if not defined SEVENZIP (
     call :ERROR SEVENZIP environment variable is not defined.
     @goto :EOF
   ) else (@echo     o Compression utility found.)
@@ -93,7 +98,7 @@ if %FBBUILD_ZIP_PACK% EQU 1 (
 if %FBBUILD_ISX_PACK% NEQ 1 goto :SKIP_INNO
 
 if defined INNO6_SETUP_PATH (
-  set ISCC_COMMAND=%INNO6_SETUP_PATH%\iscc.exe
+  set ISCC_COMMAND="%INNO6_SETUP_PATH%\iscc.exe"
 )
 :: If the environment variable is not set let's search in PATH
 if not defined ISCC_COMMAND (
@@ -170,7 +175,11 @@ set FBBUILD_PROD_STATUS=PROD
 set FBBUILD_PROD_STATUS=DEV
 )
 
-set FBBUILD_FILE_ID=%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%-%FB_TARGET_PLATFORM%
+if "%FB_TARGET_PLATFORM%"=="x64" (
+set FBBUILD_FILE_ID=%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%-windows-x64
+) else (
+set FBBUILD_FILE_ID=%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%-windows-x86
+)
 
 @setlocal
 @echo.
@@ -445,7 +454,7 @@ copy %FB_ROOT_PATH%\builds\install\misc\databases.conf %FB_OUTPUT_DIR%\databases
 :: that and they all have windows EOL
 ::===============================================
 for /R %FB_OUTPUT_DIR% %%W in ( *.txt *.conf *.sql *.c *.cpp *.hpp *.h *.bat *.pas *.e *.def *.rc *.md *.html ) do (
-  unix2dos -q --safe %%W || exit /b 1
+  unix2dos --safe %%W || exit /b 1
 )
 
 ::End of SET_CRLF
@@ -458,10 +467,10 @@ for /R %FB_OUTPUT_DIR% %%W in ( *.txt *.conf *.sql *.c *.cpp *.hpp *.h *.bat *.p
 :: Forcefully disable delayed expansion because of exclamation marks in 7z switches
 setlocal DisableDelayedExpansion
 
-set SKIP_FILES=-x!installation_readme.txt
+set SKIP_FILES=-x!*.log -x!*.exp -x!*_test.exe -x!installation_readme.txt
 
 if "%FBBUILD_SHIP_PDB%" == "ship_pdb" (
-    set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%-pdb%FBBUILD_FILENAME_SUFFIX%.zip
+    set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%-withDebugSymbols%FBBUILD_FILENAME_SUFFIX%.zip
 ) else (
     set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%%FBBUILD_FILENAME_SUFFIX%.zip
     set SKIP_FILES=%SKIP_FILES% -x!*.pdb
@@ -476,7 +485,7 @@ if exist %FBBUILD_ZIPFILE% (
   @del %FBBUILD_ZIPFILE%
 )
 
-%SEVENZIP%\7z.exe a -r -tzip -mx9 %SKIP_FILES% %FBBUILD_ZIPFILE% %FB_OUTPUT_DIR%\*
+"%SEVENZIP%\7z.exe" a -r -tzip -mx9 %SKIP_FILES% %FBBUILD_ZIPFILE% %FB_OUTPUT_DIR%\*
 
 endlocal
 
@@ -652,7 +661,7 @@ for %%v in ( %1 %2 %3 %4 %5 %6 %7 %8 %9 )  do (
 
 pushd ..\..\..\win32
 ::This must be called from the directory it resides in.
-@call setenvvar.bat
+@call setenvvar.bat %*
 popd
 @if errorlevel 1 (goto :END)
 

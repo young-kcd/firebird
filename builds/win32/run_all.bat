@@ -32,7 +32,7 @@ for %%v in ( %* )  do (
 ( if /I "%%v"=="SNAPSHOT" (set FB2_SNAPSHOT=1) )
 )
 
-call :SETVCENV
+@call setenvvar.bat %FBBUILD_BUILDTYPE% %*
 if "%ERRLEV%"=="1" goto :END
 
 if defined FBBUILD_TEST_ONLY ( goto TEST_ENV & goto :EOF )
@@ -41,9 +41,9 @@ if defined FBBUILD_MAKE_KITS_ONLY (goto :MAKE_KITS & goto :EOF)
 
 
 :: Go to work
-if not defined FBBUILD_NOCLEAN (call clean_all %FBBUILD_REAL_CLEAN%)
+if not defined FBBUILD_NOCLEAN (call clean_all %FBBUILD_BUILDTYPE% %FBBUILD_REAL_CLEAN%)
 :: We do not support debug builds of icu, so we don't pass %FBBUILD_BUILDTYPE%
-call make_icu
+call make_icu %FBBUILD_BUILDTYPE%
 if "%ERRLEV%"=="1" goto :END
 call make_boot %FBBUILD_BUILDTYPE%
 if "%ERRLEV%"=="1" goto :END
@@ -100,22 +100,10 @@ goto :END
 ::---------
 
 
-:SETVCENV
-::===============================
-:: Set up the compiler environment
-
-@call setenvvar.bat
-if "%ERRLEV%"=="1" goto :END
-
-
-goto :END
-::---------
-
-
 :TEST_ENV
 ::===============================
 :: Show variables
-call :SETVCENV
+@call setenvvar.bat %*
 if "%ERRLEV%"=="1" goto :END
 echo.
 set FB
