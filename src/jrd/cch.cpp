@@ -2083,7 +2083,7 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
 					// to same level. This will re-enable blocking AST notification.
 
 					if (!(bcb->bcb_flags & BCB_exclusive))
-					{ // scope
+					{
 						ThreadStatusGuard temp_status(tdbb);
 						LCK_convert_opt(tdbb, bdb->bdb_lock, bdb->bdb_lock->lck_logical);
 					}
@@ -3584,7 +3584,7 @@ static bool expand_buffers(thread_db* tdbb, ULONG number)
 	ULONG allocated = memory_init(tdbb, bcb, number - bcb->bcb_count);
 
 	bcb->bcb_count += allocated;
-	bcb->bcb_free_minimum = (SSHORT)MIN(bcb->bcb_count / 4, 128);	/* 25% clean page reserve */
+	bcb->bcb_free_minimum = (SSHORT) MIN(bcb->bcb_count / 4, 128);	// 25% clean page reserve
 
 	return true;
 }
