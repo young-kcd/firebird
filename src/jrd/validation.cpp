@@ -1080,6 +1080,8 @@ void Validation::cleanup()
 
 	for (auto& item : vdr_cond_idx)
 		delete item.m_recs;
+
+	vdr_cond_idx.clear();
 }
 
 
@@ -1865,7 +1867,7 @@ Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
 	release_page(&window);
 
 	// Safe moment to evaluate condition indices expressions for collected records
-	// and build pre-index bitmaps of passed record numbers.
+	// and build per-index bitmaps of passed record numbers.
 
 	if (recnums.hasData())
 	{
@@ -2397,7 +2399,7 @@ Validation::RTN Validation::walk_index(jrd_rel* relation, index_root_page& root_
 
 		if (condition)
 		{
-			for (auto getInfo : vdr_cond_idx)
+			for (auto& getInfo : vdr_cond_idx)
 			{
 				if (getInfo.m_desc.idx_id == id)
 				{
