@@ -129,12 +129,12 @@ public:
 		this->specified = true;
 	}
 
-	Nullable<T>(const Nullable<T>& o)
-	{
+	Nullable<T>(const Nullable<T>& o) = default;
+/*	{
 		this->value = o.value;
 		this->specified = o.specified;
 	}
-
+*/
 	Nullable<T>()
 	{
 		invalidate();

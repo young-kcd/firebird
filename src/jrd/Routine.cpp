@@ -299,6 +299,12 @@ int Routine::release(thread_db* tdbb)
 	return use;
 }
 
+void Routine::addRef()
+{
+	++useCount;
+}
+
+
 void Routine::releaseStatement(thread_db* tdbb)
 {
 	if (getStatement())

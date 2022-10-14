@@ -37,6 +37,7 @@
 #include "../common/classes/fb_string.h"
 #include "../jrd/RecordSourceNodes.h"
 #include "../jrd/exe.h"
+#include "../jrd/Statement.h"
 
 namespace Jrd {
 

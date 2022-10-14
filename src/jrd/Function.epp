@@ -47,6 +47,7 @@
 #include "../common/utils_proto.h"
 #include "../jrd/DebugInterface.h"
 #include "../jrd/QualifiedName.h"
+#include "../jrd/Statement.h"
 
 #include "../jrd/Function.h"
 
@@ -328,7 +329,7 @@ HazardPtr<Function> Function::loadMetadata(thread_db* tdbb, USHORT id, bool nosc
 				{
 					function->setDefaultCount(function->getDefaultCount() + 1);
 
-					MemoryPool* const csb_pool = attachment->createPool();
+					MemoryPool* const csb_pool = dbb->createPool();
 					Jrd::ContextPoolHolder context(tdbb, csb_pool);
 
 					try
@@ -338,7 +339,7 @@ HazardPtr<Function> Function::loadMetadata(thread_db* tdbb, USHORT id, bool nosc
 					}
 					catch (const Exception&)
 					{
-						attachment->deletePool(csb_pool);
+						dbb->deletePool(csb_pool);
 						throw; // an explicit error message would be better
 					}
 				}
@@ -396,7 +397,7 @@ HazardPtr<Function> Function::loadMetadata(thread_db* tdbb, USHORT id, bool nosc
 			}
 			else if (!X.RDB$ENGINE_NAME.NULL || !X.RDB$FUNCTION_BLR.NULL)
 			{
-				MemoryPool* const csb_pool = attachment->createPool();
+				MemoryPool* const csb_pool = dbb->createPool();
 				Jrd::ContextPoolHolder context(tdbb, csb_pool);
 
 				try
@@ -442,7 +443,7 @@ HazardPtr<Function> Function::loadMetadata(thread_db* tdbb, USHORT id, bool nosc
 				}
 				catch (const Exception&)
 				{
-					attachment->deletePool(csb_pool);
+					dbb->deletePool(csb_pool);
 					throw;
 				}
 
@@ -525,7 +526,7 @@ void Function::releaseLocks(thread_db* tdbb)
 	{
 		LCK_release(tdbb, existenceLock);
 		flags |= Routine::FLAG_CHECK_EXISTENCE;
-		useCount = 0;
+		// !!!!!!!!!!!!!! useCount = 0;
 	}
 }
 
@@ -544,6 +545,7 @@ bool Function::reload(thread_db* tdbb)
 	fb_assert(this->flags & Routine::FLAG_RELOAD);
 
 	Attachment* attachment = tdbb->getAttachment();
+	Database* dbb = tdbb->getDatabase();
 	AutoCacheRequest request(tdbb, irq_l_funct_blr, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
@@ -553,7 +555,7 @@ bool Function::reload(thread_db* tdbb)
 		if (X.RDB$FUNCTION_BLR.NULL)
 			continue;
 
-		MemoryPool* const csb_pool = attachment->createPool();
+		MemoryPool* const csb_pool = dbb->createPool();
 		Jrd::ContextPoolHolder context(tdbb, csb_pool);
 
 		try
@@ -580,7 +582,7 @@ bool Function::reload(thread_db* tdbb)
 		}
 		catch (const Exception&)
 		{
-			attachment->deletePool(csb_pool);
+			dbb->deletePool(csb_pool);
 			throw;
 		}
 	}

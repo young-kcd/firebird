@@ -47,6 +47,7 @@
 #include "../jrd/Monitoring.h"
 #include "../jrd/Function.h"
 #include "../jrd/met.h"
+#include "../jrd/Statement.h"
 #include "../jrd/optimizer/Optimizer.h"
 
 #ifdef WIN_NT

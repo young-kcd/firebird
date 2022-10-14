@@ -214,9 +214,7 @@ public:
 		: pageNum(0), pageSpaceID(INVALID_PAGE_SPACE)
 	{ }
 
-	inline PageNumber(const PageNumber& from)
-		: pageNum(from.pageNum), pageSpaceID(from.pageSpaceID)
-	{ }
+	inline PageNumber(const PageNumber& from) = default;
 
 	inline ULONG getPageNum() const
 	{
@@ -259,13 +257,7 @@ public:
 		memcpy(str, &val, sizeof(ULONG));
 	}
 
-	inline PageNumber& operator=(const PageNumber& from)
-	{
-		pageSpaceID = from.pageSpaceID;
-		// fb_assert(pageSpaceID != INVALID_PAGE_SPACE);
-		pageNum	= from.pageNum;
-		return *this;
-	}
+	inline PageNumber& operator=(const PageNumber& from) = default;
 
 	inline ULONG operator=(const ULONG from)
 	{

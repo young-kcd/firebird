@@ -31,7 +31,6 @@
 #include "../jrd/exe.h"
 #include "../jrd/sort.h"
 #include "../jrd/Attachment.h"
-#include "../jrd/Statement.h"
 #include "../jrd/Record.h"
 #include "../jrd/RecordNumber.h"
 #include "../common/classes/timestamp.h"
@@ -267,28 +266,7 @@ private:
 
 public:
 	Request(Attachment* attachment, /*const*/ Statement* aStatement,
-			Firebird::MemoryStats* parent_stats)
-		: statement(aStatement),
-		  req_pool(statement->pool),
-		  req_memory_stats(parent_stats),
-		  req_blobs(req_pool),
-		  req_stats(*req_pool),
-		  req_base_stats(*req_pool),
-		  req_ext_stmt(NULL),
-		  req_cursors(*req_pool),
-		  req_ext_resultset(NULL),
-		  req_timeout(0),
-		  req_domain_validation(NULL),
-		  req_sorts(*req_pool),
-		  req_rpb(*req_pool),
-		  impureArea(*req_pool),
-		  req_auto_trans(*req_pool)
-	{
-		fb_assert(statement);
-		setAttachment(attachment);
-		req_rpb = statement->rpbsSetup;
-		impureArea.grow(statement->impureSize);
-	}
+			Firebird::MemoryStats* parent_stats);
 
 	Statement* getStatement()
 	{
@@ -300,44 +278,24 @@ public:
 		return statement;
 	}
 
-	bool hasInternalStatement() const
-	{
-		return statement->flags & Statement::FLAG_INTERNAL;
-	}
+	bool hasInternalStatement() const;
 
-	bool hasPowerfulStatement() const
-	{
-		return statement->flags & Statement::FLAG_POWERFUL;
-	}
+	bool hasPowerfulStatement() const;
 
 	void setAttachment(Attachment* newAttachment)
 	{
 		req_attachment = newAttachment;
-		charSetId = statement->flags & Statement::FLAG_INTERNAL ?
-			CS_METADATA : req_attachment->att_charset;
+		charSetId = hasInternalStatement() ? CS_METADATA : req_attachment->att_charset;
 	}
 
-	bool isRoot() const
-	{
-		return statement->requests.hasData() && this == statement->requests[0];
-	}
+	bool isRoot() const;
 
 	bool isRequestIdUnassigned() const
 	{
 		return req_id == 0;
 	}
 
-	StmtNumber getRequestId() const
-	{
-		if (!req_id)
-		{
-			req_id = isRoot() ?
-				statement->getStatementId() :
-				JRD_get_thread_data()->getDatabase()->generateStatementId();
-		}
-
-		return req_id;
-	}
+	StmtNumber getRequestId() const;
 
 	void setRequestId(StmtNumber id)
 	{

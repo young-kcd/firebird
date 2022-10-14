@@ -29,6 +29,7 @@
 
 #include "../common/gdsassert.h"
 #include <initializer_list>
+#include <type_traits>
 #include <string.h>
 #include "../common/classes/vector.h"
 #include "../common/classes/alloc.h"
@@ -71,6 +72,8 @@ protected:
 template <typename T, typename Storage = EmptyStorage<T> >
 class Array : protected Storage
 {
+	static_assert(std::is_trivially_copyable<T>(), "Only simple (trivially copyable) types supported in array");
+
 public:
 	typedef FB_SIZE_T size_type;
 	typedef FB_SSIZE_T difference_type;

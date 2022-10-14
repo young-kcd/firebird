@@ -234,7 +234,7 @@ public:
 				Firebird::MemoryStats temp_stats;
 				pool->setStatsGroup(temp_stats);
 				delete transaction;
-				attachment->deletePool(pool);
+				attachment->att_database->deletePool(pool);
 			}
 		}
 	}

@@ -50,6 +50,7 @@
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"
 #include "../jrd/req.h"
+#include "../jrd/Statement.h"
 #include "../jrd/exe.h"
 #include "../jrd/scl.h"
 #include "../jrd/blb.h"
@@ -404,12 +405,12 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 	{
 		if (routine && routine->getStatement() && /*
 			 !(routine->flags & Routine::FLAG_OBSOLETE) && */
-			 routine->useCount < routine->intUseCount)
+			 routine->getUseCount() < routine->intUseCount)
 		{
 			string buffer;
 			buffer.printf("Procedure %d:%s is not properly counted (use count=%d, prc use=%d). Used by: \n",
-				routine->getId(), routine->getName(),
-				routine->useCount, routine->intUseCount);
+				routine->getId(), routine->c_name(),
+				routine->getUseCount(), routine->intUseCount);
 
 			for (auto routine2 : mdc->mdc_procedures.snapshot())
 			{
@@ -450,7 +451,7 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 				}
 			}
 
-			gds__log("%s", buffer);
+			gds__log("%s", buffer.c_str());
 			fb_assert(false);
 		}
 	}
@@ -460,12 +461,12 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 	{
 		if (routine && routine->getStatement() && /*
 			 !(routine->flags & Routine::FLAG_OBSOLETE) && */
-			 routine->useCount < routine->intUseCount)
+			 routine->getUseCount() < routine->intUseCount)
 		{
 			string buffer;
 			buffer.printf("Function %d:%s is not properly counted (use count=%d, func use=%d). Used by: \n",
 				routine->getId(), routine->getName().toString().c_str(),
-				routine->useCount, routine->intUseCount);
+				routine->getUseCount(), routine->intUseCount);
 
 			for (auto routine2 : mdc->mdc_procedures.snapshot())
 			{
@@ -551,6 +552,7 @@ void MetadataCache::clear_cache(thread_db* tdbb)
 	verify_cache(tdbb);
 
 	MetadataCache* mdc = tdbb->getDatabase()->dbb_mdc;
+	MutexLockGuard guard(mdc->mdc_use_mutex, FB_FUNCTION);
 
 	// Release global (db-level and DDL) triggers
 
@@ -595,7 +597,7 @@ void MetadataCache::clear_cache(thread_db* tdbb)
 	{
 		if (routine && routine->getStatement() &&
 			!(routine->flags & Routine::FLAG_OBSOLETE) &&
-			routine->useCount != routine->intUseCount )
+			routine->getUseCount() != routine->intUseCount )
 		{
 			routine->adjust_dependencies();
 		}
@@ -605,7 +607,7 @@ void MetadataCache::clear_cache(thread_db* tdbb)
 	{
 		if (routine && routine->getStatement() &&
 			!(routine->flags & Routine::FLAG_OBSOLETE) &&
-			routine->useCount != routine->intUseCount )
+			routine->getUseCount() != routine->intUseCount )
 		{
 			routine->adjust_dependencies();
 		}
@@ -619,7 +621,7 @@ void MetadataCache::clear_cache(thread_db* tdbb)
 		{
 			if (routine->getStatement() && !(routine->flags & Routine::FLAG_OBSOLETE) &&
 				routine->intUseCount >= 0 &&
-				routine->useCount == routine->intUseCount)
+				routine->getUseCount() == routine->intUseCount)
 			{
 				routine->releaseStatement(tdbb);
 
@@ -643,7 +645,7 @@ void MetadataCache::clear_cache(thread_db* tdbb)
 		{
 			if (routine->getStatement() && !(routine->flags & Routine::FLAG_OBSOLETE) &&
 				routine->intUseCount >= 0 &&
-				routine->useCount == routine->intUseCount)
+				routine->getUseCount() == routine->intUseCount)
 			{
 				routine->releaseStatement(tdbb);
 
@@ -680,9 +682,10 @@ bool MetadataCache::routine_in_use(thread_db* tdbb, HazardPtr<Routine> routine)
  **************************************/
 	SET_TDBB(tdbb);
 
-	verify_cache(tdbb);
-
 	MetadataCache* mdc = tdbb->getDatabase()->dbb_mdc;
+	MutexLockGuard guard(mdc->mdc_use_mutex, FB_FUNCTION);
+
+	verify_cache(tdbb);
 
 	for (auto relation : mdc->mdc_relations.snapshot())
 	{
@@ -724,7 +727,7 @@ bool MetadataCache::routine_in_use(thread_db* tdbb, HazardPtr<Routine> routine)
 	{
 		if (procedure && procedure->getStatement() &&
 			!(procedure->flags & Routine::FLAG_OBSOLETE) &&
-			procedure->useCount != procedure->intUseCount && procedure != routine)
+			procedure->getUseCount() != procedure->intUseCount && procedure != routine)
 		{
 			procedure->adjust_dependencies();
 		}
@@ -734,13 +737,13 @@ bool MetadataCache::routine_in_use(thread_db* tdbb, HazardPtr<Routine> routine)
 	{
 		if (function && function->getStatement() &&
 			!(function->flags & Routine::FLAG_OBSOLETE) &&
-			function->useCount != function->intUseCount && function != routine)
+			function->getUseCount() != function->intUseCount && function != routine)
 		{
 			function->adjust_dependencies();
 		}
 	}
 
-	const bool result = routine->useCount != routine->intUseCount;
+	const bool result = routine->getUseCount() != routine->intUseCount;
 
 	// Fix back intUseCount
 
@@ -3231,7 +3234,8 @@ HazardPtr<jrd_prc> MetadataCache::findProcedure(thread_db* tdbb, USHORT id, bool
 	newProcedure->flags |= (Routine::FLAG_BEING_SCANNED | flags);
 	newProcedure->flags &= ~(Routine::FLAG_OBSOLETE | Routine::FLAG_CLEARED);
 	newProcedure->setId(id);
-	procedure = dbb->dbb_mdc->mdc_procedures.store(tdbb, id, newProcedure);
+	if (!procedure)
+		procedure = dbb->dbb_mdc->mdc_procedures.store(tdbb, id, newProcedure);
 
 	if (!procedure->existenceLock)
 	{
@@ -3350,7 +3354,7 @@ HazardPtr<jrd_prc> MetadataCache::findProcedure(thread_db* tdbb, USHORT id, bool
 						// Here we lose pools created for previous defaults.
 						// Probably we should use common pool for defaults and procedure itself.
 
-						attachment->deletePool(pool);
+						dbb->deletePool(pool);
 						throw;
 					}
 				}
@@ -3438,7 +3442,7 @@ HazardPtr<jrd_prc> MetadataCache::findProcedure(thread_db* tdbb, USHORT id, bool
 					if (procedure->getStatement())
 						procedure->releaseStatement(tdbb);
 					else
-						attachment->deletePool(csb_pool);
+						dbb->deletePool(csb_pool);
 
 					throw;
 				}
@@ -3547,7 +3551,7 @@ bool jrd_prc::reload(thread_db* tdbb)
 		}
 		catch (const Exception&)
 		{
-			attachment->deletePool(csb_pool);
+			tdbb->getDatabase()->deletePool(csb_pool);
 			throw;
 		}
 	}
@@ -5480,7 +5484,7 @@ void MetadataCache::releaseLocks(thread_db* tdbb)
 			{
 				LCK_release(tdbb, procedure->existenceLock);
 				procedure->flags |= Routine::FLAG_CHECK_EXISTENCE;
-				procedure->useCount = 0;
+				// !!!!!!!!!!! procedure->useCount = 0;
 			}
 		}
 	}
@@ -5622,7 +5626,7 @@ void Trigger::compile(thread_db* tdbb)
 				statement = NULL;
 			}
 			else
-				att->deletePool(new_pool);
+				dbb->deletePool(new_pool);
 
 			throw;
 		}

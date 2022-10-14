@@ -149,16 +149,8 @@ public:
 	{}
 
 	~dsql_dbb();
-
-	MemoryPool* createPool()
-	{
-		return dbb_attachment->createPool();
-	}
-
-	void deletePool(MemoryPool* pool)
-	{
-		dbb_attachment->deletePool(pool);
-	}
+	MemoryPool* createPool();
+	void deletePool(MemoryPool* pool);
 };
 
 //! Relation block

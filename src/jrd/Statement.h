@@ -23,6 +23,7 @@
 
 #include "../include/fb_blk.h"
 #include "../jrd/exe.h"
+#include "../jrd/req.h"
 #include "../jrd/EngineInterface.h"
 
 namespace Jrd {

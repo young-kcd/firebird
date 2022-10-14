@@ -35,6 +35,7 @@
 #include "../jrd/val.h"
 #include "../jrd/intl.h"
 #include "../jrd/req.h"
+#include "../jrd/Statement.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"
 #include "../jrd/sort.h"

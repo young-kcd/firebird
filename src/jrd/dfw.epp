@@ -75,6 +75,7 @@
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"
 #include "../jrd/req.h"
+#include "../jrd/Statement.h"
 #include "../jrd/exe.h"
 #include "../jrd/scl.h"
 #include "../jrd/blb.h"
@@ -835,8 +836,8 @@ namespace
 					{
 						SSHORT validBlr = FALSE;
 
-						Jrd::Attachment* attachment = tdbb->getAttachment();
-						MemoryPool* newPool = attachment->createPool();
+						Jrd::Database* dbb = tdbb->getDatabase();
+						MemoryPool* newPool = dbb->createPool();
 						try
 						{
 							Jrd::ContextPoolHolder context(tdbb, newPool);
@@ -850,7 +851,7 @@ namespace
 							fb_utils::init_status(tdbb->tdbb_status_vector);
 						}
 
-						attachment->deletePool(newPool);
+						dbb->deletePool(newPool);
 
 						Self::validate(tdbb, transaction, work, validBlr);
 					}
@@ -970,7 +971,7 @@ namespace
 		static void getDependencies(DeferredWork* work, bool compile, jrd_tra* transaction)
 		{
 			thread_db* tdbb = JRD_get_thread_data();
-			Jrd::Attachment* attachment = tdbb->getAttachment();
+			Jrd::Database* dbb = tdbb->getDatabase();
 
 			if (compile)
 				compile = !tdbb->getAttachment()->isGbak();
@@ -987,7 +988,7 @@ namespace
 			{
 				Statement* statement = NULL;
 				// Nickolay Samofatov: allocate statement memory pool...
-				MemoryPool* new_pool = attachment->createPool();
+				MemoryPool* new_pool = dbb->createPool();
 				// block is used to ensure verify_cache()
 				// works in not deleted context
 				{
@@ -1004,7 +1005,7 @@ namespace
 					if (statement)
 						statement->release(tdbb);
 					else
-						attachment->deletePool(new_pool);
+						dbb->deletePool(new_pool);
 				}
 
 				MetadataCache::verify_cache(tdbb);
@@ -2780,7 +2781,7 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 			if (!relation)
 			{
 				if (new_pool)
-					attachment->deletePool(new_pool);
+					dbb->deletePool(new_pool);
 
 				// Msg308: can't create index %s
 				ERR_post(Arg::Gds(isc_no_meta_update) <<
@@ -4267,13 +4268,14 @@ static bool create_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 			if (!validation.isEmpty())
 			{
-				MemoryPool* new_pool = tdbb->getDatabase()->createPool();
+				Jrd::Database* dbb = tdbb->getDatabase();
+				MemoryPool* new_pool = dbb->createPool();
 				Jrd::ContextPoolHolder context(tdbb, new_pool);
 
 				MET_get_dependencies(tdbb, nullRel, NULL, 0, NULL, &validation,
 					NULL, NULL, depName, obj_validation, 0, transaction, depName);
 
-				attachment->deletePool(new_pool);
+				dbb->deletePool(new_pool);
 			}
 		}
 		// fall through
@@ -4431,13 +4433,14 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 			if (!validation.isEmpty())
 			{
-				MemoryPool* new_pool = tdbb->getDatabase()->createPool();
+				Jrd::Database* dbb = tdbb->getDatabase();
+				MemoryPool* new_pool = dbb->createPool();
 				Jrd::ContextPoolHolder context(tdbb, new_pool);
 
 				MET_get_dependencies(tdbb, nullRel, NULL, 0, NULL, &validation,
 					NULL, NULL, depName, obj_validation, 0, transaction, depName);
 
-				attachment->deletePool(new_pool);
+				dbb->deletePool(new_pool);
 			}
 		}
 		// fall through
@@ -5407,8 +5410,9 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
 	if ((relation || (type & TRIGGER_TYPE_MASK) != TRIGGER_TYPE_DML) && !blob_id.isEmpty())
 	{
 		Statement* statement = NULL;
+		Jrd::Database* dbb = tdbb->getDatabase();
 		// Nickolay Samofatov: allocate statement memory pool...
-		MemoryPool* new_pool = tdbb->getDatabase()->createPool();
+		MemoryPool* new_pool = dbb->createPool();
 		USHORT par_flags;
 
 		if ((type & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DML)
@@ -5424,7 +5428,7 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
 		if (statement)
 			statement->release(tdbb);
 		else
-			attachment->deletePool(new_pool);
+			dbb->deletePool(new_pool);
 	}
 }
 
@@ -6182,11 +6186,11 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 						}
 						catch (const Firebird::Exception&)
 						{
-							attachment->deletePool(new_pool);
+							dbb->deletePool(new_pool);
 							throw;
 						}
 
-						attachment->deletePool(new_pool);
+						dbb->deletePool(new_pool);
 					}
 				}
 				catch (const Firebird::Exception&)

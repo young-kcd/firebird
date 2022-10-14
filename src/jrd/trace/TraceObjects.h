@@ -42,6 +42,7 @@
 #include "../../jrd/status.h"
 #include "../../jrd/Function.h"
 #include "../../jrd/RuntimeStatistics.h"
+#include "../../jrd/Statement.h"
 #include "../../jrd/trace/TraceSession.h"
 #include "../../common/classes/ImplementHelper.h"
 #include "../../common/prett_proto.h"

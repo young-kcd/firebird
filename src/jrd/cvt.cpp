@@ -38,6 +38,7 @@
 #include <stdlib.h>
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
+#include "../jrd/Statement.h"
 #include "../jrd/val.h"
 #include "iberror.h"
 #include "../jrd/intl.h"

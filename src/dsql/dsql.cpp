@@ -53,6 +53,7 @@
 #include "../dsql/movd_proto.h"
 #include "../dsql/pass1_proto.h"
 #include "../dsql/metd_proto.h"
+#include "../jrd/Database.h"
 #include "../jrd/DataTypeUtil.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
@@ -111,6 +112,16 @@ IMPLEMENT_TRACE_ROUTINE(dsql_trace, "DSQL")
 
 dsql_dbb::~dsql_dbb()
 {
+}
+
+MemoryPool* dsql_dbb::createPool()
+{
+	return dbb_attachment->att_database->createPool();
+}
+
+void dsql_dbb::deletePool(MemoryPool* pool)
+{
+	dbb_attachment->att_database->deletePool(pool);
 }
 
 
@@ -410,7 +421,7 @@ static dsql_dbb* init(thread_db* tdbb, Jrd::Attachment* attachment)
 	if (attachment->att_dsql_instance)
 		return attachment->att_dsql_instance;
 
-	MemoryPool& pool = *attachment->createPool();
+	MemoryPool& pool = *attachment->att_database->createPool();
 	dsql_dbb* const database = FB_NEW_POOL(pool) dsql_dbb(pool);
 	database->dbb_attachment = attachment;
 	attachment->att_dsql_instance = database;

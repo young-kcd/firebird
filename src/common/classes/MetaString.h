@@ -60,7 +60,7 @@ public:
 	MetaString() { init(); count = 0; }
 	MetaString(const char* s) { assign(s); }
 	MetaString(const char* s, FB_SIZE_T l) { assign(s, l); }
-	MetaString(const MetaString& m) { set(m); }
+	MetaString(const MetaString& m) = default;	//{ set(m); }
 	MetaString(const AbstractString& s) { assign(s.c_str(), s.length()); }
 	explicit MetaString(MemoryPool&) { init(); count = 0; }
 	MetaString(MemoryPool&, const char* s) { assign(s); }
@@ -72,7 +72,7 @@ public:
 	MetaString& assign(const char* s) { return assign(s, s ? fb_strlen(s) : 0); }
 	MetaString& operator=(const char* s) { return assign(s); }
 	MetaString& operator=(const AbstractString& s) { return assign(s.c_str(), s.length()); }
-	MetaString& operator=(const MetaString& m) { return set(m); }
+	MetaString& operator=(const MetaString& m) = default;	//{ return set(m); }
 	char* getBuffer(const FB_SIZE_T l);
 
 	FB_SIZE_T length() const { return count; }

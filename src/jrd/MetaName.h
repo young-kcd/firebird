@@ -171,16 +171,11 @@ public:
 		: word(get(s, l))
 	{ }
 
-	MetaName(const MetaName& m)
-		: word(m.word)
-	{
-		test();
-	}
+	MetaName(const MetaName& m) = default;
 
 	MetaName(const Firebird::AbstractString& s)
 		: word(get(s.c_str(), s.length()))
 	{ }
-
 
 	explicit MetaName(MemoryPool&)
 		: word(nullptr)
@@ -229,12 +224,7 @@ public:
 		return *this;
 	}
 
-	MetaName& operator=(const MetaName& m)
-	{
-		word = m.word;
-		test();
-		return *this;
-	}
+	MetaName& operator=(const MetaName& m) = default;
 
 	MetaName& operator=(const Firebird::MetaString& s);
 

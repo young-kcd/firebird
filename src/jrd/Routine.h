@@ -146,15 +146,16 @@ namespace Jrd
 			return useCount != 0;
 		}
 
-		void addRef()
+		int getUseCount() const
 		{
-			++useCount;
+			return useCount;
 		}
 
 		virtual void releaseFormat()
 		{
 		}
 
+		void addRef();
 		int release(thread_db* tdbb);
 		void releaseStatement(thread_db* tdbb);
 		void remove(thread_db* tdbb);
@@ -174,7 +175,7 @@ namespace Jrd
 		USHORT id;							// routine ID
 		QualifiedName name;					// routine name
 		MetaName securityName;				// security class name
-		Statement* statement;			// compiled routine statement
+		Statement* statement;				// compiled routine statement
 		bool subRoutine;					// Is this a subroutine?
 		bool implemented;					// Is the packaged routine missing the body/entrypoint?
 		bool defined;						// UDF has its implementation module available
@@ -190,7 +191,11 @@ namespace Jrd
 
 	public:
 		USHORT flags;
+
+	private:
 		USHORT useCount;		// requests compiled with routine
+
+	public:
 		SSHORT intUseCount;		// number of routines compiled with routine, set and
 								// used internally in the clear_cache() routine
 								// no code should rely on value of this field

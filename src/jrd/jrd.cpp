@@ -4602,7 +4602,7 @@ void JAttachment::transactRequest(CheckStatusWrapper* user_status, ITransaction*
 			const MessageNode* outMessage = NULL;
 
 			Request* request = NULL;
-			MemoryPool* new_pool = att->createPool();
+			MemoryPool* new_pool = att->att_database->createPool();
 
 			try
 			{
@@ -4631,7 +4631,7 @@ void JAttachment::transactRequest(CheckStatusWrapper* user_status, ITransaction*
 				if (request)
 					CMP_release(tdbb, request);
 				else
-					att->deletePool(new_pool);
+					att->att_database->deletePool(new_pool);
 
 				throw;
 			}
@@ -7502,7 +7502,7 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	{
 		MemoryPool* const pool = &attachment->att_dsql_instance->dbb_pool;
 		delete attachment->att_dsql_instance;
-		attachment->deletePool(pool);
+		dbb->deletePool(pool);
 	}
 
 	attachment->mergeStats();

@@ -814,6 +814,59 @@ template <typename T> static void makeSubRoutines(thread_db* tdbb, Statement* st
 }
 
 
+Request::Request(Attachment* attachment, /*const*/ Statement* aStatement,
+		Firebird::MemoryStats* parent_stats)
+	: statement(aStatement),
+	  req_pool(statement->pool),
+	  req_memory_stats(parent_stats),
+	  req_blobs(req_pool),
+	  req_stats(*req_pool),
+	  req_base_stats(*req_pool),
+	  req_ext_stmt(NULL),
+	  req_cursors(*req_pool),
+	  req_ext_resultset(NULL),
+	  req_timeout(0),
+	  req_domain_validation(NULL),
+	  req_sorts(*req_pool),
+	  req_rpb(*req_pool),
+	  impureArea(*req_pool),
+	  req_auto_trans(*req_pool)
+{
+	fb_assert(statement);
+	setAttachment(attachment);
+	req_rpb = statement->rpbsSetup;
+	impureArea.grow(statement->impureSize);
+}
+
+
+bool Request::hasInternalStatement() const
+{
+	return statement->flags & Statement::FLAG_INTERNAL;
+}
+
+bool Request::hasPowerfulStatement() const
+{
+	return statement->flags & Statement::FLAG_POWERFUL;
+}
+
+bool Request::isRoot() const
+{
+	return statement->requests.hasData() && this == statement->requests[0];
+}
+
+StmtNumber Request::getRequestId() const
+{
+	if (!req_id)
+	{
+		req_id = isRoot() ?
+			statement->getStatementId() :
+			JRD_get_thread_data()->getDatabase()->generateStatementId();
+	}
+
+	return req_id;
+}
+
+
 #ifdef DEV_BUILD
 
 // Function is designed to be called from debugger to print subtree of current execution node

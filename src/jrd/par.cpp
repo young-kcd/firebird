@@ -48,6 +48,7 @@
 #include "../jrd/lls.h"
 #include "../jrd/scl.h"
 #include "../jrd/req.h"
+#include "../jrd/Statement.h"
 #include "../jrd/blb.h"
 #include "../jrd/intl.h"
 #include "../jrd/met.h"

@@ -46,6 +46,7 @@
 #include "../jrd/cch.h"
 #include "../jrd/sort.h"
 #include "../jrd/met.h"
+#include "../jrd/Statement.h"
 #include "../common/gdsassert.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"

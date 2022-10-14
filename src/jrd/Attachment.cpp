@@ -43,6 +43,7 @@
 
 #include "../jrd/extds/ExtDS.h"
 #include "../jrd/met.h"
+#include "../jrd/Statement.h"
 
 #include "../jrd/replication/Applier.h"
 #include "../jrd/replication/Manager.h"
@@ -150,42 +151,6 @@ void Jrd::Attachment::destroy(Attachment* const attachment)
 }
 
 
-MemoryPool* Jrd::Attachment::createPool()
-{
-	MemoryPool* const pool = MemoryPool::createPool(att_pool, att_memory_stats);
-	att_pools.add(pool);
-	return pool;
-}
-
-
-void Jrd::Attachment::deletePool(MemoryPool* pool)
-{
-	if (pool)
-	{
-		FB_SIZE_T pos;
-		if (att_pools.find(pool, pos))
-			att_pools.remove(pos);
-
-#ifdef DEBUG_LCK_LIST
-		// hvlad: this could be slow, use only when absolutely necessary
-		for (Lock* lock = att_long_locks; lock; )
-		{
-			Lock* next = lock->lck_next;
-			if (BtrPageGCLock::checkPool(lock, pool))
-			{
-				gds__log("DEBUG_LCK_LIST: found not detached lock 0x%p in deleting pool 0x%p", lock, pool);
-
-				//delete lock;
-				lock->setLockAttachment(NULL);
-			}
-			lock = next;
-		}
-#endif
-		MemoryPool::deletePool(pool);
-	}
-}
-
-
 bool Jrd::Attachment::backupStateWriteLock(thread_db* tdbb, SSHORT wait)
 {
 	if (att_backup_state_counter++)
@@ -267,7 +232,6 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, JProvider* provider
 	  att_repl_appliers(*pool),
 	  att_utility(UTIL_NONE),
 	  att_dec_status(DecimalStatus::DEFAULT),
-	  att_pools(*pool),
 	  att_idle_timeout(0),
 	  att_stmt_timeout(0),
 	  att_batches(*pool),
@@ -289,9 +253,6 @@ Jrd::Attachment::~Attachment()
 
 	for (unsigned n = 0; n < att_batches.getCount(); ++n)
 		att_batches[n]->resetHandle();
-
-	while (att_pools.hasData())
-		deletePool(att_pools.pop());
 
 	// For normal attachments that happens in release_attachment(),
 	// but for special ones like GC should be done also in dtor -

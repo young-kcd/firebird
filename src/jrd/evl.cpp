@@ -69,6 +69,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/req.h"
+#include "../jrd/Statement.h"
 #include "../jrd/exe.h"
 #include "../jrd/sbm.h"
 #include "../jrd/blb.h"

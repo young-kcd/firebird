@@ -3904,7 +3904,6 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 	tdbb->setTransaction(transaction);
 
 	HazardPtr<jrd_rel> relation(FB_FUNCTION);
-	//???????????????????? vec<jrd_rel*>* vector = NULL;
 
 	record_param rpb;
 	rpb.rpb_record = NULL;

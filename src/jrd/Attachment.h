@@ -577,15 +577,6 @@ public:
 	static int blockingAstMonitor(void*);
 	static int blockingAstReplSet(void*);
 
-	/// former Database members - start
-
-	Firebird::Array<MemoryPool*>	att_pools;		// pools
-
-	MemoryPool* createPool();
-	void deletePool(MemoryPool* pool);
-
-	/// former Database members - end
-
 	bool locksmith(thread_db* tdbb, SystemPrivilege sp) const;
 	jrd_tra* getSysTransaction();
 	void setSysTransaction(jrd_tra* trans);	// used only by TRA_init

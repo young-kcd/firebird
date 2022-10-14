@@ -25,6 +25,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/blb.h"
 #include "../jrd/req.h"
+#include "../jrd/Statement.h"
 #include "../jrd/ini.h"
 #include "../jrd/met.h"
 #include "ibase.h"
@@ -237,7 +238,7 @@ Applier* Applier::create(thread_db* tdbb)
 	if (!attachment->locksmith(tdbb, REPLICATE_INTO_DATABASE))
 		status_exception::raise(Arg::Gds(isc_miss_prvlg) << "REPLICATE_INTO_DATABASE");
 
-	const auto req_pool = attachment->createPool();
+	const auto req_pool = dbb->createPool();
 	Jrd::ContextPoolHolder context(tdbb, req_pool);
 	AutoPtr<CompilerScratch> csb(FB_NEW_POOL(*req_pool) CompilerScratch(*req_pool));
 
