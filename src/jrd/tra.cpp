@@ -3640,6 +3640,8 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	}
 	catch (const Firebird::Exception&)
 	{
+		LCK_release(tdbb, lock);
+		trans->tra_lock = NULL;
 		trans->unlinkFromAttachment();
 		throw;
 	}
