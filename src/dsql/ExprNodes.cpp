@@ -289,14 +289,14 @@ bool ExprNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 	return true;
 }
 
-bool ExprNode::possiblyUnknown() const
+bool ExprNode::possiblyUnknown(const StreamList& streams) const
 {
 	NodeRefsHolder holder;
 	getChildren(holder, false);
 
 	for (auto i : holder.refs)
 	{
-		if (*i && (*i)->possiblyUnknown())
+		if (*i && (*i)->possiblyUnknown(streams))
 			return true;
 	}
 
