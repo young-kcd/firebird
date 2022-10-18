@@ -3430,7 +3430,7 @@ void JAttachment::internalDropDatabase(CheckStatusWrapper* user_status)
 							 Arg::Gds(isc_obj_in_use) << Arg::Str(file_name));
 				}
 
-				if (!(attachment->att_flags & ATT_worker))
+				if (!attachment->isWorker())
 					WorkerAttachment::decUserAtts(dbb->dbb_filename);
 
 				// Lock header page before taking database lock
@@ -8398,7 +8398,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 	if (attachment->att_flags & ATT_overwrite_check)
 		shutdownFlags |= SHUT_DBB_OVERWRITE_CHECK;
 
-	if (!(attachment->att_flags & ATT_worker))
+	if (!attachment->isWorker())
 		WorkerAttachment::decUserAtts(dbb->dbb_filename);
 
 	// Unlink attachment from database
