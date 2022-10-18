@@ -6472,9 +6472,6 @@ bool get_index(BurpGlobals* tdgbl, const burp_rel* relation)
 
 	SSHORT count = 0, segments = 0;
 
-	ISC_QUAD conditionSrc, conditionBlr;
-	bool hasConditionSrc = false, hasConditionBlr = false;
-
 	STORE (REQUEST_HANDLE tdgbl->handles_get_index_req_handle1)
 		X IN RDB$INDICES
 		strcpy (X.RDB$RELATION_NAME, relation->rel_name);
@@ -6574,13 +6571,8 @@ bool get_index(BurpGlobals* tdgbl, const burp_rel* relation)
 			case att_index_condition_source:
 				if (tdgbl->RESTORE_format >= 11)
 				{
-					if (tdgbl->runtimeODS >= DB_VERSION_DDL13_1)
-					{
-						get_source_blob(tdgbl, conditionSrc, false);
-						hasConditionSrc = true;
-					}
-					else
-						eat_blob(tdgbl);
+					X.RDB$CONDITION_SOURCE.NULL = FALSE;
+					get_source_blob(tdgbl, X.RDB$CONDITION_SOURCE, false);
 				}
 				else
 					bad_attribute(scan_next_attr, attribute, 93);
@@ -6589,13 +6581,8 @@ bool get_index(BurpGlobals* tdgbl, const burp_rel* relation)
 			case att_index_condition_blr:
 				if (tdgbl->RESTORE_format >= 11)
 				{
-					if (tdgbl->runtimeODS >= DB_VERSION_DDL13_1)
-					{
-						get_blr_blob(tdgbl, conditionBlr, false);
-						hasConditionBlr = true;
-					}
-					else
-						eat_blob(tdgbl);
+					X.RDB$CONDITION_BLR.NULL = FALSE;
+					get_blr_blob(tdgbl, X.RDB$CONDITION_BLR, false);
 				}
 				else
 					bad_attribute(scan_next_attr, attribute, 93);
@@ -6648,40 +6635,6 @@ bool get_index(BurpGlobals* tdgbl, const burp_rel* relation)
 	ON_ERROR
 		general_on_error ();
 	END_ERROR;
-
-	if (hasConditionSrc || hasConditionBlr)
-	{
-		fb_assert(tdgbl->runtimeODS >= DB_VERSION_DDL13_1);
-
-		Firebird::IRequest* req_handle = nullptr;
-
-		FOR (REQUEST_HANDLE req_handle)
-			IDX IN RDB$INDICES WITH IDX.RDB$INDEX_NAME = index_name
-		{
-			MODIFY IDX USING
-				if (hasConditionSrc)
-				{
-					IDX.RDB$CONDITION_SOURCE.NULL = FALSE;
-					IDX.RDB$CONDITION_SOURCE = conditionSrc;
-				}
-
-				if (hasConditionBlr)
-				{
-					IDX.RDB$CONDITION_BLR.NULL = FALSE;
-					IDX.RDB$CONDITION_BLR = conditionBlr;
-				}
-			END_MODIFY;
-			ON_ERROR
-				general_on_error();
-			END_ERROR;
-		}
-		END_FOR;
-		ON_ERROR
-			general_on_error();
-		END_ERROR;
-
-		MISC_release_request_silent(req_handle);
-	}
 
 	return true;
 }
