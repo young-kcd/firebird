@@ -314,7 +314,7 @@ StableAttachmentPart* WorkerAttachment::getAttachment(FbStatusVector* status, Da
 		AttSyncLockGuard guard(*sAtt->getSync(), FB_FUNCTION);
 
 		att = sAtt->getHandle();
-		fb_assert(!att || (att->att_flags & ATT_worker));
+		fb_assert(!att || att->isWorker());
 
 		if (att)
 		{

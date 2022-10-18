@@ -96,9 +96,11 @@ public:
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
-	virtual bool possiblyUnknown() const
+	virtual bool possiblyUnknown(const StreamList& streams) const
 	{
-		return blrOp == blr_equiv ? true : BoolExprNode::possiblyUnknown();
+		return (blrOp == blr_equiv) ?
+			arg1->containsAnyStream(streams) || arg2->containsAnyStream(streams) :
+			BoolExprNode::possiblyUnknown(streams);
 	}
 
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
@@ -144,9 +146,9 @@ public:
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
-	virtual bool possiblyUnknown() const
+	virtual bool possiblyUnknown(const StreamList& streams) const
 	{
-		return true;
+		return arg->containsAnyStream(streams);
 	}
 
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
@@ -176,11 +178,6 @@ public:
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-
-	virtual bool possiblyUnknown() const
-	{
-		return true;
-	}
 
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual BoolExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -225,7 +222,7 @@ public:
 		return true;
 	}
 
-	virtual bool possiblyUnknown() const
+	virtual bool possiblyUnknown(const StreamList& /*streams*/) const
 	{
 		return true;
 	}

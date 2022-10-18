@@ -123,6 +123,7 @@ enum literal_string_type
 #include "../common/classes/MsgPrint.h"
 #include "../common/classes/array.h"
 
+using Firebird::string;
 using Firebird::PathName;
 using Firebird::TempFile;
 using Firebird::TimeZoneUtil;
@@ -487,7 +488,7 @@ static void frontend_load_parms(const TEXT* p, TEXT* parms[], TEXT* lparms[],
 static processing_state do_set_command(const TEXT*, bool*);
 static processing_state get_dialect(const char* const dialect_str,
 	char* const bad_dialect_buf, bool& bad_dialect);
-static processing_state get_statement(Firebird::string&, const TEXT*);
+static processing_state get_statement(string&, const TEXT*);
 static bool get_numeric(const UCHAR*, USHORT, SSHORT*, SINT64*);
 static void print_set(const char* str, bool v);
 static processing_state print_sets();
@@ -554,7 +555,7 @@ static bool Interactive = true;
 static bool Input_file = false;
 
 static const char* DEFAULT_DML_TRANS_SQL = "SET TRANSACTION";
-static Firebird::GlobalPtr<Firebird::string> TranParams;
+static Firebird::GlobalPtr<string> TranParams;
 
 // Values used in the SET command.
 // Initial options set exclusively from the command line are not included here.
@@ -707,9 +708,9 @@ private:
 
 	bool m_initialized;		// initial (before) stats loaded OK
 	StatArray m_stat;
-	Firebird::GenericMap<Firebird::Right<USHORT, Firebird::string>> m_relNames;
+	Firebird::GenericMap<Firebird::Right<USHORT, string>> m_relNames;
 
-	static const int ITEM_COUNT = 8;
+	static const unsigned ITEM_COUNT = 8;
 	static const unsigned char m_items[ITEM_COUNT + 1];
 	static const char* m_itemNames[ITEM_COUNT];
 };
@@ -1093,7 +1094,7 @@ static void readNextInputLine(const char* prompt)
 		fflush(stdout);
 	}
 
-	Firebird::string line;
+	string line;
 	bool end = false;
 
 	do
@@ -2294,7 +2295,7 @@ void ISQL_print_validation(FILE* fp,
 	bool issql = false;
 	bool firsttime = true;
 	TEXT buffer[BUFFER_LENGTH512];
-	Firebird::string fullText;
+	string fullText;
 
 	do
 	{
@@ -2349,7 +2350,7 @@ void ISQL_print_validation(FILE* fp,
 }
 
 
-static Firebird::string get_numeric_value(const char* fromStr)
+static string get_numeric_value(const char* fromStr)
 {
 /**************************************
  *
@@ -2361,7 +2362,7 @@ static Firebird::string get_numeric_value(const char* fromStr)
  *	Prepares data for converting into decfloat by interface function.
  *
  **************************************/
-	Firebird::string val;
+	string val;
 	for (const char* q = fromStr; *q; ++q)
 	{
 		switch (*q)
@@ -2438,7 +2439,7 @@ static processing_state add_row(TEXT* tabname)
 		IUTILS_make_upper(tabname);
 
 	// Query to obtain relation information
-	Firebird::string str2;
+	string str2;
 	str2.printf("SELECT * FROM %s", tabname);
 
 	if (global_Stmt)
@@ -2473,7 +2474,7 @@ static processing_state add_row(TEXT* tabname)
 
 	// Create the new INSERT statement from the sqlda info
 
-	Firebird::string insertstring;
+	string insertstring;
 
 	// There is a question mark for each column that's known to be updatable.
 
@@ -2668,7 +2669,7 @@ static processing_state add_row(TEXT* tabname)
 
 					if (!strcmp(cmd, "EDIT")) // If edit, we edit a temp file.
 					{
-						const Firebird::PathName ftmp = TempFile::create(SCRATCH);
+						const PathName ftmp = TempFile::create(SCRATCH);
 						if (ftmp.empty())
 							res = 0;
 						else
@@ -2793,7 +2794,7 @@ static processing_state add_row(TEXT* tabname)
 				case SQL_TIME_TZ_EX:
 				case SQL_TIME_TZ:
 					{
-						Firebird::string tmp(lastInputLine, length);
+						string tmp(lastInputLine, length);
 						unsigned hours, minutes, seconds;
 						char timeZone[TimeZoneUtil::MAX_SIZE];
 						fb_assert(TimeZoneUtil::MAX_SIZE - 1 == 32);
@@ -2854,7 +2855,7 @@ static processing_state add_row(TEXT* tabname)
 				case SQL_TIMESTAMP_TZ_EX:
 				case SQL_TIMESTAMP_TZ:
 					{
-						Firebird::string tmp(lastInputLine, length);
+						string tmp(lastInputLine, length);
 						unsigned year, month, day;
 						unsigned hours, minutes, seconds, fractions;
 						char timeZone[TimeZoneUtil::MAX_SIZE];
@@ -3631,7 +3632,7 @@ static processing_state bulk_insert_hack(const char* command)
 				case SQL_TIME_TZ_EX:
 				case SQL_TIME_TZ:
 					{
-						Firebird::string tmp(lastPos, length);
+						string tmp(lastPos, length);
 						unsigned hours, minutes, seconds;
 						char timeZone[TimeZoneUtil::MAX_SIZE];
 						fb_assert(TimeZoneUtil::MAX_SIZE - 1 == 32);
@@ -3693,7 +3694,7 @@ static processing_state bulk_insert_hack(const char* command)
 				case SQL_TIMESTAMP_TZ_EX:
 				case SQL_TIMESTAMP_TZ:
 					{
-						Firebird::string tmp(lastPos, length);
+						string tmp(lastPos, length);
 						unsigned year, month, day;
 						unsigned hours, minutes, seconds, fractions;
 						char timeZone[TimeZoneUtil::MAX_SIZE];
@@ -4140,7 +4141,7 @@ static processing_state copy_table(TEXT* source,
 	// If there is an alternate database, extract the domains
 	const bool domain_flag = otherdb[0];
 
-	const Firebird::PathName ftmp = TempFile::create(SCRATCH);
+	const PathName ftmp = TempFile::create(SCRATCH);
 	isqlGlob.Out = os_utils::fopen(ftmp.c_str(), "w+b");
 	if (!isqlGlob.Out)
 	{
@@ -4217,7 +4218,7 @@ static processing_state copy_table(TEXT* source,
 }
 
 
-static void appendClause(Firebird::string& to, const char* label, const TEXT* value, char quote = 0)
+static void appendClause(string& to, const char* label, const TEXT* value, char quote = 0)
 {
 	to += ' ';
 	to += label;
@@ -4257,7 +4258,7 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 
 	// Parse statement to tokens
 	const char* quotes = "\"'";
-	Firebird::string nlStatement(statement);
+	string nlStatement(statement);
 	nlStatement += '\n';
 	Firebird::Tokens toks;
 	toks.quotes(quotes);
@@ -4309,7 +4310,7 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 		TEXT psw[PASSWORD_LENGTH];
 		TEXT role[ROLE_LENGTH];
 
-		Firebird::string modifiedCreateStatement(statement);
+		string modifiedCreateStatement(statement);
 
 		TEXT quote = DBL_QUOTE;
 		const TEXT* p = NULL;
@@ -4322,7 +4323,7 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 			strip_quotes(Password, psw);
 			strcpy(role, isqlGlob.Role);
 
-			Firebird::string clauses;
+			string clauses;
 
 			if (global_usr && !keys[KEY_USER].has)
 				appendClause(clauses, keys[KEY_USER].text, usr);
@@ -4335,7 +4336,7 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 
 			if (*setValues.ISQL_charset && strcmp(setValues.ISQL_charset, DEFCHARSET)&& !keys[KEY_NAMES].has)
 			{
-				Firebird::string setNames = keys[KEY_SET].text;
+				string setNames = keys[KEY_SET].text;
 				setNames += ' ';
 				setNames += keys[KEY_NAMES].text;
 				appendClause(clauses, setNames.c_str(), setValues.ISQL_charset, SINGLE_QUOTE);
@@ -4383,7 +4384,7 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 		// CVC: Someone may decide to play strange games with undocumented ability
 		// to write crap between CREATE DATABASE and the db name, as described by
 		// Helen on CORE-932. Let's see if we can discover the real db name.
-		Firebird::string s;
+		string s;
 		if (toks.getCount() > 2)
 			s.assign(toks[2].text, toks[2].length);
 		else
@@ -4455,7 +4456,7 @@ static void do_isql()
 	// Read statements and process them from Ifp until the ret
 	// code tells us we are done
 
-	Firebird::string stmt;
+	string stmt;
 	processing_state ret;
 
 	bool done = false;
@@ -4791,7 +4792,7 @@ static processing_state edit(const TEXT* const* cmd)
 		if (!Ofp.indev_fpointer)
 		{
 			// File used to edit sessions
-			const Firebird::PathName filename = TempFile::create(SCRATCH);
+			const PathName filename = TempFile::create(SCRATCH);
 			const char* Tmpfile = filename.c_str();
 			FILE* f = os_utils::fopen(Tmpfile, "w+"); // It was w+b
 			if (f)
@@ -5826,7 +5827,7 @@ static processing_state get_dialect(const char* const dialect_str,
 }
 
 
-static processing_state get_statement(Firebird::string& statement,
+static processing_state get_statement(string& statement,
 							const TEXT* statement_prompt)
 {
 /**************************************
@@ -6638,7 +6639,7 @@ static bool printUser(const char* dbName)
 {
 	unsigned char info[] = {fb_info_username, fb_info_sqlrole};
 	unsigned char buffer[(1 + 2 + MAX_SQL_IDENTIFIER_SIZE) * 2 + 2];
-	Firebird::string login, role;
+	string login, role;
 
 	DB->getInfo(fbStatus, sizeof(info), info, sizeof(buffer), buffer);
 	if (failed())
@@ -6756,7 +6757,7 @@ static bool printUser(const char* dbName)
 		if (*v.nullInd)
 			continue;
 
-		Firebird::string txt;
+		string txt;
 		switch(v.type & ~1)
 		{
 		case SQL_TEXT:
@@ -7343,7 +7344,7 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 			int swarg_int = 0;
 			char* swarg_str = NULL;
 
-			Firebird::string s2(s);
+			string s2(s);
 			Switches::in_sw_tab_t* option = switches.findSwitchMod(s2);
 			if (option)
 			{
@@ -7818,7 +7819,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 					break;
 				}
 
-				Firebird::string str_buf;
+				string str_buf;
 				print_item_numeric(value, length, dscale, str_buf.getBuffer(length));
 				sprintf(p, "%s ", str_buf.c_str());
 				if (setValues.List)
@@ -8498,7 +8499,7 @@ static processing_state print_performance(const SINT64* perf_before)
 {
 	// Translation of report strings. Do not remove "static" modifier.
 	static bool have_report = false;
-	static Firebird::GlobalPtr<Firebird::string> diag;
+	static Firebird::GlobalPtr<string> diag;
 
 	SINT64 perf_after[ISQL_COUNTERS];
 	Firebird::UtilInterfacePtr()->getPerfCounters(fbStatus, DB, ISQL_COUNTERS_SET, perf_after);
@@ -8524,10 +8525,10 @@ static processing_state print_performance(const SINT64* perf_before)
 		// Buffers = !b\nReads = !r\nWrites = !w\nFetches = !f\n
 		diag->append(report_1);
 
-		Firebird::string::size_type p;
-		while ((p = diag->find('!')) != Firebird::string::npos)
+		string::size_type p;
+		while ((p = diag->find('!')) != string::npos)
 			diag->replace(p, 1, "%" SQUADFORMAT);
-		while ((p = diag->find('~')) != Firebird::string::npos)
+		while ((p = diag->find('~')) != string::npos)
 			diag->replace(p, 1, "%" SQUADFORMAT".%.3" SQUADFORMAT);
 
 		have_report = true;
@@ -8676,7 +8677,7 @@ static void process_plan()
 	unsigned planSize = MAX_SSHORT;
 	UCHAR* planPtr = planBuffer.getBuffer(planSize);
 
-	Firebird::string planString;
+	string planString;
 
 	for (int i = 0; i < 2; ++i)
 	{
@@ -8748,7 +8749,7 @@ static void process_exec_path()
 		if (ISQL_errmsg(fbStatus))
 			return;
 
-		Firebird::string pathString;
+		string pathString;
 
 		for (const UCHAR* ptr = pathBuffer.begin(); ptr < pathBuffer.end();)
 		{
@@ -9677,11 +9678,11 @@ static const char* charset_to_string(unsigned charset)
  *	Return a more readable version of SQLDA.sqltype
  *
  **************************************/
-	static Firebird::GlobalPtr<Firebird::GenericMap<Firebird::Pair<Firebird::Right<unsigned, Firebird::string> > > > csMap;
+	static Firebird::GlobalPtr<Firebird::GenericMap<Firebird::Pair<Firebird::Right<unsigned, string> > > > csMap;
 
 	charset = TTYPE_TO_CHARSET(charset);
 
-	Firebird::string* text = csMap->get(charset);
+	string* text = csMap->get(charset);
 	if (text)
 		return text->c_str();
 
@@ -9814,7 +9815,7 @@ void PerTableStats::printStats(Firebird::IAttachment* att)
 
 	IUTILS_printf2(Diag, "Per table statistics:%s", NEWLINE);
 
-	Firebird::string h;
+	string h;
 
 	unsigned lenTable = maxTabLen < 32 ? 32 : FB_ALIGN(maxTabLen, 4);
 	unsigned lenValue = 9;
@@ -9822,7 +9823,7 @@ void PerTableStats::printStats(Firebird::IAttachment* att)
 	h.append(lenTable, '-');
 	h.append(1, '+');
 
-	for (int i = 0; i < ITEM_COUNT; i++)
+	for (unsigned i = 0; i < ITEM_COUNT; i++)
 	{
 		h.append(lenValue, '-');
 		h.append(1, '+');
@@ -9830,12 +9831,12 @@ void PerTableStats::printStats(Firebird::IAttachment* att)
 
 	IUTILS_printf2(Diag, "%s%s", h.c_str(), NEWLINE);
 
-	Firebird::string s;
+	string s;
 	s.printf("%-*s|", lenTable, " Table name");
 
-	for (int i = 0; i < ITEM_COUNT; i++)
+	for (unsigned i = 0; i < ITEM_COUNT; i++)
 	{
-		Firebird::string l;
+		string l;
 		l.printf("%-*s|", lenValue, m_itemNames[i]);
 
 		s.append(l);
@@ -9845,15 +9846,15 @@ void PerTableStats::printStats(Firebird::IAttachment* att)
 	s = h;
 	USHORT relId = MAX_USHORT;
 	FB_SIZE_T lenName;
-	for (StatItem* item = m_stat.begin(); item < m_stat.end(); item++)
+	for (const auto& item : m_stat)
 	{
-		if (relId != item->relId)
+		if (relId != item.relId)
 		{
 			IUTILS_printf2(Diag, "%s%s", s.c_str(), NEWLINE);
 
-			relId = item->relId;
+			relId = item.relId;
 
-			if (Firebird::string* relName = m_relNames.get(relId))
+			if (string* relName = m_relNames.get(relId))
 			{
 				IcuUtil::pad(s.getBuffer(lenTable * 4 + 1), isqlGlob.att_charset,
 							 relName->length(), relName->c_str(),
@@ -9863,21 +9864,21 @@ void PerTableStats::printStats(Firebird::IAttachment* att)
 				s += '|';
 			}
 			else
-				s.printf("%-*d|", lenTable, item->relId);
+				s.printf("%-*d|", lenTable, item.relId);
 
-			for (int i = 0; i < ITEM_COUNT; i++)
+			for (unsigned i = 0; i < ITEM_COUNT; i++)
 			{
 				s.append(lenValue, ' ');
 				s.append(1, '|');
 			}
 		}
 
-		for (int i = 0; i < sizeof(m_items) - 1; i++)
+		for (unsigned i = 0; i < FB_NELEM(m_items) - 1; i++)
 		{
-			if (m_items[i] == item->statId)
+			if (m_items[i] == item.statId)
 			{
-				Firebird::string v;
-				v.printf("%*" UQUADFORMAT, lenValue, item->value);
+				string v;
+				v.printf("%*" UQUADFORMAT, lenValue, item.value);
 
 				FB_SIZE_T pos = lenName + 1 + (lenValue + 1) * i;
 				pos += lenValue - v.length();
@@ -9895,7 +9896,7 @@ void PerTableStats::printStats(Firebird::IAttachment* att)
 
 unsigned PerTableStats::loadRelNames(Firebird::IAttachment* att)
 {
-	Firebird::string sIds;
+	string sIds;
 
 	unsigned maxLen = 0;
 	USHORT relId = MAX_USHORT;
@@ -9916,7 +9917,7 @@ unsigned PerTableStats::loadRelNames(Firebird::IAttachment* att)
 			continue;
 		}
 
-		Firebird::string s;
+		string s;
 		s.printf("%u", relId);
 
 		if (!sIds.isEmpty())
@@ -9930,7 +9931,7 @@ unsigned PerTableStats::loadRelNames(Firebird::IAttachment* att)
 	if (!frontendTransaction())
 		return maxLen; // ?
 
-	Firebird::string sql;
+	string sql;
 	sql.printf("SELECT RDB$RELATION_ID, RDB$RELATION_NAME FROM RDB$RELATIONS WHERE RDB$RELATION_ID IN (%s)",
 				sIds.c_str());
 

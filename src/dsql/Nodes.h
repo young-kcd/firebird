@@ -658,7 +658,7 @@ public:
 	}
 
 	// Check if expression could return NULL or expression can turn NULL into a true/false.
-	virtual bool possiblyUnknown() const;
+	virtual bool possiblyUnknown(const StreamList& streams) const;
 
 	// Verify if this node is allowed in an unmapped boolean.
 	virtual bool unmappable(const MapNode* mapNode, StreamType shellStream) const;
@@ -666,14 +666,28 @@ public:
 	// Return all streams referenced by the expression.
 	virtual void collectStreams(SortedStreamList& streamList) const;
 
-	virtual bool containsStream(StreamType stream, bool only = false) const
+	bool containsStream(StreamType stream, bool only = false) const
 	{
-		SortedStreamList streams;
-		collectStreams(streams);
+		SortedStreamList nodeStreams;
+		collectStreams(nodeStreams);
 
 		return only ?
-			streams.getCount() == 1 && streams[0] == stream :
-			streams.exist(stream);
+			nodeStreams.getCount() == 1 && nodeStreams[0] == stream :
+			nodeStreams.exist(stream);
+	}
+
+	bool containsAnyStream(const StreamList& streams) const
+	{
+		SortedStreamList nodeStreams;
+		collectStreams(nodeStreams);
+
+		for (const auto stream : streams)
+		{
+			if (nodeStreams.exist(stream))
+				return true;
+		}
+
+		return false;
 	}
 
 	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
@@ -1028,7 +1042,7 @@ public:
 
 	virtual AggNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
-	virtual bool possiblyUnknown() const
+	virtual bool possiblyUnknown(const StreamList& /*streams*/) const
 	{
 		return true;
 	}
@@ -1157,12 +1171,13 @@ public:
 	virtual RecordSourceNode* pass2(thread_db* tdbb, CompilerScratch* csb) = 0;
 	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb) = 0;
 	virtual bool containsStream(StreamType checkStream) const = 0;
+
 	virtual void genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
 	{
 		fb_assert(false);
 	}
 
-	virtual bool possiblyUnknown() const
+	virtual bool possiblyUnknown(const StreamList& /*streams*/) const
 	{
 		return true;
 	}

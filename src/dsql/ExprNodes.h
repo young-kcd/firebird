@@ -312,9 +312,15 @@ public:
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, Request* request) const;
 
-	virtual bool possiblyUnknown() const
+	virtual bool possiblyUnknown(const StreamList& streams) const
 	{
-		return true;
+		for (const auto& item : args->items)
+		{
+			if (item->containsAnyStream(streams))
+				return true;
+		}
+
+		return false;
 	}
 
 public:
@@ -776,7 +782,7 @@ public:
 		dsqlDesc = desc;
 	}
 
-	virtual bool possiblyUnknown() const
+	virtual bool possiblyUnknown(const StreamList& /*streams*/) const
 	{
 		return false;
 	}
@@ -1650,7 +1656,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
-	virtual bool possiblyUnknown() const
+	virtual bool possiblyUnknown(const StreamList& /*streams*/) const
 	{
 		return false;
 	}
@@ -1913,7 +1919,7 @@ public:
 		return false;
 	}
 
-	virtual bool possiblyUnknown() const
+	virtual bool possiblyUnknown(const StreamList& /*streams*/) const
 	{
 		return true;
 	}
@@ -2122,7 +2128,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
-	virtual bool possiblyUnknown() const
+	virtual bool possiblyUnknown(const StreamList& /*streams*/) const
 	{
 		return true;
 	}
@@ -2171,9 +2177,11 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
-	virtual bool possiblyUnknown() const
+	virtual bool possiblyUnknown(const StreamList& streams) const
 	{
-		return true;
+		return condition->containsAnyStream(streams) ||
+			trueValue->containsAnyStream(streams) ||
+			falseValue->containsAnyStream(streams);
 	}
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);

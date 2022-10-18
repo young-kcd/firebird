@@ -693,6 +693,11 @@ public:
 		return (att_flags & ATT_system);
 	}
 
+	bool isWorker() const
+	{
+		return (att_flags & ATT_worker);
+	}
+
 	bool isGbak() const;
 	bool isRWGbak() const;
 	bool isUtility() const; // gbak, gfix and gstat.

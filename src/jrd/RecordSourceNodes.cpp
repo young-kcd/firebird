@@ -2810,9 +2810,15 @@ RseNode* RseNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	ValueExprNode* skip = rse_skip;
 	PlanNode* plan = rse_plan;
 
+	if (!rse_jointype)
+		csb->csb_inner_booleans.push(rse_boolean);
+
 	// zip thru RseNode expanding views and inner joins
 	for (auto sub : rse_relations)
 		processSource(tdbb, csb, this, sub, &boolean, stack);
+
+	if (!rse_jointype)
+		csb->csb_inner_booleans.pop();
 
 	// Now, rebuild the RseNode block.
 
@@ -2880,6 +2886,63 @@ RseNode* RseNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 void RseNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	BoolExprNode** boolean, RecordSourceNodeStack& stack)
 {
+	if (rse_jointype)
+	{
+		// Check whether any of the upper level booleans (those belonging to the WHERE clause)
+		// is able to filter out rows from the "inner" streams. If this is the case,
+		// transform the join type accordingly (LEFT -> INNER, FULL -> LEFT or INNER).
+
+		fb_assert(rse_relations.getCount() == 2);
+
+		const auto rse1 = rse_relations[0];
+		const auto rse2 = rse_relations[1];
+		fb_assert(rse1 && rse2);
+
+		StreamList streams;
+
+		// First check the left stream of the full outer join
+		if (rse_jointype == blr_full)
+		{
+			rse1->computeRseStreams(streams);
+
+			for (const auto boolean : csb->csb_inner_booleans)
+			{
+				if (boolean &&
+					boolean->containsAnyStream(streams) &&
+					!boolean->possiblyUnknown(streams))
+				{
+					rse_jointype = blr_left;
+					break;
+				}
+			}
+		}
+
+		// Then check the right stream of both left and full outer joins
+		streams.clear();
+		rse2->computeRseStreams(streams);
+
+		for (const auto boolean : csb->csb_inner_booleans)
+		{
+			if (boolean &&
+				boolean->containsAnyStream(streams) &&
+				!boolean->possiblyUnknown(streams))
+			{
+				if (rse_jointype == blr_full)
+				{
+					// We should transform FULL join to RIGHT join,
+					// but as we don't allow them inside the engine
+					// just swap the sides and insist it's LEFT join
+					std::swap(rse_relations[0], rse_relations[1]);
+					rse_jointype = blr_left;
+				}
+				else
+					rse_jointype = blr_inner;
+
+				break;
+			}
+		}
+	}
+
 	// in the case of an RseNode, it is possible that a new RseNode will be generated,
 	// so wait to process the source before we push it on the stack (bug 8039)
 

@@ -479,6 +479,7 @@ public:
 		csb_current_nodes(p),
 		csb_current_for_nodes(p),
 		csb_computing_fields(p),
+		csb_inner_booleans(p),
 		csb_variables_used_in_subroutines(p),
 		csb_pool(p),
 		csb_map_field_info(p),
@@ -557,6 +558,7 @@ public:
 												// candidates within whose scope we are
 	Firebird::Array<ForNode*> csb_current_for_nodes;
 	Firebird::SortedArray<jrd_fld*> csb_computing_fields;	// Computed fields being compiled
+	Firebird::Array<BoolExprNode*> csb_inner_booleans;	// Inner booleans at the current scope
 	Firebird::SortedArray<USHORT> csb_variables_used_in_subroutines;
 	StreamType		csb_n_stream;				// Next available stream
 	USHORT			csb_msg_number;				// Highest used message number
