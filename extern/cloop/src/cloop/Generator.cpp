@@ -21,12 +21,14 @@
 
 #include "Generator.h"
 #include "Expr.h"
+#include <algorithm>
 #include <deque>
 #include <set>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
+using std::transform;
 using std::deque;
 using std::runtime_error;
 using std::set;
@@ -147,6 +149,9 @@ CppGenerator::CppGenerator(const string& filename, const string& prefix, Parser*
 
 void CppGenerator::generate()
 {
+	string nameSpaceUpper = nameSpace;
+	transform(nameSpaceUpper.begin(), nameSpaceUpper.end(), nameSpaceUpper.begin(), toupper);
+
 	fprintf(out, "// %s\n\n", AUTOGEN_MSG);
 
 	fprintf(out, "#ifndef %s\n", headerGuard.c_str());
@@ -415,6 +420,12 @@ void CppGenerator::generate()
 		}
 
 		fprintf(out, "\t};\n\n");
+
+		fprintf(out, "#define %s_%s%s_VERSION %u\n\n",
+			nameSpaceUpper.c_str(),
+			prefix.c_str(),
+			interface->name.c_str(),
+			interface->version);
 	}
 
 	fprintf(out, "\t// Interfaces implementations\n");
