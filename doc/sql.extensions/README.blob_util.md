@@ -57,7 +57,7 @@ Return type: `VARBINARY(32767)`.
 
 `MODE` may be 0 (from the start), 1 (from current position) or 2 (from end).
 
-When `MODE` is 2, `OFFSET` should be negative.
+When `MODE` is 2, `OFFSET` should be zero or negative.
 
 Input parameter:
  - `HANDLE` type `INTEGER NOT NULL`

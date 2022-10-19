@@ -121,7 +121,14 @@ void BlobUtilPackage::seekFunction(ThrowStatusExceptionWrapper* status,
 	const auto blob = getBlobFromHandle(tdbb, in->handle);
 
 	if (!(in->mode >= 0 && in->mode <= 2))
-		status_exception::raise(Arg::Gds(isc_random) << "Seek mode must be 1, 2 or 3");
+		status_exception::raise(Arg::Gds(isc_random) << "Seek mode must be 0 (START), 1 (CURRENT) or 2 (END)");
+
+	if (in->mode == 2 && in->offset > 0)	// 2 == from END
+	{
+		status_exception::raise(
+			Arg::Gds(isc_random) <<
+			"Argument OFFSET for RDB$BLOB_UTIL must be zero or negative when argument MODE is 2");
+	}
 
 	out->offsetNull = FB_FALSE;
 	out->offset = blob->BLB_lseek(in->mode, in->offset);
