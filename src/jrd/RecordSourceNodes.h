@@ -742,7 +742,7 @@ public:
 		  rse_invariants(NULL),
 		  rse_relations(pool),
 		  flags(0),
-		  rse_jointype(0),
+		  rse_jointype(blr_inner),
 		  dsqlExplicitJoin(false)
 	{
 	}

@@ -796,7 +796,7 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 	// 1) If the view has a projection, sort, first/skip or explicit plan.
 	// 2) If it's part of an outer join.
 
-	if (rse->rse_jointype || // viewRse->rse_jointype || ???
+	if (rse->rse_jointype != blr_inner || // viewRse->rse_jointype != blr_inner || ???
 		viewRse->rse_sorted || viewRse->rse_projection || viewRse->rse_first ||
 		viewRse->rse_skip || viewRse->rse_plan)
 	{
@@ -2810,14 +2810,14 @@ RseNode* RseNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	ValueExprNode* skip = rse_skip;
 	PlanNode* plan = rse_plan;
 
-	if (!rse_jointype)
+	if (rse_jointype == blr_inner)
 		csb->csb_inner_booleans.push(rse_boolean);
 
 	// zip thru RseNode expanding views and inner joins
 	for (auto sub : rse_relations)
 		processSource(tdbb, csb, this, sub, &boolean, stack);
 
-	if (!rse_jointype)
+	if (rse_jointype == blr_inner)
 		csb->csb_inner_booleans.pop();
 
 	// Now, rebuild the RseNode block.
@@ -2886,7 +2886,7 @@ RseNode* RseNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 void RseNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	BoolExprNode** boolean, RecordSourceNodeStack& stack)
 {
-	if (rse_jointype)
+	if (rse_jointype != blr_inner)
 	{
 		// Check whether any of the upper level booleans (those belonging to the WHERE clause)
 		// is able to filter out rows from the "inner" streams. If this is the case,
@@ -2953,7 +2953,9 @@ void RseNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 
 	const auto isLateral = (this->flags & RseNode::FLAG_LATERAL) != 0;
 
-	if (!isLateral && !rse->rse_jointype && !rse_jointype &&
+	if (!isLateral &&
+		rse->rse_jointype == blr_inner &&
+		rse_jointype == blr_inner &&
 		!rse_sorted && !rse_projection &&
 		!rse_first && !rse_skip && !rse_plan)
 	{

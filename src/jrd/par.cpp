@@ -1409,7 +1409,8 @@ RseNode* PAR_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 				// An outer join is only allowed when the stream count is 2
 				// and a boolean expression has been supplied
 
-				if (!rse->rse_jointype || (rse->rse_relations.getCount() == 2 && rse->rse_boolean))
+				if (rse->rse_jointype == blr_inner ||
+					(rse->rse_relations.getCount() == 2 && rse->rse_boolean))
 				{
 					// Convert right outer joins to left joins to avoid
 					// RIGHT JOIN handling at lower engine levels
