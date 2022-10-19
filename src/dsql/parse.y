@@ -1635,6 +1635,14 @@ unique_opt
 
 %type index_definition(<createIndexNode>)
 index_definition($createIndexNode)
+	: index_column_expr($createIndexNode) index_condition_opt
+		{
+			$createIndexNode->partial = $2;
+		}
+	;
+
+%type index_column_expr(<createIndexNode>)
+index_column_expr($createIndexNode)
 	: column_list
 		{ $createIndexNode->columns = $1; }
 	| column_parens
@@ -1647,6 +1655,18 @@ index_definition($createIndexNode)
 		}
 	;
 
+%type <boolSourceClause> index_condition_opt
+index_condition_opt
+	: /* nothing */
+		{ $$ = nullptr; }
+	| WHERE search_condition
+		{
+			auto clause = newNode<BoolSourceClause>();
+			clause->value = $2;
+			clause->source = makeParseStr(YYPOSNARG(1), YYPOSNARG(2));
+			$$ = clause;
+		}
+	;
 
 // CREATE SHADOW
 %type <createShadowNode> shadow_clause

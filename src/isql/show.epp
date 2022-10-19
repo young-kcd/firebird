@@ -4777,23 +4777,36 @@ static processing_state show_indices(const SCHAR* const* cmd)
 
 	if (*name)
 	{
-		FOR IDX1 IN RDB$INDICES WITH
-			IDX1.RDB$RELATION_NAME EQ name OR
-			IDX1.RDB$INDEX_NAME EQ name
-			SORTED BY IDX1.RDB$INDEX_NAME
+		FOR IDX IN RDB$INDICES WITH
+			IDX.RDB$RELATION_NAME EQ name OR
+			IDX.RDB$INDEX_NAME EQ name
+			SORTED BY IDX.RDB$INDEX_NAME
 
-			if (IDX1.RDB$INDEX_INACTIVE.NULL)
-				IDX1.RDB$INDEX_INACTIVE = 0;
+			if (IDX.RDB$INDEX_INACTIVE.NULL)
+				IDX.RDB$INDEX_INACTIVE = 0;
 
-			show_index (IDX1.RDB$RELATION_NAME, IDX1.RDB$INDEX_NAME,
-						IDX1.RDB$UNIQUE_FLAG, IDX1.RDB$INDEX_TYPE, IDX1.RDB$INDEX_INACTIVE);
+			show_index(IDX.RDB$RELATION_NAME, IDX.RDB$INDEX_NAME,
+					   IDX.RDB$UNIQUE_FLAG, IDX.RDB$INDEX_TYPE, IDX.RDB$INDEX_INACTIVE);
 
-			if (!IDX1.RDB$EXPRESSION_BLR.NULL)
+			if (!IDX.RDB$EXPRESSION_BLR.NULL)
 			{
 				isqlGlob.printf(" COMPUTED BY ");
-				if (!IDX1.RDB$EXPRESSION_SOURCE.NULL)
-					SHOW_print_metadata_text_blob (isqlGlob.Out, &IDX1.RDB$EXPRESSION_SOURCE);
+				if (!IDX.RDB$EXPRESSION_SOURCE.NULL)
+					SHOW_print_metadata_text_blob (isqlGlob.Out, &IDX.RDB$EXPRESSION_SOURCE);
 				isqlGlob.printf(NEWLINE);
+			}
+
+			if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_13_1)
+			{
+				FOR IDX2 IN RDB$INDICES WITH
+					IDX2.RDB$INDEX_NAME = IDX.RDB$INDEX_NAME
+					AND IDX2.RDB$CONDITION_SOURCE NOT MISSING
+				{
+					isqlGlob.printf(" ");
+					SHOW_print_metadata_text_blob(isqlGlob.Out, &IDX2.RDB$CONDITION_SOURCE);
+					isqlGlob.printf(NEWLINE);
+				}
+				END_FOR
 			}
 
 			first = false;
@@ -4808,23 +4821,36 @@ static processing_state show_indices(const SCHAR* const* cmd)
 	}
 	else
 	{
-		FOR IDX2 IN RDB$INDICES CROSS
+		FOR IDX IN RDB$INDICES CROSS
 			REL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH
 			REL.RDB$SYSTEM_FLAG NE 1 OR
 			REL.RDB$SYSTEM_FLAG MISSING
-			SORTED BY IDX2.RDB$RELATION_NAME, IDX2.RDB$INDEX_NAME
+			SORTED BY IDX.RDB$RELATION_NAME, IDX.RDB$INDEX_NAME
 
 			first = false;
 
-			show_index (IDX2.RDB$RELATION_NAME, IDX2.RDB$INDEX_NAME,
-						IDX2.RDB$UNIQUE_FLAG, IDX2.RDB$INDEX_TYPE, IDX2.RDB$INDEX_INACTIVE);
+			show_index(IDX.RDB$RELATION_NAME, IDX.RDB$INDEX_NAME,
+					   IDX.RDB$UNIQUE_FLAG, IDX.RDB$INDEX_TYPE, IDX.RDB$INDEX_INACTIVE);
 
-			if (!IDX2.RDB$EXPRESSION_BLR.NULL)
+			if (!IDX.RDB$EXPRESSION_BLR.NULL)
 			{
 				isqlGlob.printf(" COMPUTED BY ");
-				if (!IDX2.RDB$EXPRESSION_SOURCE.NULL)
-					SHOW_print_metadata_text_blob (isqlGlob.Out, &IDX2.RDB$EXPRESSION_SOURCE);
+				if (!IDX.RDB$EXPRESSION_SOURCE.NULL)
+					SHOW_print_metadata_text_blob (isqlGlob.Out, &IDX.RDB$EXPRESSION_SOURCE);
 				isqlGlob.printf(NEWLINE);
+			}
+
+			if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_13_1)
+			{
+				FOR IDX2 IN RDB$INDICES WITH
+					IDX2.RDB$INDEX_NAME = IDX.RDB$INDEX_NAME
+					AND IDX2.RDB$CONDITION_SOURCE NOT MISSING
+				{
+					isqlGlob.printf(" ");
+					SHOW_print_metadata_text_blob(isqlGlob.Out, &IDX2.RDB$CONDITION_SOURCE);
+					isqlGlob.printf(NEWLINE);
+				}
+				END_FOR
 			}
 
 		END_FOR

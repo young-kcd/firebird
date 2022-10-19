@@ -646,7 +646,7 @@ RecordSource* Optimizer::compile(BoolExprNodeStack* parentStack)
 	// can generate additional booleans by associativity--this will help
 	// to utilize indices that we might not have noticed
 	if (rse->rse_boolean)
-		conjunctCount = decompose(rse->rse_boolean, conjunctStack);
+		conjunctCount = decomposeBoolean(rse->rse_boolean, conjunctStack);
 
 	conjunctCount += distributeEqualities(conjunctStack, conjunctCount);
 
@@ -1104,6 +1104,104 @@ void Optimizer::compileRelation(StreamType stream)
 
 	const auto format = CMP_format(tdbb, csb, stream);
 	tail->csb_cardinality = getCardinality(tdbb, relation, format);
+}
+
+
+//
+// Decompose a boolean into a stack of conjuctions.
+//
+
+unsigned Optimizer::decomposeBoolean(BoolExprNode* boolNode, BoolExprNodeStack& stack)
+{
+	if (const auto binaryNode = nodeAs<BinaryBoolNode>(boolNode))
+	{
+		if (binaryNode->blrOp == blr_and)
+		{
+			auto count = decomposeBoolean(binaryNode->arg1, stack);
+			count += decomposeBoolean(binaryNode->arg2, stack);
+			return count;
+		}
+		else if (binaryNode->blrOp == blr_or)
+		{
+			BoolExprNodeStack or_stack;
+
+			if (decomposeBoolean(binaryNode->arg1, or_stack) >= 2)
+			{
+				binaryNode->arg1 = or_stack.pop();
+
+				while (or_stack.hasData())
+				{
+					const auto newBoolNode =
+						FB_NEW_POOL(getPool()) BinaryBoolNode(getPool(), blr_and);
+					newBoolNode->arg1 = or_stack.pop();
+					newBoolNode->arg2 = binaryNode->arg1;
+
+					binaryNode->arg1 = newBoolNode;
+				}
+			}
+
+			or_stack.clear();
+
+			if (decomposeBoolean(binaryNode->arg2, or_stack) >= 2)
+			{
+				binaryNode->arg2 = or_stack.pop();
+
+				while (or_stack.hasData())
+				{
+					const auto newBoolNode =
+						FB_NEW_POOL(getPool()) BinaryBoolNode(getPool(), blr_and);
+					newBoolNode->arg1 = or_stack.pop();
+					newBoolNode->arg2 = binaryNode->arg2;
+
+					binaryNode->arg2 = newBoolNode;
+				}
+			}
+		}
+	}
+	else if (const auto cmpNode = nodeAs<ComparativeBoolNode>(boolNode))
+	{
+		// turn a between into (a greater than or equal) AND (a less than  or equal)
+
+		if (cmpNode->blrOp == blr_between)
+		{
+			auto newCmpNode = FB_NEW_POOL(getPool()) ComparativeBoolNode(getPool(), blr_geq);
+			newCmpNode->arg1 = cmpNode->arg1;
+			newCmpNode->arg2 = cmpNode->arg2;
+
+			stack.push(newCmpNode);
+
+			newCmpNode = FB_NEW_POOL(getPool()) ComparativeBoolNode(getPool(), blr_leq);
+			newCmpNode->arg1 = CMP_clone_node_opt(tdbb, csb, cmpNode->arg1);
+			newCmpNode->arg2 = cmpNode->arg3;
+
+			stack.push(newCmpNode);
+
+			return 2;
+		}
+
+		// turn a LIKE/SIMILAR into a LIKE/SIMILAR and a STARTING WITH, if it starts
+		// with anything other than a pattern-matching character
+
+		ValueExprNode* arg;
+
+		if ((cmpNode->blrOp == blr_like || cmpNode->blrOp == blr_similar) &&
+			(arg = optimizeLikeSimilar(cmpNode)))
+		{
+			const auto newCmpNode =
+				FB_NEW_POOL(getPool()) ComparativeBoolNode(getPool(), blr_starting);
+			newCmpNode->arg1 = cmpNode->arg1;
+			newCmpNode->arg2 = arg;
+
+			stack.push(newCmpNode);
+			stack.push(boolNode);
+
+			return 2;
+		}
+	}
+
+	stack.push(boolNode);
+
+	return 1;
 }
 
 
@@ -1836,104 +1934,6 @@ void Optimizer::checkSorts()
 			}
 		}
 	}
-}
-
-
-//
-// Decompose a boolean into a stack of conjuctions.
-//
-
-unsigned Optimizer::decompose(BoolExprNode* boolNode, BoolExprNodeStack& stack)
-{
-	if (const auto binaryNode = nodeAs<BinaryBoolNode>(boolNode))
-	{
-		if (binaryNode->blrOp == blr_and)
-		{
-			auto count = decompose(binaryNode->arg1, stack);
-			count += decompose(binaryNode->arg2, stack);
-			return count;
-		}
-		else if (binaryNode->blrOp == blr_or)
-		{
-			BoolExprNodeStack or_stack;
-
-			if (decompose(binaryNode->arg1, or_stack) >= 2)
-			{
-				binaryNode->arg1 = or_stack.pop();
-
-				while (or_stack.hasData())
-				{
-					const auto newBoolNode =
-						FB_NEW_POOL(getPool()) BinaryBoolNode(getPool(), blr_and);
-					newBoolNode->arg1 = or_stack.pop();
-					newBoolNode->arg2 = binaryNode->arg1;
-
-					binaryNode->arg1 = newBoolNode;
-				}
-			}
-
-			or_stack.clear();
-
-			if (decompose(binaryNode->arg2, or_stack) >= 2)
-			{
-				binaryNode->arg2 = or_stack.pop();
-
-				while (or_stack.hasData())
-				{
-					const auto newBoolNode =
-						FB_NEW_POOL(getPool()) BinaryBoolNode(getPool(), blr_and);
-					newBoolNode->arg1 = or_stack.pop();
-					newBoolNode->arg2 = binaryNode->arg2;
-
-					binaryNode->arg2 = newBoolNode;
-				}
-			}
-		}
-	}
-	else if (const auto cmpNode = nodeAs<ComparativeBoolNode>(boolNode))
-	{
-		// turn a between into (a greater than or equal) AND (a less than  or equal)
-
-		if (cmpNode->blrOp == blr_between)
-		{
-			auto newCmpNode = FB_NEW_POOL(getPool()) ComparativeBoolNode(getPool(), blr_geq);
-			newCmpNode->arg1 = cmpNode->arg1;
-			newCmpNode->arg2 = cmpNode->arg2;
-
-			stack.push(newCmpNode);
-
-			newCmpNode = FB_NEW_POOL(getPool()) ComparativeBoolNode(getPool(), blr_leq);
-			newCmpNode->arg1 = CMP_clone_node_opt(tdbb, csb, cmpNode->arg1);
-			newCmpNode->arg2 = cmpNode->arg3;
-
-			stack.push(newCmpNode);
-
-			return 2;
-		}
-
-		// turn a LIKE/SIMILAR into a LIKE/SIMILAR and a STARTING WITH, if it starts
-		// with anything other than a pattern-matching character
-
-		ValueExprNode* arg;
-
-		if ((cmpNode->blrOp == blr_like || cmpNode->blrOp == blr_similar) &&
-			(arg = optimizeLikeSimilar(cmpNode)))
-		{
-			const auto newCmpNode =
-				FB_NEW_POOL(getPool()) ComparativeBoolNode(getPool(), blr_starting);
-			newCmpNode->arg1 = cmpNode->arg1;
-			newCmpNode->arg2 = arg;
-
-			stack.push(newCmpNode);
-			stack.push(boolNode);
-
-			return 2;
-		}
-	}
-
-	stack.push(boolNode);
-
-	return 1;
 }
 
 

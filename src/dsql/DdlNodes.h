@@ -1719,6 +1719,8 @@ public:
 		{
 			expressionBlr.clear();
 			expressionSource.clear();
+			conditionBlr.clear();
+			conditionSource.clear();
 		}
 
 		MetaName relation;
@@ -1729,6 +1731,8 @@ public:
 		SSHORT type;
 		bid expressionBlr;
 		bid expressionSource;
+		bid conditionBlr;
+		bid conditionSource;
 		MetaName refRelation;
 		Firebird::ObjectsArray<MetaName> refColumns;
 	};
@@ -1739,15 +1743,16 @@ public:
 		  name(p, aName),
 		  unique(false),
 		  descending(false),
-		  relation(NULL),
-		  columns(NULL),
-		  computed(NULL)
+		  relation(nullptr),
+		  columns(nullptr),
+		  computed(nullptr),
+		  partial(nullptr)
 	{
 	}
 
 public:
 	static void store(thread_db* tdbb, jrd_tra* transaction, MetaName& name,
-		const Definition& definition, MetaName* referredIndexName = NULL);
+		const Definition& definition, MetaName* referredIndexName = nullptr);
 
 public:
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
@@ -1767,6 +1772,7 @@ public:
 	NestConst<RelationSourceNode> relation;
 	NestConst<ValueListNode> columns;
 	NestConst<ValueSourceClause> computed;
+	NestConst<BoolSourceClause> partial;
 };
 
 

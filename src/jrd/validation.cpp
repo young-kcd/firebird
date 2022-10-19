@@ -1077,7 +1077,13 @@ void Validation::cleanup()
 
 	delete vdr_idx_records;
 	vdr_idx_records = NULL;
+
+	for (auto& item : vdr_cond_idx)
+		delete item.m_recs;
+
+	vdr_cond_idx.clear();
 }
+
 
 ULONG Validation::getInfo(UCHAR item)
 {
@@ -1552,8 +1558,8 @@ Validation::RTN Validation::walk_chain(jrd_rel* relation, const rhd* header,
 
 		if (page->dpg_relation != relation->rel_id)
 		{
-				 release_page(&window);
-				 return corrupt(VAL_DATA_PAGE_CONFUSED, relation, page_number, page->dpg_sequence);
+			release_page(&window);
+			return corrupt(VAL_DATA_PAGE_CONFUSED, relation, page_number, page->dpg_sequence);
 		}
 
 		vdr_rel_chain_counter++;
@@ -1740,6 +1746,12 @@ Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
 	RecordNumber number((SINT64)sequence * dbb->dbb_max_records);
 	int primary_versions = 0;
 	bool marked = false;
+	MemoryPool* pool = vdr_tdbb->getDefaultPool();
+
+	// Expression of condition index could try to read current data page when evaluated.
+	// Thus we collect all record numbers and will evaluate conditions expressions after
+	// releasing data page, to avoid deadlocks.
+	HalfStaticArray<FB_UINT64, 64> recnums;
 
 	for (const data_page::dpg_repeat* line = page->dpg_rpt; line < end; line++, number.increment())
 	{
@@ -1762,7 +1774,7 @@ Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
 			if (header->rhd_flags & rhd_chain)
 			{
 				vdr_rel_backversion_counter++;
-				PBM_SET(vdr_tdbb->getDefaultPool(), &vdr_backversion_pages, page_number);
+				PBM_SET(pool, &vdr_backversion_pages, page_number);
 			}
 
 			// Record the existance of a primary version of a record
@@ -1776,7 +1788,7 @@ Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
 				// state of the lone primary record version. Unless it is already deleted.
 
 				if (header->rhd_b_page)
-					RBM_SET(vdr_tdbb->getDefaultPool(), &vdr_rel_records, number.getValue());
+					RBM_SET(pool, &vdr_rel_records, number.getValue());
 				else if ((header->rhd_flags & rhd_deleted) == 0)
 				{
 					const TraNumber transaction = Ods::getTraNum(header);
@@ -1785,7 +1797,7 @@ Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
 						tra_committed : TRA_fetch_state(vdr_tdbb, transaction);
 
 					if (state == tra_committed || state == tra_limbo)
-						RBM_SET(vdr_tdbb->getDefaultPool(), &vdr_rel_records, number.getValue());
+						RBM_SET(pool, &vdr_rel_records, number.getValue());
 				}
 
 				primary_versions++;
@@ -1821,6 +1833,12 @@ Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
 					vdr_fixed++;
 				}
 			}
+
+			if (!(header->rhd_flags & (rhd_chain | rhd_fragment | rhd_blob | rhd_damaged)) &&
+				(vdr_flags & VDR_records) && vdr_cond_idx.hasData())
+			{
+				recnums.add(number.getValue());
+			}
 		}
 #ifdef DEBUG_VAL_VERBOSE
 		else if (VAL_debug_level)
@@ -1847,6 +1865,42 @@ Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
 	}
 
 	release_page(&window);
+
+	// Safe moment to evaluate condition indices expressions for collected records
+	// and build per-index bitmaps of passed record numbers.
+
+	if (recnums.hasData())
+	{
+		// Use system transaction to get most recently committed record version.
+
+		jrd_tra* sysTran = vdr_tdbb->getAttachment()->getSysTransaction();
+		AutoSetRestore2<jrd_tra*, thread_db> setTran(vdr_tdbb,
+			&thread_db::getTransaction,
+			&thread_db::setTransaction,
+			sysTran);
+
+		record_param rpb;
+		rpb.rpb_relation = relation;
+
+		for (auto& recno : recnums)
+		{
+			rpb.rpb_number.setValue(recno);
+
+			if (VIO_get(vdr_tdbb, &rpb, sysTran, pool))
+			{
+				for (auto& getInfo : vdr_cond_idx)
+				{
+					if (getInfo.m_desc.idx_flags & idx_condition)
+					{
+						if (BTR_check_condition(vdr_tdbb, &getInfo.m_desc, rpb.rpb_record))
+							RBM_SET(pool, &getInfo.m_recs, recno);
+					}
+				}
+			}
+		}
+
+		delete rpb.rpb_record;
+	}
 
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level)
@@ -1947,18 +2001,19 @@ Validation::RTN Validation::walk_index(jrd_rel* relation, index_root_page& root_
 
 	const bool unique = (root_page.irt_rpt[id].irt_flags & (irt_unique | idx_primary));
 	const bool descending = (root_page.irt_rpt[id].irt_flags & irt_descending);
+	const bool condition = (root_page.irt_rpt[id].irt_flags & irt_condition);
 
 	temporary_key nullKey, *null_key = 0;
 	if (unique)
 	{
-		const bool isExpression = root_page.irt_rpt[id].irt_flags & irt_expression;
-		if (isExpression)
-			root_page.irt_rpt[id].irt_flags &= ~irt_expression;
-
 		index_desc idx;
-		BTR_description(vdr_tdbb, relation, &root_page, &idx, id);
-		if (isExpression)
-			root_page.irt_rpt[id].irt_flags |= irt_expression;
+		{
+			// No need to evaluate index expression and/or condition
+			AutoSetRestoreFlag<UCHAR> flags(&root_page.irt_rpt[id].irt_flags,
+				irt_expression | irt_condition, false);
+
+			BTR_description(vdr_tdbb, relation, &root_page, &idx, id);
+		}
 
 		null_key = &nullKey;
 		BTR_make_null_key(vdr_tdbb, &idx, null_key);
@@ -2340,7 +2395,20 @@ Validation::RTN Validation::walk_index(jrd_rel* relation, index_root_page& root_
 	// have a corrupt index
 	if (vdr_flags & VDR_records)
 	{
-		RecordBitmap::Accessor accessor(vdr_rel_records);
+		RecordBitmap* bm_records = vdr_rel_records;
+
+		if (condition)
+		{
+			for (auto& getInfo : vdr_cond_idx)
+			{
+				if (getInfo.m_desc.idx_id == id)
+				{
+					bm_records = getInfo.m_recs;
+					break;
+				}
+			}
+		}
+		RecordBitmap::Accessor accessor(bm_records);
 
 		if (accessor.getFirst())
 		{
@@ -2530,8 +2598,6 @@ Validation::RTN Validation::walk_pointer_page(jrd_rel* relation, ULONG sequence)
 	// Walk the data pages (someday we may optionally walk pages with "large objects"
 
 	ULONG seq = sequence * dbb->dbb_dp_per_pp;
-
-
 	UCHAR* bits = (UCHAR*) (page->ppg_page + dbb->dbb_dp_per_pp);
 	bool marked = false;
 	USHORT slot = 0;
@@ -2541,7 +2607,25 @@ Validation::RTN Validation::walk_pointer_page(jrd_rel* relation, ULONG sequence)
 		{
 			UCHAR new_pp_bits = 0;
 
+			// If walk_data_page() below going to evaluate conditions expressions,
+			// pointer page should be released to avoid deadlocks.
+
+			const bool releasePP = vdr_cond_idx.hasData();
+			if (releasePP)
+			{
+				release_page(&window);
+				marked = false;
+			}
+
 			const RTN result = walk_data_page(relation, *pages, seq, new_pp_bits);
+
+			if (releasePP)
+			{
+				fetch_page(false, (*vector)[sequence], pag_pointer, &window, &page);
+				bits = (UCHAR*) (page->ppg_page + dbb->dbb_dp_per_pp);
+				pages = &page->ppg_page[slot];
+			}
+
 			if (result != rtn_ok && (vdr_flags & VDR_repair))
 			{
 				if (!marked)
@@ -2987,6 +3071,17 @@ Validation::RTN Validation::walk_relation(jrd_rel* relation)
 		release_page(&window);
 	}
 
+	// If we going to check records, get getInfo about conditional indices before
+	// walking relation. System relations have no conditional indices.
+
+	for (auto& item : vdr_cond_idx)
+		delete item.m_recs;
+
+	vdr_cond_idx.clear();
+
+	const bool idxRootOk = (vdr_flags & VDR_records) && !relation->isSystem() ?
+		walk_root(relation, true) == rtn_ok : true;
+
 	// Walk pointer and selected data pages associated with relation
 
 	vdr_rel_backversion_counter = 0;
@@ -3010,7 +3105,8 @@ Validation::RTN Validation::walk_relation(jrd_rel* relation)
 	}
 
 	// Walk indices for the relation
-	walk_root(relation);
+	if (idxRootOk)
+		walk_root(relation, false);
 
 	lckGC.release();
 
@@ -3087,7 +3183,7 @@ Validation::RTN Validation::walk_relation(jrd_rel* relation)
 }
 
 
-Validation::RTN Validation::walk_root(jrd_rel* relation)
+Validation::RTN Validation::walk_root(jrd_rel* relation, bool getInfo)
 {
 /**************************************
  *
@@ -3096,7 +3192,8 @@ Validation::RTN Validation::walk_root(jrd_rel* relation)
  **************************************
  *
  * Functional description
- *	Walk index root page for a relation as well as any indices.
+ *	Walk index root page for a relation. If getInfo is true
+ *  get index metadata for condition indices, else walk every index.
  *
  **************************************/
 
@@ -3108,7 +3205,7 @@ Validation::RTN Validation::walk_root(jrd_rel* relation)
 
 	index_root_page* page = 0;
 	WIN window(DB_PAGE_SPACE, -1);
-	fetch_page(true, relPages->rel_index_root, pag_root, &window, &page);
+	fetch_page(!getInfo, relPages->rel_index_root, pag_root, &window, &page);
 
 	for (USHORT i = 0; i < page->irt_count; i++)
 	{
@@ -3131,6 +3228,20 @@ Validation::RTN Validation::walk_root(jrd_rel* relation)
 		{
 			if (vdr_idx_excl->matches(index.c_str(), index.length()))
 				continue;
+		}
+
+		if (getInfo)
+		{
+			if (page->irt_rpt[i].irt_flags & irt_condition)
+			{
+				// No need to evaluate index expression
+				AutoSetRestoreFlag<UCHAR> flag(&page->irt_rpt[i].irt_flags, irt_expression, false);
+
+				IdxInfo info;
+				if (BTR_description(vdr_tdbb, relation, page, &info.m_desc, i))
+					vdr_cond_idx.add(info);
+			}
+			continue;
 		}
 
 		output("Index %d (%s)\n", i + 1, index.c_str());

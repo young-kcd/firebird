@@ -420,6 +420,30 @@ void defineComputed(DsqlCompilerScratch* dsqlScratch, RelationSourceNode* relati
 	value.assign(dsqlScratch->getBlrData());
 }
 
+void definePartial(DsqlCompilerScratch* dsqlScratch, RelationSourceNode* relation,
+	BoolSourceClause* clause, BlrDebugWriter::BlrData& value)
+{
+	// Get the table node and set up correct context.
+	dsqlScratch->resetContextStack();
+
+	PASS1_make_context(dsqlScratch, relation);
+
+	const auto input = Node::doDsqlPass(dsqlScratch, clause->value);
+
+	// Generate the blr expression.
+
+	dsqlScratch->getBlrData().clear();
+	dsqlScratch->getDebugData().clear();
+	dsqlScratch->appendUChar(dsqlScratch->isVersion4() ? blr_version4 : blr_version5);
+
+	GEN_expr(dsqlScratch, input);
+	dsqlScratch->appendUChar(blr_eoc);
+
+	dsqlScratch->resetContextStack();
+
+	value.assign(dsqlScratch->getBlrData());
+}
+
 // Delete a record from RDB$RELATION_CONSTRAINTS based on a constraint name.
 //
 //      On deleting from RDB$RELATION_CONSTRAINTS, 2 system triggers fire:
@@ -9794,6 +9818,31 @@ void CreateIndexNode::store(thread_db* tdbb, jrd_tra* transaction, MetaName& nam
 		IDX.RDB$SEGMENT_COUNT = SSHORT(definition.columns.getCount());
 	}
 	END_STORE
+
+	if (!definition.conditionBlr.isEmpty() || !definition.conditionSource.isEmpty())
+	{
+		AutoRequest request;
+
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+			IDX IN RDB$INDICES
+			WITH IDX.RDB$INDEX_NAME EQ name.c_str()
+		{
+			MODIFY IDX
+				if (!definition.conditionBlr.isEmpty())
+				{
+					IDX.RDB$CONDITION_BLR.NULL = FALSE;
+					IDX.RDB$CONDITION_BLR = definition.conditionBlr;
+				}
+
+				if (!definition.conditionSource.isEmpty())
+				{
+					IDX.RDB$CONDITION_SOURCE.NULL = FALSE;
+					IDX.RDB$CONDITION_SOURCE = definition.conditionSource;
+				}
+			END_MODIFY
+		}
+		END_FOR
+	}
 }
 
 
@@ -9858,6 +9907,21 @@ void CreateIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 		attachment->storeMetaDataBlob(tdbb, transaction, &definition.expressionSource,
 			computedSource);
 		attachment->storeBinaryBlob(tdbb, transaction, &definition.expressionBlr, computedValue);
+	}
+
+	if (partial)
+	{
+		const auto dbb = tdbb->getDatabase();
+		if (dbb->getEncodedOdsVersion() < ODS_13_1)
+			ERR_post(Arg::Gds(isc_wish_list));
+
+		BlrDebugWriter::BlrData partialValue;
+		definePartial(dsqlScratch, relation, partial, partialValue);
+
+		attachment->storeMetaDataBlob(tdbb, transaction,
+			&definition.conditionSource, partial->source);
+		attachment->storeBinaryBlob(tdbb, transaction,
+			&definition.conditionBlr, partialValue);
 	}
 
 	store(tdbb, transaction, name, definition);

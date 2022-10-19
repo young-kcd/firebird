@@ -6568,6 +6568,26 @@ bool get_index(BurpGlobals* tdgbl, const burp_rel* relation)
 				get_blr_blob (tdgbl, X.RDB$EXPRESSION_BLR, false);
 				break;
 
+			case att_index_condition_source:
+				if (tdgbl->RESTORE_format >= 11)
+				{
+					X.RDB$CONDITION_SOURCE.NULL = FALSE;
+					get_source_blob(tdgbl, X.RDB$CONDITION_SOURCE, false);
+				}
+				else
+					bad_attribute(scan_next_attr, attribute, 93);
+				break;
+
+			case att_index_condition_blr:
+				if (tdgbl->RESTORE_format >= 11)
+				{
+					X.RDB$CONDITION_BLR.NULL = FALSE;
+					get_blr_blob(tdgbl, X.RDB$CONDITION_BLR, false);
+				}
+				else
+					bad_attribute(scan_next_attr, attribute, 93);
+				break;
+
 			case att_index_foreign_key:
 				foreign_index = true;
 				// Defer foreign key index activation

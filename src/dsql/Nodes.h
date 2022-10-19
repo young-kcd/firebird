@@ -666,12 +666,14 @@ public:
 	// Return all streams referenced by the expression.
 	virtual void collectStreams(SortedStreamList& streamList) const;
 
-	bool containsStream(StreamType stream) const
+	bool containsStream(StreamType stream, bool only = false) const
 	{
 		SortedStreamList nodeStreams;
 		collectStreams(nodeStreams);
 
-		return nodeStreams.exist(stream);
+		return only ?
+			nodeStreams.getCount() == 1 && nodeStreams[0] == stream :
+			nodeStreams.exist(stream);
 	}
 
 	bool containsAnyStream(const StreamList& streams) const

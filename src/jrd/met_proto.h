@@ -107,6 +107,7 @@ SLONG		MET_lookup_generator(Jrd::thread_db*, const Jrd::MetaName&, bool* sysGen 
 bool		MET_lookup_generator_id(Jrd::thread_db*, SLONG, Jrd::MetaName&, bool* sysGen = 0);
 void		MET_update_generator_increment(Jrd::thread_db* tdbb, SLONG gen_id, SLONG step);
 void		MET_lookup_index(Jrd::thread_db*, Jrd::MetaName&, const Jrd::MetaName&, USHORT);
+void		MET_lookup_index_condition(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc*);
 void		MET_lookup_index_expression(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc*);
 bool		MET_lookup_index_expression_blr(Jrd::thread_db* tdbb, const Jrd::MetaName& index_name, Jrd::bid& blob_id);
 SLONG		MET_lookup_index_name(Jrd::thread_db*, const Jrd::MetaName&, SLONG*, Jrd::IndexStatus* status);

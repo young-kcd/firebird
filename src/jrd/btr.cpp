@@ -509,13 +509,16 @@ bool BTR_description(thread_db* tdbb, jrd_rel* relation, index_root_page* root, 
 	idx->idx_count = irt_desc->irt_keys;
 	idx->idx_flags = irt_desc->irt_flags;
 	idx->idx_runtime_flags = 0;
-	idx->idx_foreign_primaries = NULL;
-	idx->idx_foreign_relations = NULL;
-	idx->idx_foreign_indexes = NULL;
+	idx->idx_foreign_primaries = nullptr;
+	idx->idx_foreign_relations = nullptr;
+	idx->idx_foreign_indexes = nullptr;
 	idx->idx_primary_relation = 0;
 	idx->idx_primary_index = 0;
-	idx->idx_expression = NULL;
-	idx->idx_expression_statement = NULL;
+	idx->idx_expression = nullptr;
+	idx->idx_expression_statement = nullptr;
+	idx->idx_condition = nullptr;
+	idx->idx_condition_statement = nullptr;
+	idx->idx_fraction = 1.0;
 
 	// pick up field ids and type descriptions for each of the fields
 	const UCHAR* ptr = (UCHAR*) root + irt_desc->irt_desc;
@@ -530,31 +533,95 @@ bool BTR_description(thread_db* tdbb, jrd_rel* relation, index_root_page* root, 
 	}
 	idx->idx_selectivity = idx_desc->idx_selectivity;
 
-	if (idx->idx_flags & idx_expressn)
+	if (idx->idx_flags & idx_expression)
 	{
 		MET_lookup_index_expression(tdbb, relation, idx);
-		fb_assert(idx->idx_expression != NULL);
+		fb_assert(idx->idx_expression);
+	}
+
+	if (idx->idx_flags & idx_condition)
+	{
+		MET_lookup_index_condition(tdbb, relation, idx);
+		fb_assert(idx->idx_condition);
 	}
 
 	return true;
 }
 
 
+bool BTR_check_condition(Jrd::thread_db* tdbb, Jrd::index_desc* idx, Jrd::Record* record)
+{
+	if (!(idx->idx_flags & idx_condition))
+		return true;
+
+	fb_assert(idx->idx_condition);
+
+	Request* const orgRequest = tdbb->getRequest();
+	Request* const conditionRequest = idx->idx_condition_statement->findRequest(tdbb);
+
+	fb_assert(conditionRequest != orgRequest);
+
+	fb_assert(!conditionRequest->req_caller);
+	conditionRequest->req_caller = orgRequest;
+
+	conditionRequest->req_flags &= req_in_use;
+	conditionRequest->req_flags |= req_active;
+	TRA_attach_request(tdbb->getTransaction(), conditionRequest);
+	tdbb->setRequest(conditionRequest);
+
+	fb_assert(conditionRequest->req_transaction);
+
+	conditionRequest->req_rpb[0].rpb_record = record;
+	conditionRequest->req_rpb[0].rpb_number.setValue(BOF_NUMBER);
+	conditionRequest->req_rpb[0].rpb_number.setValid(true);
+	conditionRequest->req_flags &= ~req_null;
+
+	FbLocalStatus status;
+	bool result = false;
+
+	try
+	{
+		Jrd::ContextPoolHolder context(tdbb, conditionRequest->req_pool);
+
+		if (orgRequest)
+			conditionRequest->setGmtTimeStamp(orgRequest->getGmtTimeStamp());
+		else
+			conditionRequest->validateTimeStamp();
+
+		result = idx->idx_condition->execute(tdbb, conditionRequest);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(&status);
+	}
+
+	EXE_unwind(tdbb, conditionRequest);
+	conditionRequest->req_flags &= ~req_in_use;
+	conditionRequest->req_attachment = nullptr;
+
+	tdbb->setRequest(orgRequest);
+
+	status.check();
+
+	return result;
+}
+
+
 DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool& notNull)
 {
 	SET_TDBB(tdbb);
-	fb_assert(idx->idx_expression != NULL);
+	fb_assert(idx->idx_expression);
 
-	// check for resursive expression evaluation
+	// check for recursive expression evaluation
 	Request* const org_request = tdbb->getRequest();
 	Request* const expr_request = idx->idx_expression_statement->findRequest(tdbb, true);
 
-	if (expr_request == NULL)
+	if (!expr_request)
 		ERR_post(Arg::Gds(isc_random) << "Attempt to evaluate index expression recursively");
 
 	fb_assert(expr_request != org_request);
 
-	fb_assert(expr_request->req_caller == NULL);
+	fb_assert(!expr_request->req_caller);
 	expr_request->req_caller = org_request;
 
 	expr_request->req_flags &= req_in_use;
@@ -1241,7 +1308,7 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 		{
 			bool isNull;
 			// for expression indices, compute the value of the expression
-			if (idx->idx_flags & idx_expressn)
+			if (idx->idx_flags & idx_expression)
 			{
 				bool notNull;
 				desc_ptr = BTR_eval_expression(tdbb, idx, record, notNull);
@@ -1437,9 +1504,9 @@ USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 			break;
 
 		default:
-			if (idx->idx_flags & idx_expressn)
+			if (idx->idx_flags & idx_expression)
 			{
-				fb_assert(idx->idx_expression != NULL);
+				fb_assert(idx->idx_expression);
 				length = idx->idx_expression_desc.dsc_length;
 				if (idx->idx_expression_desc.dsc_dtype == dtype_varying)
 				{
@@ -1756,7 +1823,7 @@ void BTR_make_null_key(thread_db* tdbb, const index_desc* idx, temporary_key* ke
 	const index_desc::idx_repeat* tail = idx->idx_rpt;
 
 	// If the index is a single segment index, don't sweat the compound stuff
-	if ((idx->idx_count == 1) || (idx->idx_flags & idx_expressn))
+	if ((idx->idx_count == 1) || (idx->idx_flags & idx_expression))
 	{
 		compress(tdbb, &null_desc, key, tail->idx_itype, true, descending, INTL_KEY_SORT);
 	}
@@ -6144,7 +6211,7 @@ string print_key(thread_db* tdbb, jrd_rel* relation, index_desc* idx, Record* re
 
 	try
 	{
-		if (idx->idx_flags & idx_expressn)
+		if (idx->idx_flags & idx_expression)
 		{
 			bool notNull = false;
 			const dsc* const desc = BTR_eval_expression(tdbb, idx, record, notNull);

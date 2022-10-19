@@ -45,13 +45,12 @@ namespace Jrd {
 
 // AB: 2005-11-05
 // Constants below needs some discussions and ideas
+const double REDUCE_SELECTIVITY_FACTOR_EQUALITY = 0.001;
 const double REDUCE_SELECTIVITY_FACTOR_BETWEEN = 0.0025;
 const double REDUCE_SELECTIVITY_FACTOR_LESS = 0.05;
 const double REDUCE_SELECTIVITY_FACTOR_GREATER = 0.05;
 const double REDUCE_SELECTIVITY_FACTOR_STARTING = 0.01;
-
-const double REDUCE_SELECTIVITY_FACTOR_EQUALITY = 0.1;
-const double REDUCE_SELECTIVITY_FACTOR_INEQUALITY = 0.3;
+const double REDUCE_SELECTIVITY_FACTOR_OTHER = 0.01;
 
 const double MAXIMUM_SELECTIVITY = 1.0;
 const double DEFAULT_SELECTIVITY = 0.1;
@@ -347,11 +346,38 @@ public:
 
 	static double getSelectivity(const BoolExprNode* node)
 	{
-		const auto cmpNode = nodeAs<ComparativeBoolNode>(node);
+		if (const auto cmpNode = nodeAs<ComparativeBoolNode>(node))
+		{
+			switch (cmpNode->blrOp)
+			{
+			case blr_eql:
+			case blr_equiv:
+				return REDUCE_SELECTIVITY_FACTOR_EQUALITY;
 
-		return (cmpNode && cmpNode->blrOp == blr_eql) ?
-			REDUCE_SELECTIVITY_FACTOR_EQUALITY :
-			REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
+			case blr_gtr:
+			case blr_geq:
+				return REDUCE_SELECTIVITY_FACTOR_GREATER;
+
+			case blr_lss:
+			case blr_leq:
+				return REDUCE_SELECTIVITY_FACTOR_LESS;
+
+			case blr_between:
+				return REDUCE_SELECTIVITY_FACTOR_BETWEEN;
+
+			case blr_starting:
+				return REDUCE_SELECTIVITY_FACTOR_STARTING;
+
+			default:
+				break;
+			}
+		}
+		else if (nodeIs<MissingBoolNode>(node))
+		{
+			return REDUCE_SELECTIVITY_FACTOR_EQUALITY;
+		}
+
+		return REDUCE_SELECTIVITY_FACTOR_OTHER;
 	}
 
 	static void adjustSelectivity(double& selectivity, double factor, double cardinality)
@@ -374,6 +400,7 @@ public:
 
 	RecordSource* compile(RseNode* subRse, BoolExprNodeStack* parentStack);
 	void compileRelation(StreamType stream);
+	unsigned decomposeBoolean(BoolExprNode* boolNode, BoolExprNodeStack& stack);
 	void generateAggregateDistincts(MapNode* map);
 	RecordSource* generateRetrieval(StreamType stream,
 									SortNode** sortClause,
@@ -434,7 +461,6 @@ private:
 									ConjunctIterator& iter);
 	void checkIndices();
 	void checkSorts();
-	unsigned decompose(BoolExprNode* boolNode, BoolExprNodeStack& stack);
 	unsigned distributeEqualities(BoolExprNodeStack& orgStack, unsigned baseCount);
 	void findDependentStreams(const StreamList& streams,
 							  StreamList& dependent_streams,
@@ -518,7 +544,7 @@ struct IndexScratchSegment
 
 struct IndexScratch
 {
-	IndexScratch(MemoryPool& p, index_desc* idx, double cardinality);
+	IndexScratch(MemoryPool& p, index_desc* idx);
 	IndexScratch(MemoryPool& p, const IndexScratch& other);
 
 	index_desc* index = nullptr;				// index descriptor
@@ -533,6 +559,7 @@ struct IndexScratch
 	bool useMultiStartingKeys = false;		// Use INTL_KEY_MULTI_STARTING
 
 	Firebird::ObjectsArray<IndexScratchSegment> segments;
+	MatchedBooleanList matches;					// matched booleans (partial indices only)
 };
 
 typedef Firebird::ObjectsArray<IndexScratch> IndexScratchList;
@@ -590,8 +617,9 @@ public:
 
 protected:
 	void analyzeNavigation(const InversionCandidateList& inversions);
-	bool betterInversion(const InversionCandidate* inv1, const InversionCandidate* inv2,
-		bool ignoreUnmatched) const;
+	bool betterInversion(const InversionCandidate* inv1, const InversionCandidate* inv2) const;
+	bool checkIndexCondition(index_desc& idx, MatchedBooleanList& matches) const;
+	bool checkIndexExpression(const index_desc* idx, ValueExprNode* node) const;
 	InversionNode* composeInversion(InversionNode* node1, InversionNode* node2,
 		InversionNode::Type node_type) const;
 	const Firebird::string& getAlias();

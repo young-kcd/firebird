@@ -55,44 +55,6 @@ using namespace Jrd;
 
 namespace
 {
-	// Check the index for being an expression one and
-	// matching both the given stream and the given expression tree
-	bool checkExpressionIndex(CompilerScratch* csb, const index_desc* idx,
-							  ValueExprNode* node, StreamType stream)
-	{
-		fb_assert(idx);
-
-		if (idx->idx_expression)
-		{
-			// The desired expression can be hidden inside a derived expression node,
-			// so try to recover it (see CORE-4118).
-			while (!idx->idx_expression->sameAs(node, true))
-			{
-				const auto derivedExpr = nodeAs<DerivedExprNode>(node);
-				const auto cast = nodeAs<CastNode>(node);
-
-				if (derivedExpr)
-					node = derivedExpr->arg;
-				else if (cast && cast->artificial)
-					node = cast->source;
-				else
-					return false;
-			}
-
-			SortedStreamList exprStreams, nodeStreams;
-			idx->idx_expression->collectStreams(exprStreams);
-			node->collectStreams(nodeStreams);
-
-			if (exprStreams.getCount() == 1 && exprStreams[0] == 0 &&
-				nodeStreams.getCount() == 1 && nodeStreams[0] == stream)
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
-
 	ValueExprNode* injectCast(CompilerScratch* csb,
 							  ValueExprNode* value, CastNode*& cast,
 							  const dsc& desc)
@@ -145,8 +107,8 @@ namespace
 } // namespace
 
 
-IndexScratch::IndexScratch(MemoryPool& p, index_desc* idx, double card)
-	: index(idx), cardinality(card), segments(p)
+IndexScratch::IndexScratch(MemoryPool& p, index_desc* idx)
+	: index(idx), segments(p), matches(p)
 {
 	segments.resize(index->idx_count);
 }
@@ -162,7 +124,8 @@ IndexScratch::IndexScratch(MemoryPool& p, const IndexScratch& other)
 	  nonFullMatchedSegments(other.nonFullMatchedSegments),
 	  usePartialKey(other.usePartialKey),
 	  useMultiStartingKeys(other.useMultiStartingKeys),
-	  segments(p, other.segments)
+	  segments(p, other.segments),
+	  matches(p, other.matches)
 {}
 
 
@@ -182,18 +145,26 @@ Retrieval::Retrieval(thread_db* aTdbb, Optimizer* opt, StreamType streamNumber,
 	  indexScratches(getPool()),
 	  inversionCandidates(getPool())
 {
-	const Database* const dbb = tdbb->getDatabase();
+	const auto dbb = tdbb->getDatabase();
 
 	const auto tail = &csb->csb_rpt[stream];
-
 	relation = tail->csb_relation;
 	fb_assert(relation);
 
 	if (!tail->csb_idx)
 		return;
 
+	MatchedBooleanList matches;
+
 	for (auto& index : *tail->csb_idx)
 	{
+		matches.clear();
+
+		index.idx_fraction = MAXIMUM_SELECTIVITY;
+
+		if ((index.idx_flags & idx_condition) && !checkIndexCondition(index, matches))
+			continue;
+
 		const auto length = ROUNDUP(BTR_key_length(tdbb, relation, &index), sizeof(SLONG));
 
 		// AB: Calculate the cardinality which should reflect the total number
@@ -206,12 +177,16 @@ Retrieval::Retrieval(thread_db* aTdbb, Optimizer* opt, StreamType streamNumber,
 		// Compound indexes are generally less compressed.
 		const double factor = (index.idx_count == 1) ? 0.5 : 0.7;
 
-		double cardinality = tail->csb_cardinality;
+		double cardinality = tail->csb_cardinality * index.idx_fraction;
 		cardinality *= (2 + length * factor);
 		cardinality /= (dbb->dbb_page_size - BTR_SIZE);
 		cardinality = MAX(cardinality, MINIMUM_CARDINALITY);
 
-		indexScratches.add(IndexScratch(getPool(), &index, cardinality));
+		IndexScratch scratch(getPool(), &index);
+		scratch.cardinality = cardinality;
+		scratch.matches.assign(matches);
+
+		indexScratches.add(scratch);
 	}
 }
 
@@ -436,7 +411,7 @@ void Retrieval::analyzeNavigation(const InversionCandidateList& inversions)
 
 		// only a single-column ORDER BY clause can be mapped to
 		// an expression index
-		if (idx->idx_flags & idx_expressn)
+		if (idx->idx_flags & idx_expression)
 		{
 			if (sort->expressions.getCount() != 1)
 				continue;
@@ -499,9 +474,9 @@ void Retrieval::analyzeNavigation(const InversionCandidateList& inversions)
 
 			for (const auto node : nodes)
 			{
-				if (idx->idx_flags & idx_expressn)
+				if (idx->idx_flags & idx_expression)
 				{
-					if (!checkExpressionIndex(csb, idx, node, stream))
+					if (!checkIndexExpression(idx, node))
 						continue;
 				}
 				else if (!(fieldNode = nodeAs<FieldNode>(node)) || fieldNode->fieldStream != stream)
@@ -598,7 +573,7 @@ void Retrieval::analyzeNavigation(const InversionCandidateList& inversions)
 					for (const auto otherMatch : otherCandidate->matches)
 					{
 						if (candidate->matches.exist(otherMatch) &&
-							betterInversion(otherCandidate, candidate, true))
+							betterInversion(otherCandidate, candidate))
 						{
 							usableIndex = false;
 							break;
@@ -622,15 +597,14 @@ void Retrieval::analyzeNavigation(const InversionCandidateList& inversions)
 			// If no inversion candidate is found, create a fake one representing full index scan
 
 			candidate = FB_NEW_POOL(getPool()) InversionCandidate(getPool());
-			candidate->cost = indexScratch.cardinality;
+			candidate->cost = DEFAULT_INDEX_COST + indexScratch.cardinality;
 			candidate->indexes = 1;
 			candidate->scratch = &indexScratch;
-			candidate->nonFullMatchedSegments = indexScratch.segments.getCount();
 			tempCandidates.add(candidate);
 		}
 
 		if (!bestCandidate ||
-			betterInversion(candidate, bestCandidate, false))
+			betterInversion(candidate, bestCandidate))
 		{
 			bestCandidate = candidate;
 		}
@@ -647,8 +621,7 @@ void Retrieval::analyzeNavigation(const InversionCandidateList& inversions)
 }
 
 bool Retrieval::betterInversion(const InversionCandidate* inv1,
-								const InversionCandidate* inv2,
-								bool ignoreUnmatched) const
+								const InversionCandidate* inv2) const
 {
 	// Return true if inversion1 is *better* than inversion2.
 	// It's mostly about the retrieval cost, but other aspects are also taken into account.
@@ -698,24 +671,23 @@ bool Retrieval::betterInversion(const InversionCandidate* inv1,
 			{
 				// If the "same" costs then compare with the nr of unmatched segments,
 				// how many indexes and matched segments. First compare number of indexes.
-				int compareSelectivity = (inv1->indexes - inv2->indexes);
+				int diff = (inv1->indexes - inv2->indexes);
 
-				if (compareSelectivity == 0)
+				if (diff == 0)
 				{
 					// For the same number of indexes compare number of matched segments.
 					// Note the inverted condition: the more matched segments the better.
-					compareSelectivity = (inv2->matchedSegments - inv1->matchedSegments);
+					diff = (inv2->matchedSegments - inv1->matchedSegments);
 
-					if (compareSelectivity == 0 && !ignoreUnmatched)
+					if (diff == 0)
 					{
 						// For the same number of matched segments
 						// compare ones that aren't full matched
-						compareSelectivity =
-							(inv1->nonFullMatchedSegments - inv2->nonFullMatchedSegments);
+						diff = (inv1->nonFullMatchedSegments - inv2->nonFullMatchedSegments);
 					}
 				}
 
-				if (compareSelectivity < 0)
+				if (diff < 0)
 					return true;
 			}
 			else if (cost1 < cost2)
@@ -724,6 +696,115 @@ bool Retrieval::betterInversion(const InversionCandidate* inv1,
 	}
 
 	return false;
+}
+
+bool Retrieval::checkIndexCondition(index_desc& idx, MatchedBooleanList& matches) const
+{
+	fb_assert(idx.idx_condition);
+
+	if (!idx.idx_condition->containsStream(0, true))
+		return false;
+
+	fb_assert(matches.isEmpty());
+
+	auto iter = optimizer->getConjuncts(outerFlag, innerFlag);
+
+	BoolExprNodeStack idxConjuncts;
+	const auto conjunctCount = optimizer->decomposeBoolean(idx.idx_condition, idxConjuncts);
+	fb_assert(conjunctCount);
+
+	idx.idx_fraction = MAXIMUM_SELECTIVITY;
+
+	for (BoolExprNodeStack::const_iterator idxIter(idxConjuncts);
+		idxIter.hasData(); ++idxIter)
+	{
+		const auto boolean = idxIter.object();
+
+		// If the index condition is (A OR B) and any of the {A, B} is present
+		// among the available booleans, then the index is possibly usable
+		const auto binaryNode = nodeAs<BinaryBoolNode>(boolean);
+		if (binaryNode && binaryNode->blrOp == blr_or)
+		{
+			for (iter.rewind(); iter.hasData(); ++iter)
+			{
+				if (binaryNode->arg1->sameAs(*iter, true) ||
+					binaryNode->arg2->sameAs(*iter, true))
+				{
+					matches.add(*iter);
+					break;
+				}
+			}
+		}
+
+		// If the index condition is (A IS NOT NULL) and the available booleans
+		// includes any comparative predicate that explicitly mentions A,
+		// then the index is possibly usable
+		const auto notNode = nodeAs<NotBoolNode>(boolean);
+		const auto missingNode = notNode ? nodeAs<MissingBoolNode>(notNode->arg) : nullptr;
+		if (missingNode)
+		{
+			for (iter.rewind(); iter.hasData(); ++iter)
+			{
+				const auto cmpNode = nodeAs<ComparativeBoolNode>(*iter);
+				if (cmpNode && cmpNode->blrOp != blr_equiv)
+				{
+					if (cmpNode->arg1->sameAs(missingNode->arg, true) ||
+						cmpNode->arg2->sameAs(missingNode->arg, true))
+					{
+						matches.add(*iter);
+						break;
+					}
+
+					if (cmpNode->arg3 &&
+						cmpNode->arg3->sameAs(missingNode->arg, true))
+					{
+						matches.add(*iter);
+						break;
+					}
+				}
+			}
+		}
+
+		// If conjunct of the index condition matches any available boolean,
+		// then the index is possibly usable
+		for (iter.rewind(); iter.hasData(); ++iter)
+		{
+			if (idxIter.object()->sameAs(*iter, true))
+			{
+				matches.add(*iter);
+				break;
+			}
+		}
+
+		idx.idx_fraction *= optimizer->getSelectivity(boolean);
+	}
+
+	return (matches.getCount() >= conjunctCount);
+}
+
+bool Retrieval::checkIndexExpression(const index_desc* idx, ValueExprNode* node) const
+{
+	fb_assert(idx && idx->idx_expression);
+
+	// The desired expression can be hidden inside a derived expression node,
+	// so try to recover it (see CORE-4118).
+	while (!idx->idx_expression->sameAs(node, true))
+	{
+		const auto derivedExpr = nodeAs<DerivedExprNode>(node);
+		const auto cast = nodeAs<CastNode>(node);
+
+		if (derivedExpr)
+			node = derivedExpr->arg;
+		else if (cast && cast->artificial)
+			node = cast->source;
+		else
+			return false;
+	}
+
+	// Check the index for matching both the given stream and the given expression tree
+
+	return idx->idx_expression->containsStream(0, true) &&
+		node->containsStream(stream, true);
 }
 
 void Retrieval::getInversionCandidates(InversionCandidateList& inversions,
@@ -744,13 +825,14 @@ void Retrieval::getInversionCandidates(InversionCandidateList& inversions,
 		scratch.usePartialKey = false;
 		scratch.useMultiStartingKeys = false;
 
+		const auto idx = scratch.index;
+
 		if (scratch.candidate)
 		{
-			matches.clear();
-			scratch.selectivity = MAXIMUM_SELECTIVITY;
+			matches.assign(scratch.matches);
+			scratch.selectivity = idx->idx_fraction;
 
 			bool unique = false;
-			const auto idx = scratch.index;
 
 			for (unsigned j = 0; j < scratch.segments.getCount(); j++)
 			{
@@ -918,6 +1000,17 @@ void Retrieval::getInversionCandidates(InversionCandidateList& inversions,
 				invCandidate->dependencies = invCandidate->dependentFromStreams.getCount();
 				inversions.add(invCandidate);
 			}
+		}
+		else if (idx->idx_flags & idx_condition)
+		{
+			const auto invCandidate = FB_NEW_POOL(getPool()) InversionCandidate(getPool());
+			invCandidate->selectivity = idx->idx_fraction;
+			invCandidate->cost = DEFAULT_INDEX_COST + scratch.cardinality;
+			invCandidate->indexes = 1;
+			invCandidate->scratch = &scratch;
+			invCandidate->matches.assign(scratch.matches);
+
+			inversions.add(invCandidate);
 		}
 	}
 }
@@ -1269,7 +1362,7 @@ InversionCandidate* Retrieval::makeInversion(InversionCandidateList& inversions)
 						break;
 					}
 
-					if (betterInversion(currentInv, bestCandidate, false))
+					if (betterInversion(currentInv, bestCandidate))
 						bestCandidate = currentInv;
 				}
 			}
@@ -1478,17 +1571,23 @@ bool Retrieval::matchBoolean(IndexScratch* indexScratch,
 
 	const auto idx = indexScratch->index;
 
-	if (idx->idx_flags & idx_expressn)
+	if (idx->idx_flags & idx_condition)
+	{
+		// If index condition matches the boolean, this should not be
+		// considered a match. Full index scan will be used instead.
+		if (idx->idx_condition->sameAs(boolean, true))
+			return false;
+	}
+
+	if (idx->idx_flags & idx_expression)
 	{
 		// see if one side or the other is matchable to the index expression
 
-	    fb_assert(idx->idx_expression);
-
-		if (!checkExpressionIndex(csb, idx, match, stream) ||
+		if (!checkIndexExpression(idx, match) ||
 			(value && !value->computable(csb, stream, false)))
 		{
 			if ((!cmpNode || cmpNode->blrOp != blr_starting) && value &&
-				checkExpressionIndex(csb, idx, value, stream) &&
+				checkIndexExpression(idx, value) &&
 				match->computable(csb, stream, false))
 			{
 				ValueExprNode* temp = match;
@@ -1554,7 +1653,7 @@ bool Retrieval::matchBoolean(IndexScratch* indexScratch,
 
 	const auto fieldNode = nodeAs<FieldNode>(match);
 
-	if (!(idx->idx_flags & idx_expressn))
+	if (!(idx->idx_flags & idx_expression))
 		fb_assert(fieldNode);
 
 	const bool isDesc = (idx->idx_flags & idx_descending);
@@ -1566,7 +1665,7 @@ bool Retrieval::matchBoolean(IndexScratch* indexScratch,
 
 	for (unsigned i = 0; i < idx->idx_count; i++)
 	{
-		if (!(idx->idx_flags & idx_expressn) &&
+		if (!(idx->idx_flags & idx_expression) &&
 			fieldNode->fieldId != idx->idx_rpt[i].idx_field)
 		{
 			continue;
@@ -2107,19 +2206,18 @@ bool Retrieval::validateStarts(IndexScratch* indexScratch,
 
 	const auto idx = indexScratch->index;
 
-	if (idx->idx_flags & idx_expressn)
+	if (idx->idx_flags & idx_expression)
 	{
 		// AB: What if the expression contains a number/float etc.. and
 		// we use starting with against it? Is that allowed?
-		fb_assert(idx->idx_expression);
 
-		if (!(checkExpressionIndex(csb, idx, field, stream) ||
+		if (!(checkIndexExpression(idx, field) ||
 			(value && !value->computable(csb, stream, false))))
 		{
 			// AB: Can we swap de left and right sides by a starting with?
 			// X STARTING WITH 'a' that is never the same as 'a' STARTING WITH X
 			if (value &&
-				checkExpressionIndex(csb, idx, value, stream) &&
+				checkIndexExpression(idx, value) &&
 				field->computable(csb, stream, false))
 			{
 				field = value;

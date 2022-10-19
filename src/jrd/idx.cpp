@@ -265,7 +265,7 @@ public:
 		{
 			m_countPP = m_creation->relation->getPages(tdbb)->rel_pages->count();
 
-			if ((m_creation->index->idx_flags & idx_expressn) && (workers > 1))
+			if ((m_creation->index->idx_flags & idx_expression) && (workers > 1))
 				MET_lookup_index_expression_blr(tdbb, m_creation->index_name, m_exprBlob);
 		}
 	}
@@ -525,7 +525,7 @@ bool IndexCreateTask::handler(WorkItem& _item)
 		partner_index_id = idx->idx_primary_index;
 	}
 
-	if ((idx->idx_flags & idx_expressn) && (idx->idx_expression == NULL))
+	if ((idx->idx_flags & idx_expression) && (idx->idx_expression == NULL))
 	{
 		fb_assert(!m_exprBlob.isEmpty());
 
@@ -617,6 +617,9 @@ bool IndexCreateTask::handler(WorkItem& _item)
 		while (!m_stop && stack.hasData())
 		{
 			Record* record = stack.pop();
+
+			if (!BTR_check_condition(tdbb, idx, record))
+				continue;
 
 			result = BTR_key(tdbb, relation, record, idx, &key,
 				((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT));
@@ -1155,6 +1158,9 @@ void IDX_garbage_collect(thread_db* tdbb, record_param* rpb, RecordStack& going,
 			{
 				Record* const rec1 = stack1.object();
 
+				if (!BTR_check_condition(tdbb, &idx, rec1))
+					continue;
+
 				idx_e result = BTR_key(tdbb, rpb->rpb_relation, rec1, &idx, &key1,
 					((idx.idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT));
 
@@ -1269,6 +1275,9 @@ void IDX_modify(thread_db* tdbb,
 
 	while (BTR_next_index(tdbb, org_rpb->rpb_relation, transaction, &idx, &window))
 	{
+		if (!BTR_check_condition(tdbb, &idx, new_rpb->rpb_record))
+			continue;
+
 		IndexErrorContext context(new_rpb->rpb_relation, &idx);
 		idx_e error_code;
 
@@ -1344,6 +1353,8 @@ void IDX_modify_check_constraints(thread_db* tdbb,
 		{
 			continue;
 		}
+
+		fb_assert(!(idx.idx_flags & idx_condition));
 
 		IndexErrorContext context(new_rpb->rpb_relation, &idx);
 		idx_e error_code;
@@ -1494,6 +1505,9 @@ void IDX_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	while (BTR_next_index(tdbb, rpb->rpb_relation, transaction, &idx, &window))
 	{
+		if (!BTR_check_condition(tdbb, &idx, rpb->rpb_record))
+			continue;
+
 		IndexErrorContext context(rpb->rpb_relation, &idx);
 		idx_e error_code;
 
@@ -1532,11 +1546,11 @@ static bool cmpRecordKeys(thread_db* tdbb,
 	HalfStaticArray<UCHAR, 256> tmp;
 	DSC desc1, desc2;
 
-	if (idx2->idx_flags & idx_expressn)
+	if (idx2->idx_flags & idx_expression)
 	{
 		// Remove assertion below if\when expression index will participate in FK,
 		// currently it is impossible.
-		fb_assert((idx1->idx_flags & idx_expressn) != 0);
+		fb_assert(idx1->idx_flags & idx_expression);
 
 		bool flag_idx;
 		const dsc* desc_idx = BTR_eval_expression(tdbb, idx2, rec2, flag_idx);
@@ -1812,6 +1826,9 @@ static idx_e check_partner_index(thread_db* tdbb,
 		BUGCHECK(175);			// msg 175 partner index description not found
 	}
 
+	fb_assert(!(idx->idx_flags & idx_condition));
+	fb_assert(!(partner_idx.idx_flags & idx_condition));
+
 	bool starting = false;
 	USHORT segment;
 
@@ -2063,11 +2080,19 @@ static void release_index_block(thread_db* tdbb, IndexBlock* index_block)
  *
  **************************************/
 	if (index_block->idb_expression_statement)
+	{
 		index_block->idb_expression_statement->release(tdbb);
+		index_block->idb_expression_statement = nullptr;
+	}
+	index_block->idb_expression = nullptr;
+	index_block->idb_expression_desc.clear();
 
-	index_block->idb_expression_statement = NULL;
-	index_block->idb_expression = NULL;
-	MOVE_CLEAR(&index_block->idb_expression_desc, sizeof(dsc));
+	if (index_block->idb_condition_statement)
+	{
+		index_block->idb_condition_statement->release(tdbb);
+		index_block->idb_condition_statement = nullptr;
+	}
+	index_block->idb_condition = nullptr;
 
 	LCK_release(tdbb, index_block->idb_lock);
 }

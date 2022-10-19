@@ -414,6 +414,7 @@ const USHORT irt_in_progress	= 4;
 const USHORT irt_foreign		= 8;
 const USHORT irt_primary		= 16;
 const USHORT irt_expression		= 32;
+const USHORT irt_condition		= 64;
 
 inline ULONG index_root_page::irt_repeat::getRoot() const
 {
