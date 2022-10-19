@@ -180,6 +180,22 @@ void CppGenerator::generate()
 
 	fprintf(out, "#ifndef CLOOP_CARG\n");
 	fprintf(out, "#define CLOOP_CARG\n");
+	fprintf(out, "#endif\n\n");
+
+	fprintf(out, "#ifndef CLOOP_NOEXCEPT\n");
+	fprintf(out, "#if __cplusplus >= 201103L\n");
+	fprintf(out, "#define CLOOP_NOEXCEPT noexcept\n");
+	fprintf(out, "#else\n");
+	fprintf(out, "#define CLOOP_NOEXCEPT throw()\n");
+	fprintf(out, "#endif\n");
+	fprintf(out, "#endif\n\n\n");
+
+	fprintf(out, "#ifndef CLOOP_CONSTEXPR\n");
+	fprintf(out, "#if __cplusplus >= 201103L\n");
+	fprintf(out, "#define CLOOP_CONSTEXPR constexpr\n");
+	fprintf(out, "#else\n");
+	fprintf(out, "#define CLOOP_CONSTEXPR const\n");
+	fprintf(out, "#endif\n");
 	fprintf(out, "#endif\n\n\n");
 
 	fprintf(out, "namespace %s\n", nameSpace.c_str());
@@ -281,7 +297,7 @@ void CppGenerator::generate()
 					convertType(parameter->typeRef).c_str(), parameter->name.c_str());
 			}
 
-			fprintf(out, ") throw();\n");
+			fprintf(out, ") CLOOP_NOEXCEPT;\n");
 		}
 
 		fprintf(out, "\t\t};\n");
@@ -313,7 +329,7 @@ void CppGenerator::generate()
 
 		fprintf(out, "\tpublic:\n");
 
-		fprintf(out, "\t\tstatic const unsigned VERSION = %s_%s%s_VERSION;\n",
+		fprintf(out, "\t\tstatic CLOOP_CONSTEXPR unsigned VERSION = %s_%s%s_VERSION;\n",
 			nameSpaceUpper.c_str(),
 			prefix.c_str(),
 			snakeInterfaceName.c_str());
@@ -327,7 +343,7 @@ void CppGenerator::generate()
 		{
 			Constant* constant = *j;
 
-			fprintf(out, "\t\tstatic const %s %s = %s;\n",
+			fprintf(out, "\t\tstatic CLOOP_CONSTEXPR %s %s = %s;\n",
 				convertType(constant->typeRef).c_str(),
 				constant->name.c_str(),
 				constant->expr->generate(LANGUAGE_CPP, prefix).c_str());
@@ -533,7 +549,7 @@ void CppGenerator::generate()
 					 method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name
 					) ? method->parameters.front() : NULL;
 
-				fprintf(out, ") throw()\n");
+				fprintf(out, ") CLOOP_NOEXCEPT\n");
 				fprintf(out, "\t\t{\n");
 
 				if (exceptionParameter)
