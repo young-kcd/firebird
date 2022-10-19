@@ -52,6 +52,26 @@ void identify(FILE* out, unsigned ident)
 	fprintf(out, "%.*s", ident, tabs);
 }
 
+string snakeUpperCase(const string& name)
+{
+	string result;
+	const size_t len = name.length();
+	bool wasUpper = true;
+
+	for (size_t i = 0; i < len; ++i)
+	{
+		const char c = name[i];
+		const bool isUpper = isupper(c);
+
+		if (isUpper && !wasUpper)
+			result += '_';
+
+		result += toupper(c);
+		wasUpper = isUpper;
+	}
+
+	return result;
+}
 
 //--------------------------------------
 
@@ -199,6 +219,14 @@ void CppGenerator::generate()
 	{
 		Interface* interface = *i;
 
+		const string snakeInterfaceName = snakeUpperCase(interface->name);
+
+		fprintf(out, "#define %s_%s%s_VERSION %uu\n\n",
+			nameSpaceUpper.c_str(),
+			prefix.c_str(),
+			snakeInterfaceName.c_str(),
+			interface->version);
+
 		deque<Method*> methods;
 
 		for (Interface* p = interface; p; p = p->super)
@@ -284,7 +312,11 @@ void CppGenerator::generate()
 		fprintf(out, "\n");
 
 		fprintf(out, "\tpublic:\n");
-		fprintf(out, "\t\tstatic const unsigned VERSION = %u;\n", interface->version);
+
+		fprintf(out, "\t\tstatic const unsigned VERSION = %s_%s%s_VERSION;\n",
+			nameSpaceUpper.c_str(),
+			prefix.c_str(),
+			snakeInterfaceName.c_str());
 
 		if (!interface->constants.empty())
 			fprintf(out, "\n");
@@ -420,12 +452,6 @@ void CppGenerator::generate()
 		}
 
 		fprintf(out, "\t};\n\n");
-
-		fprintf(out, "#define %s_%s%s_VERSION %u\n\n",
-			nameSpaceUpper.c_str(),
-			prefix.c_str(),
-			interface->name.c_str(),
-			interface->version);
 	}
 
 	fprintf(out, "\t// Interfaces implementations\n");
