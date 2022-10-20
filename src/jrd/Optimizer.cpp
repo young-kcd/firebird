@@ -2991,39 +2991,55 @@ void OptimizerInnerJoin::findBestOrder(StreamType position, InnerJoinStreamInfo*
 		{
 			IndexRelationship* relationship = stream->indexedRelationships[j];
 			InnerJoinStreamInfo* relationStreamInfo = getStreamInfo(relationship->stream);
-			if (!relationStreamInfo->used)
-			{
-				bool found = false;
-				IndexRelationship** processRelationship = processList->begin();
-				FB_SIZE_T index;
-				for (index = 0; index < processList->getCount(); index++)
-				{
-					if (relationStreamInfo->stream == processRelationship[index]->stream)
-					{
-						// If the cost of this relationship is cheaper then remove the
-						// old relationship and add this one.
-						if (cheaperRelationship(relationship, processRelationship[index]))
-						{
-							processList->remove(index);
-							break;
-						}
 
-						found = true;
-						break;
-					}
-				}
-				if (!found)
+			if (relationStreamInfo->used)
+				continue;
+
+			bool usable = true;
+			for (const StreamType* depStream = relationship->depStreams.begin();
+				depStream != relationship->depStreams.end(); ++depStream)
+			{
+				if (!(csb->csb_rpt[*depStream].csb_flags & csb_active))
 				{
-					// Add relationship sorted on cost (cheapest as first)
-					IndexRelationship** relationships = processList->begin();
-					for (index = 0; index < processList->getCount(); index++)
-					{
-						if (cheaperRelationship(relationship, relationships[index]))
-							break;
-					}
-					processList->insert(index, relationship);
+					usable = false;
+					break;
 				}
 			}
+
+			if (!usable)
+				continue;
+
+			bool found = false;
+			IndexRelationship** processRelationship = processList->begin();
+			FB_SIZE_T index;
+			for (index = 0; index < processList->getCount(); index++)
+			{
+				if (relationStreamInfo->stream == processRelationship[index]->stream)
+				{
+					// If the cost of this relationship is cheaper then remove the
+					// old relationship and add this one.
+					if (cheaperRelationship(relationship, processRelationship[index]))
+					{
+						processList->remove(index);
+						break;
+					}
+
+					found = true;
+					break;
+				}
+			}
+
+			if (found)
+				continue;
+
+			// Add relationship sorted on cost (cheapest as first)
+			IndexRelationship** relationships = processList->begin();
+			for (index = 0; index < processList->getCount(); index++)
+			{
+				if (cheaperRelationship(relationship, relationships[index]))
+					break;
+			}
+			processList->insert(index, relationship);
 		}
 
 		IndexRelationship** nextRelationship = processList->begin();
@@ -3105,6 +3121,9 @@ void OptimizerInnerJoin::getIndexedRelationships(InnerJoinStreamInfo* testStream
 			if (found)
 				continue;
 
+			if (candidate->dependentFromStreams.getCount() > IndexRelationship::MAX_DEP_STREAMS)
+				continue;
+
 			// If we could use more conjunctions on the testing stream
 			// with the base stream active as without the base stream
 			// then the test stream has a indexed relationship with the base stream.
@@ -3114,6 +3133,12 @@ void OptimizerInnerJoin::getIndexedRelationships(InnerJoinStreamInfo* testStream
 			indexRelationship->cost = candidate->cost;
 			indexRelationship->cardinality = candidate->unique ?
 				csb_tail->csb_cardinality : csb_tail->csb_cardinality * candidate->selectivity;
+
+			for (const StreamType* depStream = candidate->dependentFromStreams.begin();
+				depStream != candidate->dependentFromStreams.end(); ++depStream)
+			{
+				indexRelationship->depStreams.add(*depStream);
+			}
 
 			// indexRelationship are kept sorted on cost and unique in the indexRelations array.
 			// The unique and cheapest indexed relatioships are on the first position.
