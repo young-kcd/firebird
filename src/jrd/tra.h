@@ -85,7 +85,7 @@ struct BlobIndex
 {
 	ULONG bli_temp_id;
 	bool bli_materialized;
-	jrd_req* bli_request;
+	Request* bli_request;
 	union
 	{
 		bid bli_blob_id;		// ID of materialized blob
@@ -150,6 +150,7 @@ typedef Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<SLONG, blb*> > >
 const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
 const char* const TRA_BLOB_SPACE = "fb_blob_";
 const char* const TRA_UNDO_SPACE = "fb_undo_";
+const int MAX_TEMP_BLOBS = 1000;
 
 class jrd_tra : public pool_alloc<type_tra>
 {
@@ -288,8 +289,9 @@ public:
 	UCHAR tra_callback_count;			// callback count for 'execute statement'
 	SSHORT tra_lock_timeout;			// in seconds, -1 means infinite, 0 means NOWAIT
 	ULONG tra_next_blob_id;     		// ID of the previous blob or array created in this transaction
+	ULONG tra_temp_blobs_count;			// Number of active temporary blobs
 	const ISC_TIMESTAMP_TZ tra_timestamp;	// transaction start time
-	jrd_req* tra_requests;				// Doubly linked list of requests active in this transaction
+	Request* tra_requests;				// Doubly linked list of requests active in this transaction
 	MonitoringSnapshot* tra_mon_snapshot;	// Database state snapshot (for monitoring purposes)
 	RuntimeStatistics tra_stats;
 	Firebird::Array<DsqlCursor*> tra_open_cursors;
@@ -391,7 +393,7 @@ public:
 	Savepoint* startSavepoint(bool root = false);
 	void rollbackSavepoint(thread_db* tdbb, bool preserveLocks = false);
 	void rollbackToSavepoint(thread_db* tdbb, SavNumber number);
-	void rollforwardSavepoint(thread_db* tdbb, bool assertChanging = true);
+	void releaseSavepoint(thread_db* tdbb);
 	DbCreatorsList* getDbCreatorsList();
 	void checkBlob(thread_db* tdbb, const bid* blob_id, jrd_fld* fld, bool punt);
 
@@ -492,7 +494,6 @@ enum dfw_t {
 	dfw_revoke,
 	dfw_scan_relation,
 	dfw_create_expression_index,
-	dfw_delete_expression_index,
 	dfw_create_procedure,
 	dfw_modify_procedure,
 	dfw_delete_procedure,
@@ -510,6 +511,7 @@ enum dfw_t {
 	dfw_begin_backup,
 	dfw_end_backup,
 	dfw_user_management,
+	dfw_modify_package_header,
 	dfw_drop_package_header,
 	dfw_drop_package_body,
 	dfw_check_not_null,
@@ -518,7 +520,7 @@ enum dfw_t {
 	dfw_change_repl_state,
 
 	// deferred works argument types
-	dfw_arg_index_name,		// index name for dfw_delete_expression_index, mandatory
+	dfw_arg_index_name,		// index name for dfw_delete_index, mandatory
 	dfw_arg_partner_rel_id,	// partner relation id for dfw_delete_index if index is FK, optional
 	dfw_arg_proc_name,		// procedure name for dfw_delete_prm, mandatory
 	dfw_arg_force_computed,	// we need to drop dependencies from a field that WAS computed

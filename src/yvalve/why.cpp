@@ -28,12 +28,13 @@
  */
 
 #include "firebird.h"
+
+#define FB_UsedInYValve true
 #include "firebird/Interface.h"
+
 #include "memory_routines.h"
-#include "gen/iberror.h"
-#include "gen/msg_facs.h"
+#include "iberror.h"
 #include "../yvalve/YObjects.h"
-#include "../dsql/sqlda.h"
 #include "firebird/impl/sqlda_pub.h"
 #include "../common/gdsassert.h"
 #include "../common/db_alias.h"
@@ -75,6 +76,8 @@
 #include <signal.h>
 #endif
 
+#include <functional>
+
 using namespace Firebird;
 using namespace Why;
 
@@ -104,9 +107,28 @@ namespace Why {
 
 namespace {
 
+static const struct {
+	int fac_code;
+	const char* facility;
+} facilities[] = {
+	{FB_IMPL_MSG_FACILITY_JRD,			"JRD       "},
+	{FB_IMPL_MSG_FACILITY_GFIX,			"GFIX      "},
+	{FB_IMPL_MSG_FACILITY_DSQL,			"DSQL      "},
+	{FB_IMPL_MSG_FACILITY_DYN,			"DYN       "},
+	{FB_IMPL_MSG_FACILITY_GBAK,			"GBAK      "},
+	{FB_IMPL_MSG_FACILITY_SQLERR,		"SQLERR    "},
+	{FB_IMPL_MSG_FACILITY_GSEC,			"GSEC      "},
+	{FB_IMPL_MSG_FACILITY_GSTAT,		"GSTAT     "},
+	{FB_IMPL_MSG_FACILITY_FBSVCMGR,		"FBSVCMGR  "},
+	{FB_IMPL_MSG_FACILITY_UTL,			"UTL       "},
+	{FB_IMPL_MSG_FACILITY_NBACKUP,		"NBACKUP   "},
+	{FB_IMPL_MSG_FACILITY_FBTRACEMGR,	"FBTRACEMGR"},
+	{0, NULL}
+};
+
 // Class-wrapper around external SQLDA.
 // Can be used as local variable, but do it with care
-class SQLDAMetadata FB_FINAL :
+class SQLDAMetadata final :
 	public RefCntIface<IMessageMetadataImpl<SQLDAMetadata, CheckStatusWrapper> >
 {
 friend class SQLDAMetadataLauncher;
@@ -115,12 +137,8 @@ private:
 
 	// Fool-proof requested by Alex
 	// Private memory operators to be sure that this class is used in heap only with launcher
-#ifdef DEBUG_GDS_ALLOC
-	void* operator new (size_t s, const char* file, int line) { return MemoryPool::globalAlloc(s, file, line); }
-	void operator delete (void* mem, const char* file, int line) { MemoryPool::globalFree(mem); }
-#else
-	void* operator new (size_t s) { return MemoryPool::globalAlloc(s); }
-#endif
+	void* operator new (size_t s, Firebird::MemoryPool& pool ALLOC_PARAMS) { return pool.allocate(s ALLOC_PASS_ARGS); }
+	void operator delete (void* mem, Firebird::MemoryPool& ALLOC_PARAMS) { MemoryPool::globalFree(mem); }
 	void operator delete (void* mem) { MemoryPool::globalFree(mem); }
 
 public:
@@ -935,7 +953,7 @@ namespace Why
 						{
 							bool found = false;
 
-							const _facilities* facs = facilities;
+							const auto* facs = facilities;
 							const int fac_code = GET_FACILITY(*s);
 
 							while (facs->facility)
@@ -1240,13 +1258,16 @@ namespace Why
 		void checkCursorOpened() const
 		{
 			if (!statement || !statement->cursor)
-				Arg::Gds(isc_dsql_cursor_not_open).raise();
+				(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
+					Arg::Gds(isc_dsql_cursor_err) <<
+					Arg::Gds(isc_dsql_cursor_not_open)).raise();
 		}
 
 		void checkCursorClosed() const
 		{
 			if (statement && statement->cursor)
-				Arg::Gds(isc_dsql_cursor_open_err).raise();
+				(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
+					Arg::Gds(isc_dsql_cursor_open_err)).raise();
 		}
 
 		IStatement* getInterface()
@@ -1324,6 +1345,27 @@ namespace Why
 		bool shutdownMode;
 	};
 
+
+	template <class Y>
+	void done(CheckStatusWrapper* status, YEntry<Y>& entry, Y* y, std::function<void()> newClose, std::function<void()> oldClose)
+	{
+		if (entry.next())
+			newClose();
+
+		if (!(status->getState() & IStatus::STATE_ERRORS))
+			y->destroy(Y::DF_RELEASE | Y::DF_KEEP_NEXT);
+
+		else if (status->getErrors()[1] == isc_interface_version_too_old)
+		{
+			status->init();
+			if (entry.next())
+				oldClose();
+
+			if (!(status->getState() & IStatus::STATE_ERRORS))
+				y->destroy(Y::DF_RELEASE);
+		}
+	}
+
 }	// namespace Why
 
 struct TEB
@@ -1357,10 +1399,10 @@ static void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code)
 
 static void badSqldaVersion(const short version)
 {
-		(Arg::Gds(isc_dsql_sqlda_value_err) <<
-		 Arg::Gds(isc_dsql_invalid_sqlda_version) <<
-		 Arg::Num(SQLDA_VERSION1) << Arg::Num(SQLDA_VERSION1) << Arg::Num(version)
-		).raise();
+	(Arg::Gds(isc_dsql_sqlda_value_err) <<
+		Arg::Gds(isc_dsql_invalid_sqlda_version) <<
+		Arg::Num(SQLDA_VERSION1) << Arg::Num(SQLDA_VERSION1) << Arg::Num(version)
+	).raise();
 }
 
 // Set charset info in SQLVAR according to legacy rules
@@ -2306,9 +2348,6 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2(ISC_STATUS* userStatus, isc_db_handl
 
 	try
 	{
-		if (!sqlStmt)
-			Arg::Gds(isc_command_end_err).raise();
-
 		FB_BOOLEAN stmtIsCrDb = FB_FALSE;
 		YAttachment* att = utilInterface.executeCreateDatabase(&statusWrapper, stmtLength,
 			sqlStmt, dialect, &stmtIsCrDb);
@@ -2764,7 +2803,7 @@ int API_ROUTINE gds__enable_subsystem(TEXT* /*subsystem*/)
 
 namespace
 {
-	class WaitCallback FB_FINAL :
+	class WaitCallback final :
 		public RefCntIface<IEventCallbackImpl<WaitCallback, CheckStatusWrapper> >
 	{
 	public:
@@ -2828,7 +2867,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* userStatus, isc_db_handle*
 
 namespace
 {
-	class QueCallback FB_FINAL : public RefCntIface<IEventCallbackImpl<QueCallback, CheckStatusWrapper> >
+	class QueCallback final : public RefCntIface<IEventCallbackImpl<QueCallback, CheckStatusWrapper> >
 	{
 	public:
 		QueCallback(FPTR_EVENT_CALLBACK aAst, void* aArg)
@@ -3673,15 +3712,6 @@ ISC_STATUS API_ROUTINE isc_unwind_request(ISC_STATUS* userStatus, isc_req_handle
 // Shutdown firebird.
 int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 {
-	if (reason == fb_shutrsn_emergency)
-	{
-		shutdownStarted = true;
-		abortShutdown();
-	}
-
-	if (shutdownStarted)
-		return FB_SUCCESS;
-
 	StatusVector status(NULL);
 	CheckStatusWrapper statusWrapper(&status);
 
@@ -3901,19 +3931,21 @@ void YEvents::cancel(CheckStatusWrapper* status)
 	{
 		YEntry<YEvents> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		if (entry.next())
-			entry.next()->cancel(status);
-
-		if (status->getErrors()[1] == isc_att_shutdown)
-			status->init();
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		done(status, entry, this, [&]{
+				entry.next()->cancel(status);
+				if (status->getErrors()[1] == isc_att_shutdown)
+					status->init();
+			}, [&]{entry.next()->deprecatedCancel(status);});
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
+}
+
+void YEvents::deprecatedCancel(CheckStatusWrapper* status)
+{
+	cancel(status);
 }
 
 
@@ -4046,16 +4078,17 @@ void YRequest::free(CheckStatusWrapper* status)
 	{
 		YEntry<YRequest> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		if (entry.next())
-			entry.next()->free(status);
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		done(status, entry, this, [&]{entry.next()->free(status);}, [&]{entry.next()->deprecatedFree(status);});
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
+}
+
+void YRequest::deprecatedFree(CheckStatusWrapper* status)
+{
+	free(status);
 }
 
 
@@ -4119,7 +4152,7 @@ int YBlob::getSegment(CheckStatusWrapper* status, unsigned int bufferLength,
 		e.stuffException(status);
 	}
 
-	return 0;
+	return IStatus::RESULT_ERROR;
 }
 
 void YBlob::putSegment(CheckStatusWrapper* status, unsigned int length, const void* buffer)
@@ -4141,16 +4174,17 @@ void YBlob::cancel(CheckStatusWrapper* status)
 	{
 		YEntry<YBlob> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		if (entry.next())
-			entry.next()->cancel(status);
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		done(status, entry, this, [&]{entry.next()->cancel(status);}, [&]{entry.next()->deprecatedCancel(status);});
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
+}
+
+void YBlob::deprecatedCancel(CheckStatusWrapper* status)
+{
+	cancel(status);
 }
 
 void YBlob::close(CheckStatusWrapper* status)
@@ -4159,16 +4193,17 @@ void YBlob::close(CheckStatusWrapper* status)
 	{
 		YEntry<YBlob> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		if (entry.next())
-			entry.next()->close(status);
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		done(status, entry, this, [&]{entry.next()->close(status);}, [&]{entry.next()->deprecatedClose(status);});
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
+}
+
+void YBlob::deprecatedClose(CheckStatusWrapper* status)
+{
+	close(status);
 }
 
 int YBlob::seek(CheckStatusWrapper* status, int mode, int offset)
@@ -4438,17 +4473,19 @@ void YStatement::free(CheckStatusWrapper* status)
 	{
 		YEntry<YStatement> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		if (entry.next())
-			entry.next()->free(status);
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		done(status, entry, this, [&]{entry.next()->free(status);}, [&]{entry.next()->deprecatedFree(status);});
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
 }
+
+void YStatement::deprecatedFree(CheckStatusWrapper* status)
+{
+	free(status);
+}
+
 
 YBatch* YStatement::createBatch(CheckStatusWrapper* status, IMessageMetadata* inMetadata, unsigned parLength,
 	const unsigned char* par)
@@ -4716,7 +4753,7 @@ int YResultSet::fetchNext(CheckStatusWrapper* status, void* buffer)
 		e.stuffException(status);
 	}
 
-	return FB_FALSE;
+	return IStatus::RESULT_ERROR;
 }
 
 int YResultSet::fetchPrior(CheckStatusWrapper* status, void* buffer)
@@ -4732,7 +4769,7 @@ int YResultSet::fetchPrior(CheckStatusWrapper* status, void* buffer)
 		e.stuffException(status);
 	}
 
-	return FB_FALSE;
+	return IStatus::RESULT_ERROR;
 }
 
 int YResultSet::fetchFirst(CheckStatusWrapper* status, void* buffer)
@@ -4748,7 +4785,7 @@ int YResultSet::fetchFirst(CheckStatusWrapper* status, void* buffer)
 		e.stuffException(status);
 	}
 
-	return FB_FALSE;
+	return IStatus::RESULT_ERROR;
 }
 
 int YResultSet::fetchLast(CheckStatusWrapper* status, void* buffer)
@@ -4764,7 +4801,7 @@ int YResultSet::fetchLast(CheckStatusWrapper* status, void* buffer)
 		e.stuffException(status);
 	}
 
-	return FB_FALSE;
+	return IStatus::RESULT_ERROR;
 }
 
 int YResultSet::fetchAbsolute(CheckStatusWrapper* status, int position, void* buffer)
@@ -4780,7 +4817,7 @@ int YResultSet::fetchAbsolute(CheckStatusWrapper* status, int position, void* bu
 		e.stuffException(status);
 	}
 
-	return FB_FALSE;
+	return IStatus::RESULT_ERROR;
 }
 
 int YResultSet::fetchRelative(CheckStatusWrapper* status, int offset, void* buffer)
@@ -4796,7 +4833,7 @@ int YResultSet::fetchRelative(CheckStatusWrapper* status, int offset, void* buff
 		e.stuffException(status);
 	}
 
-	return FB_FALSE;
+	return IStatus::RESULT_ERROR;
 }
 
 FB_BOOLEAN YResultSet::isEof(CheckStatusWrapper* status)
@@ -4847,23 +4884,41 @@ IMessageMetadata* YResultSet::getMetadata(CheckStatusWrapper* status)
 	return NULL;
 }
 
-void YResultSet::close(CheckStatusWrapper* status)
+void YResultSet::getInfo(CheckStatusWrapper* status,
+						 unsigned int itemsLength, const unsigned char* items,
+						 unsigned int bufferLength, unsigned char* buffer)
 {
 	try
 	{
-		YEntry<YResultSet> entry(status, this, CHECK_WARN_ZERO_HANDLE);
+		YEntry<YResultSet> entry(status, this);
 
-		if (entry.next())
-			entry.next()->close(status);
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		entry.next()->getInfo(status, itemsLength, items, bufferLength, buffer);
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
 }
+
+void YResultSet::close(CheckStatusWrapper* status)
+{
+	try
+	{
+		YEntry<YResultSet> entry(status, this, CHECK_WARN_ZERO_HANDLE);
+
+		done(status, entry, this, [&]{entry.next()->close(status);}, [&]{entry.next()->deprecatedClose(status);});
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+}
+
+void YResultSet::deprecatedClose(CheckStatusWrapper* status)
+{
+	close(status);
+}
+
 
 //-------------------------------------
 
@@ -5043,11 +5098,29 @@ void YBatch::close(CheckStatusWrapper* status)
 	{
 		YEntry<YBatch> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		if (entry.next())
-			entry.next()->close(status);
+		done(status, entry, this, [&]{entry.next()->close(status);}, [&]{entry.next()->deprecatedClose(status);});
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+}
 
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+
+void YBatch::deprecatedClose(CheckStatusWrapper* status)
+{
+	close(status);
+}
+
+
+void YBatch::getInfo(CheckStatusWrapper* status, unsigned int itemsLength, const unsigned char* items,
+	unsigned int bufferLength, unsigned char* buffer)
+{
+	try
+	{
+		YEntry<YBatch> entry(status, this);
+
+		entry.next()->getInfo(status, itemsLength, items, bufferLength, buffer);
 	}
 	catch (const Exception& e)
 	{
@@ -5091,16 +5164,18 @@ void YReplicator::close(CheckStatusWrapper* status)
 	{
 		YEntry<YReplicator> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		if (entry.next())
-			entry.next()->close(status);
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		done(status, entry, this, [&]{entry.next()->close(status);}, [&]{entry.next()->deprecatedClose(status);});
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
+}
+
+
+void YReplicator::deprecatedClose(CheckStatusWrapper* status)
+{
+	close(status);
 }
 
 
@@ -5142,8 +5217,8 @@ void YTransaction::destroy(unsigned dstrFlags)
 	// can't release cursors by itself. See also CORE-6067.
 	const bool releaseCursors = handle;
 
-	childBlobs.destroy(dstrFlags & ~DF_RELEASE);
-	childCursors.destroy(releaseCursors ? dstrFlags : dstrFlags & ~DF_RELEASE);
+	childBlobs.destroy(dstrFlags & ~(DF_RELEASE | DF_KEEP_NEXT));
+	childCursors.destroy((releaseCursors ? dstrFlags : dstrFlags & ~DF_RELEASE) & ~DF_KEEP_NEXT);
 
 	YAttachment* att = attachment.release();
 	if (att)
@@ -5195,10 +5270,7 @@ void YTransaction::commit(CheckStatusWrapper* status)
 	{
 		YEntry<YTransaction> entry(status, this);
 
-		entry.next()->commit(status);
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		done(status, entry, this, [&]{entry.next()->commit(status);}, [&]{entry.next()->deprecatedCommit(status);});
 	}
 	catch (const Exception& e)
 	{
@@ -5226,13 +5298,11 @@ void YTransaction::rollback(CheckStatusWrapper* status)
 	{
 		YEntry<YTransaction> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		if (entry.next())
-			entry.next()->rollback(status);
-		if (isNetworkError(status))
-			status->init();
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		done(status, entry, this, [&]{
+				entry.next()->rollback(status);
+				if (isNetworkError(status))
+					status->init();
+			}, [&]{entry.next()->deprecatedRollback(status);});
 	}
 	catch (const Exception& e)
 	{
@@ -5282,6 +5352,22 @@ void YTransaction::disconnect(CheckStatusWrapper* status)
 		e.stuffException(status);
 	}
 }
+
+void YTransaction::deprecatedCommit(CheckStatusWrapper* status)
+{
+	commit(status);
+}
+
+void YTransaction::deprecatedRollback(CheckStatusWrapper* status)
+{
+	rollback(status);
+}
+
+void YTransaction::deprecatedDisconnect(CheckStatusWrapper* status)
+{
+	disconnect(status);
+}
+
 
 void YTransaction::addCleanupHandler(CheckStatusWrapper* status, CleanupCallback* callback)
 {
@@ -5346,8 +5432,6 @@ YTransaction* YTransaction::enterDtc(CheckStatusWrapper* status)
 		YEntry<YTransaction> entry(status, this);
 
 		YTransaction* copy = FB_NEW YTransaction(this);
-		// copy is created with zero handle
-		copy->addRef();
 		copy->addRef();
 		next->addRef();		// We use NoIncr in YTransaction ctor
 
@@ -5412,12 +5496,13 @@ void YAttachment::destroy(unsigned dstrFlags)
 
 	cleanupHandlers.clear();
 
-	childRequests.destroy(dstrFlags & ~DF_RELEASE);
-	childStatements.destroy(dstrFlags & ~DF_RELEASE);
-	childIscStatements.destroy(dstrFlags & ~DF_RELEASE);
-	childBlobs.destroy(dstrFlags & ~DF_RELEASE);
-	childEvents.destroy(dstrFlags & ~DF_RELEASE);
-	childTransactions.destroy(dstrFlags & ~DF_RELEASE);
+	unsigned childFlags = dstrFlags & ~(DF_KEEP_NEXT | DF_RELEASE);
+	childRequests.destroy(childFlags);
+	childStatements.destroy(childFlags);
+	childIscStatements.destroy(childFlags);
+	childBlobs.destroy(childFlags);
+	childEvents.destroy(childFlags);
+	childTransactions.destroy(childFlags);
 
 	removeHandle(&attachments, handle);
 
@@ -5454,9 +5539,6 @@ YStatement* YAttachment::prepare(CheckStatusWrapper* status, ITransaction* trans
 	try
 	{
 		YEntry<YAttachment> entry(status, this);
-
-		if (!sqlStmt)
-			Arg::Gds(isc_command_end_err).raise();
 
 		NextTransaction trans;
 		if (transaction)
@@ -5872,19 +5954,21 @@ void YAttachment::detach(CheckStatusWrapper* status)
 	{
 		YEntry<YAttachment> entry(status, this, CHECK_NONE);
 
-		if (entry.next())
-			entry.next()->detach(status);
-
-		if (isNetworkError(status))
-			status->init();
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		done(status, entry, this, [&]{
+				entry.next()->detach(status);
+				if (isNetworkError(status))
+					status->init();
+			}, [&]{entry.next()->deprecatedDetach(status);});
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
+}
+
+void YAttachment::deprecatedDetach(CheckStatusWrapper* status)
+{
+	detach(status);
 }
 
 void YAttachment::dropDatabase(CheckStatusWrapper* status)
@@ -5893,15 +5977,17 @@ void YAttachment::dropDatabase(CheckStatusWrapper* status)
 	{
 		YEntry<YAttachment> entry(status, this);
 
-		entry.next()->dropDatabase(status);
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		done(status, entry, this, [&]{entry.next()->dropDatabase(status);}, [&]{entry.next()->deprecatedDropDatabase(status);});
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
+}
+
+void YAttachment::deprecatedDropDatabase(CheckStatusWrapper* status)
+{
+	dropDatabase(status);
 }
 
 void YAttachment::addCleanupHandler(CheckStatusWrapper* status, CleanupCallback* callback)
@@ -6110,15 +6196,17 @@ void YService::detach(CheckStatusWrapper* status)
 	{
 		YEntry<YService> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		if (entry.next())
-			entry.next()->detach(status);
-
-		destroy(DF_RELEASE);
+		done(status, entry, this, [&]{entry.next()->detach(status);}, [&]{entry.next()->deprecatedDetach(status);});
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
+}
+
+void YService::deprecatedDetach(CheckStatusWrapper* status)
+{
+	detach(status);
 }
 
 void YService::query(CheckStatusWrapper* status, unsigned int sendLength, const unsigned char* sendItems,
@@ -6130,6 +6218,19 @@ void YService::query(CheckStatusWrapper* status, unsigned int sendLength, const 
 		YEntry<YService> entry(status, this);
 		entry.next()->query(status, sendLength, sendItems,
 			receiveLength, receiveItems, bufferLength, buffer);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+}
+
+void YService::cancel(CheckStatusWrapper* status)
+{
+	try
+	{
+		YEntry<YService> entry(status, this);
+		entry.next()->cancel(status);
 	}
 	catch (const Exception& e)
 	{
@@ -6422,6 +6523,10 @@ YService* Dispatcher::attachServiceManager(CheckStatusWrapper* status, const cha
 
 void Dispatcher::shutdown(CheckStatusWrapper* userStatus, unsigned int timeout, const int reason)
 {
+	// set "process exiting" state
+	if (reason == fb_shutrsn_emergency)
+		abortShutdown();
+
 	// can't syncronize with already killed threads, just exit
 	if (MasterInterfacePtr()->getProcessExiting())
 		return;

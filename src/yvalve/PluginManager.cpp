@@ -42,6 +42,7 @@
 #include "../common/classes/GenericMap.h"
 #include "../common/db_alias.h"
 #include "../common/dllinst.h"
+#include "../common/file_params.h"
 
 #include "../yvalve/config/os/config_root.h"
 
@@ -112,7 +113,7 @@ namespace
 
 	bool flShutdown = false;
 
-	class ConfigParameterAccess FB_FINAL :
+	class ConfigParameterAccess final :
 		public RefCntIface<IConfigEntryImpl<ConfigParameterAccess, CheckStatusWrapper> >
 	{
 	public:
@@ -146,7 +147,7 @@ namespace
 		const ConfigFile::Parameter* par;
 	};
 
-	class ConfigAccess FB_FINAL :
+	class ConfigAccess final :
 		public RefCntIface<IConfigImpl<ConfigAccess, CheckStatusWrapper> >
 	{
 	public:
@@ -431,7 +432,7 @@ namespace
 
 	// Provides most of configuration services for plugins,
 	// except per-database configuration in databases.conf
-	class ConfiguredPlugin FB_FINAL :
+	class ConfiguredPlugin final :
 		public RefCntIface<ITimerImpl<ConfiguredPlugin, CheckStatusWrapper> >
 	{
 	public:
@@ -516,7 +517,7 @@ namespace
 	};
 
 	// Provides per-database configuration from databases.conf.
-	class FactoryParameter FB_FINAL :
+	class FactoryParameter final :
 		public RefCntIface<IPluginConfigImpl<FactoryParameter, CheckStatusWrapper> >
 	{
 	public:
@@ -769,7 +770,7 @@ namespace
 
 
 	// Provides access to plugins of given type / name.
-	class PluginSet FB_FINAL : public RefCntIface<IPluginSetImpl<PluginSet, CheckStatusWrapper> >
+	class PluginSet final : public RefCntIface<IPluginSetImpl<PluginSet, CheckStatusWrapper> >
 	{
 	public:
 		// IPluginSet implementation
@@ -940,6 +941,9 @@ namespace
 			current = rc;
 			startModule(masterInterface);
 			current = NULL;
+#ifdef DARWIN	// Plugin unload disabled in MacOS - GH-7112
+			rc->addRef();
+#endif
 			return rc;
 		}
 
@@ -1182,7 +1186,7 @@ public:
 			cache[i] = fb_utils::getPrefix(i, "");
 		}
 
-		db = fb_utils::getPrefix(IConfigManager::DIR_SECDB, "security4.fdb");
+		db = fb_utils::getPrefix(IConfigManager::DIR_SECDB, SECURITY_DB);
 	}
 
 	const char* getDir(unsigned code)

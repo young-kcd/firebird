@@ -458,29 +458,23 @@ void UtilInterface::getFbVersion(CheckStatusWrapper* status, IAttachment* att,
 			if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 				return;
 
-			const UCHAR* p = buf;
-			redo = false;
+			ClumpletReader p(ClumpletReader::InfoResponse, buf, buf_len);
 
-			while (!redo && *p != isc_info_end && p < buf + buf_len)
+			for (redo = false; !(redo || p.isEof()); p.moveNext())
 			{
-				const UCHAR item = *p++;
-				const USHORT len = static_cast<USHORT>(gds__vax_integer(p, 2));
-
-				p += 2;
-
-				switch (item)
+				switch (p.getClumpTag())
 				{
 				case isc_info_firebird_version:
-					versions = (TEXT*) p;
+					versions = (TEXT*) p.getBytes();
 					break;
 
 				case isc_info_implementation:
-					implementations = (TEXT*) p;
+					implementations = (TEXT*) p.getBytes();
 					break;
 
 				case fb_info_implementation:
-					dbis = p;
-					if (dbis[0] * 6 + 1 > len)
+					dbis = p.getBytes();
+					if (dbis[0] * 6u + 1u > p.getClumpLength())
 					{
 						// fb_info_implementation value appears incorrect
 						dbis = NULL;
@@ -493,13 +487,13 @@ void UtilInterface::getFbVersion(CheckStatusWrapper* status, IAttachment* att,
 
 				case isc_info_truncated:
 					redo = true;
+					// fall down...
+				case isc_info_end:
 					break;
 
 				default:
 					(Arg::Gds(isc_random) << "Invalid info item").raise();
 				}
-
-				p += len;
 			}
 
 			// Our buffer wasn't large enough to hold all the information,
@@ -874,7 +868,7 @@ unsigned UtilInterface::getClientVersion()
 }
 
 // End-user proxy for ClumpletReader & Writer
-class XpbBuilder FB_FINAL : public DisposeIface<IXpbBuilderImpl<XpbBuilder, CheckStatusWrapper> >
+class XpbBuilder final : public DisposeIface<IXpbBuilderImpl<XpbBuilder, CheckStatusWrapper> >
 {
 public:
 	XpbBuilder(unsigned kind, const unsigned char* buf, unsigned len)
@@ -916,8 +910,14 @@ public:
 		case SPB_RESPONSE:
 			k = ClumpletReader::SpbResponse;
 			break;
+		case INFO_SEND:
+			k = ClumpletReader::InfoItems;
+			break;
+		case INFO_RESPONSE:
+			k = ClumpletReader::InfoResponse;
+			break;
 		default:
-			fatal_exception::raiseFmt("Wrong parameters block kind %d, should be from %d to %d", kind, DPB, SPB_RESPONSE);
+			fatal_exception::raiseFmt("Wrong parameters block kind %d, should be from %d to %d", kind, DPB, INFO_RESPONSE);
 			break;
 		}
 
@@ -1211,7 +1211,7 @@ IXpbBuilder* UtilInterface::getXpbBuilder(CheckStatusWrapper* status,
 	}
 }
 
-class DecFloat16 FB_FINAL : public AutoIface<IDecFloat16Impl<DecFloat16, CheckStatusWrapper> >
+class DecFloat16 final : public AutoIface<IDecFloat16Impl<DecFloat16, CheckStatusWrapper> >
 {
 public:
 	// IDecFloat16 implementation
@@ -1272,7 +1272,7 @@ IDecFloat16* UtilInterface::getDecFloat16(CheckStatusWrapper* status)
 	return &decFloat16;
 }
 
-class DecFloat34 FB_FINAL : public AutoIface<IDecFloat34Impl<DecFloat34, CheckStatusWrapper> >
+class DecFloat34 final : public AutoIface<IDecFloat34Impl<DecFloat34, CheckStatusWrapper> >
 {
 public:
 	// IDecFloat34 implementation
@@ -1333,7 +1333,7 @@ IDecFloat34* UtilInterface::getDecFloat34(CheckStatusWrapper* status)
 	return &decFloat34;
 }
 
-class IfaceInt128 FB_FINAL : public AutoIface<IInt128Impl<IfaceInt128, CheckStatusWrapper> >
+class IfaceInt128 final : public AutoIface<IInt128Impl<IfaceInt128, CheckStatusWrapper> >
 {
 public:
 	// IInt128 implementation
@@ -1435,37 +1435,35 @@ int API_ROUTINE gds__blob_size(FB_API_HANDLE* b, SLONG* size, SLONG* seg_count, 
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	SCHAR buffer[64];
+	UCHAR buffer[64];
 
-	if (isc_blob_info(status_vector, b, sizeof(blob_items), blob_items, sizeof(buffer), buffer))
+	if (isc_blob_info(status_vector, b, sizeof(blob_items), blob_items, sizeof(buffer), (SCHAR*)buffer))
 	{
 		isc_print_status(status_vector);
 		return FALSE;
 	}
 
-	const UCHAR* p = reinterpret_cast<UCHAR*>(buffer);
-	UCHAR item;
-	while ((item = *p++) != isc_info_end)
+	for (ClumpletReader p(ClumpletReader::InfoResponse, buffer, sizeof(buffer)); !p.isEof(); p.moveNext())
 	{
-		const USHORT l = gds__vax_integer(p, 2);
-		p += 2;
-		const SLONG n = gds__vax_integer(p, l);
-		p += l;
+		UCHAR item = p.getClumpTag();
+		if (item == isc_info_end)
+			break;
+
 		switch (item)
 		{
 		case isc_info_blob_max_segment:
 			if (max_seg)
-				*max_seg = n;
+				*max_seg = p.getInt();
 			break;
 
 		case isc_info_blob_num_segments:
 			if (seg_count)
-				*seg_count = n;
+				*seg_count = p.getInt();
 			break;
 
 		case isc_info_blob_total_length:
 			if (size)
-				*size = n;
+				*size = p.getInt();
 			break;
 
 		default:
@@ -2970,16 +2968,10 @@ static void get_ods_version(CheckStatusWrapper* status, IAttachment* att,
 	if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 		return;
 
-	const UCHAR* p = buffer;
-	UCHAR item;
-
-	while ((item = *p++) != isc_info_end)
+	for (ClumpletReader p(ClumpletReader::InfoResponse, buffer, sizeof(buffer)); !p.isEof(); p.moveNext())
 	{
-		const USHORT l = static_cast<USHORT>(gds__vax_integer(p, 2));
-		p += 2;
-		const USHORT n = static_cast<USHORT>(gds__vax_integer(p, l));
-		p += l;
-		switch (item)
+		const USHORT n = static_cast<USHORT>(p.getInt());
+		switch (p.getClumpTag())
 		{
 		case isc_info_ods_version:
 			*ods_version = n;
@@ -2987,6 +2979,9 @@ static void get_ods_version(CheckStatusWrapper* status, IAttachment* att,
 
 		case isc_info_ods_minor_version:
 			*ods_minor_version = n;
+			break;
+
+		case isc_info_end:
 			break;
 
 		default:
@@ -3241,7 +3236,7 @@ void makeKey()
 	int err = pthread_key_create(&key, ThreadCleanup::destructor);
 	if (err)
 	{
-		Firebird::system_call_failed("pthread_key_create", err);
+		Firebird::system_call_failed::raise("pthread_key_create", err);
 	}
 	keySet = true;
 }
@@ -3251,13 +3246,13 @@ void ThreadCleanup::initThreadCleanup()
 	int err = pthread_once(&keyOnce, makeKey);
 	if (err)
 	{
-		Firebird::system_call_failed("pthread_once", err);
+		Firebird::system_call_failed::raise("pthread_once", err);
 	}
 
 	err = pthread_setspecific(key, &key);
 	if (err)
 	{
-		Firebird::system_call_failed("pthread_setspecific", err);
+		Firebird::system_call_failed::raise("pthread_setspecific", err);
 	}
 }
 
@@ -3281,7 +3276,7 @@ public:
 		{
 			int err = pthread_key_delete(key);
 			if (err)
-				Firebird::system_call_failed("pthread_key_delete", err);
+				gds__log("pthread_key_delete failed with error %d", err);
 		}
 	}
 };

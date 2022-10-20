@@ -38,6 +38,8 @@ typedef FB_DEC16;
 typedef FB_DEC34;
 typedef FB_I128;
 
+boolean FB_UsedInYValve;
+
 // Versioned interface - base for all FB interfaces
 interface Versioned
 {
@@ -248,8 +250,9 @@ interface PluginManager : Versioned
 	const uint TYPE_DB_CRYPT = 9;
 	const uint TYPE_KEY_HOLDER = 10;
 	const uint TYPE_REPLICATOR = 11;
-	const uint TYPE_COUNT = 12;	// keep in sync
-	//// TODO: TYPE_COUNT is not count. And these constants starts from 1, different than DIR_* ones.
+	const uint TYPE_PROFILER = 12;
+	const uint TYPE_COUNT = 13;	// keep in sync
+	//// TYPE_COUNT is not count. And these constants starts from 1, different than DIR_* ones.
 
 	// Main function called by plugin modules in firebird_plugin()
 	void registerPluginFactory(uint pluginType, const string defaultName, PluginFactory factory);
@@ -347,9 +350,15 @@ interface Blob : ReferenceCounted
 
 	void putSegment(Status status, uint length,
 									const void* buffer);
-	void cancel(Status status);
-	void close(Status status);
+	void deprecatedCancel(Status status);
+	void deprecatedClose(Status status);
 	int seek(Status status, int mode, int offset);			// returns position
+
+version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedCancel(status) endif]
+	void cancel(Status status);
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedClose(status) endif]
+	void close(Status status);
 }
 
 interface Transaction : ReferenceCounted
@@ -359,14 +368,22 @@ interface Transaction : ReferenceCounted
 						 uint bufferLength, uchar* buffer);
 	void prepare(Status status,
 						 uint msgLength, const uchar* message);
-	void commit(Status status);
+	void deprecatedCommit(Status status);
 	void commitRetaining(Status status);
-	void rollback(Status status);
+	void deprecatedRollback(Status status);
 	void rollbackRetaining(Status status);
-	void disconnect(Status status);
+	void deprecatedDisconnect(Status status);
 	Transaction join(Status status, Transaction transaction);
 	Transaction validate(Status status, Attachment attachment);
 	Transaction enterDtc(Status status);
+
+version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedCommit(status) endif]
+	void commit(Status status);
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedRollback(status) endif]
+	void rollback(Status status);
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedDisconnect(status) endif]
+	void disconnect(Status status);
 }
 
 interface MessageMetadata : ReferenceCounted
@@ -417,6 +434,9 @@ version:	// 3.0 => 4.0
 
 interface ResultSet : ReferenceCounted
 {
+	// Info items
+	const uchar INF_RECORD_COUNT = 10;		// Number of records in the result set
+
 	[notImplemented(Status::RESULT_ERROR)] int fetchNext(Status status, void* message);
 	[notImplemented(Status::RESULT_ERROR)] int fetchPrior(Status status, void* message);
 	[notImplemented(Status::RESULT_ERROR)] int fetchFirst(Status status, void* message);
@@ -426,12 +446,21 @@ interface ResultSet : ReferenceCounted
 	boolean isEof(Status status);
 	boolean isBof(Status status);
 	MessageMetadata getMetadata(Status status);
-	void close(Status status);
+	void deprecatedClose(Status status);
 
 	// This item is for ISC API emulation only
 	// It may be gone in future versions
 	// Please do not use it!
 	void setDelayedOutputFormat(Status status, MessageMetadata format);
+
+version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedClose(status) endif]
+	void close(Status status);
+
+version:	// 4.0.1 => 5.0
+	void getInfo(Status status,
+				 uint itemsLength, const uchar* items,
+				 uint bufferLength, uchar* buffer);
 }
 
 interface Statement : ReferenceCounted
@@ -472,7 +501,7 @@ interface Statement : ReferenceCounted
 	ResultSet openCursor(Status status, Transaction transaction,
 		MessageMetadata inMetadata, void* inBuffer, MessageMetadata outMetadata, uint flags);
 	void setCursorName(Status status, const string name);
-	void free(Status status);
+	void deprecatedFree(Status status);
 	uint getFlags(Status status);
 
 version:	// 3.0 => 4.0
@@ -487,24 +516,39 @@ version:	// 3.0 => 4.0
 	Pipe createPipe(Status status, Transaction transaction, MessageMetadata inMetadata,
 		void* inBuffer, MessageMetadata outMetadata, uint parLength, const uchar* par);
 	*/
+
+version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedFree(status) endif]
+	void free(Status status);
 }
 
 interface Batch : ReferenceCounted
 {
 	const uchar VERSION1 = 1;				// Tag for parameters block
+	const uchar CURRENT_VERSION = VERSION1;
 
+	// Tags for parameters
 	const uchar TAG_MULTIERROR = 1;			// Can have >1 buffers with errors
 	const uchar TAG_RECORD_COUNTS = 2;		// Per-record modified records accountung
 	const uchar TAG_BUFFER_BYTES_SIZE = 3;	// Maximum possible buffer size
 	const uchar TAG_BLOB_POLICY = 4;		// What policy is used to store blobs
 	const uchar TAG_DETAILED_ERRORS = 5;	// How many vectors with detailed error info are stored
 
+	// Info items
+	const uchar INF_BUFFER_BYTES_SIZE = 10;	// Maximum possible buffer size
+	const uchar INF_DATA_BYTES_SIZE = 11;	// Already added messages size
+	const uchar INF_BLOBS_BYTES_SIZE = 12;	// Already added blobs size
+	const uchar INF_BLOB_ALIGNMENT = 13;	// Duplicate getBlobAlignment
+	const uchar INF_BLOB_HEADER = 14;		// Blob header size
+
+	// How should batch work with blobs
 	const uchar BLOB_NONE = 0;				// Blobs can't be used
 	const uchar BLOB_ID_ENGINE = 1;			// Blobs are added one by one, IDs are generated by firebird
 	const uchar BLOB_ID_USER = 2;			// Blobs are added one by one, IDs are generated by user
 	const uchar BLOB_STREAM = 3;			// Blobs are added in a stream, IDs are generated by user
 
-	const uint BLOB_SEGHDR_ALIGN = 2;		// Alignment of segment header in the stream
+	// Blob stream
+	const uint BLOB_SEGHDR_ALIGN = 2;		// Alignment of segment header in the blob stream
 
 	void add(Status status, uint count, const void* inBuffer);
 	void addBlob(Status status, uint length, const void* inBuffer, ISC_QUAD* blobId, uint parLength, const uchar* par);
@@ -516,7 +560,14 @@ interface Batch : ReferenceCounted
 	uint getBlobAlignment(Status status);
 	MessageMetadata getMetadata(Status status);
 	void setDefaultBpb(Status status, uint parLength, const uchar* par);
+	void deprecatedClose(Status status);
+
+version:	// 4.0.0 => 4.0.1
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedClose(status) endif]
 	void close(Status status);
+	void getInfo(Status status,
+				 uint itemsLength, const uchar* items,
+				 uint bufferLength, uchar* buffer);
 }
 
 interface BatchCompletionState : Disposable
@@ -554,6 +605,10 @@ interface Replicator : ReferenceCounted
 	void process(Status status, ReplicationBatch batch);
 */
 	void process(Status status, uint length, const uchar* data);
+	void deprecatedClose(Status status);
+
+version:	// 4.0.0 => 4.0.1
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedClose(status) endif]
 	void close(Status status);
 }
 
@@ -570,11 +625,19 @@ interface Request : ReferenceCounted
 	void startAndSend(Status status, Transaction tra, int level, uint msgType,
 							  uint length, const void* message);
 	void unwind(Status status, int level);
+	void deprecatedFree(Status status);
+
+version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedFree(status) endif]
 	void free(Status status);
 }
 
 interface Events : ReferenceCounted
 {
+	void deprecatedCancel(Status status);
+
+version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedCancel(status) endif]
 	void cancel(Status status);
 }
 
@@ -620,8 +683,8 @@ interface Attachment : ReferenceCounted
 						   uint length, const uchar* events);
 	void cancelOperation(Status status, int option);
 	void ping(Status status);
-	void detach(Status status);
-	void dropDatabase(Status status);
+	void deprecatedDetach(Status status);
+	void deprecatedDropDatabase(Status status);
 
 version:	// 3.0 => 4.0
 	// Idle attachment timeout, seconds
@@ -643,17 +706,30 @@ version:	// 3.0 => 4.0
 	*/
 
 	Replicator createReplicator(Status status);
+
+version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedDetach(status) endif]
+	void detach(Status status);
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedDropDatabase(status) endif]
+	void dropDatabase(Status status);
 }
 
 interface Service : ReferenceCounted
 {
-	void detach(Status status);
+	void deprecatedDetach(Status status);
 	void query(Status status,
 					   uint sendLength, const uchar* sendItems,
 					   uint receiveLength, const uchar* receiveItems,
 					   uint bufferLength, uchar* buffer);
 	void start(Status status,
 					   uint spbLength, const uchar* spb);
+
+version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedDetach(status) endif]
+	void detach(Status status);
+
+version:	// 3.0.9 => 3.0.10, 4.0.1 => 4.0.2
+	void cancel(Status status);
 }
 
 interface Provider : PluginBase
@@ -1153,6 +1229,8 @@ interface XpbBuilder : Disposable
 	const uint SPB_SEND = 7;
 	const uint SPB_RECEIVE = 8;
 	const uint SPB_RESPONSE = 9;
+	const uint INFO_SEND = 10;
+	const uint INFO_RESPONSE = 11;
 
 	// removing data
 	void clear(Status status);
@@ -1463,6 +1541,11 @@ interface TracePlugin : ReferenceCounted
 	[notImplemented(true)]
 	boolean trace_func_execute (TraceDatabaseConnection connection, TraceTransaction transaction, TraceFunction function,
 			boolean started, uint func_result);
+
+version:	// 4.0.1 -> 4.0.2
+	boolean trace_dsql_restart(TraceDatabaseConnection connection, TraceTransaction transaction, TraceSQLStatement statement,
+		uint number);
+
 }
 
 // Trace plugin second level factory (this is what is known to PluginManager as "trace plugin")
@@ -1630,3 +1713,55 @@ interface ReplicatedSession : PluginBase
 	void setSequence(Status status, const string name, int64 value);
 }
 
+// Profiler interfaces
+
+interface ProfilerPlugin : PluginBase
+{
+	void init(Status status, Attachment attachment);
+
+	ProfilerSession startSession(Status status, const string description,
+		const string options, ISC_TIMESTAMP_TZ timestamp);
+
+	void flush(Status status);
+}
+
+interface ProfilerSession : Disposable
+{
+	const uint FLAG_BEFORE_EVENTS = 0x1;
+	const uint FLAG_AFTER_EVENTS = 0x2;
+
+	int64 getId();
+	uint getFlags();
+
+	// When closing an attachment, the engine is free to dispose the ProfilerPlugin without call this method in advance.
+	void cancel(Status status);
+
+	void finish(Status status, ISC_TIMESTAMP_TZ timestamp);
+
+	void defineStatement(Status status, int64 statementId, int64 parentStatementId,
+		const string type, const string packageName, const string routineName, const string sqlText);
+
+	//// TODO: Add defineCursor with line/column
+
+	void defineRecordSource(int64 statementId, uint cursorId, uint recSourceId,
+		const string accessPath, uint parentRecSourceId);
+
+	void onRequestStart(Status status, int64 requestId, int64 statementId, int64 callerRequestId,
+		ISC_TIMESTAMP_TZ timestamp);
+
+	void onRequestFinish(Status status, int64 requestId, ISC_TIMESTAMP_TZ timestamp, ProfilerStats stats);
+
+	void beforePsqlLineColumn(int64 requestId, uint line, uint column);
+	void afterPsqlLineColumn(int64 requestId, uint line, uint column, ProfilerStats stats);
+
+	void beforeRecordSourceOpen(int64 requestId, uint cursorId, uint recSourceId);
+	void afterRecordSourceOpen(int64 requestId, uint cursorId, uint recSourceId, ProfilerStats stats);
+
+	void beforeRecordSourceGetRecord(int64 requestId, uint cursorId, uint recSourceId);
+	void afterRecordSourceGetRecord(int64 requestId, uint cursorId, uint recSourceId, ProfilerStats stats);
+}
+
+interface ProfilerStats : Versioned
+{
+	uint64 getElapsedTime();
+}

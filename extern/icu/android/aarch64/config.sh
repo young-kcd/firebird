@@ -18,7 +18,7 @@
     --enable-dyload \
     --with-cross-build=$CROSS_BUILD_DIR \
     CFLAGS='-Os' \
-    CXXFLAGS='--std=c++11' \
+    CXXFLAGS='--std=c++17' \
     LDFLAGS='-static-libstdc++' \
     CC=aarch64-linux-android24-clang \
     CXX=aarch64-linux-android24-clang++ \

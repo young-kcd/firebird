@@ -64,11 +64,11 @@ namespace Replication
 		{
 			ULONG version;				// changelog version
 			time_t timestamp;			// timestamp of last write
-			ULONG segmentCount;			// number of segments in use
+			ULONG generation;			// segments reload marker
 			ULONG flushMark;			// last flush mark
 			FB_UINT64 sequence;			// sequence number of the last segment
-			ULONG pidLower;				// Lower boundary mark in the PID array
-			ULONG pidUpper;				// Upper boundary mark in the PID array
+			ULONG pidLower;				// lower boundary mark in the PID array
+			ULONG pidUpper;				// upper boundary mark in the PID array
 			int pids[1];				// PIDs attached to the state
 		};
 
@@ -216,8 +216,12 @@ namespace Replication
 		void linkSelf();
 		bool unlinkSelf();
 
-		bool initialize(Firebird::SharedMemoryBase* shmem, bool init);
-		void mutexBug(int osErrorCode, const char* text);
+		bool initialize(Firebird::SharedMemoryBase* shmem, bool init) override;
+		void mutexBug(int osErrorCode, const char* text) override;
+
+		USHORT getType() const override { return Firebird::SharedMemoryBase::SRAM_CHANGELOG_STATE; }
+		USHORT getVersion() const override { return STATE_VERSION; };
+		const char* getName() const override { return "ChangeLog"; }
 
 		bool validateSegment(const Segment* segment)
 		{
@@ -243,6 +247,7 @@ namespace Replication
 		Firebird::Mutex m_localMutex;
 		Firebird::Guid m_guid;
 		const FB_UINT64 m_sequence;
+		ULONG m_generation;
 
 		Firebird::Semaphore m_startupSemaphore;
 		Firebird::Semaphore m_cleanupSemaphore;

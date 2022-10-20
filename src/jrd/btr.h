@@ -43,11 +43,13 @@ namespace Jrd {
 class jrd_rel;
 class jrd_tra;
 template <typename T> class vec;
-class JrdStatement;
+class Statement;
 struct temporary_key;
 class jrd_tra;
 class BtrPageGCLock;
 class Sort;
+class PartitionedSort;
+struct sort_key_def;
 
 // Index descriptor block -- used to hold info from index root page
 
@@ -64,9 +66,12 @@ struct index_desc
 	vec<int>*	idx_foreign_primaries;		// ids for primary/unique indexes with partners
 	vec<int>*	idx_foreign_relations;		// ids for foreign key partner relations
 	vec<int>*	idx_foreign_indexes;		// ids for foreign key partner indexes
-	ValueExprNode* idx_expression;			// node tree for indexed expresssion
+	ValueExprNode* idx_expression;			// node tree for indexed expression
 	dsc		idx_expression_desc;			// descriptor for expression result
-	JrdStatement* idx_expression_statement;	// stored statement for expression evaluation
+	Statement* idx_expression_statement;	// stored statement for expression evaluation
+	BoolExprNode* idx_condition;			// node tree for index condition
+	Statement* idx_condition_statement;		// stored statement for index condition
+	float idx_fraction;						// fraction of keys included in the index
 	// This structure should exactly match IRTD structure for current ODS
 	struct idx_repeat
 	{
@@ -76,11 +81,7 @@ struct index_desc
 	} idx_rpt[MAX_INDEX_SEGMENTS];
 };
 
-struct IndexDescAlloc : public pool_alloc_rpt<index_desc>
-{
-	index_desc items[1];
-};
-
+typedef Firebird::HalfStaticArray<index_desc, 16> IndexDescList;
 
 const USHORT idx_invalid = USHORT(~0);		// Applies to idx_id as special value
 
@@ -102,6 +103,7 @@ const int idx_boolean		= 9;
 const int idx_decimal		= 10;
 const int idx_sql_time_tz	= 11;
 const int idx_timestamp_tz	= 12;
+const int idx_bcd			= 13;	// 128-bit Integer support
 
 // idx_itype space for future expansion
 const int idx_first_intl_string	= 64;	// .. MAX (short) Range of computed key strings
@@ -115,7 +117,8 @@ const int idx_descending	= 2;
 const int idx_in_progress	= 4;
 const int idx_foreign		= 8;
 const int idx_primary		= 16;
-const int idx_expressn		= 32;
+const int idx_expression	= 32;
+const int idx_condition		= 64;
 
 // these flags are for idx_runtime_flags
 
@@ -154,6 +157,7 @@ struct temporary_key
 	UCHAR key_flags;
 	USHORT key_nulls;	// bitmap of encountered null segments,
 						// USHORT is enough to store MAX_INDEX_SEGMENTS bits
+	Firebird::AutoPtr<temporary_key> key_next;	// next key (INTL_KEY_MULTI_STARTING)
 };
 
 
@@ -227,6 +231,7 @@ const int irb_ignore_null_value_key  = 8;	// if lower bound is specified and upp
 const int irb_descending	= 16;			// Base index uses descending order
 const int irb_exclude_lower	= 32;			// exclude lower bound keys while scanning index
 const int irb_exclude_upper	= 64;			// exclude upper bound keys while scanning index
+const int irb_multi_starting	= 128;		// Use INTL_KEY_MULTI_STARTING
 
 typedef Firebird::HalfStaticArray<float, 4> SelectivityList;
 
@@ -242,6 +247,12 @@ public:
 	void disablePageGC(thread_db* tdbb, const PageNumber &page);
 	void enablePageGC(thread_db* tdbb);
 
+	// return true if lock is active
+	bool isActive() const
+	{
+		return lck_id != 0;
+	}
+
 	static bool isPageGCAllowed(thread_db* tdbb, const PageNumber& page);
 
 #ifdef DEBUG_LCK_LIST
@@ -250,7 +261,7 @@ public:
 	{
 	}
 
-	static bool checkPool(const Lock* lock, Firebird::MemoryPool* pool) 
+	static bool checkPool(const Lock* lock, Firebird::MemoryPool* pool)
 	{
 		if (!pool || !lock)
 			return false;
@@ -274,11 +285,14 @@ struct IndexCreation
 {
 	jrd_rel* relation;
 	index_desc* index;
+	const TEXT* index_name;
 	jrd_tra* transaction;
+	PartitionedSort* sort;
+	sort_key_def* key_desc;
 	USHORT key_length;
-	Firebird::AutoPtr<Sort> sort;
+	USHORT nullIndLen;
 	SINT64 dup_recno;
-	SLONG duplicates;
+	Firebird::AtomicCounter duplicates;
 };
 
 // Class used to report any index related errors

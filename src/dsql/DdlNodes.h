@@ -1129,8 +1129,8 @@ public:
 
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	{
-		dsqlScratch->getStatement()->setType(
-			legacy ? DsqlCompiledStatement::TYPE_SET_GENERATOR : DsqlCompiledStatement::TYPE_DDL);
+		dsqlScratch->getDsqlStatement()->setType(
+			legacy ? DsqlStatement::TYPE_SET_GENERATOR : DsqlStatement::TYPE_DDL);
 		return this;
 	}
 
@@ -1636,7 +1636,8 @@ public:
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
 	{
-		statusVector << Firebird::Arg::Gds(isc_dsql_drop_table_failed) << name;
+		statusVector << Firebird::Arg::Gds(view ? isc_dsql_drop_view_failed :
+			isc_dsql_drop_table_failed) << name;
 	}
 
 public:
@@ -1718,6 +1719,8 @@ public:
 		{
 			expressionBlr.clear();
 			expressionSource.clear();
+			conditionBlr.clear();
+			conditionSource.clear();
 		}
 
 		MetaName relation;
@@ -1728,6 +1731,8 @@ public:
 		SSHORT type;
 		bid expressionBlr;
 		bid expressionSource;
+		bid conditionBlr;
+		bid conditionSource;
 		MetaName refRelation;
 		Firebird::ObjectsArray<MetaName> refColumns;
 	};
@@ -1738,15 +1743,16 @@ public:
 		  name(p, aName),
 		  unique(false),
 		  descending(false),
-		  relation(NULL),
-		  columns(NULL),
-		  computed(NULL)
+		  relation(nullptr),
+		  columns(nullptr),
+		  computed(nullptr),
+		  partial(nullptr)
 	{
 	}
 
 public:
 	static void store(thread_db* tdbb, jrd_tra* transaction, MetaName& name,
-		const Definition& definition, MetaName* referredIndexName = NULL);
+		const Definition& definition, MetaName* referredIndexName = nullptr);
 
 public:
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
@@ -1766,6 +1772,7 @@ public:
 	NestConst<RelationSourceNode> relation;
 	NestConst<ValueListNode> columns;
 	NestConst<ValueSourceClause> computed;
+	NestConst<BoolSourceClause> partial;
 };
 
 
@@ -2065,7 +2072,7 @@ private:
 class MappingNode : public DdlNode, private ExecInSecurityDb
 {
 public:
-	enum OP {MAP_ADD, MAP_MOD, MAP_RPL, MAP_DROP};
+	enum OP {MAP_ADD, MAP_MOD, MAP_RPL, MAP_DROP, MAP_COMMENT};
 
 	MappingNode(MemoryPool& p, OP o, const MetaName& nm)
 		: DdlNode(p),
@@ -2076,6 +2083,7 @@ public:
 		  fromType(NULL),
 		  from(NULL),
 		  to(NULL),
+		  comment(NULL),
 		  op(o),
 		  mode('#'),
 		  global(false),
@@ -2095,7 +2103,8 @@ protected:
 	{
 		statusVector << Firebird::Arg::Gds(isc_dsql_mapping_failed) << name <<
 			(op == MAP_ADD ? "CREATE" : op == MAP_MOD ?
-			 "ALTER" : op == MAP_RPL ? "CREATE OR ALTER" : "DROP");
+			 "ALTER" : op == MAP_RPL ? "CREATE OR ALTER" : op == MAP_DROP ?
+			 "DROP" : "COMMENT ON");
 	}
 	void runInSecurityDb(SecDbContext* secDbContext);
 
@@ -2110,6 +2119,7 @@ public:
 	MetaName* fromType;
 	IntlString* from;
 	MetaName* to;
+	Firebird::string* comment;
 	OP op;
 	char mode;	// * - any source, P - plugin, M - mapping, S - any serverwide plugin
 	bool global;
@@ -2278,7 +2288,7 @@ typedef RecreateNode<CreateAlterUserNode, DropUserNode, isc_dsql_recreate_user_f
 
 
 typedef Firebird::Pair<Firebird::NonPooled<char, ValueListNode*> > PrivilegeClause;
-typedef Firebird::Pair<Firebird::NonPooled<SSHORT, MetaName> > GranteeClause;
+typedef Firebird::Pair<Firebird::NonPooled<ObjectType, MetaName> > GranteeClause;
 
 class GrantRevokeNode : public PrivilegesNode, private ExecInSecurityDb
 {
@@ -2416,8 +2426,8 @@ public:
 public:
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	{
-		dsqlScratch->getStatement()->setType(
-			create ? DsqlCompiledStatement::TYPE_CREATE_DB : DsqlCompiledStatement::TYPE_DDL);
+		dsqlScratch->getDsqlStatement()->setType(
+			create ? DsqlStatement::TYPE_CREATE_DB : DsqlStatement::TYPE_DDL);
 		return this;
 	}
 

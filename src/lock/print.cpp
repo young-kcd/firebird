@@ -140,7 +140,7 @@ using namespace Firebird;
 
 namespace
 {
-	class sh_mem FB_FINAL : public IpcObject
+	class sh_mem final : public IpcObject
 	{
 	public:
 		explicit sh_mem(bool p_consistency, const char* filename)
@@ -148,16 +148,20 @@ namespace
 			shared_memory(FB_NEW_POOL(*getDefaultMemoryPool()) SharedMemory<lhb>(filename, 0, this))
 		{ }
 
-		bool initialize(SharedMemoryBase*, bool)
+		bool initialize(SharedMemoryBase*, bool) override
 		{
 			// Initialize a lock table to looking -- i.e. don't do nuthin.
 			return sh_mem_consistency;
 		}
 
-		void mutexBug(int /*osErrorCode*/, const char* /*text*/)
+		void mutexBug(int /*osErrorCode*/, const char* /*text*/) override
 		{
 			// Do nothing - lock print always ignored mutex errors
 		}
+
+		USHORT getType() const override { return Firebird::SharedMemoryBase::SRAM_LOCK_MANAGER; }
+		USHORT getVersion() const override { return LHB_VERSION; }
+		const char* getName() const override { return "LockManager"; }
 
 	private:
 		bool sh_mem_consistency;

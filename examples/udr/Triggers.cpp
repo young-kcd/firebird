@@ -234,8 +234,6 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 			"select data_source from replicate_config where name = ?",
 			SQL_DIALECT_CURRENT, NULL), status, statusVector);
 
-		const char* table = metadata->getTriggerTable(status);
-
 		// Skip the first exclamation point, separating the module name and entry point.
 		const char* info = strchr(metadata->getEntryPoint(status), '!');
 

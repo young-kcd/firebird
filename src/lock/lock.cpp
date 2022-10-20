@@ -43,7 +43,7 @@
 #include "../common/ThreadStart.h"
 #include "../jrd/jrd.h"
 #include "../jrd/Attachment.h"
-#include "gen/iberror.h"
+#include "iberror.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/gdsassert.h"
 #include "../common/isc_proto.h"
@@ -142,6 +142,8 @@ const SRQ_PTR DUMMY_OWNER = -1;
 const SLONG HASH_MIN_SLOTS	= 101;
 const SLONG HASH_MAX_SLOTS	= 65521;
 const USHORT HISTORY_BLOCKS	= 256;
+
+const ULONG MAX_TABLE_LENGTH = SLONG_MAX;
 
 // SRQ_ABS_PTR uses this macro.
 #define SRQ_BASE                    ((UCHAR*) m_sharedMemory->getHeader())
@@ -300,16 +302,15 @@ bool LockManager::init_shared_file(CheckStatusWrapper* statusVector)
 		SharedMemory<lhb>* tmp = FB_NEW_POOL(getPool()) SharedMemory<lhb>(name.c_str(), m_memorySize, this);
 		// initialize will reset m_sharedMemory
 		fb_assert(m_sharedMemory == tmp);
+
+		const auto header = tmp->getHeader();
+		checkHeader(header);
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(statusVector);
 		return false;
 	}
-
-	fb_assert(m_sharedMemory->getHeader()->mhb_type == SharedMemoryBase::SRAM_LOCK_MANAGER);
-	fb_assert(m_sharedMemory->getHeader()->mhb_header_version == MemoryHeader::HEADER_VERSION);
-	fb_assert(m_sharedMemory->getHeader()->mhb_version == LHB_VERSION);
 
 #ifdef USE_SHMEM_EXT
 	m_extents[0] = *this;
@@ -1183,14 +1184,14 @@ bool LockManager::Extent::initialize(bool)
 void LockManager::Extent::mutexBug(int, const char*)
 { }
 
-bool LockManager::createExtent(CheckStatusWrapper* statusVector)
+bool LockManager::createExtent(CheckStatusWrapper* statusVector, ULONG memorySize)
 {
 	PathName name;
 	get_shared_file_name(name, (ULONG) m_extents.getCount());
 
 	Extent& extent = m_extents.add();
 
-	if (!extent.mapFile(statusVector, name.c_str(), m_memorySize))
+	if (!extent.mapFile(statusVector, name.c_str(), memorySize ? memorySize : m_memorySize))
 	{
 		m_extents.pop();
 		logError("LockManager::createExtent() mapFile", local_status);
@@ -1223,17 +1224,33 @@ UCHAR* LockManager::alloc(USHORT size, CheckStatusWrapper* statusVector)
 	size = FB_ALIGN(size, FB_ALIGNMENT);
 	ASSERT_ACQUIRED;
 	ULONG block = m_sharedMemory->getHeader()->lhb_used;
+	ULONG memorySize = m_memorySize;
 
 	// Make sure we haven't overflowed the lock table.  If so, bump the size of the table.
 
 	if (m_sharedMemory->getHeader()->lhb_used + size > m_sharedMemory->getHeader()->lhb_length)
 	{
+		// New table size shouldn't exceed max table length
+		if (m_sharedMemory->getHeader()->lhb_length + memorySize > MAX_TABLE_LENGTH)
+		{
+			if (m_sharedMemory->getHeader()->lhb_used + size <= MAX_TABLE_LENGTH)
+				memorySize = MAX_TABLE_LENGTH - m_sharedMemory->getHeader()->lhb_length;
+			else
+			{
+				// Return an error if can't alloc enough memory
+				(Arg::Gds(isc_lockmanerr) <<
+				Arg::Gds(isc_random) << Arg::Str("lock table size exceeds limit") <<
+				Arg::StatusVector(statusVector)).copyTo(statusVector);
+
+				return NULL;
+			}
+		}
 #ifdef USE_SHMEM_EXT
 		// round up so next object starts at beginning of next extent
 		block = m_sharedMemory->getHeader()->lhb_used = m_sharedMemory->getHeader()->lhb_length;
-		if (createExtent(*statusVector))
+		if (createExtent(*statusVector, memorySize))
 		{
-			m_sharedMemory->getHeader()->lhb_length += m_memorySize;
+			m_sharedMemory->getHeader()->lhb_length += memorySize;
 		}
 		else
 #elif (defined HAVE_OBJECT_MAP)
@@ -1241,7 +1258,7 @@ UCHAR* LockManager::alloc(USHORT size, CheckStatusWrapper* statusVector)
 		// Post remapping notifications
 		remap_local_owners();
 		// Remap the shared memory region
-		const ULONG new_length = m_sharedMemory->sh_mem_length_mapped + m_memorySize;
+		const ULONG new_length = m_sharedMemory->sh_mem_length_mapped + memorySize;
 		if (m_sharedMemory->remapFile(statusVector, new_length, true))
 		{
 			ASSERT_ACQUIRED;
@@ -1625,19 +1642,6 @@ SRQ_PTR LockManager::create_owner(CheckStatusWrapper* statusVector,
  *	Create an owner block.
  *
  **************************************/
-	if (m_sharedMemory->getHeader()->mhb_type != SharedMemoryBase::SRAM_LOCK_MANAGER ||
-		m_sharedMemory->getHeader()->mhb_header_version != MemoryHeader::HEADER_VERSION ||
-		m_sharedMemory->getHeader()->mhb_version != LHB_VERSION)
-	{
-		TEXT bug_buffer[BUFFER_TINY];
-		sprintf(bug_buffer, "inconsistent lock table type/version; found %d/%d:%d, expected %d/%d:%d",
-			m_sharedMemory->getHeader()->mhb_type,
-			m_sharedMemory->getHeader()->mhb_header_version,
-			m_sharedMemory->getHeader()->mhb_version,
-			SharedMemoryBase::SRAM_LOCK_MANAGER, MemoryHeader::HEADER_VERSION, LHB_VERSION);
-		bug(statusVector, bug_buffer);
-		return 0;
-	}
 
 	// Allocate a process block, if required
 
@@ -2276,8 +2280,8 @@ bool LockManager::initialize(SharedMemoryBase* sm, bool initializeMemory)
 
 	lhb* hdr = m_sharedMemory->getHeader();
 	memset(hdr, 0, sizeof(lhb));
-	hdr->init(SharedMemoryBase::SRAM_LOCK_MANAGER, LHB_VERSION);
 
+	initHeader(hdr);
 	hdr->lhb_type = type_lhb;
 
 	// Mark ourselves as active owner to prevent fb_assert() checks
@@ -2604,9 +2608,6 @@ void LockManager::post_blockage(thread_db* tdbb, lrq* request, lbl* lock)
  **************************************/
 	const SRQ_PTR owner_offset = request->lrq_owner;
 	const own* owner = (own*) SRQ_ABS_PTR(owner_offset);
-
-	const SRQ_PTR request_offset = SRQ_REL_PTR(request);
-	const SRQ_PTR lock_offset = SRQ_REL_PTR(lock);
 
 	ASSERT_ACQUIRED;
 	CHECK(request->lrq_flags & LRQ_pending);
@@ -3264,9 +3265,7 @@ void LockManager::validate_lhb(const lhb* alhb)
 		return;
 
 	CHECK(alhb != NULL);
-	CHECK(alhb->mhb_type == SharedMemoryBase::SRAM_LOCK_MANAGER);
-	CHECK(alhb->mhb_header_version == MemoryHeader::HEADER_VERSION);
-	CHECK(alhb->mhb_version == LHB_VERSION);
+	CHECK(checkHeader(alhb, false));
 
 	CHECK(alhb->lhb_type == type_lhb);
 
@@ -3984,6 +3983,26 @@ void LockManager::mutexBug(int state, char const* text)
 	message.printf("%s: error code %d\n", text, state);
 	bug(NULL, message.c_str());
 }
+
+bool LockManager::checkHeader(const MemoryHeader* header, bool raiseError)
+{
+	fb_assert(header);
+
+	if (raiseError &&
+		header->mhb_type == getType() &&
+		header->mhb_header_version == MemoryHeader::HEADER_VERSION &&
+		header->mhb_version != getVersion() &&
+		(header->mhb_version & ~PLATFORM_LHB_VERSION) == BASE_LHB_VERSION)
+	{
+		// @1-bit engine can't open database already opened by @2-bit engine
+		if (LHB_VERSION == BASE_LHB_VERSION)
+			(Arg::Gds(isc_wrong_shmem_bitness) << Arg::Num(32) << Arg::Num(64)).raise();
+		else
+			(Arg::Gds(isc_wrong_shmem_bitness) << Arg::Num(64) << Arg::Num(32)).raise();
+	}
+
+	return IpcObject::checkHeader(header, raiseError);
+};
 
 #ifdef USE_SHMEM_EXT
 void LockManager::Extent::assign(const SharedMemoryBase& p)

@@ -32,6 +32,7 @@
 #define CLASSES_AUTO_PTR_H
 
 #include <stdio.h>
+#include <functional>
 
 namespace Firebird {
 
@@ -42,6 +43,7 @@ class SimpleDelete
 public:
 	static void clear(What* ptr)
 	{
+		static_assert(sizeof(What) > 0, "can't delete pointer to incomplete type");
 		delete ptr;
 	}
 };
@@ -61,6 +63,7 @@ class ArrayDelete
 public:
 	static void clear(What* ptr)
 	{
+		static_assert(sizeof(What) > 0, "can't delete pointer to incomplete type");
 		delete[] ptr;
 	}
 };
@@ -104,6 +107,12 @@ public:
 		: ptr(v)
 	{}
 
+	AutoPtr(AutoPtr&& v)
+		: ptr(v.ptr)
+	{
+		v.ptr = nullptr;
+	}
+
 	~AutoPtr()
 	{
 		Clear<Where>::clear(ptr);
@@ -113,6 +122,17 @@ public:
 	{
 		Clear<Where>::clear(ptr);
 		ptr = v;
+		return *this;
+	}
+
+	AutoPtr& operator=(AutoPtr&& r)
+	{
+		if (this != &r)
+		{
+			ptr = r.ptr;
+			r.ptr = nullptr;
+		}
+
 		return *this;
 	}
 
@@ -199,28 +219,37 @@ public:
 
 
 template <typename T>
-class AutoSetRestore
+class AutoSaveRestore
 {
 public:
-	AutoSetRestore(T* aValue, T newValue)
+	AutoSaveRestore(T* aValue)
 		: value(aValue),
 		  oldValue(*aValue)
-	{
-		*value = newValue;
-	}
+	{ }
 
-	~AutoSetRestore()
+	~AutoSaveRestore()
 	{
 		*value = oldValue;
 	}
 
 private:
 	// copying is prohibited
-	AutoSetRestore(const AutoSetRestore&);
-	AutoSetRestore& operator =(const AutoSetRestore&);
+	AutoSaveRestore(const AutoSaveRestore&);
+	AutoSaveRestore& operator =(const AutoSaveRestore&);
 
 	T* value;
 	T oldValue;
+};
+
+template <typename T>
+class AutoSetRestore : public AutoSaveRestore<T>
+{
+public:
+	AutoSetRestore(T* aValue, T newValue)
+		: AutoSaveRestore<T>(aValue)
+	{
+		*aValue = newValue;
+	}
 };
 
 
@@ -288,6 +317,22 @@ private:
 	T oldValue;
 };
 
+
+class Cleanup
+{
+public:
+	Cleanup(std::function<void()> clFunc)
+		: clean(clFunc)
+	{ }
+
+	~Cleanup()
+	{
+		clean();
+	}
+
+private:
+	std::function<void()> clean;
+};
 
 } //namespace Firebird
 

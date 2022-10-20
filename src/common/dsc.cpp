@@ -64,7 +64,7 @@ static const USHORT _DSC_convert_to_text_length[DTYPE_TYPE_MAX] =
 	9,							// dtype_blob       FFFF:FFFF
 	9,							// dtype_array      FFFF:FFFF
 	20,							// dtype_int64      -9223372036854775808
-	0,							// dtype_dbkey
+	8,							// dtype_dbkey
 	5,							// dtype_boolean
 	23,							// dtype_dec64		1 + 1 + 1 + 1 + 16(34) + 3(4)
 	42,							// dtype_dec128		+-  .   e   +-  coeff  + exp
@@ -834,7 +834,7 @@ const BYTE DSC_multiply_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_int64, dtype_int64, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64,
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int128,
 	 DTYPE_CANNOT, DTYPE_CANNOT, dtype_dec128, dtype_dec128,
 	 dtype_int128, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT},
@@ -844,7 +844,7 @@ const BYTE DSC_multiply_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_int64, dtype_int64, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64,
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int128,
 	 DTYPE_CANNOT, DTYPE_CANNOT, dtype_dec128, dtype_dec128,
 	 dtype_int128, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT},
@@ -942,7 +942,7 @@ const BYTE DSC_multiply_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
 	// dtype_int64
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 dtype_int64, dtype_int64, DTYPE_CANNOT, dtype_double,
+	 dtype_int128, dtype_int128, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int128,
 	 DTYPE_CANNOT, DTYPE_CANNOT, dtype_dec128, dtype_dec128,

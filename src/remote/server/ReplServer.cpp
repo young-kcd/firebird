@@ -332,9 +332,9 @@ namespace
 	public:
 		explicit Target(const Replication::Config* config)
 			: m_config(config),
-			  m_lastError(getPool()),
 			  m_attachment(nullptr), m_replicator(nullptr),
-			  m_sequence(0), m_connected(false)
+			  m_sequence(0), m_connected(false),
+			  m_lastError(getPool()), m_errorSequence(0), m_errorOffset(0)
 		{
 		}
 
@@ -366,6 +366,7 @@ namespace
 
 			ClumpletWriter dpb(ClumpletReader::dpbList, MAX_DPB_SIZE);
 
+			dpb.insertByte(isc_dpb_no_db_triggers, 1);
 			dpb.insertString(isc_dpb_user_name, DBA_USER_NAME);
 			dpb.insertString(isc_dpb_config, ParsedList::getNonLoopbackProviders(m_config->dbName));
 
@@ -373,17 +374,20 @@ namespace
 			DispatcherPtr provider;
 			FbLocalStatus localStatus;
 
-			m_attachment =
+			const auto att =
 				provider->attachDatabase(&localStatus, m_config->dbName.c_str(),
-								   	     dpb.getBufferLength(), dpb.getBuffer());
+										 dpb.getBufferLength(), dpb.getBuffer());
 			localStatus.check();
+			m_attachment.assignRefNoIncr(att);
 
-			m_replicator = m_attachment->createReplicator(&localStatus);
+			const auto repl = m_attachment->createReplicator(&localStatus);
 			localStatus.check();
+			m_replicator.assignRefNoIncr(repl);
 
 			fb_assert(!m_sequence);
 
-			const auto transaction = m_attachment->startTransaction(&localStatus, 0, NULL);
+			RefPtr<ITransaction> transaction(REF_NO_INCR,
+				m_attachment->startTransaction(&localStatus, 0, NULL));
 			localStatus.check();
 
 			const char* sql =
@@ -397,9 +401,6 @@ namespace
 								  NULL, NULL, result.getMetadata(), result.getData());
 			localStatus.check();
 
-			transaction->commit(&localStatus);
-			localStatus.check();
-
 			m_sequence = result->sequence;
 #endif
 			m_connected = true;
@@ -409,28 +410,22 @@ namespace
 
 		void shutdown()
 		{
-			if (m_attachment)
-			{
-#ifndef NO_DATABASE
-				FbLocalStatus localStatus;
-				m_replicator->close(&localStatus);
-				m_attachment->detach(&localStatus);
-#endif
-				m_replicator = NULL;
-				m_attachment = NULL;
-				m_sequence = 0;
-			}
-
+			m_replicator = nullptr;
+			m_attachment = nullptr;
+			m_sequence = 0;
 			m_connected = false;
 		}
 
-		bool replicate(FbLocalStatus& status, ULONG length, const UCHAR* data)
+		void replicate(FB_UINT64 sequence, ULONG offset, ULONG length, const UCHAR* data)
 		{
 #ifdef NO_DATABASE
 			return true;
 #else
-			m_replicator->process(&status, length, data);
-			return status.isSuccess();
+			fb_assert(m_replicator);
+
+			FbLocalStatus localStatus;
+			m_replicator->process(&localStatus, length, data);
+			checkCompletion(localStatus, sequence, offset);
 #endif
 		}
 
@@ -446,11 +441,35 @@ namespace
 
 		void logError(const string& message)
 		{
-			if (message != m_lastError)
+			if (m_config->verboseLogging || message != m_lastError)
 			{
-				logReplicaError(m_config->dbName, message);
+				string error = message;
+
+				if (m_errorSequence)
+				{
+					string position;
+					position.printf("\n\tAt segment %" UQUADFORMAT ", offset %u",
+									m_errorSequence, m_errorOffset);
+					error += position;
+				}
+
+				logReplicaError(m_config->dbName, error);
 				m_lastError = message;
 			}
+		}
+
+		void checkCompletion(const FbLocalStatus& status, FB_UINT64 sequence, ULONG offset)
+		{
+			if (!status.isSuccess())
+			{
+				m_errorSequence = sequence;
+				m_errorOffset = offset;
+				status.raise();
+			}
+
+			m_lastError.clear();
+			m_errorSequence = 0;
+			m_errorOffset = 0;
 		}
 
 		void verbose(const char* msg, ...) const
@@ -470,11 +489,13 @@ namespace
 
 	private:
 		AutoPtr<const Replication::Config> m_config;
-		string m_lastError;
-		IAttachment* m_attachment;
-		IReplicator* m_replicator;
+		RefPtr<IAttachment> m_attachment;
+		RefPtr<IReplicator> m_replicator;
 		FB_UINT64 m_sequence;
 		bool m_connected;
+		string m_lastError;
+		FB_UINT64 m_errorSequence;
+		ULONG m_errorOffset;
 	};
 
 	typedef Array<Target*> TargetList;
@@ -568,9 +589,10 @@ namespace
 		return true;
 	}
 
-	bool replicate(FbLocalStatus& status, FB_UINT64 sequence,
-				   Target* target, TransactionList& transactions,
-				   ULONG offset, ULONG length, const UCHAR* data,
+	void replicate(Target* target,
+				   TransactionList& transactions,
+				   FB_UINT64 sequence, ULONG offset,
+				   ULONG length, const UCHAR* data,
 				   bool rewind)
 	{
 		const Block* const header = (Block*) data;
@@ -579,8 +601,7 @@ namespace
 
 		if (!rewind || !traNumber || transactions.exist(traNumber))
 		{
-			if (!target->replicate(status, length, data))
-				return false;
+			target->replicate(sequence, offset, length, data);
 		}
 
 		if (header->flags & BLOCK_END_TRANS)
@@ -603,16 +624,12 @@ namespace
 			if (!rewind && !transactions.exist(traNumber))
 				transactions.add(ActiveTransaction(traNumber, sequence));
 		}
-
-		return true;
 	}
 
 	enum ProcessStatus { PROCESS_SUSPEND, PROCESS_CONTINUE, PROCESS_ERROR };
 
 	ProcessStatus process_archive(MemoryPool& pool, Target* target)
 	{
-		FbLocalStatus localStatus;
-
 		ProcessQueue queue(pool);
 
 		ProcessStatus ret = PROCESS_SUSPEND;
@@ -623,7 +640,9 @@ namespace
 		{
 			// First pass: create the processing queue
 
-			for (auto iter = PathUtils::newDirIterator(pool, config->sourceDirectory);
+			AutoPtr<PathUtils::DirIterator> iter;
+
+			for (iter = PathUtils::newDirIterator(pool, config->sourceDirectory);
 				*iter; ++(*iter))
 			{
 				const auto filename = **iter;
@@ -767,7 +786,7 @@ namespace
 
 				// If no new segments appeared since our last attempt,
 				// then there's no point in replaying the whole sequence
-				if (max_sequence == last_sequence)
+				if (max_sequence == last_sequence && !last_offset)
 				{
 					target->verbose("No new segments found, suspending for %u seconds",
 									config->applyIdleTimeout);
@@ -844,22 +863,8 @@ namespace
 						if (read(file, data + sizeof(Block), blockLength) != blockLength)
 							raiseError("Journal file %s read failed (error %d)", segment->filename.c_str(), ERRNO);
 
-						const bool success =
-							replicate(localStatus, sequence,
-									  target, transactions,
-									  totalLength, length, data,
-									  rewind);
-
-						if (!success)
-						{
-							oldest = findOldest(transactions);
-							oldest_sequence = oldest ? oldest->sequence : 0;
-
-							target->verbose("Segment %" UQUADFORMAT " replication failure at offset %u",
-											sequence, totalLength);
-
-							localStatus.raise();
-						}
+						replicate(target, transactions, sequence, totalLength,
+								  length, data, rewind);
 					}
 
 					totalLength += length;
@@ -924,14 +929,13 @@ namespace
 		}
 		catch (const Exception& ex)
 		{
-			LocalStatus localStatus;
-			CheckStatusWrapper statusWrapper(&localStatus);
-			ex.stuffException(&statusWrapper);
+			FbLocalStatus localStatus;
+			ex.stuffException(&localStatus);
 
 			string message;
 
 			char temp[BUFFER_LARGE];
-			const ISC_STATUS* statusPtr = localStatus.getErrors();
+			const ISC_STATUS* statusPtr = localStatus->getErrors();
 			while (fb_interpret(temp, sizeof(temp), &statusPtr))
 			{
 				if (!message.isEmpty())
@@ -942,8 +946,7 @@ namespace
 
 			target->logError(message);
 
-			target->verbose("Suspending for %u seconds",
-							config->applyErrorTimeout);
+			target->verbose("Suspending for %u seconds", config->applyErrorTimeout);
 
 			ret = PROCESS_ERROR;
 		}

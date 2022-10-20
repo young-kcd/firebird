@@ -51,12 +51,12 @@ namespace Jrd
 class Attachment;
 class BlobControl;
 class jrd_rel;
-class jrd_req;
+class Request;
 class jrd_tra;
 class vcl;
 class thread_db;
 struct win;
-struct record_param;
+class Record;
 class ArrayField;
 struct impure_value;
 
@@ -109,7 +109,7 @@ public:
 	static SLONG get_slice(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, const UCHAR*, USHORT,
 					const UCHAR*, SLONG, UCHAR*);
 	SLONG	BLB_lseek(USHORT, SLONG);
-	static void	move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const record_param* rpb = NULL, USHORT fieldId = 0);
+	static void	move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_rel* relation = nullptr, Record* record = nullptr, USHORT fieldId = 0, bool bulk = false);
 	static blb* open(thread_db*, jrd_tra*, const bid*);
 	static blb* open2(thread_db*, jrd_tra*, const bid*, USHORT, const UCHAR*, bool = false);
 	void	BLB_put_data(thread_db*, const UCHAR*, SLONG);
@@ -123,6 +123,13 @@ public:
 	void toPageHeader(Ods::blh* header) const;
 	void getFromPage(USHORT length, const UCHAR* data);
 	void storeToPage(USHORT* length, Firebird::Array<UCHAR>& buffer, const UCHAR** data, void* stack);
+
+	static bid copy(thread_db* tdbb, const bid* source)
+	{
+		bid destination;
+		copy_blob(tdbb, source, &destination, 0, nullptr, 0);
+		return destination;
+	}
 
 private:
 	static blb* allocate_blob(thread_db*, jrd_tra*);
@@ -172,6 +179,8 @@ const int BLB_closed		= 8;		// Temporary blob has been closed
 const int BLB_damaged		= 16;		// Blob is busted
 const int BLB_seek			= 32;		// Seek is pending
 const int BLB_large_scan	= 64;		// Blob is larger than page buffer cache
+const int BLB_close_on_read = 128;		// Temporary blob is not closed until read
+const int BLB_bulk			= 256;		// Blob created by bulk insert operation
 
 /* Blob levels are:
 

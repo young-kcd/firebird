@@ -83,34 +83,25 @@
 
 #if defined(WIN_NT)
 #include "../common/isc_proto.h"
-#include "../remote/os/win32/wnet_proto.h"
 #include "../remote/os/win32/xnet_proto.h"
 #endif
-
-#ifdef WIN_NT
-#define sleep(seconds)		Sleep ((seconds) * 1000)
-#endif // WIN_NT
 
 
 const char* const PROTOCOL_INET = "inet";
 const char* const PROTOCOL_INET4 = "inet4";
 const char* const PROTOCOL_INET6 = "inet6";
-const char* const PROTOCOL_WNET = "wnet";
+
+#ifdef WIN_NT
 const char* const PROTOCOL_XNET = "xnet";
+#endif
 
 const char* const INET_SEPARATOR = "/";
-const char* const WNET_SEPARATOR = "@";
-
 const char* const INET_LOCALHOST = "localhost";
-const char* const WNET_LOCALHOST = "\\\\.";
 
 
 using namespace Firebird;
 
 namespace {
-	// Success vector for general use
-	const ISC_STATUS success_vector[] = {isc_arg_gds, FB_SUCCESS, isc_arg_end};
-
 	void handle_error(ISC_STATUS code)
 	{
 		Arg::Gds(code).raise();
@@ -151,6 +142,27 @@ namespace {
 		cstring* ptr;
 		cstring oldValue;
 	};
+
+	class ClientPortsCleanup : public PortsCleanup
+	{
+	public:
+		ClientPortsCleanup() :
+		  PortsCleanup()
+		{}
+
+		explicit ClientPortsCleanup(MemoryPool& p) :
+		  PortsCleanup(p)
+		{}
+
+		void closePort(rem_port* port) override;
+
+		void delay() override
+		{
+			Thread::sleep(50);
+		}
+	};
+
+	GlobalPtr<ClientPortsCleanup> outPorts;
 }
 
 namespace Remote {
@@ -159,7 +171,7 @@ namespace Remote {
 class Attachment;
 class Statement;
 
-class Blob FB_FINAL : public RefCntIface<IBlobImpl<Blob, CheckStatusWrapper> >
+class Blob final : public RefCntIface<IBlobImpl<Blob, CheckStatusWrapper> >
 {
 public:
 	// IBlob implementation
@@ -173,6 +185,8 @@ public:
 	void cancel(CheckStatusWrapper* status) override;
 	void close(CheckStatusWrapper* status) override;
 	int seek(CheckStatusWrapper* status, int mode, int offset) override;			// returns position
+	void deprecatedCancel(Firebird::CheckStatusWrapper* status) override;
+	void deprecatedClose(Firebird::CheckStatusWrapper* status) override;
 
 public:
 	explicit Blob(Rbl* handle)
@@ -183,6 +197,8 @@ public:
 
 private:
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
+	void internalCancel(Firebird::CheckStatusWrapper* status);
+	void internalClose(Firebird::CheckStatusWrapper* status);
 
 	Rbl* blob;
 };
@@ -205,7 +221,7 @@ int Blob::release()
 	return 0;
 }
 
-class Transaction FB_FINAL : public RefCntIface<ITransactionImpl<Transaction, CheckStatusWrapper> >
+class Transaction final : public RefCntIface<ITransactionImpl<Transaction, CheckStatusWrapper> >
 {
 public:
 	// ITransaction implementation
@@ -223,6 +239,9 @@ public:
 	ITransaction* join(CheckStatusWrapper* status, ITransaction* tra) override;
 	Transaction* validate(CheckStatusWrapper* status, IAttachment* attachment) override;
 	Transaction* enterDtc(CheckStatusWrapper* status) override;
+	void deprecatedCommit(Firebird::CheckStatusWrapper* status) override;
+	void deprecatedRollback(Firebird::CheckStatusWrapper* status) override;
+	void deprecatedDisconnect(Firebird::CheckStatusWrapper* status) override;
 
 public:
 	Transaction(Rtr* handle, Attachment* a)
@@ -249,6 +268,9 @@ private:
 	{ }
 
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
+	void internalCommit(Firebird::CheckStatusWrapper* status);
+	void internalRollback(Firebird::CheckStatusWrapper* status);
+	void internalDisconnect(Firebird::CheckStatusWrapper* status);
 
 	Attachment* remAtt;
 	Rtr* transaction;
@@ -270,7 +292,7 @@ int Transaction::release()
 	return 0;
 }
 
-class ResultSet FB_FINAL : public RefCntIface<IResultSetImpl<ResultSet, CheckStatusWrapper> >
+class ResultSet final : public RefCntIface<IResultSetImpl<ResultSet, CheckStatusWrapper> >
 {
 public:
 	// IResultSet implementation
@@ -285,20 +307,27 @@ public:
 	FB_BOOLEAN isBof(CheckStatusWrapper* status) override;
 	IMessageMetadata* getMetadata(CheckStatusWrapper* status) override;
 	void close(CheckStatusWrapper* status) override;
+	void deprecatedClose(CheckStatusWrapper* status) override;
 	void setDelayedOutputFormat(CheckStatusWrapper* status, IMessageMetadata* format) override;
+	void getInfo(CheckStatusWrapper* status,
+				 unsigned int itemsLength, const unsigned char* items,
+				 unsigned int bufferLength, unsigned char* buffer) override;
 
-	ResultSet(Statement* s, IMessageMetadata* outFmt)
-		: stmt(s), tmpStatement(false), delayedFormat(outFmt == DELAYED_OUT_FORMAT)
+	ResultSet(Statement* s, IMessageMetadata* outFmt, unsigned f)
+		: stmt(s), flags(f), tmpStatement(false), delayedFormat(outFmt == DELAYED_OUT_FORMAT)
 	{
 		if (!delayedFormat)
 			outputFormat = outFmt;
 	}
 
 private:
+	bool fetch(CheckStatusWrapper* status, void* message, P_FETCH operation, int position = 0);
 	void releaseStatement();
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
+	void internalClose(CheckStatusWrapper* status);
 
 	Statement* stmt;
+	const unsigned flags;
 	RefPtr<IMessageMetadata> outputFormat;
 
 public:
@@ -321,12 +350,14 @@ int ResultSet::release()
 	return 0;
 }
 
-class Batch FB_FINAL : public RefCntIface<IBatchImpl<Batch, CheckStatusWrapper> >
+class Batch final : public RefCntIface<IBatchImpl<Batch, CheckStatusWrapper> >
 {
 public:
+	static const ULONG DEFER_BATCH_LIMIT = 64;
+
 	Batch(Statement* s, IMessageMetadata* inFmt, unsigned parLength, const unsigned char* par);
 
-	// IResultSet implementation
+	// IBatch implementation
 	int release() override;
 	void add(Firebird::CheckStatusWrapper* status, unsigned count, const void* inBuffer) override;
 	void addBlob(Firebird::CheckStatusWrapper* status, unsigned length, const void* inBuffer, ISC_QUAD* blobId,
@@ -340,11 +371,24 @@ public:
 	void setDefaultBpb(Firebird::CheckStatusWrapper* status, unsigned parLength, const unsigned char* par) override;
 	Firebird::IMessageMetadata* getMetadata(Firebird::CheckStatusWrapper* status) override;
 	void close(Firebird::CheckStatusWrapper* status) override;
+	void deprecatedClose(Firebird::CheckStatusWrapper* status) override;
+	void getInfo(CheckStatusWrapper* status,
+				 unsigned int itemsLength, const unsigned char* items,
+				 unsigned int bufferLength, unsigned char* buffer) override;
 
 private:
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
+	void internalClose(Firebird::CheckStatusWrapper* status);
 	void releaseStatement();
-	void setBlobAlignment();
+	void setServerInfo();
+
+	void cleanup()
+	{
+		if (blobPolicy != BLOB_NONE)
+			blobStream = blobStreamBuffer;
+		sizePointer = nullptr;
+		messageStream = 0;
+	}
 
 	void genBlobId(ISC_QUAD* blobId)
 	{
@@ -372,7 +416,7 @@ private:
 			if (step == messageBufferSize)
 			{
 				// direct packet sent
-				sendMessagePacket(step, ptr);
+				sendMessagePacket(step, ptr, false);
 			}
 			else
 			{
@@ -381,7 +425,7 @@ private:
 				messageStream += step;
 				if (messageStream == messageBufferSize)
 				{
-					sendMessagePacket(messageBufferSize, messageStreamBuffer);
+					sendMessagePacket(messageBufferSize, messageStreamBuffer, false);
 					messageStream = 0;
 				}
 			}
@@ -394,14 +438,14 @@ private:
 	// working with blob stream buffer
 	void newBlob()
 	{
-		setBlobAlignment();
+		setServerInfo();
 		alignBlobBuffer(blobAlign);
 
 		fb_assert(blobStream - blobStreamBuffer <= blobBufferSize);
 		ULONG space = blobBufferSize - (blobStream - blobStreamBuffer);
 		if (space < Rsr::BatchStream::SIZEOF_BLOB_HEAD)
 		{
-			sendBlobPacket(blobStream - blobStreamBuffer, blobStreamBuffer);
+			sendBlobPacket(blobStream - blobStreamBuffer, blobStreamBuffer, false);
 			blobStream = blobStreamBuffer;
 		}
 	}
@@ -410,12 +454,12 @@ private:
 	{
 		fb_assert(alignment);
 
-		FB_UINT64 zeroFill = 0;
-		UCHAR* newPointer = FB_ALIGN(blobStream, alignment);
 		ULONG align = FB_ALIGN(blobStream, alignment) - blobStream;
-		putBlobData(align, &zeroFill);
 		if (bs)
 			*bs += align;
+
+		FB_UINT64 zeroFill = 0;
+		putBlobData(align, &zeroFill);
 	}
 
 	void putBlobData(ULONG size, const void* p)
@@ -431,7 +475,7 @@ private:
 			if (step == blobBufferSize)
 			{
 				// direct packet sent
-				sendBlobPacket(blobBufferSize, ptr);
+				sendBlobPacket(blobBufferSize, ptr, false);
 			}
 			else
 			{
@@ -440,9 +484,9 @@ private:
 				blobStream += step;
 				if (blobStream - blobStreamBuffer == blobBufferSize)
 				{
-					sendBlobPacket(blobBufferSize, blobStreamBuffer);
+					sendBlobPacket(blobBufferSize, blobStreamBuffer, false);
 					blobStream = blobStreamBuffer;
-					sizePointer = NULL;
+					sizePointer = nullptr;
 				}
 			}
 
@@ -463,15 +507,16 @@ private:
 		{
 			newBlob();
 
-			ISC_QUAD zero = {0, 0};
-			putBlobData(sizeof zero, &zero);
+			ISC_QUAD quadZero = {0, 0};
+			putBlobData(sizeof quadZero, &quadZero);
 			setSizePointer();
-			ULONG z2 = 0;
-			putBlobData(sizeof z2, &z2);
-			putBlobData(sizeof z2, &z2);
+			ULONG longZero = 0;
+			putBlobData(sizeof longZero, &longZero);
+			putBlobData(sizeof longZero, &longZero);
 		}
 
 		*sizePointer += size;
+
 		if (segmented)
 		{
 			if (size > MAX_USHORT)
@@ -480,11 +525,14 @@ private:
 					<< Arg::Gds(isc_big_segment) << Arg::Num(size)).raise();
 			}
 
-			alignBlobBuffer(BLOB_SEGHDR_ALIGN, sizePointer);
 			*sizePointer += sizeof(USHORT);
+
+			alignBlobBuffer(BLOB_SEGHDR_ALIGN, sizePointer);
+
 			USHORT segSize = size;
 			putBlobData(sizeof segSize, &segSize);
 		}
+
 		putBlobData(size, ptr);
 	}
 
@@ -492,27 +540,29 @@ private:
 	{
 		if (blobPolicy != BLOB_NONE)
 		{
-			setBlobAlignment();
+			setServerInfo();
 			alignBlobBuffer(blobAlign);
 			ULONG size = blobStream - blobStreamBuffer;
 			if (size)
 			{
-				sendBlobPacket(size, blobStreamBuffer);
+				sendBlobPacket(size, blobStreamBuffer, messageStream == 0);
 				blobStream = blobStreamBuffer;
 			}
 		}
 
 		if (messageStream)
 		{
-			sendMessagePacket(messageStream, messageStreamBuffer);
+			sendMessagePacket(messageStream, messageStreamBuffer, true);
 			messageStream = 0;
 		}
 
 		batchActive = false;
+		blobCount = messageCount = 0;
 	}
 
-	void sendBlobPacket(unsigned size, const UCHAR* ptr);
-	void sendMessagePacket(unsigned size, const UCHAR* ptr);
+	void sendBlobPacket(unsigned size, const UCHAR* ptr, bool flash);
+	void sendMessagePacket(unsigned size, const UCHAR* ptr, bool flash);
+	void sendDeferredPacket(IStatus* status, rem_port* port, PACKET* packet, bool flash);
 
 	Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete> messageStreamBuffer, blobStreamBuffer;
 	ULONG messageStream;
@@ -526,6 +576,8 @@ private:
 	int blobAlign;
 	UCHAR blobPolicy;
 	bool segmented, defSegmented, batchActive;
+
+	ULONG messageCount, blobCount, serverSize, blobHeadSize;
 
 public:
 	bool tmpStatement;
@@ -547,19 +599,21 @@ int Batch::release()
 	return 0;
 }
 
-class Replicator FB_FINAL : public RefCntIface<IReplicatorImpl<Replicator, CheckStatusWrapper> >
+class Replicator final : public RefCntIface<IReplicatorImpl<Replicator, CheckStatusWrapper> >
 {
 public:
 	// IReplicator implementation
 	int release() override;
 	void process(CheckStatusWrapper* status, unsigned length, const unsigned char* data) override;
 	void close(CheckStatusWrapper* status) override;
+	void deprecatedClose(CheckStatusWrapper* status) override;
 
 	explicit Replicator(Attachment* att) : attachment(att)
 	{}
 
 private:
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
+	void internalClose(CheckStatusWrapper* status);
 
 	Attachment* attachment;
 };
@@ -580,7 +634,7 @@ int Replicator::release()
 	return 0;
 }
 
-class Statement FB_FINAL : public RefCntIface<IStatementImpl<Statement, CheckStatusWrapper> >
+class Statement final : public RefCntIface<IStatementImpl<Statement, CheckStatusWrapper> >
 {
 public:
 	// IStatement implementation
@@ -601,6 +655,7 @@ public:
 		unsigned int flags) override;
 	void setCursorName(CheckStatusWrapper* status, const char* name) override;
 	void free(CheckStatusWrapper* status) override;
+	void deprecatedFree(CheckStatusWrapper* status) override;
 	unsigned getFlags(CheckStatusWrapper* status) override;
 
 	unsigned int getTimeout(CheckStatusWrapper* status) override
@@ -661,6 +716,7 @@ public:
 
 private:
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
+	void internalFree(CheckStatusWrapper* status);
 
 	StatementMetadata metadata;
 	Attachment* remAtt;
@@ -684,7 +740,7 @@ int Statement::release()
 	return 0;
 }
 
-class Request FB_FINAL : public RefCntIface<IRequestImpl<Request, CheckStatusWrapper> >
+class Request final : public RefCntIface<IRequestImpl<Request, CheckStatusWrapper> >
 {
 public:
 	// IRequest implementation
@@ -701,6 +757,7 @@ public:
 							  unsigned int length, const void* message) override;
 	void unwind(CheckStatusWrapper* status, int level) override;
 	void free(CheckStatusWrapper* status) override;
+	void deprecatedFree(CheckStatusWrapper* status) override;
 
 public:
 	Request(Rrq* handle, Attachment* a)
@@ -711,6 +768,7 @@ public:
 
 private:
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
+	void internalFree(CheckStatusWrapper* status);
 
 	Attachment* remAtt;
 	Rrq* rq;
@@ -732,12 +790,13 @@ int Request::release()
 	return 0;
 }
 
-class Events FB_FINAL : public RefCntIface<IEventsImpl<Events, CheckStatusWrapper> >
+class Events final : public RefCntIface<IEventsImpl<Events, CheckStatusWrapper> >
 {
 public:
 	// IEvents implementation
 	int release() override;
 	void cancel(CheckStatusWrapper* status) override;
+	void deprecatedCancel(CheckStatusWrapper* status) override;
 
 public:
 	Events(Rvnt* handle)
@@ -748,6 +807,7 @@ public:
 
 private:
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
+	void internalCancel(CheckStatusWrapper* status);
 
 	Rvnt* rvnt;
 	Rdb* rdb;
@@ -774,7 +834,7 @@ int Events::release()
 	return 0;
 }
 
-class Attachment FB_FINAL : public RefCntIface<IAttachmentImpl<Attachment, CheckStatusWrapper> >
+class Attachment final : public RefCntIface<IAttachmentImpl<Attachment, CheckStatusWrapper> >
 {
 public:
 	// IAttachment implementation
@@ -819,6 +879,8 @@ public:
 	void ping(CheckStatusWrapper* status) override;
 	void detach(CheckStatusWrapper* status) override;
 	void dropDatabase(CheckStatusWrapper* status) override;
+	void deprecatedDetach(Firebird::CheckStatusWrapper* status) override;
+	void deprecatedDropDatabase(Firebird::CheckStatusWrapper* status) override;
 
 	unsigned int getIdleTimeout(CheckStatusWrapper* status) override;
 	void setIdleTimeout(CheckStatusWrapper* status, unsigned int timeOut) override;
@@ -855,6 +917,8 @@ public:
 private:
 	void execWithCheck(CheckStatusWrapper* status, const string& stmt);
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
+	void internalDetach(Firebird::CheckStatusWrapper* status);
+	void internalDropDatabase(Firebird::CheckStatusWrapper* status);
 	SLONG getSingleInfo(CheckStatusWrapper* status, UCHAR infoItem);
 
 	Rdb* rdb;
@@ -877,23 +941,26 @@ int Attachment::release()
 	return 0;
 }
 
-class Service FB_FINAL : public RefCntIface<IServiceImpl<Service, CheckStatusWrapper> >
+class Service final : public RefCntIface<IServiceImpl<Service, CheckStatusWrapper> >
 {
 public:
 	// IService implementation
 	int release() override;
 	void detach(CheckStatusWrapper* status) override;
+	void deprecatedDetach(CheckStatusWrapper* status) override;
 	void query(CheckStatusWrapper* status,
 					   unsigned int sendLength, const unsigned char* sendItems,
 					   unsigned int receiveLength, const unsigned char* receiveItems,
 					   unsigned int bufferLength, unsigned char* buffer) override;
 	void start(CheckStatusWrapper* status, unsigned int spbLength, const unsigned char* spb) override;
+	void cancel(CheckStatusWrapper* status) override;
 
 public:
 	Service(Rdb* handle) : rdb(handle) { }
 
 private:
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
+	void internalDetach(CheckStatusWrapper* status);
 
 	Rdb* rdb;
 };
@@ -949,6 +1016,15 @@ private:
 void RProvider::shutdown(CheckStatusWrapper* status, unsigned int /*timeout*/, const int /*reason*/)
 {
 	status->init();
+
+	try
+	{
+		outPorts->closePorts();
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
 }
 
 void RProvider::setDbCryptCallback(CheckStatusWrapper* status, ICryptKeyCallback* callback)
@@ -994,7 +1070,7 @@ void registerRedirector(Firebird::IPluginManager* iPlugin)
 } // namespace Remote
 
 /*
-extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* master)
+extern "C" FB_DLL_EXPORT void FB_PLUGIN_ENTRY_POINT(IMaster* master)
 {
 	IPluginManager* pi = master->getPluginManager();
 	registerRedirector(pi);
@@ -1014,7 +1090,8 @@ static void batch_gds_receive(rem_port*, struct rmtque *, USHORT);
 static void batch_dsql_fetch(rem_port*, struct rmtque *, USHORT);
 static void clear_queue(rem_port*);
 static void clear_stmt_que(rem_port*, Rsr*);
-static void disconnect(rem_port*);
+static void finalize(rem_port* port);
+static void disconnect(rem_port*, bool rmRef = true);
 static void enqueue_receive(rem_port*, t_rmtque_fn, Rdb*, void*, Rrq::rrq_repeat*);
 static void dequeue_receive(rem_port*);
 static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM);
@@ -1022,7 +1099,7 @@ static Rvnt* find_event(rem_port*, SLONG);
 static bool get_new_dpb(ClumpletWriter&, const ParametersSet&);
 static void info(CheckStatusWrapper*, Rdb*, P_OP, USHORT, USHORT, USHORT,
 	const UCHAR*, USHORT, const UCHAR*, ULONG, UCHAR*);
-static void init(CheckStatusWrapper*, ClntAuthBlock&, rem_port*, P_OP, PathName&,
+static bool init(CheckStatusWrapper*, ClntAuthBlock&, rem_port*, P_OP, PathName&,
 	ClumpletWriter&, IntlParametersBlock&, ICryptKeyCallback* cryptCallback);
 static Rtr* make_transaction(Rdb*, USHORT);
 static void mov_dsql_message(const UCHAR*, const rem_fmt*, UCHAR*, const rem_fmt*);
@@ -1133,7 +1210,8 @@ IAttachment* RProvider::attach(CheckStatusWrapper* status, const char* filename,
 
 		IntlDpb intl;
 		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: call init for DB='%s'\n", expanded_name.c_str()));
-		init(status, cBlock, port, op_attach, expanded_name, newDpb, intl, cryptCallback);
+		if (!init(status, cBlock, port, op_attach, expanded_name, newDpb, intl, cryptCallback))
+			return NULL;
 
 		Attachment* a = FB_NEW Attachment(port->port_context, filename);
 		a->addRef();
@@ -1263,7 +1341,7 @@ void Blob::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Blob::cancel(CheckStatusWrapper* status)
+void Blob::internalCancel(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -1280,7 +1358,21 @@ void Blob::cancel(CheckStatusWrapper* status)
 }
 
 
-void Blob::close(CheckStatusWrapper* status)
+void Blob::cancel(CheckStatusWrapper* status)
+{
+	internalCancel(status);
+	if (status->isEmpty())
+		release();
+}
+
+
+void Blob::deprecatedCancel(CheckStatusWrapper* status)
+{
+	internalCancel(status);
+}
+
+
+void Blob::internalClose(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -1316,6 +1408,20 @@ void Blob::close(CheckStatusWrapper* status)
 	{
 		ex.stuffException(status);
 	}
+}
+
+
+void Blob::close(CheckStatusWrapper* status)
+{
+	internalClose(status);
+	if (status->isEmpty())
+		release();
+}
+
+
+void Blob::deprecatedClose(CheckStatusWrapper* status)
+{
+	internalClose(status);
 }
 
 
@@ -1401,7 +1507,7 @@ void Events::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Events::cancel(CheckStatusWrapper* status)
+void Events::internalCancel(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -1418,7 +1524,21 @@ void Events::cancel(CheckStatusWrapper* status)
 }
 
 
-void Transaction::commit(CheckStatusWrapper* status)
+void Events::cancel(CheckStatusWrapper* status)
+{
+	internalCancel(status);
+	if (status->isEmpty())
+		release();
+}
+
+
+void Events::deprecatedCancel(CheckStatusWrapper* status)
+{
+	internalCancel(status);
+}
+
+
+void Transaction::internalCommit(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -1450,6 +1570,20 @@ void Transaction::commit(CheckStatusWrapper* status)
 	{
 		ex.stuffException(status);
 	}
+}
+
+
+void Transaction::commit(CheckStatusWrapper* status)
+{
+	internalCommit(status);
+	if (status->isEmpty())
+		release();
+}
+
+
+void Transaction::deprecatedCommit(CheckStatusWrapper* status)
+{
+	internalCommit(status);
 }
 
 
@@ -1756,7 +1890,8 @@ Firebird::IAttachment* RProvider::create(CheckStatusWrapper* status, const char*
 		add_working_directory(newDpb, node_name);
 
 		IntlDpb intl;
-		init(status, cBlock, port, op_create, expanded_name, newDpb, intl, cryptCallback);
+		if (!init(status, cBlock, port, op_create, expanded_name, newDpb, intl, cryptCallback))
+			return NULL;
 
 		Firebird::IAttachment* a = FB_NEW Attachment(rdb, filename);
 		a->addRef();
@@ -1827,7 +1962,11 @@ void Attachment::getInfo(CheckStatusWrapper* status,
 		HalfStaticArray<UCHAR, 1024> temp;
 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
+
 		rem_port* port = rdb->rdb_port;
+		USHORT protocol = memchr(items, fb_info_protocol_version, item_length) ? port->port_protocol : 0;
+		protocol &= FB_PROTOCOL_MASK;
+
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		UCHAR* temp_buffer = temp.getBuffer(buffer_length);
@@ -1841,7 +1980,8 @@ void Attachment::getInfo(CheckStatusWrapper* status,
 		MERGE_database_info(temp_buffer, buffer, buffer_length,
 							DbImplementation::current.backwardCompatibleImplementation(), 3, 1,
 							reinterpret_cast<const UCHAR*>(version.c_str()),
-							reinterpret_cast<const UCHAR*>(port->port_host->str_data));
+							reinterpret_cast<const UCHAR*>(port->port_host->str_data),
+							protocol);
 	}
 	catch (const Exception& ex)
 	{
@@ -1916,7 +2056,7 @@ void Attachment::freeClientData(CheckStatusWrapper* status, bool force)
 
 		try
 		{
-			if (!(port->port_flags & PORT_rdb_shutdown))
+			if (!(port->port_flags & (PORT_rdb_shutdown | PORT_detached)))
 			{
 				release_object(status, rdb, op_detach, rdb->rdb_id);
 			}
@@ -1957,7 +2097,7 @@ void Attachment::freeClientData(CheckStatusWrapper* status, bool force)
 
 		if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 		{
-			iscLogStatus("REMOTE INTERFACE/gds__detach: Unsuccesful detach from "
+			iscLogStatus("REMOTE INTERFACE/gds__detach: Unsuccessful detach from "
 					"database.\n\tUncommitted work may have been lost.", status);
 			reset(status);
 		}
@@ -1972,7 +2112,7 @@ void Attachment::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Attachment::detach(CheckStatusWrapper* status)
+void Attachment::internalDetach(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -1989,7 +2129,21 @@ void Attachment::detach(CheckStatusWrapper* status)
 }
 
 
-void Attachment::dropDatabase(CheckStatusWrapper* status)
+void Attachment::detach(CheckStatusWrapper* status)
+{
+	internalDetach(status);
+	if (status->isEmpty())
+		release();
+}
+
+
+void Attachment::deprecatedDetach(CheckStatusWrapper* status)
+{
+	internalDetach(status);
+}
+
+
+void Attachment::internalDropDatabase(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -2044,6 +2198,20 @@ void Attachment::dropDatabase(CheckStatusWrapper* status)
 	{
 		ex.stuffException(status);
 	}
+}
+
+
+void Attachment::dropDatabase(CheckStatusWrapper* status)
+{
+	internalDropDatabase(status);
+	if (status->isEmpty())
+		release();
+}
+
+
+void Attachment::deprecatedDropDatabase(CheckStatusWrapper* status)
+{
+	internalDropDatabase(status);
 }
 
 
@@ -2265,8 +2433,15 @@ Batch* Statement::createBatch(CheckStatusWrapper* status, IMessageMetadata* inMe
 		batch->p_batch_pb.cstr_length = parLength;
 		batch->p_batch_pb.cstr_address = par;
 
-		send_partial_packet(port, packet);
-		defer_packet(port, packet, true);
+		if (port->port_flags & PORT_lazy)
+		{
+			send_partial_packet(port, packet);
+			defer_packet(port, packet, true);
+		}
+		else {
+			send_and_receive(status, rdb, packet);
+		}
+
 		message->msg_address = NULL;
 
 		Batch* b = FB_NEW Batch(this, inMetadata, parLength, par);
@@ -2286,7 +2461,9 @@ Batch::Batch(Statement* s, IMessageMetadata* inFmt, unsigned parLength, const un
 	: messageStream(0), blobStream(nullptr), sizePointer(nullptr),
 	  messageSize(0), alignedSize(0), blobBufferSize(0), messageBufferSize(0), flags(0),
 	  stmt(s), format(inFmt), blobAlign(0), blobPolicy(BLOB_NONE),
-	  segmented(false), defSegmented(false), batchActive(false), tmpStatement(false)
+	  segmented(false), defSegmented(false), batchActive(false),
+	  messageCount(0), blobCount(0), serverSize(0), blobHeadSize(0),
+	  tmpStatement(false)
 {
 	LocalStatus ls;
 	CheckStatusWrapper st(&ls);
@@ -2385,7 +2562,7 @@ void Batch::add(CheckStatusWrapper* status, unsigned count, const void* inBuffer
 }
 
 
-void Batch::sendMessagePacket(unsigned count, const UCHAR* ptr)
+void Batch::sendMessagePacket(unsigned count, const UCHAR* ptr, bool flash)
 {
 	Rsr* statement = stmt->getStatement();
 	CHECK_HANDLE(statement, isc_bad_req_handle);
@@ -2401,8 +2578,8 @@ void Batch::sendMessagePacket(unsigned count, const UCHAR* ptr)
 	batch->p_batch_data.cstr_address = const_cast<UCHAR*>(ptr);
 	statement->rsr_batch_size = alignedSize;
 
-	send_partial_packet(port, packet);
-	defer_packet(port, packet, true);
+	sendDeferredPacket(nullptr, port, packet, flash);
+	messageCount += count;
 }
 
 
@@ -2529,13 +2706,13 @@ void Batch::addBlobStream(CheckStatusWrapper* status, unsigned length, const voi
 }
 
 
-void Batch::sendBlobPacket(unsigned size, const UCHAR* ptr)
+void Batch::sendBlobPacket(unsigned size, const UCHAR* ptr, bool flash)
 {
 	Rsr* statement = stmt->getStatement();
 	Rdb* rdb = statement->rsr_rdb;
 	rem_port* port = rdb->rdb_port;
 
-	setBlobAlignment();
+	setServerInfo();
 	fb_assert(!(size % blobAlign));
 
 	PACKET* packet = &rdb->rdb_packet;
@@ -2545,8 +2722,45 @@ void Batch::sendBlobPacket(unsigned size, const UCHAR* ptr)
 	batch->p_batch_blob_data.cstr_address = const_cast<UCHAR*>(ptr);
 	batch->p_batch_blob_data.cstr_length = size;
 
-	send_partial_packet(port, packet);
-	defer_packet(port, packet, true);
+	sendDeferredPacket(nullptr, port, packet, flash);
+
+	blobCount += size;
+}
+
+
+void Batch::sendDeferredPacket(IStatus* status, rem_port* port, PACKET* packet, bool flash)
+{
+	if (port->port_flags & PORT_lazy)
+	{
+		send_partial_packet(port, packet);
+		defer_packet(port, packet, true);
+
+		if ((port->port_protocol >= PROTOCOL_VERSION17) &&
+			((port->port_deferred_packets->getCount() >= DEFER_BATCH_LIMIT) || flash))
+		{
+			packet->p_operation = op_batch_sync;
+			send_packet(port, packet);
+			receive_packet(port, packet);
+
+			LocalStatus warning;
+			port->checkResponse(&warning, packet, false);
+			Rsr* statement = stmt->getStatement();
+			if (statement->haveException())
+			{
+				cleanup();
+				statement->raiseException();
+			}
+		}
+	}
+	else if (status)
+	{
+		send_and_receive(status, port->port_context, packet);
+	}
+	else
+	{
+		LocalStatus local;
+		send_and_receive(&local, port->port_context, packet);
+	}
 }
 
 
@@ -2580,8 +2794,7 @@ void Batch::setDefaultBpb(CheckStatusWrapper* status, unsigned parLength, const 
 		batch->p_batch_blob_bpb.cstr_address = par;
 		batch->p_batch_blob_bpb.cstr_length = parLength;
 
-		send_partial_packet(port, packet);
-		defer_packet(port, packet, true);
+		sendDeferredPacket(status, port, packet, true);
 	}
 	catch (const Exception& ex)
 	{
@@ -2594,7 +2807,7 @@ unsigned Batch::getBlobAlignment(CheckStatusWrapper* status)
 {
 	try
 	{
-		setBlobAlignment();
+		setServerInfo();
 	}
 	catch (const Exception& ex)
 	{
@@ -2605,7 +2818,7 @@ unsigned Batch::getBlobAlignment(CheckStatusWrapper* status)
 }
 
 
-void Batch::setBlobAlignment()
+void Batch::setServerInfo()
 {
 	if (blobAlign)
 		return;
@@ -2623,21 +2836,71 @@ void Batch::setBlobAlignment()
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
-	// Perform info call to server
 	LocalStatus ls;
 	CheckStatusWrapper s(&ls);
-	UCHAR item = isc_info_sql_stmt_blob_align;
-	UCHAR buffer[16];
-	info(&s, rdb, op_info_sql, statement->rsr_id, 0,
-		 1, &item, 0, 0, sizeof(buffer), buffer);
+
+	if (port->port_protocol < PROTOCOL_VERSION17)
+	{
+		UCHAR item = isc_info_sql_stmt_blob_align;
+		UCHAR buffer[16];
+		info(&s, rdb, op_info_sql, statement->rsr_id, 0,
+			 1, &item, 0, 0, sizeof(buffer), buffer);
+		check(&s);
+
+		// Extract from buffer
+		if (buffer[0] != item)
+			Arg::Gds(isc_batch_align).raise();
+
+		int len = gds__vax_integer(&buffer[1], 2);
+		statement->rsr_batch_stream.alignment = blobAlign = gds__vax_integer(&buffer[3], len);
+
+		if (!blobAlign)
+			Arg::Gds(isc_batch_align).raise();
+
+		return;
+	}
+
+	// Perform info call to server
+	UCHAR items[] = {IBatch::INF_BLOB_ALIGNMENT, IBatch::INF_BUFFER_BYTES_SIZE, IBatch::INF_BLOB_HEADER};
+	UCHAR buffer[64];
+	info(&s, rdb, op_info_batch, statement->rsr_id, 0,
+		 sizeof(items), items, 0, 0, sizeof(buffer), buffer);
 	check(&s);
 
 	// Extract from buffer
-	if (buffer[0] != item)
-		Arg::Gds(isc_batch_align).raise();
+	ClumpletReader out(ClumpletReader::InfoResponse, buffer, sizeof(buffer));
+	for (out.rewind(); !out.isEof(); out.moveNext())
+	{
+		UCHAR item = out.getClumpTag();
+		if (item == isc_info_end)
+			break;
 
-	int len = gds__vax_integer(&buffer[1], 2);
-	statement->rsr_batch_stream.alignment = blobAlign = gds__vax_integer(&buffer[3], len);
+		switch(item)
+		{
+		case IBatch::INF_BLOB_ALIGNMENT:
+			statement->rsr_batch_stream.alignment = blobAlign = out.getInt();
+			break;
+		case IBatch::INF_BUFFER_BYTES_SIZE:
+			serverSize = out.getInt();
+			break;
+		case IBatch::INF_BLOB_HEADER:
+			blobHeadSize = out.getInt();
+			break;
+		case isc_info_error:
+			(Arg::Gds(isc_batch_align) << Arg::Gds(out.getInt())).raise();
+		case isc_info_truncated:
+			(Arg::Gds(isc_batch_align) << Arg::Gds(isc_random) << "truncated").raise();
+		default:
+			{
+				string msg;
+				msg.printf("Wrong info item %u", item);
+				(Arg::Gds(isc_batch_align) << Arg::Gds(isc_random) << msg).raise();
+			}
+		}
+	}
+
+	if (! (blobAlign && serverSize && blobHeadSize))
+		Arg::Gds(isc_batch_align).raise();
 }
 
 
@@ -2678,8 +2941,7 @@ void Batch::registerBlob(CheckStatusWrapper* status, const ISC_QUAD* existingBlo
 		batch->p_batch_exist_id = *existingBlob;
 		batch->p_batch_blob_id = *blobId;
 
-		send_partial_packet(port, packet);
-		defer_packet(port, packet, true);
+		sendDeferredPacket(status, port, packet, true);
 	}
 	catch (const Exception& ex)
 	{
@@ -2735,7 +2997,12 @@ IBatchCompletionState* Batch::execute(CheckStatusWrapper* status, ITransaction* 
 		statement->rsr_batch_cs = nullptr;
 
 		if (packet->p_operation == op_batch_cs)
+		{
+			// when working with 4.0.0 server we could not raise it in advance...
+			statement->clearException();
+
 			return cs.release();
+		}
 
 		REMOTE_check_response(status, rdb, packet);
 	}
@@ -2765,10 +3032,7 @@ void Batch::cancel(CheckStatusWrapper* status)
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		// Cleanup local data
-		if (blobPolicy != BLOB_NONE)
-			blobStream = blobStreamBuffer;
-		sizePointer = nullptr;
-		messageStream = 0;
+		cleanup();
 		batchActive = false;
 
 		// Prepare packet
@@ -2839,10 +3103,95 @@ void Batch::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Batch::close(CheckStatusWrapper* status)
+void Batch::internalClose(CheckStatusWrapper* status)
 {
 	reset(status);
 	freeClientData(status);
+}
+
+
+void Batch::close(CheckStatusWrapper* status)
+{
+	internalClose(status);
+	if (status->isEmpty())
+		release();
+}
+
+
+void Batch::deprecatedClose(CheckStatusWrapper* status)
+{
+	internalClose(status);
+}
+
+
+void Batch::getInfo(CheckStatusWrapper* status, unsigned int itemsLength, const unsigned char* items,
+	unsigned int bufferLength, unsigned char* buffer)
+{
+	try
+	{
+		ClumpletReader it(ClumpletReader::InfoItems, items, itemsLength);
+		ClumpletWriter out(ClumpletReader::InfoResponse, bufferLength - 1);		// place for isc_info_end / isc_info_truncated
+
+		for (it.rewind(); !it.isEof(); it.moveNext())
+		{
+			UCHAR item = it.getClumpTag();
+			if (item == isc_info_end)
+				break;
+
+			try
+			{
+				switch(item)
+				{
+				case IBatch::INF_BUFFER_BYTES_SIZE:
+					setServerInfo();
+					if (serverSize)
+						out.insertInt(item, serverSize);
+					break;
+				case IBatch::INF_DATA_BYTES_SIZE:
+					out.insertInt(item, (messageCount + messageStream) * alignedSize);
+					break;
+				case IBatch::INF_BLOBS_BYTES_SIZE:
+					if (blobStream)
+						out.insertInt(item, blobCount + (blobStream - blobStreamBuffer));
+					break;
+				case IBatch::INF_BLOB_ALIGNMENT:
+					setServerInfo();
+					out.insertInt(item, blobAlign);
+					break;
+				case IBatch::INF_BLOB_HEADER:
+					setServerInfo();
+					out.insertInt(item, blobHeadSize);
+					break;
+				default:
+					out.insertInt(isc_info_error, isc_infunk);
+					break;
+				}
+			}
+			catch(const fatal_exception&)
+			{
+				// here it's sooner of all caused by writer overflow but anyway check that
+				if (out.hasOverflow())
+				{
+					memcpy(buffer, out.getBuffer(), out.getBufferLength());
+					buffer += out.getBufferLength();
+					*buffer++ = isc_info_truncated;
+					if (out.getBufferLength() <= bufferLength - 2)
+						*buffer++ = isc_info_end;
+					return;
+				}
+				else
+					throw;
+			}
+		}
+
+		memcpy(buffer, out.getBuffer(), out.getBufferLength());
+		buffer += out.getBufferLength();
+		*buffer++ = isc_info_end;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
 }
 
 
@@ -2930,10 +3279,24 @@ void Replicator::process(CheckStatusWrapper* status, unsigned length, const unsi
 }
 
 
-void Replicator::close(CheckStatusWrapper* status)
+void Replicator::internalClose(CheckStatusWrapper* status)
 {
 	reset(status);
 	freeClientData(status);
+}
+
+
+void Replicator::close(CheckStatusWrapper* status)
+{
+	internalClose(status);
+	if (status->isEmpty())
+		release();
+}
+
+
+void Replicator::deprecatedClose(CheckStatusWrapper* status)
+{
+	internalClose(status);
 }
 
 
@@ -3108,6 +3471,7 @@ ITransaction* Statement::execute(CheckStatusWrapper* status, ITransaction* apiTr
 		sqldata->p_sqldata_out_blr.cstr_address = const_cast<UCHAR*>(out_blr);
 		sqldata->p_sqldata_out_message_number = 0;	// out_msg_type
 		sqldata->p_sqldata_timeout = statement->rsr_timeout;
+		sqldata->p_sqldata_cursor_flags = 0;
 
 		send_packet(port, packet);
 
@@ -3155,7 +3519,7 @@ ITransaction* Statement::execute(CheckStatusWrapper* status, ITransaction* apiTr
 
 
 ResultSet* Statement::openCursor(CheckStatusWrapper* status, Firebird::ITransaction* apiTra,
-	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outFormat, unsigned int /*flags*/)
+	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outFormat, unsigned int flags)
 {
 /**************************************
  *
@@ -3273,12 +3637,13 @@ ResultSet* Statement::openCursor(CheckStatusWrapper* status, Firebird::ITransact
 		sqldata->p_sqldata_out_blr.cstr_address = const_cast<UCHAR*>(out_blr);
 		sqldata->p_sqldata_out_message_number = 0;	// out_msg_type
 		sqldata->p_sqldata_timeout = statement->rsr_timeout;
+		sqldata->p_sqldata_cursor_flags = flags;
 
 		send_partial_packet(port, packet);
 		defer_packet(port, packet, true);
 		message->msg_address = NULL;
 
-		ResultSet* rs = FB_NEW ResultSet(this, outFormat);
+		ResultSet* rs = FB_NEW ResultSet(this, outFormat, flags);
 		rs->addRef();
 		return rs;
 	}
@@ -3587,7 +3952,7 @@ void Statement::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Statement::free(CheckStatusWrapper* status)
+void Statement::internalFree(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -3602,6 +3967,20 @@ void Statement::free(CheckStatusWrapper* status)
 
 	reset(status);
 	freeClientData(status);
+}
+
+
+void Statement::free(CheckStatusWrapper* status)
+{
+	internalFree(status);
+	if (status->isEmpty())
+		release();
+}
+
+
+void Statement::deprecatedFree(CheckStatusWrapper* status)
+{
+	internalFree(status);
 }
 
 
@@ -4013,369 +4392,6 @@ ISC_UINT64 Statement::getAffectedRecords(CheckStatusWrapper* status)
 }
 
 
-void ResultSet::setDelayedOutputFormat(CheckStatusWrapper* status, IMessageMetadata* format)
-{
-	try
-	{
-		reset(status);
-
-		// Check and validate handles, etc.
-		if (!delayedFormat)
-		{
-			(Arg::Gds(isc_dsql_cursor_err) << Arg::Gds(isc_bad_req_handle)).raise();
-		}
-
-		outputFormat = format;
-		delayedFormat = false;
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(status);
-	}
-}
-
-
-int ResultSet::fetchNext(CheckStatusWrapper* status, void* buffer)
-{
-/**************************************
- *
- *	d s q l _ f e t c h
- *
- **************************************
- *
- * Functional description
- *	Fetch next record from a dynamic SQL cursor.
- *
- **************************************/
-
-	try
-	{
-		reset(status);
-
-		// Check and validate handles, etc.
-
-		if (delayedFormat || !stmt)
-		{
-			(Arg::Gds(isc_dsql_cursor_err) << Arg::Gds(isc_bad_req_handle)).raise();
-		}
-		Rsr* statement = stmt->getStatement();
-		CHECK_HANDLE(statement, isc_bad_req_handle);
-
-		Rdb* rdb = statement->rsr_rdb;
-		CHECK_HANDLE(rdb, isc_bad_db_handle);
-
-		rem_port* port = rdb->rdb_port;
-
-		BlrFromMessage outBlr(outputFormat, stmt->getDialect(), port->port_protocol);
-		unsigned int blr_length = outBlr.getLength();
-		const UCHAR* blr = outBlr.getBytes();
-		const unsigned int msg_length = outBlr.getMsgLength();
-		UCHAR* msg = static_cast<UCHAR*>(buffer);
-
-		// Validate data length
-
-		CHECK_LENGTH(port, blr_length);
-		CHECK_LENGTH(port, msg_length);
-
-		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
-
-		// On first fetch, clear the end-of-stream flag & reset the message buffers
-
-		if (!statement->rsr_flags.test(Rsr::FETCHED))
-		{
-			statement->raiseException();
-
-			statement->rsr_flags.clear(Rsr::EOF_SET | Rsr::STREAM_ERR | Rsr::PAST_EOF);
-			statement->rsr_rows_pending = 0;
-			statement->clearException();
-
-			RMessage* message = statement->rsr_message;
-			if (message)
-			{
-				statement->rsr_buffer = message;
-				while (true)
-				{
-					message->msg_address = NULL;
-					message = message->msg_next;
-					if (message == statement->rsr_message) {
-						break;
-					}
-				}
-			}
-		}
-		else if (statement->rsr_flags.testAll(Rsr::EOF_SET | Rsr::PAST_EOF))
-		{
-			Arg::Gds(isc_req_sync).raise();
-		}
-
-		// Parse the blr describing the message, if there is any.
-
-		if (blr_length)
-		{
-			if (statement->rsr_user_select_format &&
-				statement->rsr_user_select_format != statement->rsr_select_format)
-			{
-				delete statement->rsr_user_select_format;
-			}
-
-			statement->rsr_user_select_format = PARSE_msg_format(blr, blr_length);
-
-			if (statement->rsr_flags.test(Rsr::FETCHED))
-				blr_length = 0;
-			else
-			{
-				delete statement->rsr_select_format;
-				statement->rsr_select_format = statement->rsr_user_select_format;
-			}
-		}
-
-		if (!statement->rsr_buffer)
-		{
-			statement->rsr_buffer = FB_NEW RMessage(0);
-			statement->rsr_message = statement->rsr_buffer;
-			statement->rsr_message->msg_next = statement->rsr_message;
-			statement->rsr_fmt_length = 0;
-		}
-
-		RMessage* message = statement->rsr_message;
-
-#ifdef DEBUG
-		fprintf(stdout, "Rows Pending in REM_fetch=%lu\n", statement->rsr_rows_pending);
-#endif
-
-		// Check to see if data is waiting.  If not, solicite data.
-
-		if ((!statement->rsr_flags.test(Rsr::EOF_SET | Rsr::STREAM_ERR) &&
-				(!statement->rsr_message->msg_address) && (statement->rsr_rows_pending == 0)) ||
-			(					// Low in inventory
-				(statement->rsr_rows_pending <= statement->rsr_reorder_level) &&
-				(statement->rsr_msgs_waiting <= statement->rsr_reorder_level) &&
-				// not using named pipe on NT
-				// Pipelining causes both server & client to
-				// write at the same time. In named pipes, writes
-				// block for the other end to read -  and so when both
-				// attempt to write simultaenously, they end up
-				// waiting indefinetly for the other end to read
-				(port->port_type != rem_port::PIPE) &&
-				(port->port_type != rem_port::XNET) &&
-				// We've reached eof or there was an error
-				!statement->rsr_flags.test(Rsr::EOF_SET | Rsr::STREAM_ERR) &&
-				// No error pending
-				!statement->haveException() ))
-		{
-			// set up the packet for the other guy...
-
-			PACKET* packet = &rdb->rdb_packet;
-			packet->p_operation = op_fetch;
-			P_SQLDATA* sqldata = &packet->p_sqldata;
-			sqldata->p_sqldata_statement = statement->rsr_id;
-			sqldata->p_sqldata_blr.cstr_length = blr_length;
-			sqldata->p_sqldata_blr.cstr_address = const_cast<unsigned char*>(blr);
-			sqldata->p_sqldata_message_number = 0;	// msg_type
-			sqldata->p_sqldata_messages = 0;
-			if (statement->rsr_select_format)
-			{
-				sqldata->p_sqldata_messages =
-					REMOTE_compute_batch_size(port, 0, op_fetch_response, statement->rsr_select_format);
-
-				// Reorder data when the local buffer is half empty
-
-				statement->rsr_reorder_level = sqldata->p_sqldata_messages / 2;
-#ifdef DEBUG
-				fprintf(stdout, "Recalculating Rows Pending in REM_fetch=%lu\n",
-						   statement->rsr_rows_pending);
-#endif
-			}
-			statement->rsr_rows_pending += sqldata->p_sqldata_messages;
-
-			// We've either got data, or some is on the way, or we have an error, or we have EOF
-
-			if (!(statement->rsr_msgs_waiting || (statement->rsr_rows_pending > 0) ||
-				statement->haveException() || statement->rsr_flags.test(Rsr::EOF_SET)))
-			{
-				// We were asked to fetch from the statement, not ready for it
-				// Give up before sending something to the server
-				Arg::Gds(isc_req_sync).raise();
-			}
-
-			// Make the batch request - and force the packet over the wire
-
-			send_packet(port, packet);
-
-			statement->rsr_batch_count++;
-
-			// Queue up receipt of the pending data
-
-			enqueue_receive(port, batch_dsql_fetch, rdb, statement, NULL);
-
-			fb_assert(statement->rsr_rows_pending > 0 || (!statement->rsr_select_format));
-		}
-
-		// Receive queued responses until we have some data for this cursor
-		// or an error status has been received.
-
-		// We've either got data, or some is on the way, or we have an error, or we have EOF
-
-		fb_assert(statement->rsr_msgs_waiting || (statement->rsr_rows_pending > 0) ||
-			   statement->haveException() || statement->rsr_flags.test(Rsr::EOF_SET));
-
-		while (!statement->haveException() &&			// received a database error
-			!statement->rsr_flags.test(Rsr::EOF_SET) &&	// reached end of cursor
-			statement->rsr_msgs_waiting < 2	&&			// Have looked ahead for end of batch
-			statement->rsr_rows_pending != 0)
-		{
-			// Hit end of batch
-			receive_queued_packet(port, statement->rsr_id);
-		}
-
-		if (!statement->rsr_msgs_waiting)
-		{
-			if (statement->rsr_flags.test(Rsr::EOF_SET))
-			{
-				// hvlad: we may have queued fetch packet but received EOF before start
-				// handling of this packet. Handle it now.
-				clear_stmt_que(port, statement);
-
-				// hvlad: as we processed all queued packets at code above we can leave Rsr::EOF_SET flag.
-				// It allows us to return EOF for all subsequent isc_dsql_fetch calls until statement
-				// will be re-executed (and without roundtrip to remote server).
-				//statement->rsr_flags.clear(Rsr::EOF_SET);
-				statement->rsr_flags.set(Rsr::PAST_EOF);
-
-				return IStatus::RESULT_NO_DATA;
-			}
-
-			if (statement->rsr_flags.test(Rsr::STREAM_ERR))
-			{
-				// The previous batch of receives ended with an error status.
-				// We're all done returning data in the local queue.
-				// Return that error status vector to the user.
-
-				// Stuff in the error result to the user's vector
-
-				statement->rsr_flags.clear(Rsr::STREAM_ERR);
-
-				// hvlad: prevent subsequent fetches
-				statement->rsr_flags.set(Rsr::EOF_SET);
-				statement->raiseException();
-			}
-		}
-		statement->rsr_msgs_waiting--;
-
-		message = statement->rsr_message;
-		statement->rsr_message = message->msg_next;
-
-		if (statement->rsr_user_select_format->fmt_length != msg_length)
-		{
-			status_exception::raise(Arg::Gds(isc_port_len) <<
-				Arg::Num(msg_length) << Arg::Num(statement->rsr_user_select_format->fmt_length));
-		}
-		if (statement->rsr_user_select_format == statement->rsr_select_format)
-		{
-			if (!msg || !message->msg_address)
-			{
-				move_error(Arg::Gds(isc_dsql_sqlda_err));
-				// Msg 263 SQLDA missing or wrong number of variables
-			}
-			memcpy(msg, message->msg_address, msg_length);
-		}
-		else
-		{
-			mov_dsql_message(message->msg_address, statement->rsr_select_format, msg,
-							 statement->rsr_user_select_format);
-		}
-
-		message->msg_address = NULL;
-		return IStatus::RESULT_OK;
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(status);
-	}
-	return IStatus::RESULT_ERROR;
-}
-
-
-int ResultSet::fetchPrior(CheckStatusWrapper* user_status, void* buffer)
-{
-	try
-	{
-		status_exception::raise(Arg::Gds(isc_wish_list));
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(user_status);
-		return FB_FALSE;
-	}
-
-	return FB_TRUE;
-}
-
-
-int ResultSet::fetchFirst(CheckStatusWrapper* user_status, void* buffer)
-{
-	try
-	{
-		status_exception::raise(Arg::Gds(isc_wish_list));
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(user_status);
-		return FB_FALSE;
-	}
-
-	return FB_TRUE;
-}
-
-
-int ResultSet::fetchLast(CheckStatusWrapper* user_status, void* buffer)
-{
-	try
-	{
-		status_exception::raise(Arg::Gds(isc_wish_list));
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(user_status);
-		return FB_FALSE;
-	}
-
-	return FB_TRUE;
-}
-
-
-int ResultSet::fetchAbsolute(CheckStatusWrapper* user_status, int position, void* buffer)
-{
-	try
-	{
-		status_exception::raise(Arg::Gds(isc_wish_list));
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(user_status);
-		return FB_FALSE;
-	}
-
-	return FB_TRUE;
-}
-
-
-int ResultSet::fetchRelative(CheckStatusWrapper* user_status, int offset, void* buffer)
-{
-	try
-	{
-		status_exception::raise(Arg::Gds(isc_wish_list));
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(user_status);
-		return FB_FALSE;
-	}
-
-	return FB_TRUE;
-}
-
-
 void Statement::setCursorName(CheckStatusWrapper* status, const char* cursor)
 {
 /*****************************************
@@ -4459,6 +4475,554 @@ void Statement::setCursorName(CheckStatusWrapper* status, const char* cursor)
 }
 
 
+void ResultSet::setDelayedOutputFormat(CheckStatusWrapper* status, IMessageMetadata* format)
+{
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+		if (!delayedFormat)
+		{
+			(Arg::Gds(isc_dsql_cursor_err) << Arg::Gds(isc_bad_req_handle)).raise();
+		}
+
+		outputFormat = format;
+		delayedFormat = false;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+
+bool ResultSet::fetch(CheckStatusWrapper* status, void* buffer, P_FETCH operation, int position)
+{
+/**************************************
+ *
+ *	d s q l _ f e t c h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Fetch next record from a dynamic SQL cursor.
+ *
+ **************************************/
+
+	reset(status);
+
+	// Check and validate handles, etc.
+
+	if (delayedFormat || !stmt)
+	{
+		(Arg::Gds(isc_dsql_cursor_err) << Arg::Gds(isc_bad_req_handle)).raise();
+	}
+
+	Rsr* const statement = stmt->getStatement();
+	CHECK_HANDLE(statement, isc_bad_req_handle);
+
+	Rdb* const rdb = statement->rsr_rdb;
+	CHECK_HANDLE(rdb, isc_bad_db_handle);
+
+	rem_port* const port = rdb->rdb_port;
+
+	// Scrolling is not available in older protocols
+	if (operation != fetch_next && port->port_protocol < PROTOCOL_FETCH_SCROLL)
+		unsupported();
+
+	// Whether we're fetching relatively to the current position
+	const bool relative =
+		(operation == fetch_next || operation == fetch_prior || operation == fetch_relative);
+
+	BlrFromMessage outBlr(outputFormat, stmt->getDialect(), port->port_protocol);
+	unsigned int blr_length = outBlr.getLength();
+	const UCHAR* blr = outBlr.getBytes();
+	const unsigned int msg_length = outBlr.getMsgLength();
+	UCHAR* msg = static_cast<UCHAR*>(buffer);
+
+	// Validate data length
+
+	CHECK_LENGTH(port, blr_length);
+	CHECK_LENGTH(port, msg_length);
+
+	RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+	if (!statement->rsr_flags.test(Rsr::FETCHED))
+	{
+		// On first fetch, clear the end-of-stream flag & reset the message buffers
+
+		statement->raiseException();
+
+		statement->rsr_flags.clear(Rsr::STREAM_END | Rsr::PAST_END | Rsr::STREAM_ERR);
+		statement->rsr_rows_pending = 0;
+		statement->rsr_fetch_operation = operation;
+		statement->rsr_fetch_position = position;
+		statement->clearException();
+
+		RMessage* message = statement->rsr_message;
+		if (message)
+		{
+			statement->rsr_buffer = message;
+
+			while (true)
+			{
+				message->msg_address = NULL;
+				message = message->msg_next;
+
+				if (message == statement->rsr_message)
+					break;
+			}
+		}
+	}
+	else if (!relative)
+	{
+		// Clear the end-of-stream flag if the fetch is positioned absolutely
+		statement->rsr_flags.clear(Rsr::STREAM_END | Rsr::PAST_END);
+	}
+	else if (statement->rsr_flags.test(Rsr::PAST_END))
+	{
+		// If we're already at BOF/EOF and the requested fetch operation
+		// cannot change our position, just do nothing
+
+		if (operation == fetch_relative && position == 0)
+			return false;
+
+		if ((operation == fetch_next || (operation == fetch_relative && position > 0)) &&
+			statement->rsr_flags.test(Rsr::PAST_EOF))
+		{
+			return false;
+		}
+
+		if ((operation == fetch_prior || (operation == fetch_relative && position < 0)) &&
+			statement->rsr_flags.test(Rsr::PAST_BOF))
+		{
+			return false;
+		}
+	}
+
+	// Parse the blr describing the message, if there is any.
+
+	if (blr_length)
+	{
+		if (statement->rsr_user_select_format &&
+			statement->rsr_user_select_format != statement->rsr_select_format)
+		{
+			delete statement->rsr_user_select_format;
+		}
+
+		statement->rsr_user_select_format = PARSE_msg_format(blr, blr_length);
+
+		if (statement->rsr_flags.test(Rsr::FETCHED))
+			blr_length = 0;
+		else
+		{
+			delete statement->rsr_select_format;
+			statement->rsr_select_format = statement->rsr_user_select_format;
+		}
+	}
+
+	if (!statement->rsr_buffer)
+	{
+		statement->rsr_buffer = FB_NEW RMessage(0);
+		statement->rsr_message = statement->rsr_buffer;
+		statement->rsr_message->msg_next = statement->rsr_message;
+		statement->rsr_fmt_length = 0;
+	}
+
+	RMessage* message = statement->rsr_message;
+
+#ifdef DEBUG
+	fprintf(stdout, "Rows Pending in REM_fetch=%lu\n", statement->rsr_rows_pending);
+#endif
+
+	// If the fetch direction was changed, we don't need the batched rows anymore.
+	// Swallow them and reset the stream for subsequent fetches.
+
+	if (operation != statement->rsr_fetch_operation ||
+		position != statement->rsr_fetch_position)
+	{
+		while (statement->rsr_rows_pending)
+			receive_queued_packet(port, statement->rsr_id);
+
+		if (statement->rsr_flags.test(Rsr::STREAM_ERR))
+		{
+			statement->rsr_flags.clear(Rsr::STREAM_ERR);
+
+			// hvlad: prevent subsequent fetches
+			statement->rsr_flags.set(Rsr::STREAM_END);
+			statement->raiseException();
+		}
+
+		const SLONG adjustment = statement->getCursorAdjustment();
+		statement->rsr_flags.clear(Rsr::STREAM_END | Rsr::PAST_END);
+
+		// We have some messages in the queue. Reset them for reuse.
+
+		if (statement->rsr_msgs_waiting)
+		{
+			fb_assert(statement->rsr_fetch_operation == fetch_next ||
+					  statement->rsr_fetch_operation == fetch_prior);
+
+			RMessage* message = statement->rsr_message;
+			if (message)
+			{
+				statement->rsr_buffer = message;
+
+				while (true)
+				{
+					message->msg_address = NULL;
+					message = message->msg_next;
+
+					if (message == statement->rsr_message)
+						break;
+				}
+			}
+
+			statement->rsr_msgs_waiting = 0;
+		}
+
+		// If we had some rows batched and the requested scrolling is relative,
+		// then move the server cursor to the actual client's position before proceeding.
+		// We don't know the absolute client's position, but it's not really necessary.
+		// rsr_msgs_waiting shows how much we're ahead the server, so we may re-position
+		// the cursor relatively.
+
+		if (relative && adjustment)
+		{
+			const bool isAhead = (statement->rsr_fetch_operation == fetch_next);
+
+			PACKET* packet = &rdb->rdb_packet;
+			packet->p_operation = op_fetch_scroll;
+			P_SQLDATA* sqldata = &packet->p_sqldata;
+			sqldata->p_sqldata_statement = statement->rsr_id;
+			sqldata->p_sqldata_blr.cstr_length = 0;
+			sqldata->p_sqldata_blr.cstr_address = nullptr;
+			sqldata->p_sqldata_message_number = 0;	// msg_type
+			sqldata->p_sqldata_messages = statement->rsr_select_format ? 1 : 0;
+			sqldata->p_sqldata_fetch_op = fetch_relative;
+			sqldata->p_sqldata_fetch_pos = adjustment;
+
+			send_packet(port, packet);
+
+			// Receive response packets. If everything is OK, there should be two of them:
+			// first with packet->p_sqldata.p_sqldata_messages == 1 and second with
+			// packet->p_sqldata.p_sqldata_messages == 0 (end-of-batch).
+
+			do
+			{
+				receive_packet(rdb->rdb_port, packet);
+
+				// If we get an error, handle it
+				if (packet->p_operation != op_fetch_response)
+				{
+					statement->rsr_flags.set(Rsr::STREAM_ERR);
+					REMOTE_check_response(status, rdb, packet);
+					break;
+				}
+
+				// If we get end-of-stream, something went seriously wrong, thus punt
+				if (packet->p_sqldata.p_sqldata_status == 100)
+					Arg::Gds(isc_req_sync).raise();
+
+				// We should get either the requested row or the end-of-batch marker
+				fb_assert(packet->p_sqldata.p_sqldata_messages == 0 ||
+						  packet->p_sqldata.p_sqldata_messages == 1);
+
+				// Release the received message, we don't need it
+				const auto message = statement->rsr_message;
+				if (message && message->msg_address)
+				{
+					statement->rsr_message = message->msg_next;
+					message->msg_address = NULL;
+				}
+			}
+			while (packet->p_sqldata.p_sqldata_messages);
+		}
+
+		// These are the necessary conditions to continue fetching (see below)
+		fb_assert(!statement->rsr_flags.test(Rsr::STREAM_END | Rsr::STREAM_ERR));
+		fb_assert(!statement->rsr_message->msg_address);
+		fb_assert(!statement->rsr_rows_pending);
+	}
+
+	// Check to see if data is waiting.  If not, solicite data.
+
+	if ((!statement->rsr_flags.test(Rsr::STREAM_END | Rsr::STREAM_ERR) &&
+		!statement->rsr_message->msg_address && !statement->rsr_rows_pending) ||
+		(	// Low in inventory
+			(statement->rsr_rows_pending <= statement->rsr_reorder_level) &&
+			(statement->rsr_msgs_waiting <= statement->rsr_reorder_level) &&
+			// Pipelining causes both server & client to
+			// write at the same time. In XNET, writes
+			// block for the other end to read -  and so when both
+			// attempt to write simultaneously, they end up
+			// waiting indefinitely for the other end to read.
+			(port->port_type != rem_port::XNET) &&
+			// We're fetching either forward or backward
+			(operation == fetch_next || operation == fetch_prior) &&
+			// We've reached end-of-stream or there was an error
+			!statement->rsr_flags.test(Rsr::STREAM_END | Rsr::STREAM_ERR) &&
+			// No error pending
+			!statement->haveException() ))
+	{
+		// set up the packet for the other guy...
+
+		PACKET* packet = &rdb->rdb_packet;
+		packet->p_operation = (operation == fetch_next) ? op_fetch : op_fetch_scroll;
+		P_SQLDATA* sqldata = &packet->p_sqldata;
+		sqldata->p_sqldata_statement = statement->rsr_id;
+		sqldata->p_sqldata_blr.cstr_length = blr_length;
+		sqldata->p_sqldata_blr.cstr_address = const_cast<unsigned char*>(blr);
+		sqldata->p_sqldata_message_number = 0;	// msg_type
+		sqldata->p_sqldata_messages = statement->rsr_select_format ? 1 : 0;
+		sqldata->p_sqldata_fetch_op = operation;
+		sqldata->p_sqldata_fetch_pos = position;
+
+		if (statement->rsr_select_format)
+		{
+			if (operation == fetch_next || operation == fetch_prior)
+			{
+				sqldata->p_sqldata_messages = REMOTE_compute_batch_size(
+					port, 0, op_fetch_response, statement->rsr_select_format);
+			}
+
+			// Reorder data when the local buffer is half empty
+
+			statement->rsr_reorder_level = sqldata->p_sqldata_messages / 2;
+#ifdef DEBUG
+			fprintf(stdout, "Recalculating Rows Pending in REM_fetch=%lu\n",
+					   statement->rsr_rows_pending);
+#endif
+		}
+
+		statement->rsr_rows_pending += sqldata->p_sqldata_messages;
+
+		// We've either got data, or some is on the way, or we have an error, or we have EOF
+
+		if (!(statement->rsr_msgs_waiting ||
+			statement->rsr_rows_pending ||
+			statement->haveException() ||
+			statement->rsr_flags.test(Rsr::STREAM_END)))
+		{
+			// We were asked to fetch from the statement, not ready for it.
+			// Give up before sending something to the server.
+			Arg::Gds(isc_req_sync).raise();
+		}
+
+		// Make the batch request - and force the packet over the wire
+
+		send_packet(port, packet);
+
+		statement->rsr_batch_count++;
+		statement->rsr_fetch_operation = operation;
+		statement->rsr_fetch_position = position;
+
+		// Queue up receipt of the pending data
+
+		enqueue_receive(port, batch_dsql_fetch, rdb, statement, NULL);
+
+		fb_assert(statement->rsr_rows_pending || !statement->rsr_select_format);
+	}
+
+	// Receive queued responses until we have some data for this cursor
+	// or an error status has been received.
+
+	// We've either got data, or some is on the way, or we have an error, or we have EOF
+
+	fb_assert(statement->rsr_msgs_waiting || statement->rsr_rows_pending ||
+			  statement->haveException() || statement->rsr_flags.test(Rsr::STREAM_END));
+
+	while (!statement->haveException() &&			// received a database error
+		!statement->rsr_flags.test(Rsr::STREAM_END) &&	// reached end of stream
+		statement->rsr_msgs_waiting < 2	&&			// Have looked ahead for end of batch
+		statement->rsr_rows_pending)
+	{
+		// Hit end of batch
+		receive_queued_packet(port, statement->rsr_id);
+	}
+
+	if (!statement->rsr_msgs_waiting)
+	{
+		if (statement->rsr_flags.test(Rsr::STREAM_END))
+		{
+			// hvlad: we may have queued fetch packet but received end-of-stream before start
+			// handling of this packet. Handle it now.
+			clear_stmt_que(port, statement);
+
+			// hvlad: as we processed all queued packets at code above we can leave Rsr::EOF_SET flag.
+			// It allows us to return EOF for all subsequent isc_dsql_fetch calls until statement
+			// will be re-executed (and without roundtrip to remote server).
+			//statement->rsr_flags.clear(Rsr::STREAM_END);
+
+			if (statement->rsr_flags.test(Rsr::BOF_SET))
+				statement->rsr_flags.set(Rsr::PAST_BOF);
+
+			if (statement->rsr_flags.test(Rsr::EOF_SET))
+				statement->rsr_flags.set(Rsr::PAST_EOF);
+
+			return false;
+		}
+
+		if (statement->rsr_flags.test(Rsr::STREAM_ERR))
+		{
+			// The previous batch of receives ended with an error status.
+			// We're all done returning data in the local queue.
+			// Return that error status vector to the user.
+
+			// Stuff in the error result to the user's vector
+
+			statement->rsr_flags.clear(Rsr::STREAM_ERR);
+
+			// hvlad: prevent subsequent fetches
+			statement->rsr_flags.set(Rsr::STREAM_END);
+			statement->raiseException();
+		}
+	}
+
+	statement->rsr_msgs_waiting--;
+
+	message = statement->rsr_message;
+	statement->rsr_message = message->msg_next;
+
+	if (statement->rsr_user_select_format->fmt_length != msg_length)
+	{
+		status_exception::raise(Arg::Gds(isc_port_len) <<
+			Arg::Num(msg_length) << Arg::Num(statement->rsr_user_select_format->fmt_length));
+	}
+
+	if (statement->rsr_user_select_format == statement->rsr_select_format)
+	{
+		if (!msg || !message->msg_address)
+		{
+			move_error(Arg::Gds(isc_dsql_sqlda_err));
+			// Msg 263 SQLDA missing or wrong number of variables
+		}
+
+		memcpy(msg, message->msg_address, msg_length);
+	}
+	else
+	{
+		mov_dsql_message(message->msg_address, statement->rsr_select_format, msg,
+						 statement->rsr_user_select_format);
+	}
+
+	message->msg_address = NULL;
+	return true;
+}
+
+
+int ResultSet::fetchNext(CheckStatusWrapper* user_status, void* buffer)
+{
+	try
+	{
+		return fetch(user_status, buffer, fetch_next) ?
+			IStatus::RESULT_OK : IStatus::RESULT_NO_DATA;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+	}
+
+	return IStatus::RESULT_ERROR;
+}
+
+
+int ResultSet::fetchPrior(CheckStatusWrapper* user_status, void* buffer)
+{
+	try
+	{
+		if (!(flags & IStatement::CURSOR_TYPE_SCROLLABLE))
+			(Arg::Gds(isc_invalid_fetch_option) << Arg::Str("PRIOR")).raise();
+
+		return fetch(user_status, buffer, fetch_prior) ?
+			IStatus::RESULT_OK : IStatus::RESULT_NO_DATA;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+	}
+
+	return IStatus::RESULT_ERROR;
+}
+
+
+int ResultSet::fetchFirst(CheckStatusWrapper* user_status, void* buffer)
+{
+	try
+	{
+		if (!(flags & IStatement::CURSOR_TYPE_SCROLLABLE))
+			(Arg::Gds(isc_invalid_fetch_option) << Arg::Str("FIRST")).raise();
+
+		return fetch(user_status, buffer, fetch_first) ?
+			IStatus::RESULT_OK : IStatus::RESULT_NO_DATA;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+	}
+
+	return IStatus::RESULT_ERROR;
+}
+
+
+int ResultSet::fetchLast(CheckStatusWrapper* user_status, void* buffer)
+{
+	try
+	{
+		if (!(flags & IStatement::CURSOR_TYPE_SCROLLABLE))
+			(Arg::Gds(isc_invalid_fetch_option) << Arg::Str("LAST")).raise();
+
+		return fetch(user_status, buffer, fetch_last) ?
+			IStatus::RESULT_OK : IStatus::RESULT_NO_DATA;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+	}
+
+	return IStatus::RESULT_ERROR;
+}
+
+
+int ResultSet::fetchAbsolute(CheckStatusWrapper* user_status, int position, void* buffer)
+{
+	try
+	{
+		if (!(flags & IStatement::CURSOR_TYPE_SCROLLABLE))
+			(Arg::Gds(isc_invalid_fetch_option) << Arg::Str("ABSOLUTE")).raise();
+
+		return fetch(user_status, buffer, fetch_absolute, position) ?
+			IStatus::RESULT_OK : IStatus::RESULT_NO_DATA;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+	}
+
+	return IStatus::RESULT_ERROR;
+}
+
+
+int ResultSet::fetchRelative(CheckStatusWrapper* user_status, int offset, void* buffer)
+{
+	try
+	{
+		if (!(flags & IStatement::CURSOR_TYPE_SCROLLABLE))
+			(Arg::Gds(isc_invalid_fetch_option) << Arg::Str("RELATIVE")).raise();
+
+		return fetch(user_status, buffer, fetch_relative, offset) ?
+			IStatus::RESULT_OK : IStatus::RESULT_NO_DATA;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+	}
+
+	return IStatus::RESULT_ERROR;
+}
+
+
 FB_BOOLEAN ResultSet::isEof(CheckStatusWrapper* status)
 {
 	try
@@ -4474,12 +5038,16 @@ FB_BOOLEAN ResultSet::isEof(CheckStatusWrapper* status)
 		Rsr* statement = stmt->getStatement();
 		CHECK_HANDLE(statement, isc_bad_req_handle);
 
-		return statement->rsr_flags.test(Rsr::EOF_SET) ? FB_TRUE : FB_FALSE;
+		if (!statement->rsr_flags.test(Rsr::FETCHED))
+			return FB_FALSE;
+
+		return statement->rsr_flags.test(Rsr::PAST_EOF) ? FB_TRUE : FB_FALSE;
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 	}
+
 	return FB_FALSE;
 }
 
@@ -4488,7 +5056,21 @@ FB_BOOLEAN ResultSet::isBof(CheckStatusWrapper* status)
 {
 	try
 	{
-		status_exception::raise(Arg::Gds(isc_wish_list));
+		reset(status);
+
+		// Check and validate handles, etc.
+
+		if (!stmt)
+		{
+			Arg::Gds(isc_dsql_cursor_err).raise();
+		}
+		Rsr* statement = stmt->getStatement();
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+
+		if (!statement->rsr_flags.test(Rsr::FETCHED))
+			return FB_TRUE;
+
+		return statement->rsr_flags.test(Rsr::PAST_BOF) ? FB_TRUE : FB_FALSE;
 	}
 	catch (const Exception& ex)
 	{
@@ -4511,6 +5093,38 @@ IMessageMetadata* ResultSet::getMetadata(CheckStatusWrapper* status)
 
 	outputFormat->addRef();
 	return outputFormat;
+}
+
+void ResultSet::getInfo(CheckStatusWrapper* status,
+						unsigned int itemsLength, const unsigned char* items,
+						unsigned int bufferLength, unsigned char* buffer)
+{
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+
+		if (!stmt)
+			Arg::Gds(isc_dsql_cursor_err).raise();
+
+		const auto statement = stmt->getStatement();
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+
+		const auto rdb = statement->rsr_rdb;
+		const auto port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		if (port->port_protocol < PROTOCOL_FETCH_SCROLL)
+			unsupported();
+
+		info(status, rdb, op_info_cursor, statement->rsr_id, 0,
+			 itemsLength, items, 0, 0, bufferLength, buffer);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
 }
 
 void ResultSet::freeClientData(CheckStatusWrapper* status, bool force)
@@ -4592,7 +5206,7 @@ void ResultSet::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void ResultSet::close(CheckStatusWrapper* status)
+void ResultSet::internalClose(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -4607,6 +5221,20 @@ void ResultSet::close(CheckStatusWrapper* status)
 
 	reset(status);
 	freeClientData(status);
+}
+
+
+void ResultSet::close(CheckStatusWrapper* status)
+{
+	internalClose(status);
+	if (status->isEmpty())
+		release();
+}
+
+
+void ResultSet::deprecatedClose(CheckStatusWrapper* status)
+{
+	internalClose(status);
 }
 
 
@@ -5300,12 +5928,11 @@ void Request::receive(CheckStatusWrapper* status, int level, unsigned int msg_ty
 				(tail->rrq_rows_pending <= tail->rrq_reorder_level &&	// Low in inventory
 					tail->rrq_msgs_waiting <= tail->rrq_reorder_level &&
 					// Pipelining causes both server & client to
-					// write at the same time. In named pipes, writes
+					// write at the same time. In XNET, writes
 					// block for the other end to read -  and so when both
 					// attempt to write simultaenously, they end up
-					// waiting indefinetly for the other end to read
-					(port->port_type != rem_port::PIPE) &&	// not named pipe on NT
-					(port->port_type != rem_port::XNET) &&	// not shared memory on NT
+					// waiting indefinetly for the other end to read.
+					(port->port_type != rem_port::XNET) &&
 					request->rrq_max_msg <= 1)))
 		{
 			// there's only one message type
@@ -5493,7 +6120,7 @@ void Request::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Request::free(CheckStatusWrapper* status)
+void Request::internalFree(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -5507,6 +6134,20 @@ void Request::free(CheckStatusWrapper* status)
  **************************************/
 	reset(status);
 	freeClientData(status);
+}
+
+
+void Request::free(CheckStatusWrapper* status)
+{
+	internalFree(status);
+	if (status->isEmpty())
+		release();
+}
+
+
+void Request::deprecatedFree(CheckStatusWrapper* status)
+{
+	internalFree(status);
 }
 
 
@@ -5677,7 +6318,7 @@ void Transaction::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Transaction::rollback(CheckStatusWrapper* status)
+void Transaction::internalRollback(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -5694,7 +6335,21 @@ void Transaction::rollback(CheckStatusWrapper* status)
 }
 
 
-void Transaction::disconnect(CheckStatusWrapper* status)
+void Transaction::rollback(CheckStatusWrapper* status)
+{
+	internalRollback(status);
+	if (status->isEmpty())
+		release();
+}
+
+
+void Transaction::deprecatedRollback(CheckStatusWrapper* status)
+{
+	internalRollback(status);
+}
+
+
+void Transaction::internalDisconnect(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -5711,6 +6366,20 @@ void Transaction::disconnect(CheckStatusWrapper* status)
 	{
 		ex.stuffException(status);
 	}
+}
+
+
+void Transaction::disconnect(CheckStatusWrapper* status)
+{
+	internalDisconnect(status);
+	if (status->isEmpty())
+		release();
+}
+
+
+void Transaction::deprecatedDisconnect(CheckStatusWrapper* status)
+{
+	internalDisconnect(status);
 }
 
 
@@ -5874,7 +6543,8 @@ Firebird::IService* RProvider::attachSvc(CheckStatusWrapper* status, const char*
 		add_other_params(port, newSpb, spbParam);
 
 		IntlSpb intl;
-		init(status, cBlock, port, op_service_attach, expanded_name, newSpb, intl, cryptCallback);
+		if (!init(status, cBlock, port, op_service_attach, expanded_name, newSpb, intl, cryptCallback))
+			return NULL;
 
 		Firebird::IService* s = FB_NEW Service(rdb);
 		s->addRef();
@@ -5946,14 +6616,17 @@ void Service::freeClientData(CheckStatusWrapper* status, bool force)
 		rem_port* port = rdb->rdb_port;
 		RemotePortGuard portGuard(port, FB_FUNCTION);
 
-		try
+		if (!(port->port_flags & PORT_detached))
 		{
-			release_object(status, rdb, op_service_detach, rdb->rdb_id);
-		}
-		catch (const Exception&)
-		{
-			if (!force)
-				throw;
+			try
+			{
+				release_object(status, rdb, op_service_detach, rdb->rdb_id);
+			}
+			catch (const Exception&)
+			{
+				if (!force)
+					throw;
+			}
 		}
 		disconnect(port);
 		rdb = NULL;
@@ -5965,7 +6638,7 @@ void Service::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Service::detach(CheckStatusWrapper* status)
+void Service::internalDetach(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -5979,6 +6652,20 @@ void Service::detach(CheckStatusWrapper* status)
  **************************************/
 	reset(status);
 	freeClientData(status);
+}
+
+
+void Service::detach(CheckStatusWrapper* status)
+{
+	internalDetach(status);
+	if (status->isEmpty())
+		release();
+}
+
+
+void Service::deprecatedDetach(CheckStatusWrapper* status)
+{
+	internalDetach(status);
 }
 
 
@@ -6010,6 +6697,28 @@ void Service::query(CheckStatusWrapper* status,
 		info(status, rdb, op_service_info, rdb->rdb_id, 0,
 			 sendLength, sendItems, receiveLength, receiveItems,
 			 bufferLength, buffer);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+
+void Service::cancel(CheckStatusWrapper* status)
+{
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+		CHECK_HANDLE(rdb, isc_bad_svc_handle);
+/*
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+*/
+
+		Arg::Gds(isc_wish_list).raise();
 	}
 	catch (const Exception& ex)
 	{
@@ -6668,20 +7377,6 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 #ifdef WIN_NT
 	if (ISC_analyze_protocol(PROTOCOL_XNET, attach_name, node_name, NULL, needFile))
 		port = XNET_analyze(&cBlock, attach_name, flags & ANALYZE_USER_VFY, cBlock.getConfig(), ref_db_name);
-	else if (ISC_analyze_protocol(PROTOCOL_WNET, attach_name, node_name, WNET_SEPARATOR, needFile) ||
-		ISC_analyze_pclan(attach_name, node_name))
-	{
-		if (node_name.isEmpty())
-			node_name = WNET_LOCALHOST;
-		else
-		{
-			ISC_unescape(node_name);
-			ISC_utf8ToSystem(node_name);
-		}
-
-		port = WNET_analyze(&cBlock, attach_name, node_name.c_str(), flags & ANALYZE_USER_VFY,
-			cBlock.getConfig(), ref_db_name);
-	}
 	else
 #endif
 
@@ -6714,15 +7409,13 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 		if (!port)
 		{
 			PathName expanded_name = attach_name;
-			ISC_expand_share(expanded_name);
-
 			if (ISC_analyze_pclan(expanded_name, node_name))
 			{
 				ISC_unescape(node_name);
 				ISC_utf8ToSystem(node_name);
 
-				port = WNET_analyze(&cBlock, expanded_name, node_name.c_str(), flags & ANALYZE_USER_VFY,
-					cBlock.getConfig(), ref_db_name);
+				port = INET_analyze(&cBlock, expanded_name, node_name.c_str(), flags & ANALYZE_USER_VFY, pb,
+					cBlock.getConfig(), ref_db_name, cryptCb);
 			}
 		}
 #endif
@@ -6756,12 +7449,6 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 				port = XNET_analyze(&cBlock, attach_name, flags & ANALYZE_USER_VFY,
 					cBlock.getConfig(), ref_db_name);
 			}
-
-			if (!port)
-			{
-				port = WNET_analyze(&cBlock, attach_name, WNET_LOCALHOST, flags & ANALYZE_USER_VFY,
-					cBlock.getConfig(), ref_db_name);
-			}
 #endif
 			if (!port)
 			{
@@ -6780,10 +7467,11 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 	}
 	catch (const Exception&)
 	{
-		disconnect(port);
+		disconnect(port, false);
 		throw;
 	}
 
+	outPorts->registerPort(port);
 	return port;
 }
 
@@ -6798,27 +7486,21 @@ static void clear_stmt_que(rem_port* port, Rsr* statement)
  *
  * Functional description
  *
- * Receive and handle all queued packets for completely
- * fetched statement. There is must be no more than one
- * such packet and it must contain isc_req_sync response.
+ * Receive and handle all queued packets for a completely fetched statement.
+ * There must be no more than one such packet.
  *
  **************************************/
-
-	fb_assert(statement->rsr_batch_count == 0 || statement->rsr_batch_count == 1);
+	fb_assert(statement->rsr_batch_count <= 1);
 
 	while (statement->rsr_batch_count)
-	{
 		receive_queued_packet(port, statement->rsr_id);
 
-		// We must receive isc_req_sync as we did fetch after EOF
-		fb_assert(statement->haveException() == isc_req_sync);
-	}
-
 	// hvlad: clear isc_req_sync error as it is received because of our batch
-	// fetching code, not because of wrong client application
-	if (statement->haveException() == isc_req_sync) {
+	// fetching code, not because of wrong client application.
+	// dimitr: modern engine versions do not pass isc_req_sync to the client,
+	// but it's possible if we're connected to the older one.
+	if (statement->haveException() == isc_req_sync)
 		statement->clearException();
-	}
 }
 
 static void batch_dsql_fetch(rem_port*	port,
@@ -6869,8 +7551,8 @@ static void batch_dsql_fetch(rem_port*	port,
 	// to handoff to them.  We'll grab the whole batch when we need to
 	// receive a response for a DIFFERENT network request on the wire,
 	// so we have to clear the wire before the response can be received
-	// In addtion to the above we grab all the records in case of XNET as
-	// we need to clear the queue
+	// In addition to the above we grab all the records in case of XNET as
+	// we need to clear the queue.
 	const bool clear_queue = (id != statement->rsr_id || port->port_type == rem_port::XNET);
 
 	statement->rsr_flags.set(Rsr::FETCHED);
@@ -6889,9 +7571,9 @@ static void batch_dsql_fetch(rem_port*	port,
 
 			new_msg->msg_next = message;
 
-			while (message->msg_next != new_msg->msg_next) {
+			while (message->msg_next != new_msg->msg_next)
 				message = message->msg_next;
-			}
+
 			message->msg_next = new_msg;
 		}
 
@@ -6904,12 +7586,14 @@ static void batch_dsql_fetch(rem_port*	port,
 			statement->rsr_rows_pending = 0;
 			--statement->rsr_batch_count;
 			dequeue_receive(port);
+
 			throw;
 		}
 
 		if (packet->p_operation != op_fetch_response)
 		{
 			statement->rsr_flags.set(Rsr::STREAM_ERR);
+
 			try
 			{
 				REMOTE_check_response(&status, rdb, packet);
@@ -6924,6 +7608,7 @@ static void batch_dsql_fetch(rem_port*	port,
 			statement->rsr_rows_pending = 0;
 			--statement->rsr_batch_count;
 			dequeue_receive(port);
+
 			break;
 		}
 
@@ -6933,17 +7618,28 @@ static void batch_dsql_fetch(rem_port*	port,
 		{
 			if (packet->p_sqldata.p_sqldata_status == 100)
 			{
-				statement->rsr_flags.set(Rsr::EOF_SET);
+				const auto operation = statement->rsr_fetch_operation;
+				const auto position = statement->rsr_fetch_position;
+
+				const bool forward =
+					(operation == fetch_next || operation == fetch_last ||
+					((operation == fetch_absolute || operation == fetch_relative) && position > 0));
+
+				if (forward)
+					statement->rsr_flags.set(Rsr::EOF_SET);
+				else
+					statement->rsr_flags.set(Rsr::BOF_SET);
+
 				statement->rsr_rows_pending = 0;
 #ifdef DEBUG
 				fprintf(stdout, "Resetting Rows Pending in batch_dsql_fetch=%lu\n",
 						   statement->rsr_rows_pending);
 #endif
 			}
-			--statement->rsr_batch_count;
-			if (statement->rsr_batch_count == 0) {
+
+			if (--statement->rsr_batch_count == 0)
 				statement->rsr_rows_pending = 0;
-			}
+
 			dequeue_receive(port);
 
 			// clear next queued batch(es) if present
@@ -6957,15 +7653,17 @@ static void batch_dsql_fetch(rem_port*	port,
 			}
 			break;
 		}
+
 		statement->rsr_msgs_waiting++;
 		statement->rsr_rows_pending--;
+
 #ifdef DEBUG
 		fprintf(stdout, "Decrementing Rows Pending in batch_dsql_fetch=%lu\n",
 				   statement->rsr_rows_pending);
 #endif
-		if (!clear_queue) {
+
+		if (!clear_queue)
 			break;
-		}
 	}
 }
 
@@ -7139,7 +7837,7 @@ static void clear_queue(rem_port* port)
 }
 
 
-static void disconnect( rem_port* port)
+static void finalize(rem_port* port)
 {
 /**************************************
  *
@@ -7148,9 +7846,16 @@ static void disconnect( rem_port* port)
  **************************************
  *
  * Functional description
- *	Disconnect a port and free its memory.
+ *	Disconnect remote port.
  *
  **************************************/
+
+	// no need to do something if port already detached
+	if (port->port_flags & PORT_detached)
+		return;
+
+	// Avoid async send during finalize
+	RefMutexGuard guard(*port->port_write_sync, FB_FUNCTION);
 
 	// Send a disconnect to the server so that it
 	// gracefully terminates.
@@ -7172,26 +7877,36 @@ static void disconnect( rem_port* port)
 			}
 		}
 
-		// BAND-AID:
-		// It seems as if we are disconnecting the port
-		// on both the server and client side.  For now
-		// let the server handle this for named pipes
+		packet->p_operation = op_disconnect;
+		port->send(packet);
 
-		// 8-Aug-1997  M.  Duquette
-		// R.  Kumar
-		// M.  Romanini
-
-		if (port->port_type != rem_port::PIPE)
-		{
-			packet->p_operation = op_disconnect;
-			port->send(packet);
-		}
 		REMOTE_free_packet(port, packet);
+		delete rdb;
+		port->port_context = nullptr;
 	}
 
 	// Cleanup the queue
 
 	delete port->port_deferred_packets;
+	port->port_deferred_packets = nullptr;
+
+	port->port_flags |= PORT_detached;
+}
+
+static void disconnect(rem_port* port, bool rmRef)
+{
+/**************************************
+ *
+ *	d i s c o n n e c t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Disconnect a port and free its memory.
+ *
+ **************************************/
+
+	finalize(port);
 
 	// Clear context reference for the associated event handler
 	// to avoid SEGV during shutdown
@@ -7207,7 +7922,11 @@ static void disconnect( rem_port* port)
 
 	port->port_flags |= PORT_disconnect;
 	port->disconnect();
-	delete rdb;
+
+	// Remove from active ports
+
+	if (rmRef)
+		outPorts->unRegisterPort(port);
 }
 
 
@@ -7608,7 +8327,7 @@ static void authReceiveResponse(bool havePacket, ClntAuthBlock& cBlock, rem_port
 	(Arg::Gds(isc_login) << Arg::StatusVector(&s)).raise();
 }
 
-static void init(CheckStatusWrapper* status, ClntAuthBlock& cBlock, rem_port* port, P_OP op, PathName& file_name,
+static bool init(CheckStatusWrapper* status, ClntAuthBlock& cBlock, rem_port* port, P_OP op, PathName& file_name,
 	ClumpletWriter& dpb, IntlParametersBlock& intlParametersBlock, ICryptKeyCallback* cryptCallback)
 {
 /**************************************
@@ -7658,12 +8377,23 @@ static void init(CheckStatusWrapper* status, ClntAuthBlock& cBlock, rem_port* po
 		send_packet(port, packet);
 
 		authReceiveResponse(false, cBlock, port, rdb, status, packet, true);
+		return true;
+	}
+	catch (const Exception& ex)
+	{
+		// report primary init error
+		ex.stuffException(status);
+	}
+
+	try
+	{
+		disconnect(port);
 	}
 	catch (const Exception&)
 	{
-		disconnect(port);
-		throw;
+		// ignore secondary error
 	}
+	return false;
 }
 
 
@@ -7951,8 +8681,6 @@ static void receive_packet_noqueue(rem_port* port, PACKET* packet)
 
 	// Receive responses for all deferred packets that were already sent
 
-	Rdb* rdb = port->port_context;
-
 	if (port->port_deferred_packets)
 	{
 		while (port->port_deferred_packets->getCount())
@@ -7962,17 +8690,30 @@ static void receive_packet_noqueue(rem_port* port, PACKET* packet)
 				break;
 
 			OBJCT stmt_id = 0;
-			bool bCheckResponse = false, bFreeStmt = false;
+			bool bCheckResponse = false, bFreeStmt = false, bAssign = false;
 
-			if (p->packet.p_operation == op_execute)
+			switch (p->packet.p_operation)
 			{
+			case op_execute:
 				stmt_id = p->packet.p_sqldata.p_sqldata_statement;
 				bCheckResponse = true;
-			}
-			else if (p->packet.p_operation == op_free_statement)
-			{
+				bAssign = true;
+				break;
+
+			case op_batch_msg:
+				stmt_id = p->packet.p_batch_msg.p_batch_statement;
+				bCheckResponse = true;
+				break;
+
+			case op_batch_create:
+				stmt_id = p->packet.p_batch_create.p_batch_statement;
+				bCheckResponse = true;
+				break;
+
+			case op_free_statement:
 				stmt_id = p->packet.p_sqlfree.p_sqlfree_statement;
 				bFreeStmt = (p->packet.p_sqlfree.p_sqlfree_option == DSQL_drop);
+				break;
 			}
 
 			receive_packet_with_callback(port, &p->packet);
@@ -7983,9 +8724,9 @@ static void receive_packet_noqueue(rem_port* port, PACKET* packet)
 
 			if (bCheckResponse)
 			{
-				bool bAssign = true;
 				try
 				{
+					Rdb* rdb = port->port_context;
 					LocalStatus ls;
 					CheckStatusWrapper status(&ls);
 					REMOTE_check_response(&status, rdb, &p->packet);
@@ -8417,6 +9158,15 @@ static void send_packet(rem_port* port, PACKET* packet)
 
 	RefMutexGuard guard(*port->port_write_sync, FB_FUNCTION);
 
+	if (port->port_flags & PORT_detached || port->port_state == rem_port::BROKEN)
+	{
+		(Arg::Gds(isc_net_write_err)
+#ifdef DEV_BUILD
+			<< Arg::Gds(isc_random) << "port detached"
+#endif
+		).raise();
+	}
+
 	// Send packets that were deferred
 
 	if (port->port_deferred_packets)
@@ -8466,6 +9216,15 @@ static void send_partial_packet(rem_port* port, PACKET* packet)
  **************************************/
 
 	RefMutexGuard guard(*port->port_write_sync, FB_FUNCTION);
+
+	if (port->port_flags & PORT_detached || port->port_state == rem_port::BROKEN)
+	{
+		(Arg::Gds(isc_net_write_err)
+#ifdef DEV_BUILD
+			<< Arg::Gds(isc_random) << "port detached"
+#endif
+		).raise();
+	}
 
 	// Send packets that were deferred
 
@@ -8678,6 +9437,20 @@ static void cleanDpb(Firebird::ClumpletWriter& dpb, const ParametersSet* tags)
 }
 
 } //namespace Remote
+
+
+void ClientPortsCleanup::closePort(rem_port* port)
+{
+	RefMutexEnsureUnlock guard(*port->port_sync, FB_FUNCTION);
+
+	if (port->port_flags & PORT_disconnect)
+		return;
+
+	if (guard.tryEnter())
+		Remote::finalize(port);
+	else
+		PortsCleanup::closePort(port);
+}
 
 
 RmtAuthBlock::RmtAuthBlock(const Firebird::AuthReader::AuthBlock& aBlock)

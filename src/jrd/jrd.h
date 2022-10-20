@@ -90,7 +90,7 @@
 #include "../jrd/lck.h"
 
 // Error codes
-#include "gen/iberror.h"
+#include "iberror.h"
 
 struct dsc;
 
@@ -106,8 +106,8 @@ const unsigned MAX_CALLBACKS	= 50;
 class thread_db;
 class Attachment;
 class jrd_tra;
-class jrd_req;
-class JrdStatement;
+class Request;
+class Statement;
 class jrd_file;
 class Format;
 class BufferDesc;
@@ -136,7 +136,7 @@ class Trigger
 public:
 	Firebird::HalfStaticArray<UCHAR, 128> blr;			// BLR code
 	Firebird::HalfStaticArray<UCHAR, 128> debugInfo;	// Debug info
-	JrdStatement* statement;							// Compiled statement
+	Statement* statement;							// Compiled statement
 	bool		releaseInProgress;
 	bool		sysTrigger;
 	FB_UINT64	type;						// Trigger type
@@ -248,7 +248,7 @@ public:
 
 	virtual SLONG getSclType() const
 	{
-		return SCL_object_procedure;
+		return obj_procedures;
 	}
 
 	virtual void releaseFormat()
@@ -286,14 +286,19 @@ public:
 	NestConst<ValueExprNode>	prm_default_value;
 	bool		prm_nullable;
 	prm_mech_t	prm_mechanism;
-	MetaName prm_name;			// asciiz name
+	MetaName prm_name;
 	MetaName prm_field_source;
+	MetaName prm_type_of_column;
+	MetaName prm_type_of_table;
+	Nullable<USHORT> prm_text_type;
 	FUN_T		prm_fun_mechanism;
 
 public:
 	explicit Parameter(MemoryPool& p)
 		: prm_name(p),
-		  prm_field_source(p)
+		  prm_field_source(p),
+		  prm_type_of_column(p),
+		  prm_type_of_table(p)
 	{
 	}
 };
@@ -305,8 +310,10 @@ class IndexBlock : public pool_alloc<type_idb>
 public:
 	IndexBlock*	idb_next;
 	ValueExprNode* idb_expression;			// node tree for index expression
-	JrdStatement* idb_expression_statement;	// statement for index expression evaluation
+	Statement* idb_expression_statement;	// statement for index expression evaluation
 	dsc			idb_expression_desc;		// descriptor for expression result
+	BoolExprNode* idb_condition;			// node tree for index condition
+	Statement* idb_condition_statement;		// statement for index condition evaluation
 	Lock*		idb_lock;					// lock to synchronize changes to index
 	USHORT		idb_id;
 };
@@ -369,7 +376,7 @@ const USHORT WIN_garbage_collect	= 8;	// scan left a page for garbage collector
 
 
 #ifdef USE_ITIMER
-class TimeoutTimer FB_FINAL :
+class TimeoutTimer final :
 	public Firebird::RefCntIface<Firebird::ITimerImpl<TimeoutTimer, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -506,7 +513,7 @@ private:
 	Database*	database;
 	Attachment*	attachment;
 	jrd_tra*	transaction;
-	jrd_req*	request;
+	Request*	request;
 	RuntimeStatistics *reqStat, *traStat, *attStat, *dbbStat;
 
 public:
@@ -591,17 +598,17 @@ public:
 
 	void setTransaction(jrd_tra* val);
 
-	jrd_req* getRequest()
+	Request* getRequest()
 	{
 		return request;
 	}
 
-	const jrd_req* getRequest() const
+	const Request* getRequest() const
 	{
 		return request;
 	}
 
-	void setRequest(jrd_req* val);
+	void setRequest(Request* val);
 
 	SSHORT getCharSet() const;
 
@@ -1029,6 +1036,37 @@ namespace Jrd {
 		BackgroundContextHolder& operator=(const BackgroundContextHolder&);
 	};
 
+	class AttachmentHolder
+	{
+	public:
+		static const unsigned ATT_LOCK_ASYNC			= 1;
+		static const unsigned ATT_DONT_LOCK				= 2;
+		static const unsigned ATT_NO_SHUTDOWN_CHECK		= 4;
+		static const unsigned ATT_NON_BLOCKING			= 8;
+
+		AttachmentHolder(thread_db* tdbb, StableAttachmentPart* sa, unsigned lockFlags, const char* from);
+		~AttachmentHolder();
+
+	private:
+		Firebird::RefPtr<StableAttachmentPart> sAtt;
+		bool async;			// async mutex should be locked instead normal
+		bool nolock; 		// if locked manually, no need to take lock recursively
+		bool blocking;		// holder instance is blocking other instances
+
+	private:
+		// copying is prohibited
+		AttachmentHolder(const AttachmentHolder&);
+		AttachmentHolder& operator =(const AttachmentHolder&);
+	};
+
+	class EngineContextHolder final : public ThreadContextHolder, private AttachmentHolder, private DatabaseContextHolder
+	{
+	public:
+		template <typename I>
+		EngineContextHolder(Firebird::CheckStatusWrapper* status, I* interfacePtr, const char* from,
+							unsigned lockFlags = 0);
+	};
+
 	class AstLockHolder : public Firebird::ReadLockGuard
 	{
 	public:
@@ -1098,14 +1136,29 @@ namespace Jrd {
 				fb_assert(type == UNNECESSARY || m_ref.hasData());
 
 				if (m_ref.hasData())
-					m_ref->getMutex()->leave();
+					m_ref->getSync()->leave();
+			}
+		}
+
+		EngineCheckout(Attachment* att, const char* from, Type type = REQUIRED)
+			: m_tdbb(nullptr), m_from(from)
+		{
+			if (type != AVOID)
+			{
+				fb_assert(type == UNNECESSARY || att);
+
+				if (att && att->att_use_count)
+				{
+					m_ref = att->getStable();
+					m_ref->getSync()->leave();
+				}
 			}
 		}
 
 		~EngineCheckout()
 		{
 			if (m_ref.hasData())
-				m_ref->getMutex()->enter(m_from);
+				m_ref->getSync()->enter(m_from);
 
 			// If we were signalled to cancel/shutdown, react as soon as possible.
 			// We cannot throw immediately, but we can reschedule ourselves.

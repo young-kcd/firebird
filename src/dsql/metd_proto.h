@@ -34,7 +34,7 @@
 namespace Jrd {
 	typedef Firebird::GenericMap<Jrd::MetaNamePair> MetaNamePairMap;
 
-	class dsql_req;
+	class DsqlRequest;
 	class DsqlCompilerScratch;
 	class jrd_tra;
 	class dsql_intlsym;
@@ -67,7 +67,7 @@ Jrd::dsql_rel* METD_get_relation(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*, const
 bool METD_get_type(Jrd::jrd_tra*, const Jrd::MetaName&, const char*, SSHORT*);
 Jrd::dsql_rel* METD_get_view_base(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*, const char* view_name,
 	Jrd::MetaNamePairMap& fields);
-Jrd::dsql_rel* METD_get_view_relation(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*, const char* view_name,
-	const char* relation_or_alias);
+bool METD_get_view_relation(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*, const Jrd::MetaName& view_name,
+	const Jrd::MetaName& relation_or_alias, Jrd::dsql_rel*& relation, Jrd::dsql_prc*& procedure);
 
 #endif // DSQL_METD_PROTO_H

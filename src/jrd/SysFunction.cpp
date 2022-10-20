@@ -223,6 +223,7 @@ bool dscHasData(const dsc* param);
 // specific setParams functions
 void setParamsAsciiVal(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsBin(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
+void setParamsBlobAppend(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsCharToUuid(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsDateDiff(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
@@ -258,8 +259,10 @@ void makeAbs(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* r
 void makeAsciiChar(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeBin(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeBinShift(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+void makeBlobAppend(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeCeilFloor(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+void makeDateDiff(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeDecode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeEncode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeDecodeHex(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
@@ -296,6 +299,7 @@ dsc* evlAsciiVal(thread_db* tdbb, const SysFunction* function, const NestValueAr
 dsc* evlAtan2(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlBin(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlBinShift(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlBlobAppend(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlCeil(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlCharToUuid(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
@@ -608,6 +612,19 @@ void setParamsAsciiVal(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc
 }
 
 
+void setParamsBlobAppend(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
+{
+	if (argsCount >= 1 && args[0]->isUnknown())
+		args[0]->makeBlob(isc_blob_text, CS_dynamic);
+
+	for (int i = 1; i < argsCount; ++i)
+	{
+		if (args[i]->isUnknown())
+			args[i]->makeVarying(80, args[0]->getTextType());
+	}
+}
+
+
 void setParamsCharToUuid(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
 {
 	if (argsCount >= 1 && args[0]->isUnknown())
@@ -705,11 +722,12 @@ const unsigned RSA_CRYPT_ARG_VALUE = 0;
 const unsigned RSA_CRYPT_ARG_KEY = 1;
 const unsigned RSA_CRYPT_ARG_LPARAM = 2;
 const unsigned RSA_CRYPT_ARG_HASH = 3;
-const unsigned RSA_CRYPT_ARG_MAX = 4;
+const unsigned RSA_CRYPT_ARG_PKCS_1_5 = 4;
+const unsigned RSA_CRYPT_ARG_MAX = 5;
 
 void setParamsRsaEncrypt(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
 {
-	fb_assert(argsCount == RSA_CRYPT_ARG_MAX);
+	fb_assert(argsCount == RSA_CRYPT_ARG_MAX || argsCount == RSA_CRYPT_ARG_MAX - 1);
 
 	setParamVarying(args[RSA_CRYPT_ARG_VALUE], ttype_binary);
 	setParamVarying(args[RSA_CRYPT_ARG_KEY], ttype_binary);
@@ -719,6 +737,9 @@ void setParamsRsaEncrypt(DataTypeUtilBase*, const SysFunction*, int argsCount, d
 
 	if (args[RSA_CRYPT_ARG_HASH]->dsc_length)
 		args[RSA_CRYPT_ARG_HASH]->makeVarying(args[RSA_CRYPT_ARG_HASH]->getStringLength(), ttype_binary);
+
+	if (argsCount == RSA_CRYPT_ARG_MAX)
+		args[RSA_CRYPT_ARG_PKCS_1_5]->makeShort(0);
 }
 
 
@@ -726,11 +747,12 @@ const unsigned RSA_SIGN_ARG_VALUE = 0;
 const unsigned RSA_SIGN_ARG_KEY = 1;
 const unsigned RSA_SIGN_ARG_HASH = 2;
 const unsigned RSA_SIGN_ARG_SALTLEN = 3;
-const unsigned RSA_SIGN_ARG_MAX = 4;
+const unsigned RSA_SIGN_ARG_PKCS_1_5 = 4;
+const unsigned RSA_SIGN_ARG_MAX = 5;
 
 void setParamsRsaSign(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
 {
-	fb_assert(argsCount == RSA_SIGN_ARG_MAX);
+	fb_assert(argsCount == RSA_SIGN_ARG_MAX || argsCount == RSA_SIGN_ARG_MAX - 1);
 
 	setParamVarying(args[RSA_SIGN_ARG_VALUE], ttype_binary);
 	setParamVarying(args[RSA_SIGN_ARG_KEY], ttype_binary);
@@ -740,6 +762,9 @@ void setParamsRsaSign(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc*
 
 	if (args[RSA_SIGN_ARG_SALTLEN]->dsc_length)
 		args[RSA_SIGN_ARG_SALTLEN]->makeShort(0);
+
+	if (argsCount == RSA_SIGN_ARG_MAX)
+		args[RSA_SIGN_ARG_PKCS_1_5]->makeShort(0);
 }
 
 
@@ -748,11 +773,12 @@ const unsigned RSA_VERIFY_ARG_SIGNATURE = 1;
 const unsigned RSA_VERIFY_ARG_KEY = 2;
 const unsigned RSA_VERIFY_ARG_HASH = 3;
 const unsigned RSA_VERIFY_ARG_SALTLEN = 4;
-const unsigned RSA_VERIFY_ARG_MAX = 5;
+const unsigned RSA_VERIFY_ARG_PKCS_1_5 = 5;
+const unsigned RSA_VERIFY_ARG_MAX = 6;
 
 void setParamsRsaVerify(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
 {
-	fb_assert(argsCount == RSA_VERIFY_ARG_MAX);
+	fb_assert(argsCount == RSA_VERIFY_ARG_MAX || argsCount == RSA_VERIFY_ARG_MAX - 1);
 
 	setParamVarying(args[RSA_VERIFY_ARG_VALUE], ttype_binary);
 	setParamVarying(args[RSA_VERIFY_ARG_KEY], ttype_binary);
@@ -763,6 +789,9 @@ void setParamsRsaVerify(DataTypeUtilBase*, const SysFunction*, int argsCount, ds
 
 	if (args[RSA_VERIFY_ARG_SALTLEN]->dsc_length)
 		args[RSA_VERIFY_ARG_SALTLEN]->makeShort(0);
+
+	if (argsCount == RSA_VERIFY_ARG_MAX)
+		args[RSA_VERIFY_ARG_PKCS_1_5]->makeShort(0);
 }
 
 
@@ -1217,6 +1246,57 @@ void makeBinShift(DataTypeUtilBase*, const SysFunction* function, dsc* result,
 }
 
 
+bool makeBlobAppendBlob(dsc* result, const dsc* arg, bid* blob_id = nullptr)
+{
+	if (!arg)
+		return false;
+
+	ISC_QUAD* ptr = reinterpret_cast<ISC_QUAD*>(blob_id);
+
+	if (arg->isBlob())
+	{
+		result->makeBlob(arg->getBlobSubType(), arg->getTextType(), ptr);
+		return true;
+	}
+
+	if (arg->isNull())
+		return false;
+
+	if (arg->isText())
+	{
+		USHORT ttype = arg->getTextType();
+		if (ttype == ttype_binary)
+			result->makeBlob(isc_blob_untyped, ttype_binary, ptr);
+		else
+			result->makeBlob(isc_blob_text, ttype, ptr);
+	}
+	else
+	{
+		result->makeBlob(isc_blob_text, ttype_ascii, ptr);
+	}
+
+	return true;
+}
+
+
+void makeBlobAppend(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result,
+	int argsCount, const dsc** args)
+{
+	if (argsCount > 0)
+	{
+		const dsc** ppArg = args;
+		const dsc** const end = args + argsCount;
+
+		for (; ppArg < end; ppArg++)
+			if (makeBlobAppendBlob(result, *ppArg))
+				return;
+	}
+
+	fb_assert(false);
+	result->makeBlob(isc_blob_untyped, ttype_binary);
+}
+
+
 void makeCeilFloor(DataTypeUtilBase*, const SysFunction* function, dsc* result,
 	int argsCount, const dsc** args)
 {
@@ -1271,6 +1351,30 @@ void makeDateAdd(DataTypeUtilBase*, const SysFunction*, dsc* result, int argsCou
 		return;
 
 	*result = *args[2];
+	result->setNullable(isNullable);
+}
+
+
+void makeDateDiff(DataTypeUtilBase* dataTypeUtil, const SysFunction*, dsc* result, int argsCount, const dsc** args)
+{
+	if (dataTypeUtil->getDialect() == 1)
+		result->makeDouble();
+	else
+	{
+		if (argsCount >= 1 &&
+			args[0]->dsc_address &&	// constant
+			CVT_get_long(args[0], 0, JRD_get_thread_data()->getAttachment()->att_dec_status, ERR_post) == blr_extract_millisecond)
+		{
+			result->makeInt64(ISC_TIME_SECONDS_PRECISION_SCALE + 3);
+		}
+		else
+			result->makeInt64(0);
+	}
+
+	bool isNullable;
+	if (initResult(result, argsCount, args, &isNullable))
+		return;
+
 	result->setNullable(isNullable);
 }
 
@@ -1395,7 +1499,13 @@ void makeEncode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, d
 	if (args[0]->isBlob())
 		result->makeBlob(isc_blob_text, ttype_ascii);
 	else if (args[0]->isText())
-		result->makeVarying(encodeLen(args[0]->getStringLength()), ttype_ascii);
+	{
+		unsigned len = encodeLen(args[0]->getStringLength());
+		if (len <= MAX_VARY_COLUMN_SIZE)
+			result->makeVarying(len, ttype_ascii);
+		else
+			result->makeBlob(isc_blob_text, ttype_ascii);
+	}
 	else
 		status_exception::raise(Arg::Gds(isc_tom_strblob));
 
@@ -1428,7 +1538,13 @@ void makeEncodeHex(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
 	if (args[0]->isBlob())
 		result->makeBlob(isc_blob_text, ttype_ascii);
 	else if (args[0]->isText())
-		result->makeVarying(args[0]->getStringLength() * 2, ttype_ascii);
+	{
+		unsigned len = args[0]->getStringLength() * 2;
+		if (len <= MAX_VARY_COLUMN_SIZE)
+			result->makeVarying(len, ttype_ascii);
+		else
+			result->makeBlob(isc_blob_text, ttype_ascii);
+	}
 	else
 		status_exception::raise(Arg::Gds(isc_tom_strblob));
 
@@ -1453,7 +1569,7 @@ void makeCrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc*
 void makeRsaCrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result,
 	int argsCount, const dsc** args)
 {
-	fb_assert(argsCount == RSA_CRYPT_ARG_MAX);
+	fb_assert(argsCount == RSA_CRYPT_ARG_MAX || argsCount == RSA_CRYPT_ARG_MAX - 1);
 
 	result->makeVarying(256, ttype_binary);
 	result->setNullable(args[0]->isNullable());
@@ -1813,7 +1929,7 @@ dsc* evlStdMath(thread_db* tdbb, const SysFunction* function, const NestValueArr
 	fb_assert(args.getCount() == 1);
 	fb_assert(function->misc != NULL);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -1913,7 +2029,7 @@ dsc* evlAbs(thread_db* tdbb, const SysFunction*, const NestValueArray& args, imp
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -1971,7 +2087,7 @@ dsc* evlAsciiChar(thread_db* tdbb, const SysFunction*, const NestValueArray& arg
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -1993,7 +2109,7 @@ dsc* evlAsciiVal(thread_db* tdbb, const SysFunction*, const NestValueArray& args
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -2028,7 +2144,7 @@ dsc* evlAtan2(thread_db* tdbb, const SysFunction* function, const NestValueArray
 {
 	fb_assert(args.getCount() == 2);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* desc1 = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if desc1 is NULL
@@ -2097,7 +2213,7 @@ dsc* evlBin(thread_db* tdbb, const SysFunction* function, const NestValueArray& 
 	fb_assert(function->misc != NULL);
 
 	Function func = (Function)(IPTR) function->misc;
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	bool f128 = false;
 	for (unsigned i = 0; i < args.getCount(); ++i)
@@ -2163,7 +2279,7 @@ dsc* evlBinShift(thread_db* tdbb, const SysFunction* function, const NestValueAr
 	fb_assert(args.getCount() == 2);
 	fb_assert(function->misc != NULL);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value1 = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value1 is NULL
@@ -2209,12 +2325,151 @@ HUGEINT getScale(impure_value* impure)
 }
 
 
+static void appendFromBlob(thread_db* tdbb, jrd_tra* transaction, blb* blob,
+	const dsc* blobDsc, const dsc* srcDsc)
+{
+	if (!srcDsc->dsc_address)
+		return;
+
+	bid* srcBlobID = (bid*)srcDsc->dsc_address;
+	if (srcBlobID->isEmpty())
+		return;
+
+	if (memcmp(blobDsc->dsc_address, srcDsc->dsc_address, sizeof(bid)) == 0)
+		status_exception::raise(Arg::Gds(isc_random) << Arg::Str("Can not append blob to itself"));
+
+	UCharBuffer bpb;
+	BLB_gen_bpb_from_descs(srcDsc, blobDsc, bpb);
+
+	AutoBlb srcBlob(tdbb, blb::open2(tdbb, transaction, srcBlobID, bpb.getCount(), bpb.begin()));
+
+	Database* dbb = tdbb->getDatabase();
+
+	HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
+	const SLONG buffSize = (srcBlob->getLevel() == 0) ?
+		MAX(BUFFER_LARGE, srcBlob->blb_length) : dbb->dbb_page_size - BLP_SIZE;
+
+	UCHAR* buff = buffer.getBuffer(buffSize);
+	while (!(srcBlob->blb_flags & BLB_eof))
+	{
+		const SLONG len = srcBlob->BLB_get_data(tdbb, buff, buffSize, false);
+		if (len)
+			blob->BLB_put_data(tdbb, buff, len);
+	}
+}
+
+
+dsc* evlBlobAppend(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
+	impure_value* impure)
+{
+	Request* request = tdbb->getRequest();
+	jrd_tra* transaction = request ? request->req_transaction : tdbb->getTransaction();
+	transaction = transaction->getOuter();
+
+	blb* blob = NULL;
+	bid blob_id;
+	dsc blobDsc;
+
+	blob_id.clear();
+	blobDsc.clear();
+
+	const dsc* argDsc = EVL_expr(tdbb, request, args[0]);
+	const bool arg0_null = (request->req_flags & req_null) || (argDsc == NULL);
+
+	if (!arg0_null && argDsc->isBlob())
+		blob_id = *reinterpret_cast<bid*>(argDsc->dsc_address);
+
+	// Try to get blob type from declared var\param
+	if (!argDsc && (nodeIs<VariableNode>(args[0]) ||
+					nodeIs<ParameterNode>(args[0]) ))
+	{
+		argDsc = EVL_assign_to(tdbb, args[0]);
+		if (argDsc && argDsc->isBlob())
+			makeBlobAppendBlob(&blobDsc, argDsc, &blob_id);
+	}
+
+	bool copyBlob = !blob_id.isEmpty();
+	if (copyBlob)
+	{
+		if (!blob_id.bid_internal.bid_relation_id)
+		{
+			if (!transaction->tra_blobs->locate(blob_id.bid_temp_id()))
+				status_exception::raise(Arg::Gds(isc_bad_segstr_id));
+
+			BlobIndex blobIdx = transaction->tra_blobs->current();
+			if (!blobIdx.bli_materialized && (blobIdx.bli_blob_object->blb_flags & BLB_close_on_read))
+			{
+				blob = blobIdx.bli_blob_object;
+				copyBlob = false;
+			}
+		}
+	}
+
+	for (FB_SIZE_T i = 0; i < args.getCount(); i++)
+	{
+		if (i == 0)
+		{
+			if (arg0_null || argDsc->isBlob() && !copyBlob)
+				continue;
+		}
+		else
+		{
+			argDsc = EVL_expr(tdbb, request, args[i]);
+			if ((request->req_flags & req_null) || !argDsc)
+				continue;
+		}
+
+		fb_assert(argDsc != nullptr);
+
+		if (!blobDsc.isBlob())
+		{
+			if (!makeBlobAppendBlob(&blobDsc, argDsc, &blob_id))
+				continue;
+		}
+
+		fb_assert(blobDsc.isBlob());
+
+		if (!blob)
+		{
+			UCharBuffer bpb;
+			BLB_gen_bpb_from_descs(&blobDsc, &blobDsc, bpb);
+			bpb.push(isc_bpb_storage);
+			bpb.push(1);
+			bpb.push(isc_bpb_storage_temp);
+
+			blob = blb::create2(tdbb, transaction, &blob_id, bpb.getCount(), bpb.begin());
+			blob->blb_flags |= BLB_stream | BLB_close_on_read;
+		}
+
+		if (!argDsc->isBlob())
+		{
+			MoveBuffer temp;
+			UCHAR* addr = NULL;
+			SLONG len = MOV_make_string2(tdbb, argDsc, blobDsc.getTextType(), &addr, temp);
+
+			if (addr)
+				blob->BLB_put_data(tdbb, addr, len);
+		}
+		else
+		{
+			appendFromBlob(tdbb, transaction, blob, &blobDsc, argDsc);
+		}
+	}
+
+	if (!blob)
+		return nullptr;
+
+	EVL_make_value(tdbb, &blobDsc, impure);
+	return &impure->vlu_desc;
+}
+
+
 dsc* evlCeil(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -2299,7 +2554,7 @@ dsc* evlCharToUuid(thread_db* tdbb, const SysFunction* function, const NestValue
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -2417,7 +2672,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 {
 	fb_assert(args.getCount() == 3);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* quantityDsc = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if quantityDsc is NULL
@@ -2869,6 +3124,54 @@ private:
 };
 
 
+// Descriptor value loader, taking into an account BLOBs
+
+class DscValue
+{
+public:
+	DscValue(thread_db* tdbb, const dsc* desc, const char* objectName = nullptr)
+	{
+		if (!desc)
+			l = 0;
+		else if (desc->isBlob())
+		{
+			AutoPtr<blb> b(blb::open(tdbb, tdbb->getRequest()->req_transaction, (bid*) desc->dsc_address));
+			if (b->blb_length > MAX_VARY_COLUMN_SIZE)
+				(Arg::Gds(isc_expression_eval_err) << Arg::Gds(isc_malformed_string)).raise();
+
+			UCHAR* data = buf.getBuffer(b->blb_length);
+			l = b->BLB_get_data(tdbb, data, b->blb_length, false);
+			v = data;
+		}
+		else
+			v = CVT_get_bytes(desc, l);
+
+		if (l == 0)
+		{
+			if (objectName)
+				(Arg::Gds(isc_sysf_invalid_null_empty) << objectName).raise();
+
+			v = nullptr;
+		}
+	}
+
+	unsigned getLength() const
+	{
+		return l;
+	}
+
+	const UCHAR* getBytes() const
+	{
+		return v;
+	}
+
+private:
+	UCharBuffer buf;
+	const UCHAR* v;
+	unsigned l;
+};
+
+
 // Lists of constant parameter values
 
 class CodeValue
@@ -2897,7 +3200,7 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 
 	fb_assert(args.getCount() == CRYPT_ARG_MAX);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	// parse args and check correctness
 	const dsc* dscs[CRYPT_ARG_MAX];
@@ -2956,20 +3259,15 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 	else if (modeName.hasData())
 		status_exception::raise(Arg::Gds(isc_tom_no_mode));
 
-	unsigned len;
-	const void* data = CVT_get_bytes(dscs[CRYPT_ARG_KEY], len);
-	UCharBuffer key;
-	memcpy(key.getBuffer(len), data, len);
+	DscValue key(tdbb, dscs[CRYPT_ARG_KEY], "crypt key");
 
-	UCharBuffer iv;
-	data = CVT_get_bytes(dscs[CRYPT_ARG_IV], len);
+	DscValue iv(tdbb, dscs[CRYPT_ARG_IV]);
 	if ((m && (m->code != MODE_ECB)) || (a && (a->code != ALG_RC4)))	// all other need IV
 	{
-		if (!len)
+		if (!iv.getLength())
 			status_exception::raise(Arg::Gds(isc_tom_iv_miss));
-		memcpy(iv.getBuffer(len), data, len);
 	}
-	else if (len)
+	else if (iv.getLength())
 		status_exception::raise(Arg::Gds(isc_tom_no_iv));
 
 	const unsigned CTR_32 = 1;
@@ -3005,8 +3303,8 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		if (dscHasData(dscs[CRYPT_ARG_COUNTER]))
 		{
 			ctrVal = MOV_get_int64(tdbb, dscs[CRYPT_ARG_COUNTER], 0);
-			if (m && ctrVal > key.getCount())
-				status_exception::raise(Arg::Gds(isc_tom_ctr_big) << Arg::Num(ctrVal) <<  Arg::Num(key.getCount()));
+			if (m && ctrVal > key.getLength())
+				status_exception::raise(Arg::Gds(isc_tom_ctr_big) << Arg::Num(ctrVal) <<  Arg::Num(key.getLength()));
 		}
 	}
 	else if (dscHasData(dscs[CRYPT_ARG_COUNTER]))
@@ -3020,15 +3318,15 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 	if (m)
 	{
 		unsigned blockLen = cipher_descriptor[cipher].block_length;
-		if (iv.hasData() && iv.getCount() != blockLen)
-			status_exception::raise(Arg::Gds(isc_tom_iv_length) << Arg::Num(iv.getCount()) << Arg::Num(blockLen));
+		if (iv.getLength() && iv.getLength() != blockLen)
+			status_exception::raise(Arg::Gds(isc_tom_iv_length) << Arg::Num(iv.getLength()) << Arg::Num(blockLen));
 
 		switch (m->code)
 		{
 		case MODE_ECB:
 			{
 				symmetric_ECB ecb;
-				tomCheck(ecb_start(cipher, key.begin(), key.getCount(), 0, &ecb), Arg::Gds(isc_tom_init_mode) << "ECB");
+				tomCheck(ecb_start(cipher, key.getBytes(), key.getLength(), 0, &ecb), Arg::Gds(isc_tom_init_mode) << "ECB");
 
 				while (dp.hasData())
 				{
@@ -3045,7 +3343,7 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		case MODE_CBC:
 			{
 				symmetric_CBC cbc;
-				tomCheck(cbc_start(cipher, iv.begin(), key.begin(), key.getCount(), 0, &cbc), Arg::Gds(isc_tom_init_mode) << "CBC");
+				tomCheck(cbc_start(cipher, iv.getBytes(), key.getBytes(), key.getLength(), 0, &cbc), Arg::Gds(isc_tom_init_mode) << "CBC");
 
 				while (dp.hasData())
 				{
@@ -3062,7 +3360,7 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		case MODE_CFB:
 			{
 				symmetric_CFB cfb;
-				tomCheck(cfb_start(cipher, iv.begin(), key.begin(), key.getCount(), 0, &cfb), Arg::Gds(isc_tom_init_mode) << "CFB");
+				tomCheck(cfb_start(cipher, iv.getBytes(), key.getBytes(), key.getLength(), 0, &cfb), Arg::Gds(isc_tom_init_mode) << "CFB");
 
 				while (dp.hasData())
 				{
@@ -3079,7 +3377,7 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		case MODE_OFB:
 			{
 				symmetric_OFB ofb;
-				tomCheck(ofb_start(cipher, iv.begin(), key.begin(), key.getCount(), 0, &ofb), Arg::Gds(isc_tom_init_mode) << "OFB");
+				tomCheck(ofb_start(cipher, iv.getBytes(), key.getBytes(), key.getLength(), 0, &ofb), Arg::Gds(isc_tom_init_mode) << "OFB");
 
 				while (dp.hasData())
 				{
@@ -3096,7 +3394,7 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		case MODE_CTR:
 			{
 				symmetric_CTR ctr;
-				tomCheck(ctr_start(cipher, iv.begin(), key.begin(), key.getCount(), 0,
+				tomCheck(ctr_start(cipher, iv.getBytes(), key.getBytes(), key.getLength(), 0,
 					(c->code == CTR_LITTLE_ENDIAN ? CTR_COUNTER_LITTLE_ENDIAN : CTR_COUNTER_BIG_ENDIAN) | ctrVal,
 					&ctr), Arg::Gds(isc_tom_init_mode) << "CTR");
 
@@ -3120,10 +3418,10 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		{
 		case ALG_RC4:
 			{
-				if (key.getCount() < 5)		// 40 bit - constant from tomcrypt
-					(Arg::Gds(isc_tom_key_length) << Arg::Num(key.getCount()) << Arg::Num(4)).raise();
+				if (key.getLength() < 5)		// 40 bit - constant from tomcrypt
+					(Arg::Gds(isc_tom_key_length) << Arg::Num(key.getLength()) << Arg::Num(4)).raise();
 				rc4_state rc4;
-				tomCheck(rc4_stream_setup(&rc4, key.begin(), key.getCount()), Arg::Gds(isc_tom_init_cip) << "RC4");
+				tomCheck(rc4_stream_setup(&rc4, key.getBytes(), key.getLength()), Arg::Gds(isc_tom_init_cip) << "RC4");
 
 				while (dp.hasData())
 				{
@@ -3138,25 +3436,25 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		case ALG_CHACHA:
 			{
 				chacha_state chacha;
-				switch (key.getCount())
+				switch (key.getLength())
 				{
 				case 16:
 				case 32:
 					break;
 				default:
-					status_exception::raise(Arg::Gds(isc_tom_chacha_key) << Arg::Num(key.getCount()));
+					status_exception::raise(Arg::Gds(isc_tom_chacha_key) << Arg::Num(key.getLength()));
 				}
-				tomCheck(chacha_setup(&chacha, key.begin(), key.getCount(), 20), Arg::Gds(isc_tom_init_cip) << "CHACHA#20");
-				switch (iv.getCount())
+				tomCheck(chacha_setup(&chacha, key.getBytes(), key.getLength(), 20), Arg::Gds(isc_tom_init_cip) << "CHACHA#20");
+				switch (iv.getLength())
 				{
 				case 12:
-					tomCheck(chacha_ivctr32(&chacha, iv.begin(), iv.getCount(), ctrVal), Arg::Gds(isc_tom_setup_cip) << "CHACHA#20");
+					tomCheck(chacha_ivctr32(&chacha, iv.getBytes(), iv.getLength(), ctrVal), Arg::Gds(isc_tom_setup_cip) << "CHACHA#20");
 					break;
 				case 8:
-					tomCheck(chacha_ivctr64(&chacha, iv.begin(), iv.getCount(), ctrVal),  Arg::Gds(isc_tom_setup_cip) << "CHACHA#20");
+					tomCheck(chacha_ivctr64(&chacha, iv.getBytes(), iv.getLength(), ctrVal),  Arg::Gds(isc_tom_setup_cip) << "CHACHA#20");
 					break;
 				default:
-					status_exception::raise(Arg::Gds(isc_tom_setup_chacha) << Arg::Num(iv.getCount()));
+					status_exception::raise(Arg::Gds(isc_tom_setup_chacha) << Arg::Num(iv.getLength()));
 					break;
 				}
 
@@ -3172,11 +3470,11 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 
 		case ALG_SOBER:
 			{
-				if (key.getCount() < 4)		// 4, 8, 12, ...
-					(Arg::Gds(isc_tom_key_length) << Arg::Num(key.getCount()) << Arg::Num(3)).raise();
+				if (key.getLength() < 4)		// 4, 8, 12, ...
+					(Arg::Gds(isc_tom_key_length) << Arg::Num(key.getLength()) << Arg::Num(3)).raise();
 				sober128_state sober128;
-				tomCheck(sober128_stream_setup(&sober128, key.begin(), key.getCount()), Arg::Gds(isc_tom_init_cip) << "SOBER-128");
-				tomCheck(sober128_stream_setiv(&sober128, iv.begin(), iv.getCount()),  Arg::Gds(isc_tom_setup_cip) << "SOBER-128");
+				tomCheck(sober128_stream_setup(&sober128, key.getBytes(), key.getLength()), Arg::Gds(isc_tom_init_cip) << "SOBER-128");
+				tomCheck(sober128_stream_setiv(&sober128, iv.getBytes(), iv.getLength()),  Arg::Gds(isc_tom_setup_cip) << "SOBER-128");
 
 				while (dp.hasData())
 				{
@@ -3246,7 +3544,8 @@ dsc* evlEncodeDecode64(thread_db* tdbb, bool encodeFlag, const SysFunction* func
 	out.resize(outLen);
 
 	dsc result;
-	if (arg->isBlob())
+	unsigned len = encodeLen(arg->getStringLength());
+	if (arg->isBlob() || (encodeFlag && len > MAX_VARY_COLUMN_SIZE))
 	{
 		AutoPtr<blb> blob(blb::create2(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid,
 			sizeof(streamBpb), streamBpb));
@@ -3362,6 +3661,7 @@ dsc* evlEncodeDecodeHex(thread_db* tdbb, bool encodeFlag, const SysFunction* fun
 		status_exception::raise(Arg::Gds(isc_odd_hex_len) << Arg::Num(pos));
 
 	dsc result;
+	bool mkBlob = true;
 	if (arg->isBlob())
 	{
 		if(out.hasData())
@@ -3372,12 +3672,30 @@ dsc* evlEncodeDecodeHex(thread_db* tdbb, bool encodeFlag, const SysFunction* fun
 
 		inBlob->BLB_close(tdbb);
 		inBlob.release();
+	}
+	else
+	{
+		if (encodeFlag && arg->getStringLength() * 2 > MAX_VARY_COLUMN_SIZE)
+		{
+			outBlob.reset(blb::create2(tdbb, tdbb->getRequest()->req_transaction,
+				&impure->vlu_misc.vlu_bid, sizeof(streamBpb), streamBpb));
+			if(out.hasData())
+				outBlob->BLB_put_data(tdbb, out.begin(), out.getCount());
+			outBlob->BLB_close(tdbb);
+			outBlob.release();
+		}
+		else
+		{
+			result.makeText(out.getCount(), encodeFlag ? ttype_ascii : ttype_binary, const_cast<UCHAR*>(out.begin()));
+			mkBlob = false;
+		}
+	}
 
+	if (mkBlob)
+	{
 		result.makeBlob(encodeFlag ? isc_blob_text : isc_blob_untyped, encodeFlag ? ttype_ascii : ttype_binary,
 			(ISC_QUAD*)&impure->vlu_misc.vlu_bid);
 	}
-	else
-		result.makeText(out.getCount(), encodeFlag ? ttype_ascii : ttype_binary, const_cast<UCHAR*>(out.begin()));
 
 	EVL_make_value(tdbb, &result, impure);
 	return &impure->vlu_desc;
@@ -3398,14 +3716,15 @@ dsc* evlRsaEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const Ne
 {
 	tomcryptInitializer();
 
-	fb_assert(args.getCount() == RSA_CRYPT_ARG_MAX);
+	fb_assert(args.getCount() == RSA_CRYPT_ARG_MAX || args.getCount() == RSA_CRYPT_ARG_MAX - 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	// parse args and check correctness
 	const dsc* dscs[RSA_CRYPT_ARG_MAX];
-	for (unsigned i = 0; i < RSA_CRYPT_ARG_MAX; ++i)
+	for (unsigned i = 0; i < args.getCount(); ++i)
 		dscs[i] = EVL_expr(tdbb, request, args[i]);
+	SSHORT pkcs15 = args.getCount() < RSA_CRYPT_ARG_MAX ? 0 : *(SSHORT*)(dscs[RSA_CRYPT_ARG_PKCS_1_5]->dsc_address);
 
 	MetaName hashName;
 	if (dscs[RSA_CRYPT_ARG_HASH])
@@ -3418,31 +3737,30 @@ dsc* evlRsaEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const Ne
 	if (hash < 0)
 		status_exception::raise(Arg::Gds(isc_tom_hash_bad) << hashName);
 
-	unsigned len;
-	const UCHAR* data = CVT_get_bytes(dscs[RSA_CRYPT_ARG_VALUE], len);
-	if (!data)
+	DscValue data(tdbb, dscs[RSA_CRYPT_ARG_VALUE]);
+	if (!data.getBytes())
 		return nullptr;
 
-	unsigned keyLen;
-	const UCHAR* key = CVT_get_bytes(dscs[RSA_CRYPT_ARG_KEY], keyLen);
-	if (!key)
+	DscValue key(tdbb, dscs[RSA_CRYPT_ARG_KEY], "crypt key");
+	if (!key.getBytes())
 		return nullptr;
 
-	unsigned paramLen;
-	const UCHAR* lParam = CVT_get_bytes(dscs[RSA_CRYPT_ARG_LPARAM], paramLen);
-	if (!paramLen)
-		lParam = nullptr;
+	DscValue lParam(tdbb, dscs[RSA_CRYPT_ARG_LPARAM]);
 
 	// Run tomcrypt functions
 	rsa_key rsaKey;
-	tomCheck(rsa_import(key, keyLen, &rsaKey), Arg::Gds(isc_tom_rsa_import));
+	tomCheck(rsa_import(key.getBytes(), key.getLength(), &rsaKey), Arg::Gds(isc_tom_rsa_import));
 
 	unsigned long outlen = encryptFlag ? 256 : 190;
 	UCharBuffer outBuf;
 	int stat = 0;
-	int cryptRc = encryptFlag ? rsa_encrypt_key(data, len, outBuf.getBuffer(outlen), &outlen, lParam, paramLen,
-			prng().getState(), prng().getIndex(), hash, &rsaKey) :
-		rsa_decrypt_key(data, len, outBuf.getBuffer(outlen), &outlen, lParam, paramLen, hash, &stat, &rsaKey);
+	int cryptRc = encryptFlag ?
+		rsa_encrypt_key_ex(data.getBytes(), data.getLength(), outBuf.getBuffer(outlen), &outlen,
+			lParam.getBytes(), lParam.getLength(), prng().getState(), prng().getIndex(), hash,
+			pkcs15 ? LTC_PKCS_1_V1_5 : LTC_PKCS_1_OAEP, &rsaKey) :
+		rsa_decrypt_key_ex(data.getBytes(), data.getLength(), outBuf.getBuffer(outlen), &outlen,
+			lParam.getBytes(), lParam.getLength(), hash,
+			pkcs15 ? LTC_PKCS_1_V1_5 : LTC_PKCS_1_OAEP, &stat, &rsaKey);
 	rsa_free(&rsaKey);
 	tomCheck(cryptRc, Arg::Gds(encryptFlag ? isc_tom_crypt_cip : isc_tom_decrypt_cip) << "RSA");
 	if ((!encryptFlag) && (!stat))
@@ -3470,7 +3788,7 @@ dsc* evlRsaPrivate(thread_db* tdbb, const SysFunction* function, const NestValue
 
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -3501,18 +3819,17 @@ dsc* evlRsaPublic(thread_db* tdbb, const SysFunction* function, const NestValueA
 
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
-	unsigned len;
-	const UCHAR* data = CVT_get_bytes(value, len);
+	DscValue data(tdbb, value, "private key");
 	rsa_key rsaKey;
-	tomCheck(rsa_import(data, len, &rsaKey), Arg::Gds(isc_tom_rsa_import));
+	tomCheck(rsa_import(data.getBytes(), data.getLength(), &rsaKey), Arg::Gds(isc_tom_rsa_import));
 
-	unsigned long outlen = len;
+	unsigned long outlen = data.getLength();
 	UCharBuffer key;
 	int cryptRc = rsa_export(key.getBuffer(outlen), &outlen, PK_PUBLIC, &rsaKey);
 	rsa_free(&rsaKey);
@@ -3539,14 +3856,16 @@ dsc* evlRsaSign(thread_db* tdbb, const SysFunction* function, const NestValueArr
 {
 	tomcryptInitializer();
 
-	fb_assert(args.getCount() == RSA_SIGN_ARG_MAX);
+	fb_assert(args.getCount() == RSA_SIGN_ARG_MAX || args.getCount() == RSA_SIGN_ARG_MAX - 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	// parse args and check correctness
 	const dsc* dscs[RSA_SIGN_ARG_MAX];
-	for (unsigned i = 0; i < RSA_SIGN_ARG_MAX; ++i)
+	for (unsigned i = 0; i < args.getCount(); ++i)
 		dscs[i] = EVL_expr(tdbb, request, args[i]);
+
+	SSHORT pkcs15 = args.getCount() < RSA_SIGN_ARG_MAX ? 0 : *(SSHORT*)(dscs[RSA_SIGN_ARG_PKCS_1_5]->dsc_address);
 
 	MetaName hashName;
 	if (dscs[RSA_SIGN_ARG_HASH])
@@ -3559,17 +3878,15 @@ dsc* evlRsaSign(thread_db* tdbb, const SysFunction* function, const NestValueArr
 	if (hash < 0)
 		status_exception::raise(Arg::Gds(isc_tom_hash_bad) << hashName);
 
-	unsigned len;
-	const UCHAR* data = CVT_get_bytes(dscs[RSA_SIGN_ARG_VALUE], len);
-	if (!data)
+	DscValue data(tdbb, dscs[RSA_SIGN_ARG_VALUE]);
+	if (!data.getBytes())
 		return nullptr;
 
-	unsigned keyLen;
-	const UCHAR* key = CVT_get_bytes(dscs[RSA_SIGN_ARG_KEY], keyLen);
-	if (!key)
+	DscValue key(tdbb, dscs[RSA_SIGN_ARG_KEY], "private key");
+	if (!key.getBytes())
 		return nullptr;
 	rsa_key rsaKey;
-	tomCheck(rsa_import(key, keyLen, &rsaKey), Arg::Gds(isc_tom_rsa_import));
+	tomCheck(rsa_import(key.getBytes(), key.getLength(), &rsaKey), Arg::Gds(isc_tom_rsa_import));
 
 	SLONG saltLength = 8;
 	if (dscHasData(dscs[RSA_SIGN_ARG_SALTLEN]))
@@ -3581,8 +3898,8 @@ dsc* evlRsaSign(thread_db* tdbb, const SysFunction* function, const NestValueArr
 
 	unsigned long signLen = 1024;
 	UCharBuffer sign;
-	int cryptRc = rsa_sign_hash(data, len, sign.getBuffer(signLen), &signLen,
-		prng().getState(), prng().getIndex(), hash, saltLength, &rsaKey);
+	int cryptRc = rsa_sign_hash_ex(data.getBytes(), data.getLength(), sign.getBuffer(signLen), &signLen,
+		pkcs15 ? LTC_PKCS_1_V1_5 : LTC_PKCS_1_PSS, prng().getState(), prng().getIndex(), hash, saltLength, &rsaKey);
 	rsa_free(&rsaKey);
 	tomCheck(cryptRc, Arg::Gds(isc_tom_rsa_sign));
 
@@ -3608,14 +3925,15 @@ dsc* evlRsaVerify(thread_db* tdbb, const SysFunction* function, const NestValueA
 {
 	tomcryptInitializer();
 
-	fb_assert(args.getCount() == RSA_VERIFY_ARG_MAX);
+	fb_assert(args.getCount() == RSA_VERIFY_ARG_MAX || args.getCount() == RSA_VERIFY_ARG_MAX - 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	// parse args and check correctness
 	const dsc* dscs[RSA_VERIFY_ARG_MAX];
-	for (unsigned i = 0; i < RSA_VERIFY_ARG_MAX; ++i)
+	for (unsigned i = 0; i < args.getCount(); ++i)
 		dscs[i] = EVL_expr(tdbb, request, args[i]);
+	SSHORT pkcs15 = args.getCount() < RSA_VERIFY_ARG_MAX ? 0 : *(SSHORT*)(dscs[RSA_VERIFY_ARG_PKCS_1_5]->dsc_address);
 
 	MetaName hashName;
 	if (dscs[RSA_VERIFY_ARG_HASH])
@@ -3628,22 +3946,19 @@ dsc* evlRsaVerify(thread_db* tdbb, const SysFunction* function, const NestValueA
 	if (hash < 0)
 		status_exception::raise(Arg::Gds(isc_tom_hash_bad) << hashName);
 
-	unsigned len;
-	const UCHAR* data = CVT_get_bytes(dscs[RSA_VERIFY_ARG_VALUE], len);
-	if (!data)
+	DscValue data(tdbb, dscs[RSA_VERIFY_ARG_VALUE]);
+	if (!data.getBytes())
 		return nullptr;
 
-	unsigned signLen;
-	const UCHAR* sign = CVT_get_bytes(dscs[RSA_VERIFY_ARG_SIGNATURE], signLen);
-	if (!sign)
+	DscValue sign(tdbb, dscs[RSA_VERIFY_ARG_SIGNATURE]);
+	if (!sign.getBytes())
 		return boolResult(tdbb, impure, false);
 
-	unsigned keyLen;
-	const UCHAR* key = CVT_get_bytes(dscs[RSA_VERIFY_ARG_KEY], keyLen);
-	if (!key)
+	DscValue key(tdbb, dscs[RSA_VERIFY_ARG_KEY], "public key");
+	if (!key.getBytes())
 		return boolResult(tdbb, impure, false);
 	rsa_key rsaKey;
-	tomCheck(rsa_import(key, keyLen, &rsaKey), Arg::Gds(isc_tom_rsa_import));
+	tomCheck(rsa_import(key.getBytes(), key.getLength(), &rsaKey), Arg::Gds(isc_tom_rsa_import));
 
 	SLONG saltLength = 8;
 	if (dscHasData(dscs[RSA_VERIFY_ARG_SALTLEN]))
@@ -3654,7 +3969,8 @@ dsc* evlRsaVerify(thread_db* tdbb, const SysFunction* function, const NestValueA
 	}
 
 	int state = 0;
-	int cryptRc = rsa_verify_hash(sign, signLen, data, len, hash, saltLength, &state, &rsaKey);
+	int cryptRc = rsa_verify_hash_ex(sign.getBytes(), sign.getLength(), data.getBytes(), data.getLength(),
+		pkcs15 ? LTC_PKCS_1_V1_5 : LTC_PKCS_1_PSS, hash, saltLength, &state, &rsaKey);
 	rsa_free(&rsaKey);
 	if (cryptRc != CRYPT_INVALID_PACKET)
 		tomCheck(cryptRc, Arg::Gds(isc_tom_rsa_verify));
@@ -3670,7 +3986,7 @@ dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueAr
 {
 	fb_assert(args.getCount() == 3);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* partDsc = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if partDsc is NULL
@@ -3828,6 +4144,7 @@ dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueAr
 	}
 
 	SINT64 result = 0;
+	SCHAR scale = 0;
 
 	switch (part)
 	{
@@ -3874,10 +4191,9 @@ dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueAr
 
 		case blr_extract_millisecond:
 			result = (SINT64) ONE_DAY *
-				(timestamp2.value().timestamp_date - timestamp1.value().timestamp_date) * 1000;
-			result += ((SINT64) timestamp2.value().timestamp_time -
-				(SINT64) timestamp1.value().timestamp_time) /
-				(ISC_TIME_SECONDS_PRECISION / 1000);
+				(timestamp2.value().timestamp_date - timestamp1.value().timestamp_date) * ISC_TIME_SECONDS_PRECISION;
+			result += (SINT64) timestamp2.value().timestamp_time - (SINT64) timestamp1.value().timestamp_time;
+			scale = ISC_TIME_SECONDS_PRECISION_SCALE + 3;
 			break;
 
 		default:
@@ -3889,7 +4205,7 @@ dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueAr
 	}
 
 	impure->vlu_misc.vlu_int64 = result;
-	impure->vlu_desc.makeInt64(0, &impure->vlu_misc.vlu_int64);
+	impure->vlu_desc.makeInt64(scale, &impure->vlu_misc.vlu_int64);
 
 	return &impure->vlu_desc;
 }
@@ -3900,7 +4216,7 @@ dsc* evlExp(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -3937,7 +4253,7 @@ dsc* evlFirstLastDay(thread_db* tdbb, const SysFunction* function, const NestVal
 {
 	fb_assert(args.getCount() >= 2);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* partDsc = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if partDsc is NULL
@@ -4064,7 +4380,7 @@ dsc* evlFloor(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -4182,7 +4498,7 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	jrd_tra* transaction = tdbb->getTransaction();
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* nameSpace = EVL_expr(tdbb, request, args[0]);
@@ -4222,6 +4538,11 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 				resultStr = RO_VALUE;
 			else if (dbb->dbb_replica_mode == REPLICA_READ_WRITE)
 				resultStr = RW_VALUE;
+			else
+			{
+				fb_assert(dbb->dbb_replica_mode == REPLICA_NONE);
+				return NULL;
+			}
 		}
 		else if (nameStr == SESSION_ID_NAME)
 			resultStr.printf("%" SQUADFORMAT, PAG_attachment_id(tdbb));
@@ -4283,22 +4604,20 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 		}
 		else if (nameStr == CURRENT_USER_NAME)
 		{
-			MetaName user;
-			if (attachment->att_user)
-				user = attachment->att_user->getUserName();
+			const MetaString& user = attachment->getUserName();
 
 			if (user.isEmpty())
 				return NULL;
+
 			resultStr = user.c_str();
 		}
 		else if (nameStr == CURRENT_ROLE_NAME)
 		{
-			MetaName role;
-			if (attachment->att_user)
-				role = attachment->att_user->getSqlRole();
+			const MetaString& role = attachment->getSqlRole();
 
 			if (role.isEmpty())
 				return NULL;
+
 			resultStr = role.c_str();
 		}
 		else if (nameStr == SESSION_IDLE_TIMEOUT)
@@ -4329,7 +4648,7 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 			else if ((transaction->tra_flags & TRA_read_committed) &&
 				(transaction->tra_flags & TRA_read_consistency))
 			{
-				jrd_req* snapshot_req = request->req_snapshot.m_owner;
+				Request* snapshot_req = request->req_snapshot.m_owner;
 				if (snapshot_req)
 					resultStr.printf("%" SQUADFORMAT, snapshot_req->req_snapshot.m_number);
 				else
@@ -4353,14 +4672,11 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 			resultStr.printf("%" UQUADFORMAT, dbb->getReplSequence(tdbb));
 		else if (nameStr == EFFECTIVE_USER_NAME)
 		{
-			MetaName user;
-			if (attachment->att_ss_user)
-				user = attachment->att_ss_user->getUserName();
-			else if (attachment->att_user)
-				user = attachment->att_user->getUserName();
+			const MetaString& user = attachment->getEffectiveUserName();
 
 			if (user.isEmpty())
 				return NULL;
+
 			resultStr = user.c_str();
 		}
 		else if (nameStr == SESSION_TIMEZONE)
@@ -4469,7 +4785,7 @@ dsc* evlSetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	jrd_tra* transaction = tdbb->getTransaction();
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* nameSpace = EVL_expr(tdbb, request, args[0]);
@@ -4569,7 +4885,7 @@ dsc* evlGetTranCN(thread_db* tdbb, const SysFunction* function, const NestValueA
 	fb_assert(args.getCount() == 1);
 
 	Database* dbb = tdbb->getDatabase();
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
@@ -4610,7 +4926,7 @@ dsc* evlHash(thread_db* tdbb, const SysFunction* function, const NestValueArray&
 {
 	fb_assert(args.getCount() >= 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -4669,7 +4985,7 @@ dsc* evlLeft(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 {
 	fb_assert(args.getCount() == 2);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* str = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if str is NULL
@@ -4693,7 +5009,7 @@ dsc* evlLnLog10(thread_db* tdbb, const SysFunction* function, const NestValueArr
 	fb_assert(args.getCount() == 1);
 	fb_assert(function->misc != NULL);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -4766,7 +5082,7 @@ dsc* evlLog(thread_db* tdbb, const SysFunction* function, const NestValueArray& 
 {
 	fb_assert(args.getCount() == 2);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value[2];
 	value[0] = EVL_expr(tdbb, request, args[0]);
@@ -4832,7 +5148,7 @@ dsc* evlQuantize(thread_db* tdbb, const SysFunction* function, const NestValueAr
 {
 	fb_assert(args.getCount() == 2);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value[2];
 	value[0] = EVL_expr(tdbb, request, args[0]);
@@ -4871,7 +5187,7 @@ dsc* evlCompare(thread_db* tdbb, const SysFunction* function, const NestValueArr
 {
 	fb_assert(args.getCount() == 2);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value[2];
 	value[0] = EVL_expr(tdbb, request, args[0]);
@@ -4927,7 +5243,7 @@ dsc* evlNormDec(thread_db* tdbb, const SysFunction* function, const NestValueArr
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value;
 	value = EVL_expr(tdbb, request, args[0]);
@@ -4960,7 +5276,7 @@ dsc* evlMakeDbkey(Jrd::thread_db* tdbb, const SysFunction* function, const NestV
 	// MAKE_DBKEY ( REL_NAME | REL_ID, RECNUM [, DPNUM [, PPNUM] ] )
 
 	Database* const dbb = tdbb->getDatabase();
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 
 	fb_assert(args.getCount() >= 2 && args.getCount() <= 4);
 
@@ -5061,7 +5377,7 @@ dsc* evlMaxMinValue(thread_db* tdbb, const SysFunction* function, const NestValu
 	fb_assert(args.getCount() >= 1);
 	fb_assert(function->misc != NULL);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 	dsc* result = NULL;
 
 	for (FB_SIZE_T i = 0; i < args.getCount(); ++i)
@@ -5101,7 +5417,7 @@ dsc* evlMod(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 {
 	fb_assert(args.getCount() == 2);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value1 = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value1 is NULL
@@ -5164,7 +5480,7 @@ dsc* evlOverlay(thread_db* tdbb, const SysFunction* function, const NestValueArr
 {
 	fb_assert(args.getCount() >= 3);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -5348,7 +5664,7 @@ dsc* evlPad(thread_db* tdbb, const SysFunction* function, const NestValueArray& 
 {
 	fb_assert(args.getCount() >= 2);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value1 = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value1 is NULL
@@ -5523,7 +5839,7 @@ dsc* evlPosition(thread_db* tdbb, const SysFunction* function, const NestValueAr
 {
 	fb_assert(args.getCount() >= 2);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value1 = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value1 is NULL
@@ -5649,7 +5965,7 @@ dsc* evlPower(thread_db* tdbb, const SysFunction* function, const NestValueArray
 {
 	fb_assert(args.getCount() == 2);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value[2];
 	value[0] = EVL_expr(tdbb, request, args[0]);
@@ -5713,7 +6029,7 @@ dsc* evlRand(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	tdbb->getAttachment()->att_random_generator.getBytes(&n, sizeof(n));
 	n &= QUADCONST(0x7FFFFFFFFFFFFFFF);	// remove the sign
 
-	impure->vlu_misc.vlu_double = (double) n / MAX_SINT64;
+	impure->vlu_misc.vlu_double = (double) n / (double) MAX_SINT64;
 	impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
 
 	return &impure->vlu_desc;
@@ -5725,7 +6041,7 @@ dsc* evlReplace(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 {
 	fb_assert(args.getCount() == 3);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 	dsc* values[3];	// 0 = searched, 1 = find, 2 = replacement
 	const dsc* firstBlob = NULL;
 
@@ -5883,7 +6199,7 @@ dsc* evlReverse(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -5986,7 +6302,7 @@ dsc* evlRight(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 {
 	fb_assert(args.getCount() == 2);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -6039,7 +6355,7 @@ dsc* evlRound(thread_db* tdbb, const SysFunction* function, const NestValueArray
 {
 	fb_assert(args.getCount() >= 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -6087,7 +6403,7 @@ dsc* evlSign(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -6118,7 +6434,7 @@ dsc* evlSqrt(thread_db* tdbb, const SysFunction* function, const NestValueArray&
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -6161,7 +6477,7 @@ dsc* evlTrunc(thread_db* tdbb, const SysFunction* function, const NestValueArray
 {
 	fb_assert(args.getCount() >= 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -6294,7 +6610,7 @@ dsc* evlUuidToChar(thread_db* tdbb, const SysFunction* function, const NestValue
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -6338,7 +6654,7 @@ dsc* evlRoleInUse(thread_db* tdbb, const SysFunction*, const NestValueArray& arg
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
@@ -6365,7 +6681,7 @@ dsc* evlSystemPrivilege(thread_db* tdbb, const SysFunction*, const NestValueArra
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
@@ -6387,7 +6703,7 @@ dsc* evlUnicodeChar(thread_db* tdbb, const SysFunction* function, const NestValu
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -6422,7 +6738,7 @@ dsc* evlUnicodeVal(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 {
 	fb_assert(args.getCount() == 1);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -6483,6 +6799,7 @@ const SysFunction SysFunction::functions[] =
 		{"BIN_SHL_ROT", 2, 2, setParamsInteger, makeBinShift, evlBinShift, (void*) funBinShlRot},
 		{"BIN_SHR_ROT", 2, 2, setParamsInteger, makeBinShift, evlBinShift, (void*) funBinShrRot},
 		{"BIN_XOR", 2, -1, setParamsBin, makeBin, evlBin, (void*) funBinXor},
+		{"BLOB_APPEND", 2, -1, setParamsBlobAppend, makeBlobAppend, evlBlobAppend, NULL},
 		{"CEIL", 1, 1, setParamsDblDec, makeCeilFloor, evlCeil, NULL},
 		{"CEILING", 1, 1, setParamsDblDec, makeCeilFloor, evlCeil, NULL},
 		{"CHAR_TO_UUID", 1, 1, setParamsCharToUuid, makeUuid, evlCharToUuid, NULL},
@@ -6492,9 +6809,9 @@ const SysFunction SysFunction::functions[] =
 		{"COT", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCot},
 		{"CRYPT_HASH", 2, 2, setParamsHash, makeHash, evlHash, NULL},
 		{"DATEADD", 3, 3, setParamsDateAdd, makeDateAdd, evlDateAdd, NULL},
-		{"DATEDIFF", 3, 3, setParamsDateDiff, makeInt64Result, evlDateDiff, NULL},
-		{"DECRYPT", 7, 7, setParamsEncrypt, makeCrypt, evlDecrypt, NULL},
-		{"ENCRYPT", 7, 7, setParamsEncrypt, makeCrypt, evlEncrypt, NULL},
+		{"DATEDIFF", 3, 3, setParamsDateDiff, makeDateDiff, evlDateDiff, NULL},
+		{"DECRYPT", CRYPT_ARG_MAX, CRYPT_ARG_MAX, setParamsEncrypt, makeCrypt, evlDecrypt, NULL},
+		{"ENCRYPT", CRYPT_ARG_MAX, CRYPT_ARG_MAX, setParamsEncrypt, makeCrypt, evlEncrypt, NULL},
 		{"EXP", 1, 1, setParamsDblDec, makeDblDecResult, evlExp, NULL},
 		{"FIRST_DAY", 2, 2, setParamsFirstLastDay, makeFirstLastDayResult, evlFirstLastDay, (void*) funFirstDay},
 		{"FLOOR", 1, 1, setParamsDblDec, makeCeilFloor, evlFloor, NULL},
@@ -6529,12 +6846,12 @@ const SysFunction SysFunction::functions[] =
 		{"RIGHT", 2, 2, setParamsSecondInteger, makeLeftRight, evlRight, NULL},
 		{"ROUND", 1, 2, setParamsRoundTrunc, makeRound, evlRound, NULL},
 		{"RPAD", 2, 3, setParamsSecondInteger, makePad, evlPad, (void*) funRPad},
-		{"RSA_DECRYPT", 4, 4, setParamsRsaEncrypt, makeRsaCrypt, evlRsaDecrypt, NULL},
-		{"RSA_ENCRYPT", 4, 4, setParamsRsaEncrypt, makeRsaCrypt, evlRsaEncrypt, NULL},
+		{"RSA_DECRYPT", RSA_CRYPT_ARG_MAX, RSA_CRYPT_ARG_MAX, setParamsRsaEncrypt, makeRsaCrypt, evlRsaDecrypt, NULL},
+		{"RSA_ENCRYPT", RSA_CRYPT_ARG_MAX, RSA_CRYPT_ARG_MAX, setParamsRsaEncrypt, makeRsaCrypt, evlRsaEncrypt, NULL},
 		{"RSA_PRIVATE", 1, 1, setParamsInteger, makeRsaPrivate, evlRsaPrivate, NULL},
 		{"RSA_PUBLIC", 1, 1, setParamsRsaPublic, makeRsaPublic, evlRsaPublic, NULL},
-		{"RSA_SIGN_HASH", 4, 4, setParamsRsaSign, makeRsaSign, evlRsaSign, NULL},
-		{"RSA_VERIFY_HASH", 5, 5, setParamsRsaVerify, makeBoolResult, evlRsaVerify, NULL},
+		{"RSA_SIGN_HASH", RSA_SIGN_ARG_MAX, RSA_SIGN_ARG_MAX, setParamsRsaSign, makeRsaSign, evlRsaSign, NULL},
+		{"RSA_VERIFY_HASH", RSA_VERIFY_ARG_MAX, RSA_VERIFY_ARG_MAX, setParamsRsaVerify, makeBoolResult, evlRsaVerify, NULL},
 		{"SIGN", 1, 1, setParamsDblDec, makeShortResult, evlSign, NULL},
 		{"SIN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfSin},
 		{"SINH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfSinh},

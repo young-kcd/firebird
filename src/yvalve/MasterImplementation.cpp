@@ -56,7 +56,7 @@ namespace Why {
 // getStatus()
 //
 
-class UserStatus FB_FINAL : public Firebird::DisposeIface<Firebird::BaseStatus<UserStatus> >
+class UserStatus final : public Firebird::DisposeIface<Firebird::BaseStatus<UserStatus> >
 {
 };
 
@@ -145,7 +145,7 @@ FB_BOOLEAN MasterImplementation::getProcessExiting()
 		return true;
 
 #ifdef WIN_NT
-	// Sometime, when user process exits not calling fb_shutdown and timer thread should 
+	// Sometime, when user process exits not calling fb_shutdown and timer thread should
 	// be terminated already, wait for its handle with zero timeout returns WAIT_TIMEOUT.
 	// Usage of small non-zero timeout seems fixed such cases.
 
@@ -219,10 +219,10 @@ void TimerEntry::cleanup()
 
 ISC_UINT64 curTime()
 {
-	ISC_UINT64 rc = fb_utils::query_performance_counter();
+	double rc = fb_utils::query_performance_counter();
 	rc *= 1000000;
 	rc /= fb_utils::query_performance_frequency();
-	return rc;
+	return ISC_UINT64(rc);
 }
 
 TimerEntry* getTimer(ITimer* timer)

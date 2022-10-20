@@ -27,6 +27,7 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/Attachment.h"
+#include "../jrd/optimizer/Optimizer.h"
 
 #include "RecordSource.h"
 
@@ -48,13 +49,23 @@ BaseAggWinStream<ThisType, NextType>::BaseAggWinStream(thread_db* tdbb, Compiler
 	  m_oneRowWhenEmpty(oneRowWhenEmpty)
 {
 	fb_assert(m_next);
+
 	m_impure = csb->allocImpure<typename ThisType::Impure>();
+
+	if (group)
+	{
+		m_cardinality = next->getCardinality();
+		for (auto count = group->getCount(); count; count--)
+			m_cardinality *= REDUCE_SELECTIVITY_FACTOR_EQUALITY;
+	}
+	else
+		m_cardinality = MINIMUM_CARDINALITY;
 }
 
 template <typename ThisType, typename NextType>
-void BaseAggWinStream<ThisType, NextType>::open(thread_db* tdbb) const
+void BaseAggWinStream<ThisType, NextType>::internalOpen(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = getImpure(request);
 
 	impure->irsb_flags = irsb_open;
@@ -77,7 +88,7 @@ void BaseAggWinStream<ThisType, NextType>::open(thread_db* tdbb) const
 template <typename ThisType, typename NextType>
 void BaseAggWinStream<ThisType, NextType>::close(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 
 	invalidateRecords(request);
 
@@ -111,7 +122,7 @@ void BaseAggWinStream<ThisType, NextType>::markRecursive()
 }
 
 template <typename ThisType, typename NextType>
-void BaseAggWinStream<ThisType, NextType>::invalidateRecords(jrd_req* request) const
+void BaseAggWinStream<ThisType, NextType>::invalidateRecords(Request* request) const
 {
 	m_next->invalidateRecords(request);
 }
@@ -130,7 +141,7 @@ void BaseAggWinStream<ThisType, NextType>::findUsedStreams(StreamList& streams,
 template <typename ThisType, typename NextType>
 bool BaseAggWinStream<ThisType, NextType>::evaluateGroup(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 
 	JRD_reschedule(tdbb);
 
@@ -194,7 +205,7 @@ bool BaseAggWinStream<ThisType, NextType>::evaluateGroup(thread_db* tdbb) const
 
 // Initialize the aggregate record
 template <typename ThisType, typename NextType>
-void BaseAggWinStream<ThisType, NextType>::aggInit(thread_db* tdbb, jrd_req* request,
+void BaseAggWinStream<ThisType, NextType>::aggInit(thread_db* tdbb, Request* request,
 	const MapNode* map) const
 {
 	const NestConst<ValueExprNode>* const sourceEnd = map->sourceList.end();
@@ -215,7 +226,7 @@ void BaseAggWinStream<ThisType, NextType>::aggInit(thread_db* tdbb, jrd_req* req
 
 // Go through and compute all the aggregates on this record
 template <typename ThisType, typename NextType>
-bool BaseAggWinStream<ThisType, NextType>::aggPass(thread_db* tdbb, jrd_req* request,
+bool BaseAggWinStream<ThisType, NextType>::aggPass(thread_db* tdbb, Request* request,
 	const NestValueArray& sourceList, const NestValueArray& targetList) const
 {
 	bool ret = true;
@@ -245,7 +256,7 @@ bool BaseAggWinStream<ThisType, NextType>::aggPass(thread_db* tdbb, jrd_req* req
 }
 
 template <typename ThisType, typename NextType>
-void BaseAggWinStream<ThisType, NextType>::aggExecute(thread_db* tdbb, jrd_req* request,
+void BaseAggWinStream<ThisType, NextType>::aggExecute(thread_db* tdbb, Request* request,
 	const NestValueArray& sourceList, const NestValueArray& targetList) const
 {
 	const NestConst<ValueExprNode>* const sourceEnd = sourceList.end();
@@ -277,7 +288,7 @@ void BaseAggWinStream<ThisType, NextType>::aggExecute(thread_db* tdbb, jrd_req* 
 
 // Finalize a sort for distinct aggregate
 template <typename ThisType, typename NextType>
-void BaseAggWinStream<ThisType, NextType>::aggFinish(thread_db* tdbb, jrd_req* request,
+void BaseAggWinStream<ThisType, NextType>::aggFinish(thread_db* tdbb, Request* request,
 	const MapNode* map) const
 {
 	const NestConst<ValueExprNode>* const sourceEnd = map->sourceList.end();
@@ -295,13 +306,11 @@ void BaseAggWinStream<ThisType, NextType>::aggFinish(thread_db* tdbb, jrd_req* r
 
 // Look for change in the values of a group/order.
 template <typename ThisType, typename NextType>
-int BaseAggWinStream<ThisType, NextType>::lookForChange(thread_db* tdbb, jrd_req* request,
+int BaseAggWinStream<ThisType, NextType>::lookForChange(thread_db* tdbb, Request* request,
 	const NestValueArray* group, const SortNode* sort, impure_value* values) const
 {
 	if (!group)
 		return false;
-
-	Impure* const impure = getImpure(request);
 
 	for (const NestConst<ValueExprNode>* ptrValue = group->begin(), *endValue = group->end();
 		 ptrValue != endValue;
@@ -342,7 +351,7 @@ int BaseAggWinStream<ThisType, NextType>::lookForChange(thread_db* tdbb, jrd_req
 }
 
 template <typename ThisType, typename NextType>
-bool BaseAggWinStream<ThisType, NextType>::getNextRecord(thread_db* tdbb, jrd_req* request) const
+bool BaseAggWinStream<ThisType, NextType>::getNextRecord(thread_db* tdbb, Request* request) const
 {
 	Impure* const impure = getImpure(request);
 
@@ -367,19 +376,28 @@ AggregatedStream::AggregatedStream(thread_db* tdbb, CompilerScratch* csb, Stream
 	fb_assert(map);
 }
 
-void AggregatedStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
+void AggregatedStream::getChildren(Array<const RecordSource*>& children) const
 {
-	if (detailed)
-		plan += printIndent(++level) + "Aggregate";
-
-	m_next->print(tdbb, plan, detailed, level);
+	children.add(m_next);
 }
 
-bool AggregatedStream::getRecord(thread_db* tdbb) const
+void AggregatedStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level, bool recurse) const
+{
+	if (detailed)
+	{
+		plan += printIndent(++level) + "Aggregate";
+		printOptInfo(plan);
+	}
+
+	if (recurse)
+		m_next->print(tdbb, plan, detailed, level, recurse);
+}
+
+bool AggregatedStream::internalGetRecord(thread_db* tdbb) const
 {
 	JRD_reschedule(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	record_param* const rpb = &request->req_rpb[m_stream];
 	Impure* const impure = getImpure(request);
 

@@ -27,8 +27,10 @@
 @echo off
 :: reset ERRLEV to clear error from last run in same cmd shell
 set ERRLEV=0
+
 :: Assume we are preparing a production build
 set FBBUILD_BUILDTYPE=release
+
 :: Don't ship pdb files by default
 set FBBUILD_SHIP_PDB=no_pdb
 :: Reset "make" vars to zero
@@ -65,10 +67,10 @@ if "%FB2_SNAPSHOT%"=="1" (
 :: let's bail out now.
 
 @echo     o Checking for sed...
-(cmd /c "sed.exe --version 2>&1 | findstr version > nul ") || ( call :ERROR Could not locate sed && @goto :EOF )
+(cmd /c "sed.exe --version 2>&1 > nul ") || ( call :ERROR Could not locate sed && @goto :EOF )
 
 @echo     o Checking for unix2dos...
-(cmd /c "unix2dos.exe --version 2>&1 | findstr version > nul" ) || ( call :ERROR Could not locate unix2dos && @goto :EOF )
+(cmd /c "unix2dos.exe --version 2>&1 > nul" ) || ( call :ERROR Could not locate unix2dos && @goto :EOF )
 
 @for /f "usebackq tokens=*" %%c in (`where /f touch 2^>nul`) do set TOUCH_COMMAND=%%c
 if defined TOUCH_COMMAND (
@@ -85,6 +87,9 @@ if defined MD5_COMMAND (
 
 if %FBBUILD_ZIP_PACK% EQU 1 (
   if not defined SEVENZIP (
+    if exist "%ProgramW6432%\7-Zip\7z.exe" set SEVENZIP=%ProgramW6432%\7-Zip
+  )
+  if not defined SEVENZIP (
     call :ERROR SEVENZIP environment variable is not defined.
     @goto :EOF
   ) else (@echo     o Compression utility found.)
@@ -93,7 +98,7 @@ if %FBBUILD_ZIP_PACK% EQU 1 (
 if %FBBUILD_ISX_PACK% NEQ 1 goto :SKIP_INNO
 
 if defined INNO6_SETUP_PATH (
-  set ISCC_COMMAND=%INNO6_SETUP_PATH%\iscc.exe
+  set ISCC_COMMAND="%INNO6_SETUP_PATH%\iscc.exe"
 )
 :: If the environment variable is not set let's search in PATH
 if not defined ISCC_COMMAND (
@@ -154,8 +159,8 @@ set /A FBBUILD_PACKAGE_NUMBER+=1
 
 :: If a suffix is defined (usually for an RC) ensure it is prefixed correctly.
 if defined FBBUILD_FILENAME_SUFFIX (
-if not "%FBBUILD_FILENAME_SUFFIX:~0,1%"=="_" (
-(set FBBUILD_FILENAME_SUFFIX=_%FBBUILD_FILENAME_SUFFIX%)
+if not "%FBBUILD_FILENAME_SUFFIX:~0,1%"=="-" (
+(set FBBUILD_FILENAME_SUFFIX=-%FBBUILD_FILENAME_SUFFIX%)
 )
 )
 
@@ -170,7 +175,11 @@ set FBBUILD_PROD_STATUS=PROD
 set FBBUILD_PROD_STATUS=DEV
 )
 
-set FBBUILD_FILE_ID=%PRODUCT_VER_STRING%_%FBBUILD_PACKAGE_NUMBER%_%FB_TARGET_PLATFORM%
+if "%FB_TARGET_PLATFORM%"=="x64" (
+set FBBUILD_FILE_ID=%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%-windows-x64
+) else (
+set FBBUILD_FILE_ID=%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%-windows-x86
+)
 
 @setlocal
 @echo.
@@ -204,28 +213,24 @@ set SED_COMMAND=sed -e s/\$MAJOR/%FB_MAJOR_VER%/g ^
 :: MSVC should be installed with redistributable packages.
 ::=====================
 
-:: We are forced to set this because the runtime library now (MSVC15)
-:: has a different version to the compiler. And sometimes they use 141
-:: and sometimes 140.
-if %MSVC_VERSION% EQU 15 (
-  @set MSVC_RUNTIME_MAJOR_VERSION=14
-  @set MSVC_RUNTIME_MINOR_VERSION_0=0
-  @set MSVC_RUNTIME_MINOR_VERSION_1=1
-
-) else (
-  @set MSVC_RUNTIME_VERSION=%MSVC_VERSION%0
-)
-
 
 @echo   Copying MSVC runtime libraries...
 @if not exist %FB_OUTPUT_DIR%\system32 (
   @mkdir %FB_OUTPUT_DIR%\system32
 )
-for %%f in ( msvcp%MSVC_RUNTIME_MAJOR_VERSION%%MSVC_RUNTIME_MINOR_VERSION_0%.dll vcruntime%MSVC_RUNTIME_MAJOR_VERSION%%MSVC_RUNTIME_MINOR_VERSION_0%.dll  ) do (
-    echo Copying "%VCToolsRedistDir%\%VSCMD_ARG_TGT_ARCH%\Microsoft.VC%MSVC_RUNTIME_MAJOR_VERSION%%MSVC_RUNTIME_MINOR_VERSION_1%.CRT\%%f"
-    copy  "%VCToolsRedistDir%\%VSCMD_ARG_TGT_ARCH%\Microsoft.VC%MSVC_RUNTIME_MAJOR_VERSION%%MSVC_RUNTIME_MINOR_VERSION_1%.CRT\%%f" %FB_OUTPUT_DIR%\ >nul
+:: Note the confusion of RT library numbers here! These notes, as of time of
+:: writing 2021-12-21, are accurate for current versions of Visual Studio
+:: - 2017, 2019, 2022. Basic MS runtime version is v140. Except that is only
+:: used in file names. In reality Visual Studio uses 141, 142 or 143 in
+:: directory names and merge module names as well as producing file names with
+:: these version numbers. %MSVC_RUNTIME_FILE_VERSION% should represent 140.
+:: %MSVC_RUNTIME_LIBRARY_VERSION% is based on the Visual Studio version used.
+:: These variables are set in setenvvar.bat.
+for %%f in ( msvcp%MSVC_RUNTIME_FILE_VERSION%.dll vcruntime%MSVC_RUNTIME_FILE_VERSION%.dll  ) do (
+    echo Copying "%VCToolsRedistDir%\%VSCMD_ARG_TGT_ARCH%\Microsoft.VC%MSVC_RUNTIME_LIBRARY_VERSION%.CRT\%%f"
+    copy  "%VCToolsRedistDir%\%VSCMD_ARG_TGT_ARCH%\Microsoft.VC%MSVC_RUNTIME_LIBRARY_VERSION%.CRT\%%f" %FB_OUTPUT_DIR%\ >nul
     if %ERRORLEVEL% GEQ 1 (
-       call :ERROR Copying "%VCToolsRedistDir%\%VSCMD_ARG_TGT_ARCH%\Microsoft.VC%MSVC_RUNTIME_MAJOR_VERSION%%MSVC_RUNTIME_MINOR_VERSION_1%.CRT\%%f" failed with error %ERRORLEVEL% ) && (goto :EOF)
+       call :ERROR Copying "%VCToolsRedistDir%\%VSCMD_ARG_TGT_ARCH%\Microsoft.VC%MSVC_RUNTIME_LIBRARY_VERSION%.CRT\%%f" failed with error %ERRORLEVEL% ) && (goto :EOF)
     )
 )
 
@@ -240,19 +245,17 @@ if "%VSCMD_ARG_TGT_ARCH%"=="x86" (
 @if "%FBBUILD_SHIP_PDB%"=="ship_pdb" (
   @echo   Copying pdb files...
   @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\fbserver\firebird.pdb %FB_OUTPUT_DIR%\ > nul
+  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\burp\burp.pdb %FB_OUTPUT_DIR%\gbak.pdb > nul
+  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\gfix\gfix.pdb %FB_OUTPUT_DIR%\ > nul
+  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\isql\isql.pdb %FB_OUTPUT_DIR%\ > nul
   @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\yvalve\fbclient.pdb %FB_OUTPUT_DIR%\ > nul
-  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\engine\engine*.pdb %FB_OUTPUT_DIR%\ > nul
-  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\fbtrace\fbtrace.pdb %FB_OUTPUT_DIR%\ > nul
-  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\legacy_auth\legacy_auth.pdb %FB_OUTPUT_DIR%\ > nul
-  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\legacy_usermanager\legacy_usermanager.pdb %FB_OUTPUT_DIR%\ > nul
-  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\srp\srp.pdb %FB_OUTPUT_DIR%\ > nul
-  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\udr_engine\udr_engine.pdb %FB_OUTPUT_DIR%\ > nul
+  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\engine\engine*.pdb %FB_OUTPUT_DIR%\plugins\ > nul
+  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\fbtrace\fbtrace.pdb %FB_OUTPUT_DIR%\plugins\ > nul
+  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\legacy_auth\legacy_auth.pdb %FB_OUTPUT_DIR%\plugins\ > nul
+  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\legacy_usermanager\legacy_usermanager.pdb %FB_OUTPUT_DIR%\plugins\ > nul
+  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\srp\srp.pdb %FB_OUTPUT_DIR%\plugins\ > nul
+  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\udr_engine\udr_engine.pdb %FB_OUTPUT_DIR%\plugins\ > nul
 )
-:: Maybe include these and other executables, one day ?
-::  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\gbak\gbak.pdb %FB_OUTPUT_DIR%\ > nul
-::  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\gfix\gfix.pdb %FB_OUTPUT_DIR%\ > nul
-::  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\isql\isql.pdb %FB_OUTPUT_DIR%\ > nul
-
 
 @echo   Started copying docs...
 @rmdir /S /Q %FB_OUTPUT_DIR%\doc 2>nul
@@ -316,7 +319,7 @@ if defined FB_EXTERNAL_DOCS (
         if %ERRORLEVEL% GEQ 1 (
             REM - As of RC1 there is no quick start guide so we do not want
             REM   the packaging to fail for something that doesn't exist
-            if "%FBBUILD_FILENAME_SUFFIX%" == "_RC1" (
+            if "%FBBUILD_FILENAME_SUFFIX%" == "-RC1" (
                 echo Copying %FB_EXTERNAL_DOCS%\%%v failed.
             ) else (
                 call :ERROR Copying %FB_EXTERNAL_DOCS%\%%v failed.
@@ -378,17 +381,17 @@ if %FB2_SNAPSHOT% EQU 1 (
 :: Generate runtimes as an MSI file.
 :: This requires WiX 3.0 to be installed
 ::============
-if %MSVC_VERSION% EQU 15 (
-  if not exist %FB_OUTPUT_DIR%\system32\vccrt%MSVC_RUNTIME_MAJOR_VERSION%%MSVC_RUNTIME_MINOR_VERSION_1%_%FB_TARGET_PLATFORM%.msi (
+@if %MSVC_VERSION% EQU 15 (
+  if not exist %FB_OUTPUT_DIR%\system32\vccrt%MSVC_RUNTIME_LIBRARY_VERSION%_%FB_TARGET_PLATFORM%.msi (
     "%WIX%\bin\candle.exe" -v -sw1091 %FB_ROOT_PATH%\builds\win32\msvc%MSVC_VERSION%\VCCRT_%FB_TARGET_PLATFORM%.wxs -out %FB_GEN_DIR%\vccrt_%FB_TARGET_PLATFORM%.wixobj
     @if %ERRORLEVEL% GEQ 1 (
         ( call :ERROR Could not generate wixobj for MSVC Runtime MSI ) & (goto :EOF)
     ) else (
-        "%WIX%\bin\light.exe" -sw1076 %FB_GEN_DIR%\vccrt_%FB_TARGET_PLATFORM%.wixobj -out %FB_OUTPUT_DIR%\system32\vccrt%MSVC_RUNTIME_MAJOR_VERSION%%MSVC_RUNTIME_MINOR_VERSION_1%_%FB_TARGET_PLATFORM%.msi
-        @if %ERRORLEVEL% GEQ 1 ( (call :ERROR Could not generate MSVCC Runtime MSI ) & (goto :EOF))
+        "%WIX%\bin\light.exe" -sw1076 %FB_GEN_DIR%\vccrt_%FB_TARGET_PLATFORM%.wixobj -out %FB_OUTPUT_DIR%\system32\vccrt%MSVC_RUNTIME_LIBRARY_VERSION%_%FB_TARGET_PLATFORM%.msi
+        @if %ERRORLEVEL% GEQ 1 ( (call :ERROR Could not generate MSVCC Runtime MSI %MSVC_RUNTIME_LIBRARY_VERSION% ) & (goto :EOF))
     )
   ) else (
-    @echo   Using an existing build of %FB_OUTPUT_DIR%\system32\vccrt%MSVC_RUNTIME_MAJOR_VERSION%%MSVC_RUNTIME_MINOR_VERSION_1%_%FB_TARGET_PLATFORM%.msi
+    @echo   Using an existing build of %FB_OUTPUT_DIR%\system32\vccrt%MSVC_RUNTIME_LIBRARY_VERSION%_%FB_TARGET_PLATFORM%.msi
   )
 )
 
@@ -405,14 +408,12 @@ setlocal
 ::=========================================================================
 @echo   Copying ib_util etc
 @copy %FB_ROOT_PATH%\src\extlib\ib_util.h %FB_OUTPUT_DIR%\include > nul || (call :WARNING Copying ib_util.h failed. && @goto :EOF )
-@copy %FB_ROOT_PATH%\lang_helpers\ib_util.pas %FB_OUTPUT_DIR%\include > nul || (call :WARNING Copying ib_util.pas failed. && @goto :EOF )
+@copy %FB_ROOT_PATH%\src\misc\pascal\ib_util.pas %FB_OUTPUT_DIR%\include > nul || (call :WARNING Copying ib_util.pas failed. && @goto :EOF )
 
 @echo   Copying other include files required for development...
 set OUTPATH=%FB_OUTPUT_DIR%\include
 @copy %FB_ROOT_PATH%\src\yvalve\perf.h %OUTPATH%\ > nul
 @copy %FB_ROOT_PATH%\src\include\gen\firebird.pas %OUTPATH%\firebird\ > nul || (@call :ERROR Failure executing copy %FB_ROOT_PATH%\src\include\gen\firebird.pas %OUTPATH%\firebird\  )
-@if %ERRLEV% GEQ 1 goto :END
-@xcopy /e /i /y %FB_ROOT_PATH%\src\include\firebird\impl %OUTPATH%\firebird\  > nul || (@call :ERROR Failure executing @xcopy /e /i /y %FB_ROOT_PATH%\src\include\firebird\* %OUTPATH%\firebird\  )
 @if %ERRLEV% GEQ 1 goto :END
 
 endlocal
@@ -429,22 +430,6 @@ endlocal
 copy %FB_ROOT_PATH%\builds\install\misc\databases.conf %FB_OUTPUT_DIR%\databases.conf > nul
 
 ::End of DB_CONF
-::-----------------
-@goto :EOF
-
-
-:MISC
-::==============================================
-:: Make sure that qli's help.fdb is available
-::===============================================
-@if not exist %FB_OUTPUT_DIR%\help\help.fdb (
-    (@echo   Copying help.fdb for qli support)
-    (@copy %FB_GEN_DIR%\dbs\help.fdb %FB_OUTPUT_DIR%\help\help.fdb > nul)
-    (@if %ERRORLEVEL% GEQ 1 ( (call :ERROR Could not copy qli help database ) & (goto :EOF)))
-)
-
-
-::End of MISC
 ::-----------------
 @goto :EOF
 
@@ -469,7 +454,7 @@ copy %FB_ROOT_PATH%\builds\install\misc\databases.conf %FB_OUTPUT_DIR%\databases
 :: that and they all have windows EOL
 ::===============================================
 for /R %FB_OUTPUT_DIR% %%W in ( *.txt *.conf *.sql *.c *.cpp *.hpp *.h *.bat *.pas *.e *.def *.rc *.md *.html ) do (
-  unix2dos -q --safe %%W || exit /b 1
+  unix2dos --safe %%W || exit /b 1
 )
 
 ::End of SET_CRLF
@@ -482,10 +467,10 @@ for /R %FB_OUTPUT_DIR% %%W in ( *.txt *.conf *.sql *.c *.cpp *.hpp *.h *.bat *.p
 :: Forcefully disable delayed expansion because of exclamation marks in 7z switches
 setlocal DisableDelayedExpansion
 
-set SKIP_FILES=-x!installation_readme.txt
+set SKIP_FILES=-x!*.log -x!*.exp -x!*_test.exe -x!installation_readme.txt
 
 if "%FBBUILD_SHIP_PDB%" == "ship_pdb" (
-    set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%_pdb%FBBUILD_FILENAME_SUFFIX%.zip
+    set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%-withDebugSymbols%FBBUILD_FILENAME_SUFFIX%.zip
 ) else (
     set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%%FBBUILD_FILENAME_SUFFIX%.zip
     set SKIP_FILES=%SKIP_FILES% -x!*.pdb
@@ -500,7 +485,7 @@ if exist %FBBUILD_ZIPFILE% (
   @del %FBBUILD_ZIPFILE%
 )
 
-%SEVENZIP%\7z.exe a -r -tzip -mx9 %SKIP_FILES% %FBBUILD_ZIPFILE% %FB_OUTPUT_DIR%\*
+"%SEVENZIP%\7z.exe" a -r -tzip -mx9 %SKIP_FILES% %FBBUILD_ZIPFILE% %FB_OUTPUT_DIR%\*
 
 endlocal
 
@@ -676,7 +661,7 @@ for %%v in ( %1 %2 %3 %4 %5 %6 %7 %8 %9 )  do (
 
 pushd ..\..\..\win32
 ::This must be called from the directory it resides in.
-@call setenvvar.bat
+@call setenvvar.bat %*
 popd
 @if errorlevel 1 (goto :END)
 
@@ -715,9 +700,6 @@ if defined WIX (
 
 @echo   Writing databases conf
 @(@call :DB_CONF ) || (@echo Error calling DB_CONF && @goto :END)
-@echo.
-@echo   Copying miscellany such as the QLI help database
-@(@call :MISC ) || (@echo Error calling MISC & @goto :END)
 @echo.
 @echo   Copying firebird.msg
 @(@call :FB_MSG ) || (@echo Error calling FB_MSG && @goto :END)

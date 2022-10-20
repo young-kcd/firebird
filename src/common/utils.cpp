@@ -43,8 +43,10 @@
 
 #include "../common/gdsassert.h"
 #include "../common/utils_proto.h"
+#include "../common/classes/auto.h"
 #include "../common/classes/locks.h"
 #include "../common/classes/init.h"
+#include "../common/isc_proto.h"
 #include "../jrd/constants.h"
 #include "firebird/impl/inf_pub.h"
 #include "../jrd/align.h"
@@ -60,6 +62,7 @@
 #ifdef WIN_NT
 #include <direct.h>
 #include <io.h> // isatty()
+#include <sddl.h>
 #endif
 
 #ifdef HAVE_UNISTD_H
@@ -555,6 +558,160 @@ bool isGlobalKernelPrefix()
 }
 
 
+// Incapsulates Windows private namespace
+class PrivateNamespace
+{
+public:
+	PrivateNamespace(MemoryPool& pool) :
+		m_hNamespace(NULL),
+		m_hTestEvent(NULL)
+	{
+		try
+		{
+			init();
+		}
+		catch (const Firebird::Exception& ex)
+		{
+			iscLogException("Error creating private namespace", ex);
+		}
+	}
+
+	~PrivateNamespace()
+	{
+		if (m_hNamespace != NULL)
+			ClosePrivateNamespace(m_hNamespace, 0);
+		if (m_hTestEvent != NULL)
+			CloseHandle(m_hTestEvent);
+	}
+
+	// Add namespace prefix to the name, returns true on success.
+	bool addPrefix(char* name, size_t bufsize)
+	{
+		if (!isReady())
+			return false;
+
+		if (strchr(name, '\\') != 0)
+			return false;
+
+		const size_t prefixLen = strlen(sPrivateNameSpace) + 1;
+		const size_t nameLen = strlen(name) + 1;
+		if (prefixLen + nameLen > bufsize)
+			return false;
+
+		memmove(name + prefixLen, name, nameLen + 1);
+		memcpy(name, sPrivateNameSpace, prefixLen - 1);
+		name[prefixLen - 1] = '\\';
+		return true;
+	}
+
+	bool isReady() const
+	{
+		return (m_hNamespace != NULL) || (m_hTestEvent != NULL);
+	}
+
+private:
+	const char* sPrivateNameSpace = "FirebirdCommon";
+	const char* sBoundaryName = "FirebirdCommonBoundary";
+
+	void raiseError(const char* apiRoutine)
+	{
+		(Firebird::Arg::Gds(isc_sys_request) << apiRoutine << Firebird::Arg::OsError()).raise();
+	}
+
+	void init()
+	{
+		alignas(SID) char sid[SECURITY_MAX_SID_SIZE];
+		DWORD cbSid = sizeof(sid);
+
+		// For now use EVERYONE, could be changed later
+		cbSid = sizeof(sid);
+		if (!CreateWellKnownSid(WinWorldSid, NULL, &sid, &cbSid))
+			raiseError("CreateWellKnownSid");
+
+		// Create security descriptor which allows generic access to the just created SID
+
+		SECURITY_ATTRIBUTES sa;
+		RtlSecureZeroMemory(&sa, sizeof(sa));
+		sa.nLength = sizeof(sa);
+		sa.bInheritHandle = FALSE;
+
+		char strSecDesc[255];
+		LPSTR strSid = NULL;
+		if (ConvertSidToStringSid(&sid, &strSid))
+		{
+			snprintf(strSecDesc, sizeof(strSecDesc), "D:(A;;GA;;;%s)", strSid);
+			LocalFree(strSid);
+		}
+		else
+			strncpy(strSecDesc, "D:(A;;GA;;;WD)", sizeof(strSecDesc));
+
+		if (!ConvertStringSecurityDescriptorToSecurityDescriptor(strSecDesc, SDDL_REVISION_1,
+			&sa.lpSecurityDescriptor, NULL))
+		{
+			raiseError("ConvertStringSecurityDescriptorToSecurityDescriptor");
+		}
+
+		Firebird::Cleanup cleanSecDesc( [&sa] {
+				LocalFree(sa.lpSecurityDescriptor);
+			});
+
+		HANDLE hBoundaryDesc = CreateBoundaryDescriptor(sBoundaryName, 0);
+		if (hBoundaryDesc == NULL)
+			raiseError("CreateBoundaryDescriptor");
+
+		Firebird::Cleanup cleanBndDesc( [&hBoundaryDesc] {
+				DeleteBoundaryDescriptor(hBoundaryDesc);
+			});
+
+		if (!AddSIDToBoundaryDescriptor(&hBoundaryDesc, &sid))
+			raiseError("AddSIDToBoundaryDescriptor");
+
+		m_hNamespace = CreatePrivateNamespace(&sa, hBoundaryDesc, sPrivateNameSpace);
+
+		if (m_hNamespace == NULL)
+		{
+			DWORD err = GetLastError();
+			if (err != ERROR_ALREADY_EXISTS)
+				raiseError("CreatePrivateNamespace");
+
+			m_hNamespace = OpenPrivateNamespace(hBoundaryDesc, sPrivateNameSpace);
+			if (m_hNamespace == NULL)
+			{
+				err = GetLastError();
+				if (err != ERROR_DUP_NAME)
+					raiseError("OpenPrivateNamespace");
+
+				Firebird::string name(sPrivateNameSpace);
+				name.append("\\test");
+
+				m_hTestEvent = CreateEvent(ISC_get_security_desc(), TRUE, TRUE, name.c_str());
+				if (m_hTestEvent == NULL)
+					raiseError("CreateEvent");
+			}
+		}
+	}
+
+	HANDLE m_hNamespace;
+	HANDLE m_hTestEvent;
+};
+
+static Firebird::InitInstance<PrivateNamespace> privateNamespace;
+
+
+bool private_kernel_object_name(char* name, size_t bufsize)
+{
+	if (!privateNamespace().addPrefix(name, bufsize))
+		return prefix_kernel_object_name(name, bufsize);
+
+	return true;
+}
+
+bool privateNameSpaceReady()
+{
+	return privateNamespace().isReady();
+}
+
+
 // This is a very basic registry querying class. Not much validation, but avoids
 // leaving the registry open by mistake.
 
@@ -854,8 +1011,11 @@ FetchPassResult fetchPassword(const Firebird::PathName& name, const char*& passw
 
 
 
-const SINT64 BILLION = 1000000000;
+#ifdef WIN_NT
 static SINT64 saved_frequency = 0;
+#elif defined(HAVE_CLOCK_GETTIME)
+const SINT64 BILLION = 1000000000;
+#endif
 
 // Returns current value of performance counter
 SINT64 query_performance_counter()
@@ -1044,7 +1204,7 @@ Firebird::PathName getPrefix(unsigned int prefType, const char* name)
 
 	const char* configDir[] = {
 		FB_BINDIR, FB_SBINDIR, FB_CONFDIR, FB_LIBDIR, FB_INCDIR, FB_DOCDIR, "", FB_SAMPLEDIR,
-		FB_SAMPLEDBDIR, FB_HELPDIR, FB_INTLDIR, FB_MISCDIR, FB_SECDBDIR, FB_MSGDIR, FB_LOGDIR,
+		FB_SAMPLEDBDIR, "", FB_INTLDIR, FB_MISCDIR, FB_SECDBDIR, FB_MSGDIR, FB_LOGDIR,
 		FB_GUARDDIR, FB_PLUGDIR, FB_TZDATADIR
 	};
 
@@ -1140,7 +1300,7 @@ Firebird::PathName getPrefix(unsigned int prefType, const char* name)
 
 	if (s.hasData() && name[0])
 	{
-		s += '/';
+		s += PathUtils::dir_sep;
 	}
 	s += name;
 	gds__prefix(tmp, s.c_str());
@@ -1610,6 +1770,13 @@ bool containsErrorCode(const ISC_STATUS* v, ISC_STATUS code)
 	return false;
 }
 
+inline bool sqlSymbolChar(char c, bool first)
+{
+	if (c & 0x80)
+		return false;
+	return (isdigit(c) && !first) || isalpha(c) || c == '_' || c == '$';
+}
+
 const char* dpbItemUpper(const char* s, FB_SIZE_T l, Firebird::string& buf)
 {
 	if (l && (s[0] == '"' || s[0] == '\''))
@@ -1622,30 +1789,38 @@ const char* dpbItemUpper(const char* s, FB_SIZE_T l, Firebird::string& buf)
 		{
 			if (s[i] == end_quote)
 			{
-				if (++i >= l || s[i] != end_quote)
-					break;		// delimited quote, done processing
+				if (++i >= l)
+				{
+					if (ascii && s[0] == '\'')
+						buf.upper();
+
+					return buf.c_str();
+				}
+
+				if (s[i] != end_quote)
+				{
+					buf.assign(&s[i], l - i);
+					(Firebird::Arg::Gds(isc_quoted_str_bad) << buf).raise();
+				}
 
 				// skipped the escape quote, continue processing
 			}
-
-			if (s[i] & 0x80)
+			else if (!sqlSymbolChar(s[i], i == 1))
 				ascii = false;
+
 			buf += s[i];
 		}
 
-		if (ascii && s[0] == '\'')
-			buf.upper();
-
-		return buf.c_str();
+		buf.assign(1, s[0]);
+		(Firebird::Arg::Gds(isc_quoted_str_miss) << buf).raise();
 	}
 
 	// non-quoted string - try to uppercase
 	for (FB_SIZE_T i = 0; i < l; ++i)
 	{
-		if (!(s[i] & 0x80))
-			buf += toupper(s[i]);
-		else
+		if (!sqlSymbolChar(s[i], i == 0))
 			return NULL;				// contains non-ascii data
+		buf += toupper(s[i]);
 	}
 
 	return buf.c_str();

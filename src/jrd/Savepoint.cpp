@@ -307,7 +307,7 @@ void VerbAction::undo(thread_db* tdbb, jrd_tra* transaction, bool preserveLocks,
 
 					if (preserveAction)
 						RBM_SET(transaction->tra_pool, &preserveAction->vct_records, rpb.rpb_number.getValue());
-				} 
+				}
 				else
 					VIO_backout(tdbb, &rpb, transaction);
 			}
@@ -644,7 +644,8 @@ void AutoSavePoint::release()
 
 	fb_assert(m_transaction->tra_save_point);
 	fb_assert(m_transaction->tra_save_point->getNumber() == m_number);
-	m_transaction->rollforwardSavepoint(m_tdbb);
+	fb_assert(!m_transaction->tra_save_point->isChanging());
+	m_transaction->releaseSavepoint(m_tdbb);
 	m_number = 0;
 }
 
@@ -687,7 +688,8 @@ void StableCursorSavePoint::release()
 	while (m_transaction->tra_save_point &&
 		m_transaction->tra_save_point->getNumber() >= m_number)
 	{
-		m_transaction->rollforwardSavepoint(m_tdbb);
+		fb_assert(!m_transaction->tra_save_point->isChanging());
+		m_transaction->releaseSavepoint(m_tdbb);
 	}
 
 	m_number = 0;

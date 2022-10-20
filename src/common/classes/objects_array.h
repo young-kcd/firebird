@@ -28,7 +28,9 @@
 #ifndef CLASSES_OBJECTS_ARRAY_H
 #define CLASSES_OBJECTS_ARRAY_H
 
+#include <cstddef>
 #include <initializer_list>
+#include <iterator>
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
 
@@ -52,6 +54,12 @@ namespace Firebird
 			size_type pos;
 			iterator(ObjectsArray *l, size_type p) : lst(l), pos(p) { }
 		public:
+			using iterator_category = std::forward_iterator_tag;
+			using difference_type = std::ptrdiff_t;
+			using value_type = T;
+			using pointer = T*;
+			using reference = T&;
+
 			iterator() : lst(0), pos(0) { }
 			iterator(const iterator& it) : lst(it.lst), pos(it.pos) { }
 
@@ -111,6 +119,12 @@ namespace Firebird
 			size_type pos;
 			const_iterator(const ObjectsArray *l, size_type p) : lst(l), pos(p) { }
 		public:
+			using iterator_category = std::forward_iterator_tag;
+			using difference_type = std::ptrdiff_t;
+			using value_type = T;
+			using pointer = const T*;
+			using reference = const T&;
+
 			const_iterator() : lst(0), pos(0) { }
 			const_iterator(const iterator& it) : lst(it.lst), pos(it.pos) { }
 			const_iterator(const const_iterator& it) : lst(it.lst), pos(it.pos) { }
@@ -197,6 +211,12 @@ namespace Firebird
 		size_type add(const T& item)
 		{
 			T* dataL = FB_NEW_POOL(this->getPool()) T(this->getPool(), item);
+			return inherited::add(dataL);
+		}
+
+		size_type add(T&& item)
+		{
+			T* dataL = FB_NEW_POOL(this->getPool()) T(this->getPool(), std::move(item));
 			return inherited::add(dataL);
 		}
 
@@ -468,6 +488,13 @@ namespace Firebird
 				ObjectStorage, const ObjectKey*, ObjectKeyOfValue,
 				ObjectCmp> >()
 		{ }
+
+		explicit SortedObjectsArray(MemoryPool& p, const SortedObjectsArray& o) :
+			ObjectsArray <ObjectValue, SortedArray<ObjectValue*,
+				ObjectStorage, const ObjectKey*, ObjectKeyOfValue,
+				ObjectCmp> >(p, o)
+		{
+		}
 
 		bool find(const ObjectKey& item, size_type& pos) const
 		{

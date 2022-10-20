@@ -69,7 +69,8 @@ public:
 	SortNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	SortNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	bool computable(CompilerScratch* csb, StreamType stream, bool allowOnlyCurrentStream);
-	void findDependentFromStreams(const OptimizerRetrieval* optRet, SortedStreamList* streamList);
+	void findDependentFromStreams(const CompilerScratch* csb,
+		StreamType currentStream, SortedStreamList* streamList);
 
 	NullsPlacement getEffectiveNullOrder(unsigned index) const
 	{
@@ -173,9 +174,8 @@ public:
 		: PermanentStorage(pool),
 		  type(aType),
 		  accessType(NULL),
-		  relationNode(NULL),
+		  recordSourceNode(NULL),
 		  subNodes(pool),
-		  dsqlRecordSourceNode(NULL),
 		  dsqlNames(NULL)
 	{
 	}
@@ -197,9 +197,8 @@ private:
 public:
 	Type const type;
 	AccessType* accessType;
-	RelationSourceNode* relationNode;
+	RecordSourceNode* recordSourceNode;
 	Firebird::Array<NestConst<PlanNode> > subNodes;
-	RecordSourceNode* dsqlRecordSourceNode;
 	Firebird::ObjectsArray<MetaName>* dsqlNames;
 };
 
@@ -283,7 +282,76 @@ public:
 };
 
 
-class RelationSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_RELATION>
+class LocalTableSourceNode final : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_LOCAL_TABLE>
+{
+public:
+	explicit LocalTableSourceNode(MemoryPool& pool, const MetaName& aDsqlName = NULL)
+		: TypedNode<RecordSourceNode, RecordSourceNode::TYPE_LOCAL_TABLE>(pool),
+		  alias(pool)
+	{
+	}
+
+	static LocalTableSourceNode* parse(thread_db* tdbb, CompilerScratch* csb, const SSHORT blrOp,
+		bool parseContext);
+
+	Firebird::string internalPrint(NodePrinter& printer) const override;
+	RecordSourceNode* dsqlPass(DsqlCompilerScratch* dsqlScratch) override;
+
+	bool dsqlSubSelectFinder(SubSelectFinder& /*visitor*/) override
+	{
+		return false;
+	}
+
+	bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const override;
+	void genBlr(DsqlCompilerScratch* dsqlScratch) override;
+
+	LocalTableSourceNode* copy(thread_db* tdbb, NodeCopier& copier) const override;
+
+	RecordSourceNode* pass1(thread_db* tdbb, CompilerScratch* csb) override
+	{
+		return this;
+	}
+
+	void pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
+		BoolExprNode** boolean, RecordSourceNodeStack& stack) override;
+
+	RecordSourceNode* pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/) override
+	{
+		return this;
+	}
+
+	void pass2Rse(thread_db* tdbb, CompilerScratch* csb) override;
+
+	bool containsStream(StreamType checkStream) const override
+	{
+		return checkStream == stream;
+	}
+
+	void computeDbKeyStreams(StreamList& streamList) const override
+	{
+		streamList.add(getStream());
+	}
+
+	bool computable(CompilerScratch* /*csb*/, StreamType /*stream*/,
+		bool /*allowOnlyCurrentStream*/, ValueExprNode* /*value*/) override
+	{
+		return true;
+	}
+
+	void findDependentFromStreams(const CompilerScratch* /*csb*/,
+		StreamType /*currentStream*/, SortedStreamList* /*streamList*/) override
+	{
+	}
+
+	RecordSource* compile(thread_db* tdbb, Optimizer* opt, bool innerSubStream) override;
+
+public:
+	Firebird::string alias;
+	USHORT tableNumber = 0;
+	SSHORT context = 0;			// user-specified context number for the local table reference
+};
+
+class RelationSourceNode final : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_RELATION>
 {
 public:
 	explicit RelationSourceNode(MemoryPool& pool, const MetaName& aDsqlName = NULL)
@@ -340,12 +408,12 @@ public:
 		return true;
 	}
 
-	virtual void findDependentFromStreams(const OptimizerRetrieval* /*optRet*/,
-		SortedStreamList* /*streamList*/)
+	virtual void findDependentFromStreams(const CompilerScratch* /*csb*/,
+		StreamType /*currentStream*/, SortedStreamList* /*streamList*/)
 	{
 	}
 
-	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
+	virtual RecordSource* compile(thread_db* tdbb, Optimizer* opt, bool innerSubStream);
 
 public:
 	MetaName dsqlName;
@@ -359,7 +427,7 @@ public:
 	SSHORT context;			// user-specified context number for the relation reference
 };
 
-class ProcedureSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_PROCEDURE>
+class ProcedureSourceNode final : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_PROCEDURE>
 {
 public:
 	explicit ProcedureSourceNode(MemoryPool& pool,
@@ -367,10 +435,10 @@ public:
 		: TypedNode<RecordSourceNode, RecordSourceNode::TYPE_PROCEDURE>(pool),
 		  dsqlName(pool, aDsqlName),
 		  alias(pool),
+		  procedure(NULL),
 		  sourceList(NULL),
 		  targetList(NULL),
 		  in_msg(NULL),
-		  procedure(NULL),
 		  view(NULL),
 		  procedureId(0),
 		  context(0),
@@ -378,7 +446,8 @@ public:
 	{
 	}
 
-	static ProcedureSourceNode* parse(thread_db* tdbb, CompilerScratch* csb, const SSHORT blrOp);
+	static ProcedureSourceNode* parse(thread_db* tdbb, CompilerScratch* csb, const SSHORT blrOp,
+		bool parseContext);
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual RecordSourceNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -412,24 +481,16 @@ public:
 
 	virtual bool computable(CompilerScratch* csb, StreamType stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
-	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
-		SortedStreamList* streamList);
+	virtual void findDependentFromStreams(const CompilerScratch* csb,
+		StreamType currentStream, SortedStreamList* streamList);
 
-	virtual void collectStreams(CompilerScratch* csb, SortedStreamList& streamList) const;
+	virtual void collectStreams(SortedStreamList& streamList) const;
 
-	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
-
-private:
-	ProcedureScan* generate(thread_db* tdbb, OptimizerBlk* opt);
+	virtual RecordSource* compile(thread_db* tdbb, Optimizer* opt, bool innerSubStream);
 
 public:
 	QualifiedName dsqlName;
 	Firebird::string alias;
-	NestConst<ValueListNode> sourceList;
-	NestConst<ValueListNode> targetList;
-
-private:
-	NestConst<MessageNode> in_msg;
 
 	/***
 	dimitr: Referencing procedures via a pointer is not currently reliable, because
@@ -448,14 +509,21 @@ private:
 			explicit unload from the metadata cache. But we don't have clearly established
 			cache management policies yet, so I leave it for the other day.
 	***/
+
 	jrd_prc* procedure;
+	NestConst<ValueListNode> sourceList;
+	NestConst<ValueListNode> targetList;
+
+private:
+	NestConst<MessageNode> in_msg;
+
 	jrd_rel* view;
 	USHORT procedureId;
 	SSHORT context;
 	bool isSubRoutine;
 };
 
-class AggregateSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_AGGREGATE_SOURCE>
+class AggregateSourceNode final : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_AGGREGATE_SOURCE>
 {
 public:
 	explicit AggregateSourceNode(MemoryPool& pool)
@@ -496,16 +564,13 @@ public:
 
 	virtual bool computable(CompilerScratch* csb, StreamType stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
-	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
-		SortedStreamList* streamList);
+	virtual void findDependentFromStreams(const CompilerScratch* csb,
+		StreamType currentStream, SortedStreamList* streamList);
 
-	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
+	virtual RecordSource* compile(thread_db* tdbb, Optimizer* opt, bool innerSubStream);
 
 private:
 	void genMap(DsqlCompilerScratch* dsqlScratch, UCHAR blrVerb, dsql_map* map);
-
-	RecordSource* generate(thread_db* tdbb, OptimizerBlk* opt, BoolExprNodeStack* parentStack,
-		StreamType shellStream);
 
 public:
 	NestConst<ValueListNode> dsqlGroup;
@@ -520,7 +585,7 @@ public:
 	bool dsqlWindow;
 };
 
-class UnionSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_UNION>
+class UnionSourceNode final : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_UNION>
 {
 public:
 	explicit UnionSourceNode(MemoryPool& pool)
@@ -562,14 +627,10 @@ public:
 	virtual void computeDbKeyStreams(StreamList& streamList) const;
 	virtual bool computable(CompilerScratch* csb, StreamType stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
-	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
-		SortedStreamList* streamList);
+	virtual void findDependentFromStreams(const CompilerScratch* csb,
+		StreamType currentStream, SortedStreamList* streamList);
 
-	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
-
-private:
-	RecordSource* generate(thread_db* tdbb, OptimizerBlk* opt, const StreamType* streams,
-		FB_SIZE_T nstreams, BoolExprNodeStack* parentStack, StreamType shellStream);
+	virtual RecordSource* compile(thread_db* tdbb, Optimizer* opt, bool innerSubStream);
 
 public:
 	RecSourceListNode* dsqlClauses;
@@ -585,7 +646,7 @@ public:
 	bool recursive;		// union node is a recursive union
 };
 
-class WindowSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_WINDOW>
+class WindowSourceNode final : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_WINDOW>
 {
 public:
 	struct Window
@@ -634,7 +695,7 @@ public:
 	virtual RecordSourceNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb);
 	virtual bool containsStream(StreamType checkStream) const;
-	virtual void collectStreams(CompilerScratch* csb, SortedStreamList& streamList) const;
+	virtual void collectStreams(SortedStreamList& streamList) const;
 
 	virtual void computeDbKeyStreams(StreamList& /*streamList*/) const
 	{
@@ -644,16 +705,16 @@ public:
 
 	virtual bool computable(CompilerScratch* csb, StreamType stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
-	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
-		SortedStreamList* streamList);
-	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
+	virtual void findDependentFromStreams(const CompilerScratch* csb,
+		StreamType currentStream, SortedStreamList* streamList);
+	virtual RecordSource* compile(thread_db* tdbb, Optimizer* opt, bool innerSubStream);
 
 private:
 	NestConst<RseNode> rse;
 	Firebird::ObjectsArray<Window> windows;
 };
 
-class RseNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_RSE>
+class RseNode final : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_RSE>
 {
 public:
 	static const USHORT FLAG_VARIANT			= 0x01;	// variant (not invariant?)
@@ -681,7 +742,7 @@ public:
 		  rse_invariants(NULL),
 		  rse_relations(pool),
 		  flags(0),
-		  rse_jointype(0),
+		  rse_jointype(blr_inner),
 		  dsqlExplicitJoin(false)
 	{
 	}
@@ -764,12 +825,12 @@ public:
 	virtual void computeRseStreams(StreamList& streamList) const;
 	virtual bool computable(CompilerScratch* csb, StreamType stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
-	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
-		SortedStreamList* streamList);
+	virtual void findDependentFromStreams(const CompilerScratch* csb,
+		StreamType currentStream, SortedStreamList* streamList);
 
-	virtual void collectStreams(CompilerScratch* csb, SortedStreamList& streamList) const;
+	virtual void collectStreams(SortedStreamList& streamList) const;
 
-	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
+	virtual RecordSource* compile(thread_db* tdbb, Optimizer* opt, bool innerSubStream);
 
 private:
 	void planCheck(const CompilerScratch* csb) const;
@@ -802,7 +863,7 @@ public:
 	bool dsqlExplicitJoin;
 };
 
-class SelectExprNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_SELECT_EXPR>
+class SelectExprNode final : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_SELECT_EXPR>
 {
 public:
 	explicit SelectExprNode(MemoryPool& pool)
@@ -818,6 +879,11 @@ public:
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual RseNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+
+	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor)
+	{
+		return true;
+	}
 
 	virtual RseNode* copy(thread_db* /*tdbb*/, NodeCopier& /*copier*/) const
 	{
@@ -859,7 +925,7 @@ public:
 		fb_assert(false);
 	}
 
-	virtual RecordSource* compile(thread_db* /*tdbb*/, OptimizerBlk* /*opt*/, bool /*innerSubStream*/)
+	virtual RecordSource* compile(thread_db* /*tdbb*/, Optimizer* /*opt*/, bool /*innerSubStream*/)
 	{
 		fb_assert(false);
 		return NULL;

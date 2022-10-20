@@ -40,11 +40,14 @@ using namespace Jrd;
 // --------------------------
 
 BufferedStream::BufferedStream(CompilerScratch* csb, RecordSource* next)
-	: m_next(next), m_map(csb->csb_pool)
+	: BaseBufferedStream(csb),
+	  m_next(next),
+	  m_map(csb->csb_pool)
 {
 	fb_assert(m_next);
 
 	m_impure = csb->allocImpure<Impure>();
+	m_cardinality = next->getCardinality();
 
 	StreamList streams;
 	m_next->findUsedStreams(streams);
@@ -112,9 +115,9 @@ BufferedStream::BufferedStream(CompilerScratch* csb, RecordSource* next)
 	m_format = format;
 }
 
-void BufferedStream::open(thread_db* tdbb) const
+void BufferedStream::internalOpen(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open | irsb_mustread;
@@ -130,7 +133,7 @@ void BufferedStream::open(thread_db* tdbb) const
 
 void BufferedStream::close(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 
 	invalidateRecords(request);
 
@@ -147,11 +150,11 @@ void BufferedStream::close(thread_db* tdbb) const
 	}
 }
 
-bool BufferedStream::getRecord(thread_db* tdbb) const
+bool BufferedStream::internalGetRecord(thread_db* tdbb) const
 {
 	JRD_reschedule(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
@@ -256,26 +259,29 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 					VIO_record(tdbb, rpb, MET_current(tdbb, relation), tdbb->getDefaultPool());
 			}
 
-			Record* const record = rpb->rpb_record;
-			record->reset();
+			const bool isNull = !EVL_field(relation, buffer_record, (USHORT) i, &from);
 
-			if (!EVL_field(relation, buffer_record, (USHORT) i, &from))
+			if (map.map_type == FieldMap::REGULAR_FIELD)
 			{
-				fb_assert(map.map_type == FieldMap::REGULAR_FIELD);
-				record->setNull(map.map_id);
-				continue;
-			}
+				Record* const record = rpb->rpb_record;
+				record->reset();
 
-			switch (map.map_type)
-			{
-			case FieldMap::REGULAR_FIELD:
+				if (isNull)
+					record->setNull(map.map_id);
+				else
 				{
 					EVL_field(relation, record, map.map_id, &to);
 					MOV_move(tdbb, &from, &to);
 					record->clearNull(map.map_id);
 				}
-				break;
 
+				continue;
+			}
+
+			fb_assert(!isNull);
+
+			switch (map.map_type)
+			{
 			case FieldMap::TRANSACTION_ID:
 				rpb->rpb_transaction_nr = *reinterpret_cast<SINT64*>(from.dsc_address);
 				break;
@@ -308,7 +314,12 @@ bool BufferedStream::lockRecord(thread_db* tdbb) const
 	return m_next->lockRecord(tdbb);
 }
 
-void BufferedStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
+void BufferedStream::getChildren(Array<const RecordSource*>& children) const
+{
+	children.add(m_next);
+}
+
+void BufferedStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level, bool recurse) const
 {
 	if (detailed)
 	{
@@ -316,9 +327,11 @@ void BufferedStream::print(thread_db* tdbb, string& plan, bool detailed, unsigne
 		extras.printf(" (record length: %" ULONGFORMAT")", m_format->fmt_length);
 
 		plan += printIndent(++level) + "Record Buffer" + extras;
+		printOptInfo(plan);
 	}
 
-	m_next->print(tdbb, plan, detailed, level);
+	if (recurse)
+		m_next->print(tdbb, plan, detailed, level, recurse);
 }
 
 void BufferedStream::markRecursive()
@@ -331,7 +344,7 @@ void BufferedStream::findUsedStreams(StreamList& streams, bool expandAll) const
 	m_next->findUsedStreams(streams, expandAll);
 }
 
-void BufferedStream::invalidateRecords(jrd_req* request) const
+void BufferedStream::invalidateRecords(Request* request) const
 {
 	m_next->invalidateRecords(request);
 }
@@ -343,7 +356,7 @@ void BufferedStream::nullRecords(thread_db* tdbb) const
 
 void BufferedStream::locate(thread_db* tdbb, FB_UINT64 position) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	// If we haven't fetched and cached the underlying stream completely, do it now
@@ -359,7 +372,7 @@ void BufferedStream::locate(thread_db* tdbb, FB_UINT64 position) const
 
 FB_UINT64 BufferedStream::getCount(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	// If we haven't fetched and cached the underlying stream completely, do it now

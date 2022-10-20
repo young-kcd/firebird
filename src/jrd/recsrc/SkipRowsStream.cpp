@@ -37,16 +37,19 @@ using namespace Jrd;
 // -------------------------------
 
 SkipRowsStream::SkipRowsStream(CompilerScratch* csb, RecordSource* next, ValueExprNode* value)
-	: m_next(next), m_value(value)
+	: RecordSource(csb),
+	  m_next(next),
+	  m_value(value)
 {
 	fb_assert(m_next && m_value);
 
 	m_impure = csb->allocImpure<Impure>();
+	m_cardinality = next->getCardinality();
 }
 
-void SkipRowsStream::open(thread_db* tdbb) const
+void SkipRowsStream::internalOpen(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open;
@@ -66,7 +69,7 @@ void SkipRowsStream::open(thread_db* tdbb) const
 
 void SkipRowsStream::close(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 
 	invalidateRecords(request);
 
@@ -80,11 +83,11 @@ void SkipRowsStream::close(thread_db* tdbb) const
 	}
 }
 
-bool SkipRowsStream::getRecord(thread_db* tdbb) const
+bool SkipRowsStream::internalGetRecord(thread_db* tdbb) const
 {
 	JRD_reschedule(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
@@ -113,12 +116,21 @@ bool SkipRowsStream::lockRecord(thread_db* tdbb) const
 	return m_next->lockRecord(tdbb);
 }
 
-void SkipRowsStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
+void SkipRowsStream::getChildren(Array<const RecordSource*>& children) const
+{
+	children.add(m_next);
+}
+
+void SkipRowsStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level, bool recurse) const
 {
 	if (detailed)
+	{
 		plan += printIndent(++level) + "Skip N Records";
+		printOptInfo(plan);
+	}
 
-	m_next->print(tdbb, plan, detailed, level);
+	if (recurse)
+		m_next->print(tdbb, plan, detailed, level, recurse);
 }
 
 void SkipRowsStream::markRecursive()
@@ -131,7 +143,7 @@ void SkipRowsStream::findUsedStreams(StreamList& streams, bool expandAll) const
 	m_next->findUsedStreams(streams, expandAll);
 }
 
-void SkipRowsStream::invalidateRecords(jrd_req* request) const
+void SkipRowsStream::invalidateRecords(Request* request) const
 {
 	m_next->invalidateRecords(request);
 }

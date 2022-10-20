@@ -26,11 +26,10 @@
 
 #include "../jrd/jrd.h"
 #include "../jrd/btr.h"
-#include "../jrd/rse.h"
 #include "../jrd/lls.h"
 
 namespace Jrd {
-	class jrd_req;
+	class Request;
 	class jrd_rel;
 	class RecordSource;
 	struct index_desc;
@@ -41,7 +40,7 @@ namespace Jrd {
 	class MapNode;
 }
 
-Firebird::string OPT_get_plan(Jrd::thread_db* tdbb, const Jrd::jrd_req* request, bool detailed);
+Firebird::string OPT_get_plan(Jrd::thread_db* tdbb, const Jrd::Statement* statement, bool detailed);
 Jrd::RecordSource* OPT_compile(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb,
 	Jrd::RseNode* rse, Jrd::BoolExprNodeStack* parent_stack);
 void OPT_compile_relation(Jrd::thread_db* tdbb, Jrd::jrd_rel* relation, Jrd::CompilerScratch* csb,

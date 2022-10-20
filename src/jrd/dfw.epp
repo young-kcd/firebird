@@ -85,6 +85,7 @@
 #include "../jrd/intl.h"
 #include "../intl/charsets.h"
 #include "../jrd/align.h"
+#include "../dsql/DsqlStatementCache.h"
 #include "../common/gdsassert.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/btr_proto.h"
@@ -131,7 +132,7 @@
 #include <unistd.h>
 #endif
 
-#include "gen/iberror.h"
+#include "iberror.h"
 
 // Pick up system relation ids
 #include "../jrd/ini.h"
@@ -480,6 +481,7 @@ static bool check_not_null(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool store_view_context_type(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool user_management(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool drop_package_header(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool modify_package_header(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool drop_package_body(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool grant_privileges(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool db_crypt(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
@@ -687,9 +689,11 @@ namespace
 			{
 				case 1:
 				case 2:
+				case 3:
+				case 4:
 					return true;
 
-				case 3:
+				case 5:
 				{
 					const bool compile = !work->findArg(dfw_arg_check_blr);
 					getDependencies(work, compile, transaction);
@@ -981,9 +985,15 @@ namespace
 
 			// get any dependencies now by parsing the blr
 
-			if (routine && !blobId.isEmpty())
+			if (!routine)
+				return;
+
+			const MetaName depName(work->dfw_package.isEmpty() ?
+				MetaName(work->dfw_name) : work->dfw_package);
+
+			if (!blobId.isEmpty())
 			{
-				JrdStatement* statement = NULL;
+				Statement* statement = NULL;
 				// Nickolay Samofatov: allocate statement memory pool...
 				MemoryPool* new_pool = attachment->createPool();
 				// block is used to ensure MET_verify_cache
@@ -991,8 +1001,6 @@ namespace
 				{
 					Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-					const MetaName depName(work->dfw_package.isEmpty() ?
-						MetaName(work->dfw_name) : work->dfw_package);
 					MET_get_dependencies(tdbb, NULL, NULL, 0, NULL, &blobId,
 						(compile ? &statement : NULL),
 						NULL, depName,
@@ -1004,11 +1012,48 @@ namespace
 					else
 						attachment->deletePool(new_pool);
 				}
+			}
+			else
+			{
+				Array<CompilerScratch::Dependency> dependencies;
+
+				const auto allParameters = {&routine->getInputFields(), &routine->getOutputFields()};
+
+				for (const auto parameters : allParameters)
+				{
+					for (const auto parameter : *parameters)
+					{
+						if (parameter->prm_type_of_table.hasData())
+						{
+							CompilerScratch::Dependency dependency(obj_relation);
+							dependency.relation = MET_lookup_relation(tdbb, parameter->prm_type_of_table);
+							dependency.subName = &parameter->prm_type_of_column;
+							dependencies.push(dependency);
+						}
+						else if (!fb_utils::implicit_domain(parameter->prm_field_source.c_str()))
+						{
+							CompilerScratch::Dependency dependency(obj_field);
+							dependency.name = &parameter->prm_field_source;
+							dependencies.push(dependency);
+						}
+
+						if (parameter->prm_text_type.isAssigned())
+						{
+							CompilerScratch::Dependency dependency(obj_collation);
+							dependency.number = parameter->prm_text_type.value;
+							dependencies.push(dependency);
+						}
+					}
+				}
+
+				MET_store_dependencies(tdbb, dependencies, nullptr, depName,
+					(work->dfw_package.isEmpty() ? objType : obj_package_header),
+					transaction);
+			}
 
 #ifdef DEV_BUILD
-				MET_verify_cache(tdbb);
+			MET_verify_cache(tdbb);
 #endif
-			}
 		}
 	};
 
@@ -1190,7 +1235,6 @@ static const deferred_task task_table[] =
 	{ dfw_add_file, add_file },
 	{ dfw_add_shadow, add_shadow },
 	{ dfw_delete_index, modify_index },
-	{ dfw_delete_expression_index, modify_index },
 	{ dfw_delete_rfr, delete_rfr },
 	{ dfw_delete_relation, delete_relation },
 	{ dfw_delete_shadow, delete_shadow },
@@ -1210,6 +1254,7 @@ static const deferred_task task_table[] =
 	{ dfw_delete_trigger, delete_trigger },
 	{ dfw_modify_trigger, modify_trigger },
 	{ dfw_drop_package_header, drop_package_header },	// packages should be before procedures
+	{ dfw_modify_package_header, modify_package_header },	// packages should be before procedures
 	{ dfw_drop_package_body, drop_package_body },		// packages should be before procedures
 	{ dfw_create_procedure, ProcedureManager::createRoutine },
 	{ dfw_create_function, FunctionManager::createRoutine },
@@ -1301,8 +1346,9 @@ USHORT DFW_assign_index_type(thread_db* tdbb, const MetaName& name, SSHORT field
 		return idx_boolean;
 	case dtype_dec64:
 	case dtype_dec128:
-	case dtype_int128:
 		return idx_decimal;
+	case dtype_int128:
+		return tdbb->getDatabase()->getEncodedOdsVersion() >= ODS_13_1 ? idx_bcd : idx_decimal;
 	default:
 		return idx_numeric;
 	}
@@ -1477,6 +1523,9 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
 	}
 
 	SET_TDBB(tdbb);
+
+	tdbb->getAttachment()->att_dsql_instance->dbb_statement_cache->purgeAllAttachments(tdbb);
+
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 
 	/* Loop for as long as any of the deferred work routines says that it has
@@ -2615,6 +2664,22 @@ static bool drop_package_header(thread_db* tdbb, SSHORT phase, DeferredWork* wor
 }
 
 
+// Drop dependencies of a package header.
+static bool modify_package_header(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
+{
+	SET_TDBB(tdbb);
+
+	switch (phase)
+	{
+	case 1:
+		MET_delete_dependencies(tdbb, work->dfw_name, obj_package_header, transaction);
+		break;
+	}
+
+	return false;
+}
+
+
 // Drop dependencies of a package body.
 static bool drop_package_body(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
 {
@@ -2678,7 +2743,8 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 	{
 	case 0:
 		cleanup_index_creation(tdbb, work, transaction);
-		MET_delete_dependencies(tdbb, work->dfw_name, obj_expression_index, transaction);
+		MET_delete_dependencies(tdbb, work->dfw_name, obj_index_expression, transaction);
+		MET_delete_dependencies(tdbb, work->dfw_name, obj_index_condition, transaction);
 		return false;
 
 	case 1:
@@ -2687,14 +2753,14 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 
 	case 3:
 		{
-			jrd_rel* relation = NULL;
+			jrd_rel* relation = nullptr;
+			CompilerScratch* csb = nullptr;
+			MemoryPool* new_pool = nullptr;
+
+			const auto dbb = tdbb->getDatabase();
+			const auto attachment = tdbb->getAttachment();
+
 			index_desc idx;
-			MemoryPool* new_pool = NULL;
-
-			SET_TDBB(tdbb);
-			Database* dbb = tdbb->getDatabase();
-			Jrd::Attachment* attachment = tdbb->getAttachment();
-
 			MOVE_CLEAR(&idx, sizeof(index_desc));
 
 			AutoCacheRequest request(tdbb, irq_c_exp_index, IRQ_REQUESTS);
@@ -2708,9 +2774,8 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 				if (!relation)
 				{
 					relation = MET_relation(tdbb, REL.RDB$RELATION_ID);
-					if (relation->rel_name.length() == 0) {
+					if (relation->rel_name.length() == 0)
 						relation->rel_name = REL.RDB$RELATION_NAME;
-					}
 
 					if (IDX.RDB$INDEX_ID && IDX.RDB$STATISTICS < 0.0)
 					{
@@ -2725,7 +2790,8 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 					if (IDX.RDB$INDEX_ID)
 					{
 						IDX_delete_index(tdbb, relation, IDX.RDB$INDEX_ID - 1);
-						MET_delete_dependencies(tdbb, work->dfw_name, obj_expression_index, transaction);
+						MET_delete_dependencies(tdbb, work->dfw_name, obj_index_expression, transaction);
+						MET_delete_dependencies(tdbb, work->dfw_name, obj_index_condition, transaction);
 						MODIFY IDX
 							IDX.RDB$INDEX_ID.NULL = TRUE;
 						END_MODIFY
@@ -2745,34 +2811,30 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 					if (IDX.RDB$INDEX_TYPE == 1)
 						idx.idx_flags |= idx_descending;
 
-					CompilerScratch* csb = NULL;
-					// allocate a new pool to contain the expression tree for the expression index
-					new_pool = attachment->createPool();
-					{ // scope
-						Jrd::ContextPoolHolder context(tdbb, new_pool);
-						MET_scan_relation(tdbb, relation);
+					MET_scan_relation(tdbb, relation);
 
-						if (!IDX.RDB$EXPRESSION_BLR.NULL)
-						{
-							idx.idx_expression = static_cast<ValueExprNode*>(MET_get_dependencies(
-								tdbb, relation, NULL, 0, NULL, &IDX.RDB$EXPRESSION_BLR,
-								&idx.idx_expression_statement, &csb, work->dfw_name, obj_expression_index, 0,
-								transaction));
-						}
-					} // end scope
+					// Allocate a new pool to contain the expression tree
+					// for index expression / condition
+					new_pool = attachment->createPool();
+
+					Jrd::ContextPoolHolder context(tdbb, new_pool);
+
+					MET_get_dependencies(tdbb, relation, nullptr, 0, nullptr, &IDX.RDB$EXPRESSION_BLR,
+						nullptr, &csb, work->dfw_name, obj_index_expression, 0,
+						transaction);
+
+					idx.idx_expression_statement = Statement::makeValueExpression(tdbb,
+						idx.idx_expression, idx.idx_expression_desc, csb, false);
 
 					// fake a description of the index
 
 					idx.idx_count = 1;
-					idx.idx_flags |= idx_expressn;
-					idx.idx_expression->getDesc(tdbb, csb, &idx.idx_expression_desc);
+					idx.idx_flags |= idx_expression;
 					idx.idx_rpt[0].idx_itype =
 						DFW_assign_index_type(tdbb, work->dfw_name,
 						idx.idx_expression_desc.dsc_dtype,
 						idx.idx_expression_desc.dsc_sub_type);
 					idx.idx_rpt[0].idx_selectivity = 0;
-
-					delete csb;
 				}
 			}
 			END_FOR
@@ -2787,6 +2849,34 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 					Arg::Gds(isc_idx_create_err) << Arg::Str(work->dfw_name));
 			}
 
+			idx.idx_condition = nullptr;
+			idx.idx_condition_statement = nullptr;
+
+			if (dbb->getEncodedOdsVersion() >= ODS_13_1)
+			{
+				AutoCacheRequest request(tdbb, irq_c_cond_index, IRQ_REQUESTS);
+
+				FOR(REQUEST_HANDLE request)
+					IDX IN RDB$INDICES WITH
+					IDX.RDB$CONDITION_BLR NOT MISSING AND
+					IDX.RDB$INDEX_NAME EQ work->dfw_name.c_str()
+				{
+					Jrd::ContextPoolHolder context(tdbb, new_pool);
+
+					MET_get_dependencies(tdbb, relation, nullptr, 0, nullptr, &IDX.RDB$CONDITION_BLR,
+						nullptr, &csb, work->dfw_name, obj_index_condition, 0,
+						transaction);
+
+					idx.idx_condition_statement = Statement::makeBoolExpression(tdbb,
+						idx.idx_condition, csb, false);
+
+					idx.idx_flags |= idx_condition;
+				}
+				END_FOR
+			}
+
+			delete csb;
+
 			// Actually create the index
 
 			// Protect relation from modification to create consistent index
@@ -2795,7 +2885,7 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 			SelectivityList selectivity(*tdbb->getDefaultPool());
 
 			jrd_tra* const current_transaction = tdbb->getTransaction();
-			jrd_req* const current_request = tdbb->getRequest();
+			Request* const current_request = tdbb->getRequest();
 
 			try
 			{
@@ -2810,6 +2900,12 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 			{
 				tdbb->setTransaction(current_transaction);
 				tdbb->setRequest(current_request);
+
+				// Get rid of the expression/condition statements
+				idx.idx_expression_statement->release(tdbb);
+				if (idx.idx_condition_statement)
+					idx.idx_condition_statement->release(tdbb);
+
 				throw;
 			}
 
@@ -2818,9 +2914,10 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 
 			DFW_update_index(work->dfw_name.c_str(), idx.idx_id, selectivity, transaction);
 
-			// Get rid of the pool containing the expression tree
-
-			attachment->deletePool(new_pool);
+			// Get rid of the expression/condition statements
+			idx.idx_expression_statement->release(tdbb);
+			if (idx.idx_condition_statement)
+				idx.idx_condition_statement->release(tdbb);
 		}
 		break;
 
@@ -3224,7 +3321,6 @@ static bool modify_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 			break;
 
 		case dfw_delete_index :
-		case dfw_delete_expression_index :
 			task_routine = delete_index;
 			is_create = false;
 			break;
@@ -3495,18 +3591,18 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 		}
 		END_FOR
 
+		if (!relation)
+		{
+			// The record was not found in RDB$INDICES.
+			// Apparently the index was dropped in the same transaction.
+			return false;
+		}
+
 		if (key_count != idx.idx_count)
 		{
 			ERR_post(Arg::Gds(isc_no_meta_update) <<
 					 Arg::Gds(isc_key_field_err) << Arg::Str(work->dfw_name));
 			// Msg352: too few key columns found for index %s (incorrect column name?)
-		}
-
-		if (!relation)
-		{
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_idx_create_err) << Arg::Str(work->dfw_name));
-			// Msg308: can't create index %s
 		}
 
 		// Make sure the relation info is all current
@@ -3518,6 +3614,39 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 			ERR_post(Arg::Gds(isc_no_meta_update) <<
 					 Arg::Gds(isc_idx_create_err) << Arg::Str(work->dfw_name));
 			// Msg308: can't create index %s
+		}
+
+		idx.idx_condition = nullptr;
+		idx.idx_condition_statement = nullptr;
+
+		if (dbb->getEncodedOdsVersion() >= ODS_13_1)
+		{
+			// Allocate a new pool to contain the expression tree
+			// for index condition
+			const auto new_pool = attachment->createPool();
+			CompilerScratch* csb = nullptr;
+
+			AutoCacheRequest request(tdbb, irq_c_cond_index, IRQ_REQUESTS);
+
+			FOR(REQUEST_HANDLE request)
+				IDX IN RDB$INDICES WITH
+				IDX.RDB$CONDITION_BLR NOT MISSING AND
+				IDX.RDB$INDEX_NAME EQ work->dfw_name.c_str()
+			{
+				Jrd::ContextPoolHolder context(tdbb, new_pool);
+
+				MET_get_dependencies(tdbb, relation, nullptr, 0, nullptr, &IDX.RDB$CONDITION_BLR,
+					nullptr, &csb, work->dfw_name, obj_index_condition, 0,
+					transaction);
+
+				idx.idx_condition_statement = Statement::makeBoolExpression(tdbb,
+					idx.idx_condition, csb, false);
+
+				idx.idx_flags |= idx_condition;
+			}
+			END_FOR
+
+			delete csb;
 		}
 
 		// Actually create the index
@@ -3589,6 +3718,9 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 						&work->dfw_id, transaction, selectivity);
 		fb_assert(work->dfw_id == idx.idx_id);
 		DFW_update_index(work->dfw_name.c_str(), idx.idx_id, selectivity, transaction);
+
+		if (idx.idx_condition_statement)
+			idx.idx_condition_statement->release(tdbb);
 
 		if (partner_relation)
 		{
@@ -3995,6 +4127,7 @@ void DFW_reset_icu(thread_db* tdbb)
 			"join RDB$CHARACTER_SETS cs on coll.RDB$CHARACTER_SET_ID = cs.RDB$CHARACTER_SET_ID "
 			"where coll.RDB$SPECIFIC_ATTRIBUTES like '%COLL-VERSION=%' "
 			" and coalesce(ind.RDB$INDEX_INACTIVE, 0) = 0 "
+			" and coalesce(rel.RDB$RELATION_TYPE, 0) = 0 "		// rel_persistent
 			"group by ind.RDB$INDEX_NAME, rel.RDB$RELATION_ID, coll.RDB$BASE_COLLATION_NAME, "
 			" coll.RDB$COLLATION_NAME, cs.RDB$CHARACTER_SET_NAME, coll.RDB$SPECIFIC_ATTRIBUTES";
 
@@ -4516,9 +4649,9 @@ static void check_partners(thread_db* tdbb, const USHORT rel_id)
 	jrd_rel *relation = (*relations)[rel_id];
 	fb_assert(relation);
 
+	relation->rel_flags |= REL_check_partners;
 	LCK_lock(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
 	LCK_release(tdbb, relation->rel_partners_lock);
-	relation->rel_flags |= REL_check_partners;
 }
 
 
@@ -4636,10 +4769,8 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 		if (isTempIndex)
 			return false;
 
-		if (work->dfw_type == dfw_delete_expression_index)
-		{
-			MET_delete_dependencies(tdbb, arg->dfw_name, obj_expression_index, transaction);
-		}
+		MET_delete_dependencies(tdbb, arg->dfw_name, obj_index_expression, transaction);
+		MET_delete_dependencies(tdbb, arg->dfw_name, obj_index_condition, transaction);
 
 		// if index was bound to deleted FK constraint
 		// then work->dfw_args was set in VIO_erase
@@ -4778,12 +4909,12 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 	switch (phase)
 	{
 	case 0:
-		relation = MET_lookup_relation_id(tdbb, work->dfw_id, false);
+		relation = MET_lookup_relation_id(tdbb, work->dfw_id, true);
 		if (!relation) {
 			return false;
 		}
 
-		if (relation->rel_existence_lock)
+		if (relation->rel_existence_lock && !(relation->rel_flags & REL_deleted))
 		{
 			LCK_convert(tdbb, relation->rel_existence_lock, LCK_SR, transaction->getLockWait());
 		}
@@ -4884,6 +5015,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 	case 4:
 		relation = MET_lookup_relation_id(tdbb, work->dfw_id, true);
 		if (!relation) {
+			fb_assert(false);
 			return false;
 		}
 
@@ -4913,6 +5045,13 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 
 		if (relation->rel_file) {
 		    EXT_fini(relation, false);
+		}
+
+		if (relation->isTemporary())
+		{
+			// release pages, allocated for current GTT instance
+			AutoSetRestoreFlag<ULONG> tmpSpace(&tdbb->tdbb_flags, TDBB_use_db_page_space, false);
+			relation->delPages(tdbb);
 		}
 
 		RelationPages* const relPages = relation->getBasePages();
@@ -5231,8 +5370,9 @@ static bool find_depend_in_dfw(thread_db*	tdbb,
 	case obj_procedure:
 		dfw_type = dfw_delete_procedure;
 		break;
-	case obj_expression_index:
-		dfw_type = dfw_delete_expression_index;
+	case obj_index_expression:
+	case obj_index_condition:
+		dfw_type = dfw_delete_index;
 		break;
 	case obj_package_header:
 		dfw_type = dfw_drop_package_header;
@@ -5272,7 +5412,7 @@ static bool find_depend_in_dfw(thread_db*	tdbb,
 			}
 		}
 
-		if (work->dfw_type == dfw_type && dfw_type == dfw_delete_expression_index)
+		if (work->dfw_type == dfw_type && dfw_type == dfw_delete_index)
 		{
 			for (FB_SIZE_T i = 0; i < work->dfw_args.getCount(); ++i)
 			{
@@ -5423,7 +5563,7 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
 
 	if ((relation || (type & TRIGGER_TYPE_MASK) != TRIGGER_TYPE_DML) && !blob_id.isEmpty())
 	{
-		JrdStatement* statement = NULL;
+		Statement* statement = NULL;
 		// Nickolay Samofatov: allocate statement memory pool...
 		MemoryPool* new_pool = attachment->createPool();
 		USHORT par_flags;
@@ -5895,19 +6035,19 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 					if (notNull && !defaultValue->isEmpty())
 					{
 						Jrd::ContextPoolHolder context(tdbb, attachment->createPool());
-						JrdStatement* defaultStatement = NULL;
+						Statement* defaultStatement = NULL;
 						try
 						{
 							ValueExprNode* defaultNode = static_cast<ValueExprNode*>(MET_parse_blob(
 								tdbb, relation, defaultValue, NULL, &defaultStatement, false, false));
 
-							jrd_req* const defaultRequest = defaultStatement->findRequest(tdbb);
+							Request* const defaultRequest = defaultStatement->findRequest(tdbb);
 
 							// Attention: this is scoped to the end of this "try".
-							AutoSetRestore2<jrd_req*, thread_db> autoRequest(tdbb,
+							AutoSetRestore2<Request*, thread_db> autoRequest(tdbb,
 								&thread_db::getRequest, &thread_db::setRequest, defaultRequest);
 
-							TimeZoneUtil::validateGmtTimeStamp(defaultRequest->req_gmt_timestamp);
+							defaultRequest->validateTimeStamp();
 
 							TRA_attach_request(transaction, defaultRequest);
 							dsc* result = EVL_expr(tdbb, defaultRequest, defaultNode);

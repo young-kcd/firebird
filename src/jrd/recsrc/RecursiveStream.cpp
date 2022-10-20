@@ -39,24 +39,20 @@ using namespace Jrd;
 RecursiveStream::RecursiveStream(CompilerScratch* csb, StreamType stream, StreamType mapStream,
 							     RecordSource* root, RecordSource* inner,
 							     const MapNode* rootMap, const MapNode* innerMap,
-							     FB_SIZE_T streamCount, const StreamType* innerStreams,
+							     const StreamList& innerStreams,
 							     ULONG saveOffset)
 	: RecordStream(csb, stream),
 	  m_mapStream(mapStream),
 	  m_root(root), m_inner(inner),
 	  m_rootMap(rootMap), m_innerMap(innerMap),
-	  m_innerStreams(csb->csb_pool),
+	  m_innerStreams(csb->csb_pool, innerStreams),
 	  m_saveOffset(saveOffset)
 {
 	fb_assert(m_root && m_inner && m_rootMap && m_innerMap);
 
 	m_impure = csb->allocImpure<Impure>();
+	m_cardinality = root->getCardinality() * inner->getCardinality();
 	m_saveSize = csb->csb_impure - saveOffset;
-
-	m_innerStreams.resize(streamCount);
-
-	for (FB_SIZE_T i = 0; i < streamCount; i++)
-		m_innerStreams[i] = innerStreams[i];
 
 	// To make aggregates, unions and nested recursions inside the inner stream work correctly,
 	// we need to add all the child streams as well. See CORE-3683 for the test case.
@@ -66,9 +62,9 @@ RecursiveStream::RecursiveStream(CompilerScratch* csb, StreamType stream, Stream
 	m_inner->markRecursive();
 }
 
-void RecursiveStream::open(thread_db* tdbb) const
+void RecursiveStream::internalOpen(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open;
@@ -96,7 +92,7 @@ void RecursiveStream::open(thread_db* tdbb) const
 
 void RecursiveStream::close(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	invalidateRecords(request);
@@ -115,11 +111,11 @@ void RecursiveStream::close(thread_db* tdbb) const
 	}
 }
 
-bool RecursiveStream::getRecord(thread_db* tdbb) const
+bool RecursiveStream::internalGetRecord(thread_db* tdbb) const
 {
 	JRD_reschedule(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	record_param* const rpb = &request->req_rpb[m_stream];
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 	Impure* const saveImpure = request->getImpure<Impure>(m_saveOffset);
@@ -243,24 +239,35 @@ bool RecursiveStream::lockRecord(thread_db* /*tdbb*/) const
 	return false; // compiler silencer
 }
 
-void RecursiveStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
+void RecursiveStream::getChildren(Array<const RecordSource*>& children) const
+{
+	children.add(m_root);
+	children.add(m_inner);
+}
+
+void RecursiveStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level, bool recurse) const
 {
 	if (detailed)
 	{
 		plan += printIndent(++level) + "Recursion";
-		m_root->print(tdbb, plan, true, level);
-		m_inner->print(tdbb, plan, true, level);
+		printOptInfo(plan);
+
+		if (recurse)
+		{
+			m_root->print(tdbb, plan, true, level, recurse);
+			m_inner->print(tdbb, plan, true, level, recurse);
+		}
 	}
 	else
 	{
 		if (!level)
 			plan += "(";
 
-		m_root->print(tdbb, plan, false, level + 1);
+		m_root->print(tdbb, plan, false, level + 1, recurse);
 
 		plan += ", ";
 
-		m_inner->print(tdbb, plan, false, level + 1);
+		m_inner->print(tdbb, plan, false, level + 1, recurse);
 
 		if (!level)
 			plan += ")";
@@ -273,7 +280,7 @@ void RecursiveStream::markRecursive()
 	m_inner->markRecursive();
 }
 
-void RecursiveStream::invalidateRecords(jrd_req* request) const
+void RecursiveStream::invalidateRecords(Request* request) const
 {
 	m_root->invalidateRecords(request);
 	m_inner->invalidateRecords(request);
@@ -293,7 +300,7 @@ void RecursiveStream::findUsedStreams(StreamList& streams, bool expandAll) const
 	}
 }
 
-void RecursiveStream::cleanupLevel(jrd_req* request, Impure* impure) const
+void RecursiveStream::cleanupLevel(Request* request, Impure* impure) const
 {
 	Impure* const saveImpure = request->getImpure<Impure>(m_saveOffset);
 

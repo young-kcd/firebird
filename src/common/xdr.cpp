@@ -381,23 +381,56 @@ bool_t xdr_double(xdr_t* xdrs, double* ip)
 	return FALSE;
 }
 
+/*
+DecFloat (at least as implemented in IBM's library) has a kind of PDP-endian format:
+Bytes in 4-byte words are in endianess dependent order
+4-byte words - are in endianess independent order
+
+Therefore need in special processing
+*/
+
+static bool_t xdr_decfloat_hyper(xdr_t* xdrs, void* dec)
+{
+	SLONG temp_long[2];
+
+	switch (xdrs->x_op)
+	{
+	case XDR_ENCODE:
+		memcpy(temp_long, dec, sizeof temp_long);
+		if (PUTLONG(xdrs, &temp_long[1]) &&
+			PUTLONG(xdrs, &temp_long[0]))
+		{
+			return TRUE;
+		}
+		return FALSE;
+
+	case XDR_DECODE:
+		if (!GETLONG(xdrs, &temp_long[1]) ||
+			!GETLONG(xdrs, &temp_long[0]))
+		{
+			return FALSE;
+		}
+		memcpy(dec, temp_long, sizeof temp_long);
+		return TRUE;
+
+	case XDR_FREE:
+		return TRUE;
+	}
+	// TMN: added compiler silencier return FALSE.
+	return FALSE;
+}
+
 
 bool_t xdr_dec64(xdr_t* xdrs, Firebird::Decimal64* ip)
 {
-	return xdr_hyper(xdrs, ip->getBytes());
+	return xdr_decfloat_hyper(xdrs, ip->getBytes());
 }
 
 
 bool_t xdr_dec128(xdr_t* xdrs, Firebird::Decimal128* ip)
 {
 	UCHAR* bytes = ip->getBytes();
-
-#ifndef WORDS_BIGENDIAN
-	return xdr_hyper(xdrs, &bytes[8]) && xdr_hyper(xdrs, &bytes[0]);
-#else
-	fb_assert(false);			// Dec64/128 XDR not tested on bigendians!
-	return xdr_hyper(xdrs, &bytes[0]) && xdr_hyper(xdrs, &bytes[8]);
-#endif
+	return xdr_decfloat_hyper(xdrs, &bytes[8]) && xdr_decfloat_hyper(xdrs, &bytes[0]);
 }
 
 

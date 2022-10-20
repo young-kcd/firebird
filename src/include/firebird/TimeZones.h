@@ -637,5 +637,7 @@
 #define fb_tzid_zulu                                 64904 /* Zulu */
 #define fb_tzid_america_nuuk                         64903 /* America/Nuuk */
 #define fb_tzid_asia_qostanay                        64902 /* Asia/Qostanay */
+#define fb_tzid_pacific_kanton                       64901 /* Pacific/Kanton */
+#define fb_tzid_europe_kyiv                          64900 /* Europe/Kyiv */
 
 #endif /* FIREBIRD_TIME_ZONES_H */

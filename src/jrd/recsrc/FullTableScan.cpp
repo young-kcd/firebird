@@ -45,13 +45,14 @@ FullTableScan::FullTableScan(CompilerScratch* csb, const string& alias,
 	  m_dbkeyRanges(csb->csb_pool, dbkeyRanges)
 {
 	m_impure = csb->allocImpure<Impure>();
+	m_cardinality = csb->csb_rpt[stream].csb_cardinality;
 }
 
-void FullTableScan::open(thread_db* tdbb) const
+void FullTableScan::internalOpen(thread_db* tdbb) const
 {
 	Database* const dbb = tdbb->getDatabase();
 	Attachment* const attachment = tdbb->getAttachment();
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open;
@@ -112,7 +113,7 @@ void FullTableScan::open(thread_db* tdbb) const
 
 void FullTableScan::close(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 
 	invalidateRecords(request);
 
@@ -131,11 +132,11 @@ void FullTableScan::close(thread_db* tdbb) const
 	}
 }
 
-bool FullTableScan::getRecord(thread_db* tdbb) const
+bool FullTableScan::internalGetRecord(thread_db* tdbb) const
 {
 	JRD_reschedule(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	record_param* const rpb = &request->req_rpb[m_stream];
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
@@ -145,7 +146,7 @@ bool FullTableScan::getRecord(thread_db* tdbb) const
 		return false;
 	}
 
-	if (VIO_next_record(tdbb, rpb, request->req_transaction, request->req_pool, false))
+	if (VIO_next_record(tdbb, rpb, request->req_transaction, request->req_pool, DPM_next_all))
 	{
 		if (impure->irsb_upper.isValid() && rpb->rpb_number > impure->irsb_upper)
 		{
@@ -161,7 +162,11 @@ bool FullTableScan::getRecord(thread_db* tdbb) const
 	return false;
 }
 
-void FullTableScan::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
+void FullTableScan::getChildren(Array<const RecordSource*>& children) const
+{
+}
+
+void FullTableScan::print(thread_db* tdbb, string& plan, bool detailed, unsigned level, bool recurse) const
 {
 	if (detailed)
 	{
@@ -185,6 +190,7 @@ void FullTableScan::print(thread_db* tdbb, string& plan, bool detailed, unsigned
 
 		plan += printIndent(++level) + "Table " +
 			printName(tdbb, m_relation->rel_name.c_str(), m_alias) + " Full Scan" + bounds;
+		printOptInfo(plan);
 	}
 	else
 	{

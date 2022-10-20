@@ -249,7 +249,7 @@ Connection* Manager::getConnection(thread_db* tdbb, const string& dataSource,
 }
 
 ConnectionsPool* Manager::getConnPool(bool create)
-{ 
+{
 	if (!m_connPool && create)
 		m_connPool = FB_NEW_POOL(manager->getPool()) ConnectionsPool(manager->getPool());
 
@@ -412,8 +412,6 @@ Connection* Provider::getBoundConnection(Jrd::thread_db* tdbb,
 
 void Provider::jrdAttachmentEnd(thread_db* tdbb, Jrd::Attachment* att, bool forced)
 {
-	Database* dbb = tdbb->getDatabase();
-
 	HalfStaticArray<Connection*, 16> toRelease(getPool());
 
 	{	// scope
@@ -2231,7 +2229,7 @@ void Statement::setInParams(thread_db* tdbb, const MetaName* const* names,
 
 		doSetInParams(tdbb, mapCount, m_sqlParamsMap.begin(), sqlParams);
 	}
-	else 
+	else
 		doSetInParams(tdbb, count, NULL, (params ? params->items.begin() : NULL));
 }
 
@@ -2251,7 +2249,7 @@ void Statement::doSetInParams(thread_db* tdbb, unsigned int count, const MetaStr
 	const NestConst<ValueExprNode>* jrdVar = params;
 	GenericMap<Pair<NonPooled<const ValueExprNode*, dsc*> > > paramDescs(getPool());
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 
 	for (FB_SIZE_T i = 0; i < count; ++i, ++jrdVar)
 	{
@@ -2366,7 +2364,7 @@ void Statement::getExtBlob(thread_db* tdbb, const dsc& src, dsc& dst)
 	{
 		extBlob->open(tdbb, *m_transaction, src, NULL);
 
-		jrd_req* request = tdbb->getRequest();
+		Request* request = tdbb->getRequest();
 		const UCHAR bpb[] = {isc_bpb_version1, isc_bpb_storage, 1, isc_bpb_storage_temp};
 		bid* localBlobID = (bid*) dst.dsc_address;
 		destBlob = blb::create2(tdbb, request->req_transaction, localBlobID, sizeof(bpb), bpb);
@@ -2410,7 +2408,7 @@ void Statement::putExtBlob(thread_db* tdbb, dsc& src, dsc& dst)
 	{
 		extBlob->create(tdbb, *m_transaction, dst, NULL);
 
-		jrd_req* request = tdbb->getRequest();
+		Request* request = tdbb->getRequest();
 		bid* srcBid = (bid*) src.dsc_address;
 
 		UCharBuffer bpb;
@@ -2480,7 +2478,7 @@ void Statement::raise(FbStatusVector* status, thread_db* tdbb, const char* sWher
 											Arg::Str(m_connection.getDataSourceName()));
 }
 
-void Statement::bindToRequest(jrd_req* request, Statement** impure)
+void Statement::bindToRequest(Request* request, Statement** impure)
 {
 	fb_assert(!m_boundReq);
 	fb_assert(!m_prevInReq);
@@ -2543,10 +2541,10 @@ void EngineCallbackGuard::init(thread_db* tdbb, Connection& conn, const char* fr
 		{
 			m_saveConnection = attachment->att_ext_connection;
 			m_stable = attachment->getStable();
-			m_stable->getMutex()->leave();
+			m_stable->getSync()->leave();
 
-			MutexLockGuard guardAsync(*m_stable->getMutex(true, true), FB_FUNCTION);
-			MutexLockGuard guardMain(*m_stable->getMutex(), FB_FUNCTION);
+			Jrd::AttSyncLockGuard guardAsync(*m_stable->getSync(true, true), FB_FUNCTION);
+			Jrd::AttSyncLockGuard guardMain(*m_stable->getSync(), FB_FUNCTION);
 			if (m_stable->getHandle() == attachment)
 				attachment->att_ext_connection = &conn;
 		}
@@ -2568,13 +2566,13 @@ EngineCallbackGuard::~EngineCallbackGuard()
 		Jrd::Attachment* attachment = m_tdbb->getAttachment();
 		if (attachment && m_stable.hasData())
 		{
-			MutexLockGuard guardAsync(*m_stable->getMutex(true, true), FB_FUNCTION);
-			m_stable->getMutex()->enter(FB_FUNCTION);
+			Jrd::AttSyncLockGuard guardAsync(*m_stable->getSync(true, true), FB_FUNCTION);
+			m_stable->getSync()->enter(FB_FUNCTION);
 
 			if (m_stable->getHandle() == attachment)
 				attachment->att_ext_connection = m_saveConnection;
 			else
-				m_stable->getMutex()->leave();
+				m_stable->getSync()->leave();
 		}
 
 		jrd_tra* transaction = m_tdbb->getTransaction();

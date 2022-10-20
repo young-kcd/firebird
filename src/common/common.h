@@ -150,11 +150,18 @@
 
 #ifdef MIPSEL
 #define FB_CPU CpuMipsel
+#define RISC_ALIGNMENT
 #endif /* mipsel */
 
 #ifdef MIPSEB
 #define FB_CPU CpuMips
+#define RISC_ALIGNMENT
 #endif /* mips */
+
+#ifdef MIPS64EL
+#define FB_CPU CpuMips64el
+#define RISC_ALIGNMENT
+#endif /* mips64el */
 
 #ifdef IA64
 #define FB_CPU CpuIa64
@@ -230,6 +237,10 @@
 #ifdef ARM
 #define FB_CPU CpuArm
 #endif /* ARM */
+#ifdef ARM64
+#define DARWIN64
+#define FB_CPU CpuArm64
+#endif /* ARM64 */
 #ifdef __ppc__
 #define powerpc
 #define FB_CPU CpuPowerPc
@@ -252,15 +263,13 @@
 
 #define API_ROUTINE __attribute__((visibility("default")))
 #define API_ROUTINE_VARARG API_ROUTINE
-#define INTERNAL_API_ROUTINE API_ROUTINE
-#define FB_EXPORTED __attribute__((visibility("default")))
 
 #define O_DIRECT F_NOCACHE
 #endif /* Darwin Platforms */
 
 
 /*****************************************************
-* FreeBSD for Intel platforms
+* FreeBSD
 *****************************************************/
 #ifdef FREEBSD
 
@@ -272,7 +281,13 @@
 
 #ifdef AMD64
 #define FB_CPU CpuAmd
-#else
+#endif
+
+#ifdef PPC64EL
+#define FB_CPU CpuPowerPc64el
+#endif
+
+#if defined(i386) || defined(__i386) || defined(__i386__)
 #define I386
 #define FB_CPU CpuIntel
 #endif
@@ -603,10 +618,6 @@ extern "C" int remove(const char* path);
 #define CLIB_ROUTINE
 #endif
 
-#ifndef FB_EXPORTED
-#define FB_EXPORTED
-#endif
-
 #ifdef HAS_NOEXCEPT
 #define NOEXCEPT noexcept
 #define NOEXCEPT_ARG(X) noexcept((X))
@@ -773,8 +784,6 @@ extern "C" int remove(const char* path);
 #endif
 #define ROUNDUP_LONG(len)       ROUNDUP (len, sizeof (SLONG))
 
-#define JRD_BUGCHK 15			/* facility code for bugcheck messages */
-
 #ifndef ODS_ALIGNMENT
 #define ODS_ALIGNMENT           4
 #endif
@@ -886,21 +895,6 @@ void GDS_breakpoint(int);
 #define FB_CONST64(a) (a##i64)
 #else
 #define FB_CONST64(a) (a##LL)
-#endif
-
-// Check for "final" keyword support
-#ifdef CPP_11
-#define FB_FINAL final
-#else
-#ifdef __GNUC__
-#if ((__GNUC__ == 4 && __GNUC_MINOR__ >= 7) || (__GNUC__ >= 5))
-#define FB_FINAL __final
-#endif
-#endif
-// Please add support for other compilers here
-#ifndef FB_FINAL
-#define FB_FINAL
-#endif
 #endif
 
 #define FB_UNUSED(value) do { if (value) {} } while (false)

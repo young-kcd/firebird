@@ -51,7 +51,6 @@ enum pp_vals {
 };
 
 
-const size_t MAX_TOKEN_SIZE = 1024;
 static void generate_error(const Firebird::NoCaseString&, SSHORT, char = 0);
 
 struct pp_table
@@ -166,7 +165,7 @@ bool PREPARSE_execute(CheckStatusWrapper* status, Why::YAttachment** ptrAtt,
 	{
 		if (stmt.isEmpty())
 		{
-			Arg::Gds(isc_command_end_err).raise();
+			return false;	// let others care
 		}
 
 		bool hasUser = true;

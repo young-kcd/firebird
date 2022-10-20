@@ -31,7 +31,7 @@
 #include "../common/classes/Hash.h"
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
-#include "gen/iberror.h"
+#include "iberror.h"
 #include "../jrd/err_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../jrd/jrd_proto.h"
@@ -584,6 +584,8 @@ static lck_owner_t get_owner_type(enum lck_t lock_type)
 	case LCK_record_gc:
 	case LCK_alter_database:
 	case LCK_repl_tables:
+	case LCK_dsql_statement_cache:
+	case LCK_profiler_listener:
 		owner_type = LCK_OWNER_attachment;
 		break;
 
@@ -1488,7 +1490,7 @@ Lock::~Lock()
 	{
 #ifdef DEBUG_LCK_LIST
 		gds__log("DEBUG_LCK_LIST: Lock::~Lock(): this 0x%p, attachment 0x%p, lck_type %d, lck_next 0x%p, lck_prior 0x%p",
-			this, lck_attachment ? lck_attachment->getHandle() : NULL, 
+			this, lck_attachment ? lck_attachment->getHandle() : NULL,
 			(int) lck_type, lck_next, lck_prior);
 #endif
 

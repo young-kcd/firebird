@@ -23,10 +23,11 @@
 #include "firebird.h"
 #include "../dsql/Nodes.h"
 #include "../jrd/mov_proto.h"
-#include "../jrd/opt_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/exe_proto.h"
 #include "../jrd/par_proto.h"
+#include "../jrd/optimizer/Optimizer.h"
+
 #include "RecordSource.h"
 
 using namespace Firebird;
@@ -50,34 +51,36 @@ namespace
 	public:
 		BufferedStreamWindow(CompilerScratch* csb, BufferedStream* next);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
+		void internalOpen(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
 
-		bool getRecord(thread_db* tdbb) const;
-		bool refetchRecord(thread_db* tdbb) const;
-		bool lockRecord(thread_db* tdbb) const;
+		bool internalGetRecord(thread_db* tdbb) const override;
+		bool refetchRecord(thread_db* tdbb) const override;
+		bool lockRecord(thread_db* tdbb) const override;
 
-		void print(thread_db* tdbb, Firebird::string& plan, bool detailed, unsigned level) const;
+		void getChildren(Firebird::Array<const RecordSource*>& children) const override;
 
-		void markRecursive();
-		void invalidateRecords(jrd_req* request) const;
+		void print(thread_db* tdbb, Firebird::string& plan, bool detailed, unsigned level, bool recurse) const override;
 
-		void findUsedStreams(StreamList& streams, bool expandAll) const;
-		void nullRecords(thread_db* tdbb) const;
+		void markRecursive() override;
+		void invalidateRecords(Request* request) const override;
 
-		void locate(thread_db* tdbb, FB_UINT64 position) const
+		void findUsedStreams(StreamList& streams, bool expandAll) const override;
+		void nullRecords(thread_db* tdbb) const override;
+
+		void locate(thread_db* tdbb, FB_UINT64 position) const override
 		{
-			jrd_req* const request = tdbb->getRequest();
+			Request* const request = tdbb->getRequest();
 			Impure* const impure = request->getImpure<Impure>(m_impure);
 			impure->irsb_position = position;
 		}
 
-		FB_UINT64 getCount(thread_db* tdbb) const
+		FB_UINT64 getCount(thread_db* tdbb) const override
 		{
 			return m_next->getCount(tdbb);
 		}
 
-		FB_UINT64 getPosition(jrd_req* request) const
+		FB_UINT64 getPosition(Request* request) const override
 		{
 			Impure* const impure = request->getImpure<Impure>(m_impure);
 			return impure->irsb_position;
@@ -90,14 +93,15 @@ namespace
 	// BufferedStreamWindow implementation
 
 	BufferedStreamWindow::BufferedStreamWindow(CompilerScratch* csb, BufferedStream* next)
-		: m_next(next)
+		: BaseBufferedStream(csb),
+		  m_next(next)
 	{
 		m_impure = csb->allocImpure<Impure>();
 	}
 
-	void BufferedStreamWindow::open(thread_db* tdbb) const
+	void BufferedStreamWindow::internalOpen(thread_db* tdbb) const
 	{
-		jrd_req* const request = tdbb->getRequest();
+		Request* const request = tdbb->getRequest();
 		Impure* const impure = request->getImpure<Impure>(m_impure);
 
 		impure->irsb_flags = irsb_open;
@@ -106,7 +110,7 @@ namespace
 
 	void BufferedStreamWindow::close(thread_db* tdbb) const
 	{
-		jrd_req* const request = tdbb->getRequest();
+		Request* const request = tdbb->getRequest();
 
 		invalidateRecords(request);
 
@@ -116,9 +120,9 @@ namespace
 			impure->irsb_flags &= ~irsb_open;
 	}
 
-	bool BufferedStreamWindow::getRecord(thread_db* tdbb) const
+	bool BufferedStreamWindow::internalGetRecord(thread_db* tdbb) const
 	{
-		jrd_req* const request = tdbb->getRequest();
+		Request* const request = tdbb->getRequest();
 		Impure* const impure = request->getImpure<Impure>(m_impure);
 
 		if (!(impure->irsb_flags & irsb_open))
@@ -142,9 +146,15 @@ namespace
 		return m_next->lockRecord(tdbb);
 	}
 
-	void BufferedStreamWindow::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
+	void BufferedStreamWindow::getChildren(Array<const RecordSource*>& children) const
 	{
-		m_next->print(tdbb, plan, detailed, level);
+		children.add(m_next);
+	}
+
+	void BufferedStreamWindow::print(thread_db* tdbb, string& plan, bool detailed, unsigned level, bool recurse) const
+	{
+		if (recurse)
+			m_next->print(tdbb, plan, detailed, level, recurse);
 	}
 
 	void BufferedStreamWindow::markRecursive()
@@ -157,7 +167,7 @@ namespace
 		m_next->findUsedStreams(streams, expandAll);
 	}
 
-	void BufferedStreamWindow::invalidateRecords(jrd_req* request) const
+	void BufferedStreamWindow::invalidateRecords(Request* request) const
 	{
 		m_next->invalidateRecords(request);
 	}
@@ -182,44 +192,40 @@ namespace
 
 // ------------------------------
 
-WindowedStream::WindowedStream(thread_db* tdbb, CompilerScratch* csb,
+WindowedStream::WindowedStream(thread_db* tdbb, Optimizer* opt,
 			ObjectsArray<WindowSourceNode::Window>& windows, RecordSource* next)
-	: m_next(FB_NEW_POOL(csb->csb_pool) BufferedStream(csb, next)),
-	  m_joinedStream(NULL)
+	: RecordSource(opt->getCompilerScratch()),
+	  m_joinedStream(nullptr)
 {
+	const auto csb = opt->getCompilerScratch();
+
+	m_next = FB_NEW_POOL(csb->csb_pool) BufferedStream(csb, next);
 	m_impure = csb->allocImpure<Impure>();
+	m_cardinality = next->getCardinality();
 
 	// Process the unpartioned and unordered map, if existent.
 
-	for (ObjectsArray<WindowSourceNode::Window>::iterator window = windows.begin();
-		 window != windows.end();
-		 ++window)
+	for (auto& window : windows)
 	{
 		// While here, verify not supported functions/clauses.
 
-		if (window->order)
+		if (window.order || window.frameExtent->unit == FrameExtent::Unit::ROWS)
 		{
-			const NestConst<ValueExprNode>* source = window->map->sourceList.begin();
-
-			for (const NestConst<ValueExprNode>* const end = window->map->sourceList.end();
-				 source != end;
-				 ++source)
+			for (const auto& source : window.map->sourceList)
 			{
-				const AggNode* aggNode = nodeAs<AggNode>(*source);
-
-				if (aggNode)
+				if (const auto aggNode = nodeAs<AggNode>(source))
 				{
-					if (aggNode->distinct)
-					{
-						status_exception::raise(
-							Arg::Gds(isc_wish_list) <<
-							Arg::Gds(isc_random) << "DISTINCT is not supported in ordered windows");
-					}
+					const char* arg = nullptr;
 
-					if (!(aggNode->getCapabilities() & AggNode::CAP_SUPPORTS_WINDOW_FRAME))
+					if (aggNode->distinct)
+						arg = "DISTINCT";
+					else if (!(aggNode->getCapabilities() & AggNode::CAP_SUPPORTS_WINDOW_FRAME))
+						arg = aggNode->aggInfo.name;
+
+					if (arg)
 					{
 						string msg;
-						msg.printf("%s is not supported in ordered windows", aggNode->aggInfo.name);
+						msg.printf("%s is not supported in windows with ORDER BY or frame by ROWS clauses", arg);
 
 						status_exception::raise(
 							Arg::Gds(isc_wish_list) <<
@@ -229,15 +235,22 @@ WindowedStream::WindowedStream(thread_db* tdbb, CompilerScratch* csb,
 			}
 		}
 
-		if (!window->group && !window->order)
+		if (!window.group && !window.order)
 		{
-			fb_assert(!m_joinedStream);
+			if (!m_joinedStream)
+			{
+				m_joinedStream = FB_NEW_POOL(csb->csb_pool) WindowStream(tdbb, csb, window.stream,
+					nullptr, FB_NEW_POOL(csb->csb_pool) BufferedStreamWindow(csb, m_next),
+					nullptr, window.map, window.frameExtent, window.exclusion);
+			}
+			else
+			{
+				m_joinedStream = FB_NEW_POOL(csb->csb_pool) WindowStream(tdbb, csb, window.stream,
+					nullptr, FB_NEW_POOL(csb->csb_pool) BufferedStream(csb, m_joinedStream),
+					nullptr, window.map, window.frameExtent, window.exclusion);
+			}
 
-			m_joinedStream = FB_NEW_POOL(csb->csb_pool) WindowStream(tdbb, csb, window->stream,
-				NULL, FB_NEW_POOL(csb->csb_pool) BufferedStreamWindow(csb, m_next),
-				NULL, window->map, NULL, window->exclusion);
-
-			OPT_gen_aggregate_distincts(tdbb, csb, window->map);
+			opt->generateAggregateDistincts(window.map);
 		}
 	}
 
@@ -248,14 +261,8 @@ WindowedStream::WindowedStream(thread_db* tdbb, CompilerScratch* csb,
 
 	StreamList streams;
 
-	for (ObjectsArray<WindowSourceNode::Window>::iterator window = windows.begin();
-		 window != windows.end();
-		 ++window)
+	for (auto& window : windows)
 	{
-		// Refresh the stream list based on the last m_joinedStream.
-		streams.clear();
-		m_joinedStream->findUsedStreams(streams);
-
 #if 0	//// FIXME: This causes problems, for example with FIRST_VALUE.
 		//// I think it can be fixed with the help of SlidingWindow.
 
@@ -263,10 +270,10 @@ WindowedStream::WindowedStream(thread_db* tdbb, CompilerScratch* csb,
 
 		// between !{<n> following || unbounded preceding} and unbounded following
 		if (window->frameExtent &&
-			window->frameExtent->frame2->bound == WindowClause::Frame::Bound::FOLLOWING &&
+			window->frameExtent->frame2->bound == Frame::Bound::FOLLOWING &&
 			!window->frameExtent->frame2->value &&
-			!(window->frameExtent->frame1->bound == WindowClause::Frame::Bound::FOLLOWING ||
-			  (window->frameExtent->frame1->bound == WindowClause::Frame::Bound::PRECEDING &&
+			!(window->frameExtent->frame1->bound == Frame::Bound::FOLLOWING ||
+			  (window->frameExtent->frame1->bound == Frame::Bound::PRECEDING &&
 			   !window->frameExtent->frame1->value)))
 		{
 			if (window->order)
@@ -286,14 +293,14 @@ WindowedStream::WindowedStream(thread_db* tdbb, CompilerScratch* csb,
 				}
 			}
 
-			WindowClause::Frame* temp = window->frameExtent->frame1;
+			Frame* temp = window->frameExtent->frame1;
 			window->frameExtent->frame1 = window->frameExtent->frame2;
 			window->frameExtent->frame2 = temp;
 
-			window->frameExtent->frame1->bound = WindowClause::Frame::Bound::PRECEDING;
+			window->frameExtent->frame1->bound = Frame::Bound::PRECEDING;
 
-			if (window->frameExtent->frame2->bound == WindowClause::Frame::Bound::PRECEDING)
-				window->frameExtent->frame2->bound = WindowClause::Frame::Bound::FOLLOWING;
+			if (window->frameExtent->frame2->bound == Frame::Bound::PRECEDING)
+				window->frameExtent->frame2->bound = Frame::Bound::FOLLOWING;
 		}
 #endif
 
@@ -301,41 +308,45 @@ WindowedStream::WindowedStream(thread_db* tdbb, CompilerScratch* csb,
 
 		SortNode* windowOrder;
 
-		if (window->group)
+		if (window.group)
 		{
 			windowOrder = FB_NEW_POOL(csb->csb_pool) SortNode(csb->csb_pool);
-			windowOrder->expressions.join(window->group->expressions);
-			windowOrder->direction.join(window->group->direction);
-			windowOrder->nullOrder.join(window->group->nullOrder);
+			windowOrder->expressions.join(window.group->expressions);
+			windowOrder->direction.join(window.group->direction);
+			windowOrder->nullOrder.join(window.group->nullOrder);
 
-			if (window->order)
+			if (window.order)
 			{
-				windowOrder->expressions.join(window->order->expressions);
-				windowOrder->direction.join(window->order->direction);
-				windowOrder->nullOrder.join(window->order->nullOrder);
+				windowOrder->expressions.join(window.order->expressions);
+				windowOrder->direction.join(window.order->direction);
+				windowOrder->nullOrder.join(window.order->nullOrder);
 			}
 		}
 		else
-			windowOrder = window->order;
+			windowOrder = window.order;
 
 		if (windowOrder)
 		{
-			SortedStream* sortedStream = OPT_gen_sort(tdbb, csb, streams, NULL,
-				m_joinedStream, windowOrder, false, false);
+			// Refresh the stream list based on the last m_joinedStream.
+			streams.clear();
+			m_joinedStream->findUsedStreams(streams);
 
-			m_joinedStream = FB_NEW_POOL(csb->csb_pool) WindowStream(tdbb, csb, window->stream,
-				(window->group ? &window->group->expressions : NULL),
+			const auto sortedStream =
+				opt->generateSort(streams, nullptr, m_joinedStream, windowOrder, false, false);
+
+			m_joinedStream = FB_NEW_POOL(csb->csb_pool) WindowStream(tdbb, csb, window.stream,
+				(window.group ? &window.group->expressions : nullptr),
 				FB_NEW_POOL(csb->csb_pool) BufferedStream(csb, sortedStream),
-				window->order, window->map, window->frameExtent, window->exclusion);
+				window.order, window.map, window.frameExtent, window.exclusion);
 
-			OPT_gen_aggregate_distincts(tdbb, csb, window->map);
+			opt->generateAggregateDistincts(window.map);
 		}
 	}
 }
 
-void WindowedStream::open(thread_db* tdbb) const
+void WindowedStream::internalOpen(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open;
@@ -346,7 +357,7 @@ void WindowedStream::open(thread_db* tdbb) const
 
 void WindowedStream::close(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 
 	invalidateRecords(request);
 
@@ -360,11 +371,11 @@ void WindowedStream::close(thread_db* tdbb) const
 	}
 }
 
-bool WindowedStream::getRecord(thread_db* tdbb) const
+bool WindowedStream::internalGetRecord(thread_db* tdbb) const
 {
 	JRD_reschedule(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
@@ -387,9 +398,15 @@ bool WindowedStream::lockRecord(thread_db* /*tdbb*/) const
 	return false; // compiler silencer
 }
 
-void WindowedStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
+void WindowedStream::getChildren(Array<const RecordSource*>& children) const
 {
-	m_joinedStream->print(tdbb, plan, detailed, level);
+	children.add(m_joinedStream);
+}
+
+void WindowedStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level, bool recurse) const
+{
+	if (recurse)
+		m_joinedStream->print(tdbb, plan, detailed, level, recurse);
 }
 
 void WindowedStream::markRecursive()
@@ -397,7 +414,7 @@ void WindowedStream::markRecursive()
 	m_joinedStream->markRecursive();
 }
 
-void WindowedStream::invalidateRecords(jrd_req* request) const
+void WindowedStream::invalidateRecords(Request* request) const
 {
 	m_joinedStream->invalidateRecords(request);
 }
@@ -419,8 +436,8 @@ void WindowedStream::nullRecords(thread_db* tdbb) const
 WindowedStream::WindowStream::WindowStream(thread_db* tdbb, CompilerScratch* csb, StreamType stream,
 			const NestValueArray* group, BaseBufferedStream* next,
 			SortNode* order, MapNode* windowMap,
-			WindowClause::FrameExtent* frameExtent,
-			WindowClause::Exclusion exclusion)
+			FrameExtent* frameExtent,
+			Exclusion exclusion)
 	: BaseAggWinStream(tdbb, csb, stream, group, NULL, false, next),
 	  m_order(order),
 	  m_windowMap(windowMap),
@@ -470,12 +487,12 @@ WindowedStream::WindowStream::WindowStream(thread_db* tdbb, CompilerScratch* csb
 
 		for (unsigned i = 0; i < 2; ++i)
 		{
-			WindowClause::Frame* frame = i == 0 ?
+			Frame* frame = i == 0 ?
 				m_frameExtent->frame1 : m_frameExtent->frame2;
 
-			if (m_frameExtent->unit == WindowClause::FrameExtent::Unit::RANGE && frame->value)
+			if (m_frameExtent->unit == FrameExtent::Unit::RANGE && frame->value)
 			{
-				int direction = frame->bound == WindowClause::Frame::Bound::FOLLOWING ? 1 : -1;
+				int direction = frame->bound == Frame::Bound::FOLLOWING ? 1 : -1;
 
 				if (m_order->direction[0] == ORDER_DESC)
 					direction *= -1;
@@ -505,11 +522,11 @@ WindowedStream::WindowStream::WindowStream(thread_db* tdbb, CompilerScratch* csb
 	(void) m_exclusion;	// avoid warning
 }
 
-void WindowedStream::WindowStream::open(thread_db* tdbb) const
+void WindowedStream::WindowStream::internalOpen(thread_db* tdbb) const
 {
-	BaseAggWinStream::open(tdbb);
+	BaseAggWinStream::internalOpen(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = getImpure(request);
 
 	impure->partitionBlock.startPosition = impure->partitionBlock.endPosition =
@@ -533,7 +550,7 @@ void WindowedStream::WindowStream::open(thread_db* tdbb) const
 
 void WindowedStream::WindowStream::close(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (impure->irsb_flags & irsb_open)
@@ -542,11 +559,11 @@ void WindowedStream::WindowStream::close(thread_db* tdbb) const
 	BaseAggWinStream::close(tdbb);
 }
 
-bool WindowedStream::WindowStream::getRecord(thread_db* tdbb) const
+bool WindowedStream::WindowStream::internalGetRecord(thread_db* tdbb) const
 {
 	JRD_reschedule(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	record_param* const rpb = &request->req_rpb[m_stream];
 	Impure* const impure = getImpure(request);
 
@@ -605,37 +622,36 @@ bool WindowedStream::WindowStream::getRecord(thread_db* tdbb) const
 
 		// Find the window start.
 
-		if (m_order && m_frameExtent->frame1->value && !(m_invariantOffsets & 0x1))
+		if (m_frameExtent->frame1->value && !(m_invariantOffsets & 0x1))
 			getFrameValue(tdbb, request, m_frameExtent->frame1, &impure->startOffset);
 
-		if (!m_order)
-			impure->windowBlock.startPosition = impure->partitionBlock.startPosition;
 		// {range | rows} between unbounded preceding and ...
-		else if (m_frameExtent->frame1->bound == WindowClause::Frame::Bound::PRECEDING &&
-			!m_frameExtent->frame1->value)
+		// (no order by) range
+		if ((m_frameExtent->frame1->bound == Frame::Bound::PRECEDING && !m_frameExtent->frame1->value) ||
+			(!m_order && m_frameExtent->unit == FrameExtent::Unit::RANGE))
 		{
 			impure->windowBlock.startPosition = impure->partitionBlock.startPosition;
 		}
 		// rows between current row and ...
-		else if (m_frameExtent->unit == WindowClause::FrameExtent::Unit::ROWS &&
-			m_frameExtent->frame1->bound == WindowClause::Frame::Bound::CURRENT_ROW)
+		else if (m_frameExtent->unit == FrameExtent::Unit::ROWS &&
+			m_frameExtent->frame1->bound == Frame::Bound::CURRENT_ROW)
 		{
 			impure->windowBlock.startPosition = position;
 		}
 		// rows between <n> {preceding | following} and ...
-		else if (m_frameExtent->unit == WindowClause::FrameExtent::Unit::ROWS &&
+		else if (m_frameExtent->unit == FrameExtent::Unit::ROWS &&
 			m_frameExtent->frame1->value)
 		{
 			impure->windowBlock.startPosition = position + impure->startOffset.vlux_count;
 		}
 		// range between current row and ...
-		else if (m_frameExtent->unit == WindowClause::FrameExtent::Unit::RANGE &&
-			m_frameExtent->frame1->bound == WindowClause::Frame::Bound::CURRENT_ROW)
+		else if (m_frameExtent->unit == FrameExtent::Unit::RANGE &&
+			m_frameExtent->frame1->bound == Frame::Bound::CURRENT_ROW)
 		{
 			impure->windowBlock.startPosition = position;
 		}
 		// range between <n> {preceding | following} and ...
-		else if (m_frameExtent->unit == WindowClause::FrameExtent::Unit::RANGE &&
+		else if (m_frameExtent->unit == FrameExtent::Unit::RANGE &&
 			m_frameExtent->frame1->value)
 		{
 			impure->windowBlock.startPosition = locateFrameRange(tdbb, request, impure,
@@ -649,32 +665,31 @@ bool WindowedStream::WindowStream::getRecord(thread_db* tdbb) const
 
 		// Find the window end.
 
-		if (m_order && m_frameExtent->frame2->value && !(m_invariantOffsets & 0x2))
+		if (m_frameExtent->frame2->value && !(m_invariantOffsets & 0x2))
 			getFrameValue(tdbb, request, m_frameExtent->frame2, &impure->endOffset);
 
-		if (!m_order)
-			impure->windowBlock.endPosition = impure->partitionBlock.endPosition;
 		// {range | rows} between ... and unbounded following
-		else if (m_frameExtent->frame2->bound == WindowClause::Frame::Bound::FOLLOWING &&
-			!m_frameExtent->frame2->value)
+		// (no order by) range
+		if ((m_frameExtent->frame2->bound == Frame::Bound::FOLLOWING && !m_frameExtent->frame2->value) ||
+			(!m_order && m_frameExtent->unit == FrameExtent::Unit::RANGE))
 		{
 			impure->windowBlock.endPosition = impure->partitionBlock.endPosition;
 		}
 		// rows between ... and current row
-		else if (m_frameExtent->unit == WindowClause::FrameExtent::Unit::ROWS &&
-			m_frameExtent->frame2->bound == WindowClause::Frame::Bound::CURRENT_ROW)
+		else if (m_frameExtent->unit == FrameExtent::Unit::ROWS &&
+			m_frameExtent->frame2->bound == Frame::Bound::CURRENT_ROW)
 		{
 			impure->windowBlock.endPosition = position;
 		}
 		// rows between ... and <n> {preceding | following}
-		else if (m_frameExtent->unit == WindowClause::FrameExtent::Unit::ROWS &&
+		else if (m_frameExtent->unit == FrameExtent::Unit::ROWS &&
 			m_frameExtent->frame2->value)
 		{
 			impure->windowBlock.endPosition = position + impure->endOffset.vlux_count;
 		}
 		// range between ... and current row
-		else if (m_frameExtent->unit == WindowClause::FrameExtent::Unit::RANGE &&
-			m_frameExtent->frame2->bound == WindowClause::Frame::Bound::CURRENT_ROW)
+		else if (m_frameExtent->unit == FrameExtent::Unit::RANGE &&
+			m_frameExtent->frame2->bound == Frame::Bound::CURRENT_ROW)
 		{
 			SINT64 rangePos = position;
 			cacheValues(tdbb, request, &m_order->expressions, impure->orderValues,
@@ -700,7 +715,7 @@ bool WindowedStream::WindowStream::getRecord(thread_db* tdbb) const
 				fb_assert(false);
 		}
 		// range between ... and <n> {preceding | following}
-		else if (m_frameExtent->unit == WindowClause::FrameExtent::Unit::RANGE &&
+		else if (m_frameExtent->unit == FrameExtent::Unit::RANGE &&
 			m_frameExtent->frame2->value)
 		{
 			impure->windowBlock.endPosition = locateFrameRange(tdbb, request, impure,
@@ -712,43 +727,37 @@ bool WindowedStream::WindowStream::getRecord(thread_db* tdbb) const
 			return false;
 		}
 
-		if (!m_order)
-			impure->rangePending = MAX(0, impure->windowBlock.endPosition - position);
-		else if (m_order && m_frameExtent->unit == WindowClause::FrameExtent::Unit::RANGE)
+		if ((m_frameExtent->frame1->bound == Frame::Bound::PRECEDING && !m_frameExtent->frame1->value &&
+			 m_frameExtent->frame2->bound == Frame::Bound::FOLLOWING && !m_frameExtent->frame2->value) ||
+		    (m_frameExtent->unit == FrameExtent::Unit::RANGE && !m_order))
 		{
-			if (m_frameExtent->frame1->bound == WindowClause::Frame::Bound::PRECEDING &&
-			    !m_frameExtent->frame1->value &&
-			    m_frameExtent->frame2->bound == WindowClause::Frame::Bound::FOLLOWING &&
-			    !m_frameExtent->frame2->value)
-			{
-				impure->rangePending = MAX(0, impure->windowBlock.endPosition - position);
-			}
-			else
-			{
-				SINT64 rangePos = position;
-				cacheValues(tdbb, request, &m_order->expressions, impure->orderValues,
-					DummyAdjustFunctor());
-
-				while (++rangePos <= impure->partitionBlock.endPosition)
-				{
-					if (!m_next->getRecord(tdbb))
-						fb_assert(false);
-
-					if (lookForChange(tdbb, request, &m_order->expressions, m_order,
-							impure->orderValues))
-					{
-						break;
-					}
-				}
-
-				impure->rangePending = rangePos - position - 1;
-			}
-
-			m_next->locate(tdbb, position);
-
-			if (!m_next->getRecord(tdbb))
-				fb_assert(false);
+			impure->rangePending = MAX(0, impure->windowBlock.endPosition - position);
 		}
+		else if (m_frameExtent->unit == FrameExtent::Unit::RANGE)
+		{
+			SINT64 rangePos = position;
+			cacheValues(tdbb, request, &m_order->expressions, impure->orderValues,
+				DummyAdjustFunctor());
+
+			while (++rangePos <= impure->partitionBlock.endPosition)
+			{
+				if (!m_next->getRecord(tdbb))
+					fb_assert(false);
+
+				if (lookForChange(tdbb, request, &m_order->expressions, m_order,
+						impure->orderValues))
+				{
+					break;
+				}
+			}
+
+			impure->rangePending = rangePos - position - 1;
+		}
+
+		m_next->locate(tdbb, position);
+
+		if (!m_next->getRecord(tdbb))
+			fb_assert(false);
 
 		//// TODO: There is no need to pass record by record when m_aggSources.isEmpty()
 
@@ -878,13 +887,22 @@ bool WindowedStream::WindowStream::getRecord(thread_db* tdbb) const
 	return true;
 }
 
+void WindowedStream::WindowStream::getChildren(Array<const RecordSource*>& children) const
+{
+	children.add(m_next);
+}
+
 void WindowedStream::WindowStream::print(thread_db* tdbb, string& plan, bool detailed,
-	unsigned level) const
+	unsigned level, bool recurse) const
 {
 	if (detailed)
+	{
 		plan += printIndent(++level) + "Window";
+		printOptInfo(plan);
+	}
 
-	m_next->print(tdbb, plan, detailed, level);
+	if (recurse)
+		m_next->print(tdbb, plan, detailed, level, recurse);
 }
 
 void WindowedStream::WindowStream::findUsedStreams(StreamList& streams, bool expandAll) const
@@ -901,8 +919,8 @@ void WindowedStream::WindowStream::nullRecords(thread_db* tdbb) const
 	m_next->nullRecords(tdbb);
 }
 
-const void WindowedStream::WindowStream::getFrameValue(thread_db* tdbb, jrd_req* request,
-	const WindowClause::Frame* frame, impure_value_ex* impureValue) const
+const void WindowedStream::WindowStream::getFrameValue(thread_db* tdbb, Request* request,
+	const Frame* frame, impure_value_ex* impureValue) const
 {
 	dsc* desc = EVL_expr(tdbb, request, frame->value);
 	bool error = false;
@@ -911,7 +929,7 @@ const void WindowedStream::WindowStream::getFrameValue(thread_db* tdbb, jrd_req*
 		error = true;
 	else
 	{
-		if (m_frameExtent->unit == WindowClause::FrameExtent::Unit::ROWS)
+		if (m_frameExtent->unit == FrameExtent::Unit::ROWS)
 		{
 			// Purposedly used 32-bit here. So long distance will complicate things for no gain.
 			impureValue->vlux_count = MOV_get_long(tdbb, desc, 0);
@@ -919,7 +937,7 @@ const void WindowedStream::WindowStream::getFrameValue(thread_db* tdbb, jrd_req*
 			if (impureValue->vlux_count < 0)
 				error = true;
 
-			if (frame->bound == WindowClause::Frame::Bound::PRECEDING)
+			if (frame->bound == Frame::Bound::PRECEDING)
 				impureValue->vlux_count = -impureValue->vlux_count;
 		}
 		else if (MOV_compare(tdbb, desc, &zeroDsc) < 0)
@@ -936,8 +954,8 @@ const void WindowedStream::WindowStream::getFrameValue(thread_db* tdbb, jrd_req*
 	}
 }
 
-SINT64 WindowedStream::WindowStream::locateFrameRange(thread_db* tdbb, jrd_req* request, Impure* impure,
-	const WindowClause::Frame* frame, const dsc* offsetDesc, SINT64 position) const
+SINT64 WindowedStream::WindowStream::locateFrameRange(thread_db* tdbb, Request* request, Impure* impure,
+	const Frame* frame, const dsc* offsetDesc, SINT64 position) const
 {
 	if (m_order->expressions.getCount() != 1)
 	{
@@ -949,11 +967,6 @@ SINT64 WindowedStream::WindowStream::locateFrameRange(thread_db* tdbb, jrd_req* 
 
 	if (offsetDesc)
 	{
-		int direction = (frame->bound == WindowClause::Frame::Bound::FOLLOWING ? 1 : -1);
-
-		if (m_order->direction[0] == ORDER_DESC)
-			direction *= -1;
-
 		cacheValues(tdbb, request, &m_order->expressions, impure->orderValues,
 			AdjustFunctor(m_arithNodes[frame == m_frameExtent->frame1 ? 0 : 1], offsetDesc));
 	}
@@ -983,7 +996,7 @@ SINT64 WindowedStream::WindowStream::locateFrameRange(thread_db* tdbb, jrd_req* 
 			--rangePos;
 		}
 	}
-	else if (frame->bound == WindowClause::Frame::Bound::FOLLOWING)
+	else if (frame->bound == Frame::Bound::FOLLOWING)
 	{
 		const int bound = frame == m_frameExtent->frame1 ? 0 : 1;
 
@@ -1057,7 +1070,7 @@ SINT64 WindowedStream::WindowStream::locateFrameRange(thread_db* tdbb, jrd_req* 
 // ------------------------------
 
 SlidingWindow::SlidingWindow(thread_db* aTdbb, const BaseBufferedStream* aStream,
-			jrd_req* request,
+			Request* request,
 			FB_UINT64 aPartitionStart, FB_UINT64 aPartitionEnd,
 			FB_UINT64 aFrameStart, FB_UINT64 aFrameEnd)
 	: tdbb(aTdbb),	// Note: instantiate the class only as local variable

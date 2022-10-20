@@ -524,9 +524,10 @@ void INI_format(const char* owner, const char* charset)
 
 	length = acl - buffer;
 
-	for (int ddl_obj = obj_database + 1; ddl_obj < obj_type_MAX; ++ddl_obj)
+	for (int obj = obj_database + 1; obj < obj_type_MAX; obj++)
 	{
-		add_security_class(tdbb, reqAddSC, get_object_name(ddl_obj), length, buffer);
+		if (isDdlObject(obj))
+			add_security_class(tdbb, reqAddSC, getSecurityClassName(obj), length, buffer);
 	}
 
 	{ // scope
@@ -810,7 +811,12 @@ void INI_init_dsql(thread_db* tdbb, dsql_dbb* database)
 	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
 		if (relfld[RFLD_R_ODS] > ENCODE_ODS(majorVersion, minorVersion))
+		{
+			for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
+				;
+
 			continue;
+		}
 
 		dsql_rel* relation = FB_NEW_POOL(database->dbb_pool) dsql_rel(database->dbb_pool);
 
@@ -1430,7 +1436,6 @@ static void store_global_field(thread_db* tdbb, const gfld* gfield, AutoRequest&
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	STORE(REQUEST_HANDLE handle) X IN RDB$FIELDS
@@ -1782,6 +1787,29 @@ static void store_packages(thread_db* tdbb, const MetaName& owner)
 						PP.RDB$NULL_FLAG = !parameter.nullable;
 
 						PAD(names[gfields[parameter.fieldId].gfld_name], PP.RDB$FIELD_SOURCE);
+
+						fb_assert(parameter.defaultBlr.isEmpty() == !parameter.defaultText);
+
+						if (parameter.defaultBlr.hasData())
+						{
+							attachment->storeMetaDataBlob(tdbb, attachment->getSysTransaction(), &PP.RDB$DEFAULT_SOURCE,
+								string("default ") + parameter.defaultText);
+							PP.RDB$DEFAULT_SOURCE.NULL = FALSE;
+
+							Array<UCHAR> blrData(1 + parameter.defaultBlr.getCount() + 1);
+							blrData.push(blr_version5);
+							blrData.append(parameter.defaultBlr);
+							blrData.push(blr_eoc);
+
+							attachment->storeBinaryBlob(tdbb, attachment->getSysTransaction(), &PP.RDB$DEFAULT_VALUE,
+								blrData);
+							PP.RDB$DEFAULT_VALUE.NULL = FALSE;
+						}
+						else
+						{
+							PP.RDB$DEFAULT_SOURCE.NULL = TRUE;
+							PP.RDB$DEFAULT_VALUE.NULL = TRUE;
+						}
 					}
 					END_STORE
 				}
@@ -1839,6 +1867,29 @@ static void store_packages(thread_db* tdbb, const MetaName& owner)
 					ARG.RDB$NULL_FLAG = !parameter.nullable;
 
 					PAD(names[gfields[parameter.fieldId].gfld_name], ARG.RDB$FIELD_SOURCE);
+
+					fb_assert(parameter.defaultBlr.isEmpty() == !parameter.defaultText);
+
+					if (parameter.defaultBlr.hasData())
+					{
+						attachment->storeMetaDataBlob(tdbb, attachment->getSysTransaction(), &ARG.RDB$DEFAULT_SOURCE,
+							string("default ") + parameter.defaultText);
+						ARG.RDB$DEFAULT_SOURCE.NULL = FALSE;
+
+						Array<UCHAR> blrData(1 + parameter.defaultBlr.getCount() + 1);
+						blrData.push(blr_version5);
+						blrData.append(parameter.defaultBlr);
+						blrData.push(blr_eoc);
+
+						attachment->storeBinaryBlob(tdbb, attachment->getSysTransaction(), &ARG.RDB$DEFAULT_VALUE,
+							blrData);
+						ARG.RDB$DEFAULT_VALUE.NULL = FALSE;
+					}
+					else
+					{
+						ARG.RDB$DEFAULT_SOURCE.NULL = TRUE;
+						ARG.RDB$DEFAULT_VALUE.NULL = TRUE;
+					}
 				}
 				END_STORE
 			}

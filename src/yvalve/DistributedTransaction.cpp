@@ -32,6 +32,7 @@
 
 #include "../yvalve/MasterImplementation.h"
 #include "../common/classes/rwlock.h"
+#include "../common/classes/ClumpletReader.h"
 #include "firebird/impl/inf_pub.h"
 #include "../common/isc_proto.h"
 #include "../jrd/acl.h"
@@ -41,7 +42,7 @@ using namespace Why;
 
 namespace {
 
-class DTransaction FB_FINAL : public RefCntIface<ITransactionImpl<DTransaction, CheckStatusWrapper> >
+class DTransaction final : public RefCntIface<ITransactionImpl<DTransaction, CheckStatusWrapper> >
 {
 public:
 	DTransaction()
@@ -61,8 +62,15 @@ public:
 	DTransaction* join(CheckStatusWrapper* status, ITransaction* transaction);
 	ITransaction* validate(CheckStatusWrapper* status, IAttachment* attachment);
 	DTransaction* enterDtc(CheckStatusWrapper* status);
+	void deprecatedCommit(CheckStatusWrapper* status);
+	void deprecatedRollback(CheckStatusWrapper* status);
+	void deprecatedDisconnect(CheckStatusWrapper* status);
 
 private:
+	void internalCommit(CheckStatusWrapper* status);
+	void internalRollback(CheckStatusWrapper* status);
+	void internalDisconnect(CheckStatusWrapper* status);
+
 	typedef HalfStaticArray<ITransaction*, 8> SubArray;
 	typedef HalfStaticArray<UCHAR, 1024> TdrBuffer;
 	SubArray sub;
@@ -97,39 +105,29 @@ bool DTransaction::buildPrepareInfo(CheckStatusWrapper* status, TdrBuffer& tdr, 
 	// limit MAX_SSHORT is chosen cause for old API larger buffer cause problems
 	UCHAR* buf = bigBuffer.getBuffer(MAX_SSHORT);
 	from->getInfo(status, sizeof(PREPARE_TR_INFO), PREPARE_TR_INFO, bigBuffer.getCount(), buf);
-	if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+	if (status->getState() & IStatus::STATE_ERRORS)
 		return false;
 
-	UCHAR* const end = bigBuffer.end();
-
-	while (buf < end)
+	for (ClumpletReader p(ClumpletReader::InfoResponse, buf, bigBuffer.getCount()); !p.isEof(); p.moveNext())
 	{
-		UCHAR item = buf[0];
-		++buf;
-		const USHORT length = (USHORT) gds__vax_integer(buf, 2);
+		const USHORT length = (USHORT) p.getClumpLength();
 		// Prevent information out of sync.
 		UCHAR lengthByte = length > MAX_UCHAR ? MAX_UCHAR : length;
-		buf += 2;
 
-		switch(item)
+		switch(p.getClumpTag())
 		{
 			case isc_info_tra_id:
 				tdr.add(TDR_TRANSACTION_ID);
 				tdr.add(lengthByte);
-				tdr.add(buf, lengthByte);
+				tdr.add(p.getBytes(), lengthByte);
 				break;
 
 			case fb_info_tra_dbpath:
 				tdr.add(TDR_DATABASE_PATH);
 				tdr.add(lengthByte);
-				tdr.add(buf, lengthByte);
+				tdr.add(p.getBytes(), lengthByte);
 				break;
-
-			case isc_info_end:
-				return true;
 		}
-
-		buf += length;
 	}
 
 	return true;
@@ -178,7 +176,7 @@ void DTransaction::getInfo(CheckStatusWrapper* status,
 			if (sub[i])
 			{
 				sub[i]->getInfo(status, itemsLength, items, bufferLength, buffer);
-				if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+				if (status->getState() & IStatus::STATE_ERRORS)
 				{
 					return;
 				}
@@ -232,7 +230,7 @@ void DTransaction::prepare(CheckStatusWrapper* status,
 			{
 				sub[i]->prepare(status, msgLength, message);
 
-				if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+				if (status->getState() & IStatus::STATE_ERRORS)
 					return;
 			}
 		}
@@ -245,14 +243,14 @@ void DTransaction::prepare(CheckStatusWrapper* status,
 	}
 }
 
-void DTransaction::commit(CheckStatusWrapper* status)
+void DTransaction::internalCommit(CheckStatusWrapper* status)
 {
 	try
 	{
 		status->init();
 
 		prepare(status, 0, NULL);
-		if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+		if (status->getState() & IStatus::STATE_ERRORS)
 		{
 			return;
 		}
@@ -265,7 +263,7 @@ void DTransaction::commit(CheckStatusWrapper* status)
 				if (sub[i])
 				{
 					sub[i]->commit(status);
-					if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+					if (status->getState() & IStatus::STATE_ERRORS)
 						return;
 
 					sub[i] = NULL;
@@ -295,12 +293,10 @@ void DTransaction::commitRetaining(CheckStatusWrapper* status)
 			if (sub[i])
 			{
 				sub[i]->commitRetaining(status);
-				if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+				if (status->getState() & IStatus::STATE_ERRORS)
 					return;
 			}
 		}
-
-		limbo = true;	// ASF: why do retaining marks limbo?
 	}
 	catch (const Exception& ex)
 	{
@@ -308,7 +304,7 @@ void DTransaction::commitRetaining(CheckStatusWrapper* status)
 	}
 }
 
-void DTransaction::rollback(CheckStatusWrapper* status)
+void DTransaction::internalRollback(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -322,7 +318,7 @@ void DTransaction::rollback(CheckStatusWrapper* status)
 				if (sub[i])
 				{
 					sub[i]->rollback(status);
-					if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+					if (status->getState() & IStatus::STATE_ERRORS)
 						return;
 
 					sub[i] = NULL;
@@ -349,12 +345,10 @@ void DTransaction::rollbackRetaining(CheckStatusWrapper* status)
 			if (sub[i])
 			{
 				sub[i]->rollbackRetaining(status);
-				if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+				if (status->getState() & IStatus::STATE_ERRORS)
 					return;
 			}
 		}
-
-		limbo = true;	// ASF: why do retaining marks limbo?
 	}
 	catch (const Exception& ex)
 	{
@@ -362,7 +356,7 @@ void DTransaction::rollbackRetaining(CheckStatusWrapper* status)
 	}
 }
 
-void DTransaction::disconnect(CheckStatusWrapper* status)
+void DTransaction::internalDisconnect(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -378,7 +372,7 @@ void DTransaction::disconnect(CheckStatusWrapper* status)
 			if (sub[i])
 			{
 				sub[i]->disconnect(status);
-				if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+				if (status->getState() & IStatus::STATE_ERRORS)
 					return;
 
 				sub[i] = NULL;
@@ -390,6 +384,43 @@ void DTransaction::disconnect(CheckStatusWrapper* status)
 		ex.stuffException(status);
 	}
 }
+
+void DTransaction::deprecatedCommit(CheckStatusWrapper* status)
+{
+	internalCommit(status);
+}
+
+void DTransaction::deprecatedRollback(CheckStatusWrapper* status)
+{
+	internalRollback(status);
+}
+
+void DTransaction::deprecatedDisconnect(CheckStatusWrapper* status)
+{
+	internalDisconnect(status);
+}
+
+void DTransaction::disconnect(CheckStatusWrapper* status)
+{
+	internalDisconnect(status);
+	if (status->isEmpty())
+		release();
+}
+
+void DTransaction::rollback(CheckStatusWrapper* status)
+{
+	internalRollback(status);
+	if (status->isEmpty())
+		release();
+}
+
+void DTransaction::commit(CheckStatusWrapper* status)
+{
+	internalCommit(status);
+	if (status->isEmpty())
+		release();
+}
+
 
 // To do: check the maximum allowed dbs in a two phase commit.
 //		  Q: what is the maximum?
@@ -528,7 +559,7 @@ YTransaction* DtcStart::start(CheckStatusWrapper* status)
 		RefPtr<DTransaction> dtransaction(FB_NEW DTransaction);
 
 		unsigned cnt = components.getCount();
-		if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+		if (status->getState() & IStatus::STATE_ERRORS)
 			status_exception::raise(status);
 		if (cnt == 0)
 			(Arg::Gds(isc_random) << "No attachments to start distributed transaction provided").raise();
@@ -536,11 +567,11 @@ YTransaction* DtcStart::start(CheckStatusWrapper* status)
 		for (unsigned i = 0; i < cnt; ++i)
 		{
 			ITransaction* started = components[i].att->startTransaction(status, components[i].tpbLen, components[i].tpb);
-			if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+			if (status->getState() & IStatus::STATE_ERRORS)
 				status_exception::raise(status);
 
 			dtransaction->join(status, started);
-			if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+			if (status->getState() & IStatus::STATE_ERRORS)
 			{
 				started->release();
 				status_exception::raise(status);
@@ -570,12 +601,12 @@ YTransaction* Dtc::join(CheckStatusWrapper* status, ITransaction* one, ITransact
 		RefPtr<DTransaction> dtransaction(FB_NEW DTransaction);
 
 		dtransaction->join(status, one);
-		if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+		if (status->getState() & IStatus::STATE_ERRORS)
 			return NULL;
 
 		dtransaction->join(status, two);
 		/* We must not return NULL - first transaction is available only inside dtransaction
-		if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+		if (status->getState() & IStatus::STATE_ERRORS)
 			return NULL;
 		*/
 

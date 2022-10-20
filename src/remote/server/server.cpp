@@ -60,7 +60,7 @@
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 #ifdef DEBUG
-#include "gen/iberror.h"
+#include "iberror.h"
 #endif
 #include "../common/classes/FpeControl.h"
 #include "../remote/proto_proto.h"	// xdr_protocol_overhead()
@@ -907,7 +907,7 @@ private:
 GlobalPtr<Mutex> GlobalPortLock::mtx;
 #endif
 
-class Callback FB_FINAL : public RefCntIface<IEventCallbackImpl<Callback, CheckStatusWrapper> >
+class Callback final : public RefCntIface<IEventCallbackImpl<Callback, CheckStatusWrapper> >
 {
 public:
 	explicit Callback(Rdb* aRdb, Rvnt* aEvent)
@@ -1083,6 +1083,8 @@ public:
 		CheckStatusWrapper st(&ls);
 		for (GetPlugins<IWireCryptPlugin> cpItr(IPluginManager::TYPE_WIRE_CRYPT); cpItr.hasData(); cpItr.next())
 		{
+			WIRECRYPT_DEBUG(fprintf(stderr, "CryptKeyTypeManager %s\n", cpItr.name()));
+
 			const char* list = cpItr.plugin()->getKnownTypes(&st);
 			check(&st);
 			fb_assert(list);
@@ -1918,7 +1920,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 	{
 		if ((protocol->p_cnct_version == PROTOCOL_VERSION10 ||
 			 (protocol->p_cnct_version >= PROTOCOL_VERSION11 &&
-			  protocol->p_cnct_version <= PROTOCOL_VERSION16)) &&
+			  protocol->p_cnct_version <= PROTOCOL_VERSION18)) &&
 			 (protocol->p_cnct_architecture == arch_generic ||
 			  protocol->p_cnct_architecture == ARCHITECTURE) &&
 			protocol->p_cnct_weight >= weight)
@@ -2024,9 +2026,9 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: accept_connection: calls createPluginsItr\n"));
 			port->port_srv_auth_block->createPluginsItr();
 
-			if (port->port_srv_auth_block->plugins)		// We have all required data and iterator was created
+			AuthServerPlugins* const plugins = port->port_srv_auth_block->plugins;
+			if (plugins && plugins->hasData())		// We have all required data and iterator was created
 			{
-				AuthServerPlugins* const plugins = port->port_srv_auth_block->plugins;
 				NoCaseString clientPluginName(port->port_srv_auth_block->getPluginName());
 				// If there is plugin matching client's one it will be
 				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: accept_connection: client plugin='%s' server='%s'\n",
@@ -2454,6 +2456,7 @@ void DatabaseAuth::accept(PACKET* send, Auth::WriterImplementation* authBlock)
 		// remove tags for specific internal attaches
 		case isc_dpb_map_attach:
 		case isc_dpb_sec_attach:
+		case isc_dpb_worker_attach:
 
 		// remove client's config information
 		case isc_dpb_config:
@@ -2534,7 +2537,7 @@ static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
 			return;
 		}
 
-		// This buffer is used by INET and WNET transports
+		// This buffer is used by INET transport
 		// to return the server identification string
 		UCHAR buffer[BUFFER_TINY];
 		send->p_resp.p_resp_data.cstr_address = buffer;
@@ -2679,23 +2682,28 @@ static void cancel_operation(rem_port* port, USHORT kind)
 	if ((port->port_flags & (PORT_async | PORT_disconnect)) || !(port->port_context))
 		return;
 
-	ServAttachment iface;
+	ServAttachment dbIface;
+	ServService svcIface;
 	{
 		RefMutexGuard portGuard(*port->port_cancel_sync, FB_FUNCTION);
 
-		Rdb* rdb;
-		if ((port->port_flags & PORT_disconnect) || !(rdb = port->port_context))
+		Rdb* rdb = port->port_context;
+		if ((port->port_flags & PORT_disconnect) || !rdb)
 			return;
 
-		iface = rdb->rdb_iface;
+		if (rdb->rdb_svc)
+			svcIface = rdb->rdb_svc->svc_iface;
+		else
+			dbIface = rdb->rdb_iface;
 	}
 
-	if (iface)
-	{
-		LocalStatus ls;
-		CheckStatusWrapper status_vector(&ls);
-		iface->cancelOperation(&status_vector, kind);
-	}
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
+
+	if (dbIface)
+		dbIface->cancelOperation(&status_vector, kind);
+	else if (svcIface && kind == fb_cancel_raise)
+		svcIface->cancel(&status_vector);
 }
 
 
@@ -2746,11 +2754,11 @@ static USHORT check_statement_type( Rsr* statement)
 
 	if (!(local_status.getState() & Firebird::IStatus::STATE_ERRORS))
 	{
-		for (const UCHAR* info = buffer; (*info != isc_info_end) && !done;)
+		for (ClumpletReader p(ClumpletReader::InfoResponse, buffer, sizeof(buffer)); !p.isEof(); p.moveNext())
 		{
-			const USHORT l = (USHORT) gds__vax_integer(info + 1, 2);
-			const USHORT type = (USHORT) gds__vax_integer(info + 3, l);
-			switch (*info)
+			const USHORT type = (USHORT) p.getInt();
+
+			switch (p.getClumpTag())
 			{
 			case isc_info_sql_stmt_type:
 				switch (type)
@@ -2765,17 +2773,12 @@ static USHORT check_statement_type( Rsr* statement)
 					break;
 				}
 				break;
+
 			case isc_info_sql_batch_fetch:
 				if (type == 0)
 					ret |= STMT_NO_BATCH;
 				break;
-			case isc_info_error:
-			case isc_info_truncated:
-				done = true;
-				break;
-
 			}
-			info += 3 + l;
 		}
 	}
 
@@ -2935,7 +2938,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 		return;
 	}
 
-	// For WNET and XNET we should send dummy op_disconnect packet
+	// For XNET we should send dummy op_disconnect packet
 	// to wakeup async port handling events on client side.
 	// For INET it's not necessary because INET client's async port
 	// wakes up while server performs shutdown(socket) call on its async port.
@@ -2944,7 +2947,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 	PACKET *packet = &rdb->rdb_packet;
 	if (this->port_async)
 	{
-		if ((this->port_type == rem_port::XNET) || (this->port_type == rem_port::PIPE))
+		if (this->port_type == rem_port::XNET)
 		{
 			packet->p_operation = op_disconnect;
 			this->port_async->send(packet);
@@ -3001,6 +3004,8 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 
 	if (rdb->rdb_svc.hasData() && rdb->rdb_svc->svc_iface)
 	{
+		RefMutexGuard portGuard(*port_cancel_sync, FB_FUNCTION);
+
 		rdb->rdb_svc->svc_iface->detach(&status_vector);
 		rdb->rdb_svc->svc_iface = NULL;
 	}
@@ -3484,6 +3489,10 @@ void rem_port::batch_create(P_BATCH_CREATE* batch, PACKET* sendL)
 	getHandle(statement, batch->p_batch_statement);
 	statement->checkIface();
 
+	// Check for previously opened batch for the statement
+	if (statement->rsr_batch)
+		Arg::Gds(isc_batch_open).raise();
+
 	const ULONG blr_length = batch->p_batch_blr.cstr_length;
 	const UCHAR* blr = batch->p_batch_blr.cstr_address;
 	if (!blr)
@@ -3717,6 +3726,16 @@ void rem_port::batch_cancel(P_BATCH_FREE_CANCEL* batch, PACKET* sendL)
 }
 
 
+void rem_port::batch_sync(PACKET* sendL)
+{
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
+
+	// no need checking protocol version if client is using batch_sync, just return synced response
+	this->send_response(sendL, 0, 0, &status_vector, false);
+}
+
+
 void rem_port::replicate(P_REPLICATE* repl, PACKET* sendL)
 {
 	LocalStatus ls;
@@ -3730,7 +3749,11 @@ void rem_port::replicate(P_REPLICATE* repl, PACKET* sendL)
 	}
 
 	if (!this->port_replicator)
+	{
 		this->port_replicator = rdb->rdb_iface->createReplicator(&status_vector);
+		check(&status_vector);
+		fb_assert(this->port_replicator);
+	}
 
 	if (repl->p_repl_data.cstr_length)
 	{
@@ -3771,7 +3794,8 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 	CheckStatusWrapper status_vector(&ls);
 	Rsr* statement;
 	getHandle(statement, sqldata->p_sqldata_statement);
-	USHORT out_msg_type = (op == op_execute2) ? sqldata->p_sqldata_out_message_number : 0;
+
+	const USHORT out_msg_type = (op == op_execute2) ? sqldata->p_sqldata_out_message_number : 0;
 	const bool defer = this->haveRecvData();
 
 	if ((SSHORT) out_msg_type == -1)
@@ -3779,13 +3803,14 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		return this->send_response(sendL, (OBJCT) (transaction ? transaction->rtr_id : 0),
 			0, &status_vector, defer);
 	}
+
 	statement->checkIface();
 
 	ULONG in_msg_length = 0, out_msg_length = 0;
 	UCHAR* in_msg = NULL;
 	UCHAR* out_msg = NULL;
-	ULONG out_blr_length;
-	UCHAR* out_blr;
+	ULONG out_blr_length = 0;
+	UCHAR* out_blr = NULL;
 
 	if (statement->rsr_format)
 	{
@@ -3794,22 +3819,19 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		in_msg_length = statement->rsr_format->fmt_length;
 		in_msg = statement->rsr_message->msg_address;
 	}
+
 	if (op == op_execute2)
 	{
 		out_blr_length = sqldata->p_sqldata_out_blr.cstr_length;
 		out_blr = sqldata->p_sqldata_out_blr.cstr_address;
+
 		if (this->port_statement->rsr_select_format)
 		{
 			out_msg_length = this->port_statement->rsr_select_format->fmt_length;
 			out_msg = this->port_statement->rsr_message->msg_buffer;
 		}
 	}
-	else
-	{
-		out_blr_length = 0;
-		out_msg_type = 0;
-		out_blr = NULL;
-	}
+
 	statement->rsr_flags.clear(Rsr::FETCHED);
 
 	ITransaction* tra = NULL;
@@ -3818,7 +3840,8 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 
 	if (statement->rsr_cursor || statement->rsr_batch)
 	{
-		 Arg::Gds(isc_dsql_cursor_open_err).raise();
+		(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
+			Arg::Gds(isc_dsql_cursor_open_err)).raise();
 	}
 
 	InternalMessageBuffer iMsgBuffer(sqldata->p_sqldata_blr.cstr_length,
@@ -3844,11 +3867,15 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 
 	if ((flags & IStatement::FLAG_HAS_CURSOR) && (out_msg_length == 0))
 	{
+		const auto cursorFlags = (port_protocol >= PROTOCOL_FETCH_SCROLL) ?
+			sqldata->p_sqldata_cursor_flags : 0;
+
 		statement->rsr_cursor =
 			statement->rsr_iface->openCursor(&status_vector, tra,
 											 iMsgBuffer.metadata, iMsgBuffer.buffer,
 											 (out_blr_length ? oMsgBuffer.metadata : DELAYED_OUT_FORMAT),
-											 0);
+											 cursorFlags);
+
 		if (!(status_vector.getState() & Firebird::IStatus::STATE_ERRORS))
 		{
 			transaction->rtr_cursors.add(statement);
@@ -3868,6 +3895,7 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		sendL->p_operation = op_sql_response;
 		sendL->p_sqldata.p_sqldata_messages =
 			((status_vector.getState() & Firebird::IStatus::STATE_ERRORS) || !out_msg) ? 0 : 1;
+
 		this->send_partial(sendL);
 	}
 
@@ -3895,7 +3923,7 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 }
 
 
-ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
+ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL, bool scroll)
 {
 /*****************************************
  *
@@ -3912,16 +3940,31 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	Rsr* statement;
 	getHandle(statement, sqldata->p_sqldata_statement);
 
-	// On first fetch, clear the end-of-stream flag & reset the message buffers
+	// The default (and legacy) scrolling option is FETCH NEXT
+	const auto operation = scroll ? sqldata->p_sqldata_fetch_op : fetch_next;
+	const auto position = scroll ? sqldata->p_sqldata_fetch_pos : 0;
+
+	// Whether we're fetching in the forward direction
+	const bool forward =
+		(operation == fetch_next || operation == fetch_last ||
+		((operation == fetch_absolute || operation == fetch_relative) && position > 0));
+
+	// Whether we're fetching relatively to the current position
+	const bool relative =
+		(operation == fetch_next || operation == fetch_prior || operation == fetch_relative);
 
 	if (!statement->rsr_flags.test(Rsr::FETCHED))
 	{
-		statement->rsr_flags.clear(Rsr::EOF_SET | Rsr::STREAM_ERR);
+		// On first fetch, clear the end-of-stream flag & reset the message buffers
+
+		statement->rsr_flags.clear(Rsr::STREAM_END | Rsr::STREAM_ERR);
+		statement->rsr_fetch_operation = operation;
+		statement->rsr_fetch_position = position;
 		statement->clearException();
 
 		RMessage* message = statement->rsr_message;
 
-		if (message != NULL)
+		if (message)
 		{
 			statement->rsr_buffer = message;
 
@@ -3935,30 +3978,100 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			}
 		}
 	}
+	else if (!relative)
+	{
+		// Clear the end-of-stream flag if the fetch is positioned absolutely
+		statement->rsr_flags.clear(Rsr::STREAM_END);
+	}
 
 	const ULONG msg_length = statement->rsr_format ? statement->rsr_format->fmt_length : 0;
 
+	statement->checkCursor();
+	auto cursor = statement->rsr_cursor;
+
 	// If required, call setDelayedOutputFormat()
 
-	statement->checkCursor();
 	if (statement->rsr_delayed_format)
 	{
 		InternalMessageBuffer msgBuffer(sqldata->p_sqldata_blr.cstr_length,
 			sqldata->p_sqldata_blr.cstr_address, msg_length, NULL);
 
 		if (!msgBuffer.metadata)
-			Arg::Gds(isc_dsql_cursor_open_err).raise();
+			(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
+				Arg::Gds(isc_dsql_cursor_open_err)).raise();
 
-		statement->rsr_cursor->setDelayedOutputFormat(&status_vector, msgBuffer.metadata);
+		cursor->setDelayedOutputFormat(&status_vector, msgBuffer.metadata);
 		check(&status_vector);
 
 		statement->rsr_delayed_format = false;
 	}
 
-	// Get ready to ship the data out
+	// If the fetch direction was changed, discard the messages already cached
 
-	const USHORT max_records = statement->rsr_flags.test(Rsr::NO_BATCH) ?
-		1 : sqldata->p_sqldata_messages;
+	if (operation != statement->rsr_fetch_operation ||
+		position != statement->rsr_fetch_position)
+	{
+		if (statement->rsr_flags.test(Rsr::STREAM_ERR))
+		{
+			fb_assert(statement->rsr_status);
+			statement->rsr_flags.clear(Rsr::STREAM_ERR);
+			return this->send_response(sendL, 0, 0, statement->rsr_status->value(), false);
+		}
+
+		const SLONG adjustment = statement->getCursorAdjustment();
+		statement->rsr_flags.clear(Rsr::STREAM_END);
+
+		if (statement->rsr_msgs_waiting)
+		{
+			fb_assert(statement->rsr_fetch_operation == fetch_next ||
+					  statement->rsr_fetch_operation == fetch_prior);
+
+			RMessage* message = statement->rsr_message;
+			if (message)
+			{
+				statement->rsr_buffer = message;
+
+				while (true)
+				{
+					message->msg_address = NULL;
+					message = message->msg_next;
+
+					if (message == statement->rsr_message)
+						break;
+				}
+			}
+
+			statement->rsr_msgs_waiting = 0;
+		}
+
+		// If we had some rows cached and the requested scrolling is relative,
+		// then re-position the server cursor appropriately
+
+		if (relative && adjustment)
+		{
+			const auto message = statement->rsr_buffer;
+			const int rc = cursor->fetchRelative(&status_vector, adjustment, message->msg_buffer);
+
+			if (status_vector.getState() & Firebird::IStatus::STATE_ERRORS)
+				return this->send_response(sendL, 0, 0, &status_vector, false);
+
+			// Re-positioning should never fail
+			fb_assert(rc == IStatus::RESULT_OK);
+		}
+	}
+
+	statement->rsr_fetch_operation = operation;
+	statement->rsr_fetch_position = position;
+
+	// Setup the prefetch count. It's available only for FETCH NEXT and FETCH PRIOR
+	// operations, unless batching is disabled explicitly.
+
+	const bool prefetch = (operation == fetch_next || operation == fetch_prior) &&
+		!statement->rsr_flags.test(Rsr::NO_BATCH);
+
+	const USHORT max_records = prefetch ? sqldata->p_sqldata_messages : 1;
+
+	// Get ready to ship the data out
 
 	P_SQLDATA* response = &sendL->p_sqldata;
 	sendL->p_operation = op_fetch_response;
@@ -3972,31 +4085,55 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	const FB_UINT64 org_packets = this->port_snd_packets;
 
 	USHORT count = 0;
-	bool rc = true;
+	bool success = true;
+	int rc = 0;
 
 	for (; count < max_records; count++)
 	{
-		// Have we exhausted the cache & reached cursor EOF?
-		if (statement->rsr_flags.test(Rsr::EOF_SET) && !statement->rsr_msgs_waiting)
-		{
-			statement->rsr_flags.clear(Rsr::EOF_SET);
-			rc = false;
-			break;
-		}
+		// If we have exhausted the cache...
 
-		// Have we exhausted the cache & have a pending error?
-		if (statement->rsr_flags.test(Rsr::STREAM_ERR) && !statement->rsr_msgs_waiting)
+		if (!statement->rsr_msgs_waiting)
 		{
-			fb_assert(statement->rsr_status);
-			statement->rsr_flags.clear(Rsr::STREAM_ERR);
-			return this->send_response(sendL, 0, 0, statement->rsr_status->value(), false);
+			// ... have we reached end of the cursor?
+
+			if (relative)
+			{
+				if (forward)
+				{
+					if (statement->rsr_flags.test(Rsr::EOF_SET))
+					{
+						statement->rsr_flags.clear(Rsr::EOF_SET);
+						success = false;
+					}
+				}
+				else
+				{
+					if (statement->rsr_flags.test(Rsr::BOF_SET))
+					{
+						statement->rsr_flags.clear(Rsr::BOF_SET);
+						success = false;
+					}
+				}
+			}
+
+			if (!success)
+				break;
+
+			// ... do we have a pending error?
+
+			if (statement->rsr_flags.test(Rsr::STREAM_ERR))
+			{
+				fb_assert(statement->rsr_status);
+				statement->rsr_flags.clear(Rsr::STREAM_ERR);
+				return this->send_response(sendL, 0, 0, statement->rsr_status->value(), false);
+			}
 		}
 
 		message = statement->rsr_buffer;
 
-		// Make sure message can be de referenced, if not then return false
+		// Make sure message can be dereferenced, if not then return false
 		if (message == NULL)
-			return FALSE;
+			return FB_FAILURE;
 
 		// If we don't have a message cached, get one from the access method.
 
@@ -4004,15 +4141,44 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		{
 			fb_assert(statement->rsr_msgs_waiting == 0);
 
-			rc = statement->rsr_cursor->fetchNext(
-				&status_vector, message->msg_buffer) == IStatus::RESULT_OK;
+			switch (operation)
+			{
+				case fetch_next:
+					rc = cursor->fetchNext(&status_vector, message->msg_buffer);
+					break;
+
+				case fetch_prior:
+					rc = cursor->fetchPrior(&status_vector, message->msg_buffer);
+					break;
+
+				case fetch_first:
+					rc = cursor->fetchFirst(&status_vector, message->msg_buffer);
+					break;
+
+				case fetch_last:
+					rc = cursor->fetchLast(&status_vector, message->msg_buffer);
+					break;
+
+				case fetch_absolute:
+					rc = cursor->fetchAbsolute(&status_vector, position, message->msg_buffer);
+					break;
+
+				case fetch_relative:
+					rc = cursor->fetchRelative(&status_vector, position, message->msg_buffer);
+					break;
+
+				default:
+					fb_assert(false);
+			}
 
 			statement->rsr_flags.set(Rsr::FETCHED);
 
 			if (status_vector.getState() & Firebird::IStatus::STATE_ERRORS)
 				return this->send_response(sendL, 0, 0, &status_vector, false);
 
-			if (!rc)
+			success = (rc == IStatus::RESULT_OK);
+
+			if (!success)
 				break;
 
 			message->msg_address = message->msg_buffer;
@@ -4026,8 +4192,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 
 		// There's a buffer waiting -- send it
 
-		if (!this->send_partial(sendL))
-			return FALSE;
+		this->send_partial(sendL);
 
 		message->msg_address = NULL;
 
@@ -4039,7 +4204,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			break;
 	}
 
-	response->p_sqldata_status = rc ? 0 : 100;
+	response->p_sqldata_status = success ? 0 : 100;
 	response->p_sqldata_messages = 0;
 
 	// hvlad: message->msg_address not used in xdr_protocol because of
@@ -4065,7 +4230,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	while (message->msg_address && message->msg_next != statement->rsr_buffer)
 		message = message->msg_next;
 
-	USHORT prefetch_count = (rc && !statement->rsr_flags.test(Rsr::NO_BATCH)) ? count : 0;
+	USHORT prefetch_count = (success && prefetch) ? count : 0;
 
 	for (; prefetch_count; --prefetch_count)
 	{
@@ -4084,8 +4249,21 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			next = message;
 		}
 
-		rc = statement->rsr_cursor->fetchNext(
-			&status_vector, message->msg_buffer) == IStatus::RESULT_OK;
+		// Only FETCH NEXT and FETCH PRIOR operations are available for prefetch
+
+		switch (operation)
+		{
+			case fetch_next:
+				rc = cursor->fetchNext(&status_vector, message->msg_buffer);
+				break;
+
+			case fetch_prior:
+				rc = cursor->fetchPrior(&status_vector, message->msg_buffer);
+				break;
+
+			default:
+				fb_assert(false);
+		}
 
 		if (status_vector.getState() & Firebird::IStatus::STATE_ERRORS)
 		{
@@ -4095,11 +4273,18 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 				statement->rsr_flags.set(Rsr::STREAM_ERR);
 				statement->saveException(&status_vector, true);
 			}
+
 			break;
 		}
-		if (!rc)
+
+		if (rc == IStatus::RESULT_NO_DATA)
 		{
-			statement->rsr_flags.set(Rsr::EOF_SET);
+			if (cursor->isBof(&status_vector))
+				statement->rsr_flags.set(Rsr::BOF_SET);
+
+			if (cursor->isEof(&status_vector))
+				statement->rsr_flags.set(Rsr::EOF_SET);
+
 			break;
 		}
 
@@ -4108,7 +4293,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		statement->rsr_msgs_waiting++;
 	}
 
-	return TRUE;
+	return FB_SUCCESS;
 }
 
 
@@ -4381,11 +4566,14 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 		{
 			string version;
 			versionInfo(version);
+			USHORT protocol = memchr(stuff->p_info_items.cstr_address, fb_info_protocol_version,
+				stuff->p_info_items.cstr_length) ? port_protocol & FB_PROTOCOL_MASK : 0;
 			info_db_len = MERGE_database_info(temp_buffer, //temp
 				buffer, buffer_length,
 				DbImplementation::current.backwardCompatibleImplementation(), 4, 1,
 				reinterpret_cast<const UCHAR*>(version.c_str()),
-				reinterpret_cast<const UCHAR*>(this->port_host->str_data));
+				reinterpret_cast<const UCHAR*>(this->port_host->str_data),
+				protocol);
 		}
 		break;
 
@@ -4413,11 +4601,32 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 
 	case op_info_sql:
 		getHandle(statement, stuff->p_info_object);
-		statement->checkIface(isc_info_unprepared_stmt);
+		statement->checkIface();
 
 		statement->rsr_iface->getInfo(&status_vector, info_len, info_buffer,
 			buffer_length, buffer);
 		break;
+
+	case op_info_batch:
+		getHandle(statement, stuff->p_info_object);
+		statement->checkIface();
+		statement->checkBatch();
+
+		statement->rsr_batch->getInfo(&status_vector, info_len, info_buffer,
+			buffer_length, buffer);
+		break;
+
+	case op_info_cursor:
+		getHandle(statement, stuff->p_info_object);
+		statement->checkIface();
+		statement->checkCursor();
+
+		statement->rsr_cursor->getInfo(&status_vector, info_len, info_buffer,
+			buffer_length, buffer);
+		break;
+
+	default:
+		fb_assert(false);
 	}
 
 	// Send a response that includes the segment.
@@ -4898,6 +5107,8 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 		case op_info_transaction:
 		case op_service_info:
 		case op_info_sql:
+		case op_info_batch:
+		case op_info_cursor:
 			port->info(op, &receive->p_info, sendL);
 			break;
 
@@ -4940,7 +5151,8 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 			break;
 
 		case op_fetch:
-			port->fetch(&receive->p_sqldata, sendL);
+		case op_fetch_scroll:
+			port->fetch(&receive->p_sqldata, sendL, op == op_fetch_scroll);
 			break;
 
 		case op_free_statement:
@@ -4992,6 +5204,10 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 			port->batch_cancel(&receive->p_batch_free_cancel, sendL);
 			break;
 
+		case op_batch_sync:
+			port->batch_sync(sendL);
+			break;
+
 		case op_batch_blob_stream:
 			port->batch_blob_stream(&receive->p_batch_blob, sendL);
 			break;
@@ -5019,8 +5235,11 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 		{
 			if (!port->port_parent)
 			{
-				if (!Worker::isShuttingDown() && !(port->port_flags & (PORT_rdb_shutdown | PORT_detached)))
+				if (!Worker::isShuttingDown() && !(port->port_flags & (PORT_rdb_shutdown | PORT_detached)) &&
+					((port->port_server_flags & (SRVR_server | SRVR_multi_client)) != SRVR_server))
+				{
 					gds__log("SERVER/process_packet: broken port, server exiting");
+				}
 				port->disconnect(sendL, receive);
 				return false;
 			}
@@ -6037,12 +6256,15 @@ ISC_STATUS rem_port::service_end(P_RLSE* /*release*/, PACKET* sendL)
 	if (bad_service(&status_vector, rdb))
 		return this->send_response(sendL, 0, 0, &status_vector, false);
 
-	rdb->rdb_svc->svc_iface->detach(&status_vector);
+	{ // scope
+		RefMutexGuard portGuard(*port_cancel_sync, FB_FUNCTION);
+		rdb->rdb_svc->svc_iface->detach(&status_vector);
 
-	if (!(status_vector.getState() & Firebird::IStatus::STATE_ERRORS))
-	{
-		port_flags |= PORT_detached;
-		rdb->rdb_svc->svc_iface = NULL;
+		if (!(status_vector.getState() & Firebird::IStatus::STATE_ERRORS))
+		{
+			port_flags |= PORT_detached;
+			rdb->rdb_svc->svc_iface = NULL;
+		}
 	}
 
 	return this->send_response(sendL, 0, 0, &status_vector, false);
@@ -6130,12 +6352,15 @@ void rem_port::start_crypt(P_CRYPT * crypt, PACKET* sendL)
 	{
 		ICryptKey* key = NULL;
 		PathName keyName(crypt->p_key.cstr_address, crypt->p_key.cstr_length);
-		for (unsigned k = 0; k < port_crypt_keys.getCount(); ++k)
+		if (getPortConfig()->getWireCrypt(WC_SERVER) != WIRE_CRYPT_DISABLED)
 		{
-			if (keyName == port_crypt_keys[k]->keyName)
+			for (unsigned k = 0; k < port_crypt_keys.getCount(); ++k)
 			{
-				key = port_crypt_keys[k];
-				break;
+				if (keyName == port_crypt_keys[k]->keyName)
+				{
+					key = port_crypt_keys[k];
+					break;
+				}
 			}
 		}
 
@@ -7210,7 +7435,7 @@ bool SrvAuthBlock::extractNewKeys(CSTRING* to, ULONG flags)
 				for (CryptKeyTypeManager::SpecificPlugins sp(knownCryptKeyTypes().getSpecific(t)); sp.hasData(); sp.next())
 				{
 					PathName plugin = sp.get();
-					GetPlugins<IWireCryptPlugin> cp(IPluginManager::TYPE_WIRE_CRYPT);
+					GetPlugins<IWireCryptPlugin> cp(IPluginManager::TYPE_WIRE_CRYPT, plugin.c_str());
 					fb_assert(cp.hasData());
 					if (cp.hasData())
 					{

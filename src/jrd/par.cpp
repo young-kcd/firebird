@@ -58,6 +58,7 @@
 #include "../yvalve/gds_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/par_proto.h"
+#include "../common/MsgUtil.h"
 #include "../common/utils_proto.h"
 #include "../jrd/RecordSourceNodes.h"
 #include "../jrd/SysFunction.h"
@@ -72,8 +73,6 @@
 using namespace Jrd;
 using namespace Firebird;
 
-#include "gen/codetext.h"
-
 
 static NodeParseFunc blr_parsers[256] = {NULL};
 
@@ -81,6 +80,7 @@ static NodeParseFunc blr_parsers[256] = {NULL};
 static void par_error(BlrReader& blrReader, const Arg::StatusVector& v, bool isSyntaxError = true);
 static PlanNode* par_plan(thread_db*, CompilerScratch*);
 static void getBlrVersion(CompilerScratch* csb);
+static void parseSubRoutines(thread_db* tdbb, CompilerScratch* csb);
 
 
 namespace
@@ -162,61 +162,13 @@ namespace
 		AutoPtr<CompilerScratch> m_csb;
 		CompilerScratch** const m_csbPtr;
 	};
-
-	class FetchNode
-	{
-	public:
-		// Parse a FETCH statement, and map it into FOR x IN relation WITH x.DBKEY EQ value ...
-		static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
-		{
-			ForNode* forNode = FB_NEW_POOL(pool) ForNode(pool);
-
-			// Fake RseNode.
-
-			RseNode* rse = forNode->rse = FB_NEW_POOL(*tdbb->getDefaultPool()) RseNode(
-				*tdbb->getDefaultPool());
-
-			DmlNode* relationNode = PAR_parse_node(tdbb, csb);
-			if (relationNode->getKind() != DmlNode::KIND_REC_SOURCE)
-				PAR_syntax_error(csb, "TABLE");
-
-			RelationSourceNode* relationSource = nodeAs<RelationSourceNode>(
-				static_cast<RecordSourceNode*>(relationNode));
-
-			if (!relationSource)
-				PAR_syntax_error(csb, "TABLE");
-
-			rse->rse_relations.add(relationSource);
-
-			// Fake boolean.
-
-			ComparativeBoolNode* booleanNode = FB_NEW_POOL(csb->csb_pool) ComparativeBoolNode(
-				csb->csb_pool, blr_eql);
-
-			rse->rse_boolean = booleanNode;
-
-			booleanNode->arg2 = PAR_parse_value(tdbb, csb);
-
-			RecordKeyNode* dbKeyNode = FB_NEW_POOL(csb->csb_pool) RecordKeyNode(csb->csb_pool, blr_dbkey);
-			dbKeyNode->recStream = relationSource->getStream();
-
-			booleanNode->arg1 = dbKeyNode;
-
-			// Pick up statement.
-			forNode->statement = PAR_parse_stmt(tdbb, csb);
-
-			return forNode;
-		}
-	};
-
-	static RegisterNode<FetchNode> regFetch({blr_fetch});
 }	// namespace
 
 
 // Parse blr, returning a compiler scratch block with the results.
 // Caller must do pool handling.
 DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr_length,
-	CompilerScratch* view_csb, CompilerScratch** csb_ptr, JrdStatement** statementPtr,
+	CompilerScratch* view_csb, CompilerScratch** csb_ptr, Statement** statementPtr,
 	const bool trigger, USHORT flags)
 {
 #ifdef CMP_DEBUG
@@ -236,8 +188,10 @@ DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 	if (csb->csb_blr_reader.getByte() != (UCHAR) blr_eoc)
 		PAR_syntax_error(csb, "end_of_command");
 
+	parseSubRoutines(tdbb, csb);
+
 	if (statementPtr)
-		*statementPtr = JrdStatement::makeStatement(tdbb, csb, false);
+		*statementPtr = Statement::makeStatement(tdbb, csb, false);
 
 	return csb->csb_node;
 }
@@ -246,7 +200,7 @@ DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 // Finish parse of memory nodes, returning a compiler scratch block with the results.
 // Caller must do pool handling.
 void PAR_preparsed_node(thread_db* tdbb, jrd_rel* relation, DmlNode* node,
-	CompilerScratch* view_csb, CompilerScratch** csb_ptr, JrdStatement** statementPtr,
+	CompilerScratch* view_csb, CompilerScratch** csb_ptr, Statement** statementPtr,
 	const bool trigger, USHORT flags)
 {
 	BlrParseWrapper csb(*tdbb->getDefaultPool(), relation, view_csb, csb_ptr, trigger, flags);
@@ -255,7 +209,7 @@ void PAR_preparsed_node(thread_db* tdbb, jrd_rel* relation, DmlNode* node,
 	csb->csb_node = node;
 
 	if (statementPtr)
-		*statementPtr = JrdStatement::makeStatement(tdbb, csb, false);
+		*statementPtr = Statement::makeStatement(tdbb, csb, false);
 }
 
 
@@ -518,11 +472,11 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, dsc* desc, ItemInfo* item
 				}
 			}
 
-			if (csb->csb_g_flags & csb_get_dependencies)
+			if (csb->collectingDependencies())
 			{
 				CompilerScratch::Dependency dependency(obj_field);
 				dependency.name = name;
-				csb->csb_dependencies.push(dependency);
+				csb->addDependency(dependency);
 			}
 
 			break;
@@ -583,12 +537,12 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, dsc* desc, ItemInfo* item
 				}
 			}
 
-			if (csb->csb_g_flags & csb_get_dependencies)
+			if (csb->collectingDependencies())
 			{
 				CompilerScratch::Dependency dependency(obj_relation);
 				dependency.relation = MET_lookup_relation(tdbb, *relationName);
 				dependency.subName = fieldName;
-				csb->csb_dependencies.push(dependency);
+				csb->addDependency(dependency);
 			}
 
 			break;
@@ -600,11 +554,11 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, dsc* desc, ItemInfo* item
 			break;
 	}
 
-	if ((csb->csb_g_flags & csb_get_dependencies) && desc->getTextType() != CS_NONE)
+	if (csb->collectingDependencies() && desc->getTextType() != CS_NONE)
 	{
 		CompilerScratch::Dependency dependency(obj_collation);
 		dependency.number = INTL_TEXT_TYPE(*desc);
-		csb->csb_dependencies.push(dependency);
+		csb->addDependency(dependency);
 	}
 
 	if (itemInfo)
@@ -669,7 +623,7 @@ ValueExprNode* PAR_make_field(thread_db* tdbb, CompilerScratch* csb, USHORT cont
 	if (id < 0)
 		return NULL;
 
-	if (csb->csb_g_flags & csb_get_dependencies)
+	if (csb->collectingDependencies())
 		PAR_dependency(tdbb, csb, stream, id, base_field);
 
 	return PAR_gen_field(tdbb, stream, id);
@@ -749,6 +703,8 @@ CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, ULONG blr_length,
 	if (csb->csb_blr_reader.getByte() != (UCHAR) blr_eoc)
 		PAR_syntax_error(csb, "end_of_command");
 
+	parseSubRoutines(tdbb, csb);
+
 	return csb.release();
 }
 
@@ -773,14 +729,7 @@ SLONG PAR_symbol_to_gdscode(const Firebird::string& name)
  *
  **************************************/
 
-	for (int i = 0; codes[i].code_number; ++i)
-	{
-		if (name == codes[i].code_string) {
-			return codes[i].code_number;
-		}
-	}
-
-	return 0;
+	return MsgUtil::getCodeByName(name.c_str());
 }
 
 
@@ -934,7 +883,7 @@ void PAR_dependency(thread_db* tdbb, CompilerScratch* csb, StreamType stream, SS
  **************************************/
 	SET_TDBB(tdbb);
 
-	if (!(csb->csb_g_flags & csb_get_dependencies))
+	if (!csb->collectingDependencies())
 		return;
 
 	CompilerScratch::Dependency dependency(0);
@@ -963,7 +912,7 @@ void PAR_dependency(thread_db* tdbb, CompilerScratch* csb, StreamType stream, SS
 	else if (id >= 0)
 		dependency.subNumber = id;
 
-	csb->csb_dependencies.push(dependency);
+	csb->addDependency(dependency);
 }
 
 
@@ -984,11 +933,11 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
  **************************************/
 	SET_TDBB(tdbb);
 
-	USHORT node_type = (USHORT) csb->csb_blr_reader.getByte();
+	auto blrOp = csb->csb_blr_reader.getByte();
 
 	// a join type indicates a cross of two or more streams
 
-	if (node_type == blr_join || node_type == blr_merge)
+	if (blrOp == blr_join || blrOp == blr_merge)
 	{
 		// CVC: bottleneck
 		int count = (USHORT) csb->csb_blr_reader.getByte();
@@ -1002,7 +951,10 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 	// we have hit a stream; parse the context number and access type
 
-	if (node_type == blr_retrieve)
+	jrd_rel* relation = nullptr;
+	jrd_prc* procedure = nullptr;
+
+	if (blrOp == blr_retrieve)
 	{
 		PlanNode* plan = FB_NEW_POOL(csb->csb_pool) PlanNode(csb->csb_pool, PlanNode::TYPE_RETRIEVE);
 
@@ -1010,37 +962,75 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 		// itself is redundant except in the case of a view,
 		// in which case the base relation (and alias) must be specified
 
-		USHORT n = (unsigned int) csb->csb_blr_reader.getByte();
-		if (n != blr_relation && n != blr_relation2 && n != blr_rid && n != blr_rid2)
-			PAR_syntax_error(csb, "TABLE");
+		blrOp = csb->csb_blr_reader.getByte();
 
-		// don't make RelationSourceNode::parse() parse the context, because
-		// this would add a new context; while this is a reference to
+		// Don't make RecordSourceNode::parse() to parse the context, because
+		// this would add a new context, while this is a reference to
 		// an existing context
 
-		plan->relationNode = RelationSourceNode::parse(tdbb, csb, n, false);
+		switch (blrOp)
+		{
+			case blr_relation:
+			case blr_rid:
+			case blr_relation2:
+			case blr_rid2:
+				{
+					const auto relationNode = RelationSourceNode::parse(tdbb, csb, blrOp, false);
+					plan->recordSourceNode = relationNode;
+					relation = relationNode->relation;
+				}
+				break;
 
-		jrd_rel* relation = plan->relationNode->relation;
+			case blr_pid:
+			case blr_pid2:
+			case blr_procedure:
+			case blr_procedure2:
+			case blr_procedure3:
+			case blr_procedure4:
+			case blr_subproc:
+				{
+					const auto procedureNode = ProcedureSourceNode::parse(tdbb, csb, blrOp, false);
+					plan->recordSourceNode = procedureNode;
+					procedure = procedureNode->procedure;
+				}
+				break;
+
+			case blr_local_table_id:
+				// TODO
+
+			default:
+				PAR_syntax_error(csb, "TABLE or PROCEDURE");
+		}
 
 		// CVC: bottleneck
-		n = csb->csb_blr_reader.getByte();
-		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
+		const auto context = csb->csb_blr_reader.getByte();
+		if (context >= csb->csb_rpt.getCount() || !(csb->csb_rpt[context].csb_flags & csb_used))
 			PAR_error(csb, Arg::Gds(isc_ctxnotdef));
-		const StreamType stream = csb->csb_rpt[n].csb_stream;
+		const StreamType stream = csb->csb_rpt[context].csb_stream;
 
-		plan->relationNode->setStream(stream);
-		plan->relationNode->context = n;
+		plan->recordSourceNode->setStream(stream);
+//		plan->recordSourceNode->context = context; not needed ???
+
+		if (procedure)
+		{
+			// Skip input parameters count, it's always zero for plans
+			const auto count = csb->csb_blr_reader.getWord();
+			fb_assert(!count);
+		}
 
 		// Access plan types (sequential is default)
 
-		node_type = (USHORT) csb->csb_blr_reader.getByte();
+		blrOp = csb->csb_blr_reader.getByte();
 
 		const bool isGbak = tdbb->getAttachment()->isGbak();
 
-		switch (node_type)
+		switch (blrOp)
 		{
 		case blr_navigational:
 			{
+				if (procedure)
+					PAR_error(csb, Arg::Gds(isc_wrong_proc_plan));
+
 				plan->accessType = FB_NEW_POOL(csb->csb_pool) PlanNode::AccessType(csb->csb_pool,
 					PlanNode::AccessType::TYPE_NAVIGATIONAL);
 
@@ -1084,11 +1074,11 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 				item.indexId = index_id;
 				item.indexName = name;
 
-				if (csb->csb_g_flags & csb_get_dependencies)
+				if (csb->collectingDependencies())
 				{
 					CompilerScratch::Dependency dependency(obj_index);
 					dependency.name = &item.indexName;
-					csb->csb_dependencies.push(dependency);
+					csb->addDependency(dependency);
 	            }
 
 				if (csb->csb_blr_reader.peekByte() != blr_indices)
@@ -1098,6 +1088,9 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 			}
 		case blr_indices:
 			{
+				if (procedure)
+					PAR_error(csb, Arg::Gds(isc_wrong_proc_plan));
+
 				if (plan->accessType)
 					csb->csb_blr_reader.getByte(); // skip blr_indices
 				else
@@ -1150,11 +1143,11 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 					item.indexId = index_id;
 					item.indexName = name;
 
-					if (csb->csb_g_flags & csb_get_dependencies)
+					if (csb->collectingDependencies())
 					{
 						CompilerScratch::Dependency dependency(obj_index);
 						dependency.name = &item.indexName;
-						csb->csb_dependencies.push(dependency);
+						csb->addDependency(dependency);
 		            }
 				}
 			}
@@ -1195,6 +1188,7 @@ void PAR_procedure_parms(thread_db* tdbb, CompilerScratch* csb, jrd_prc* procedu
 		MemoryPool& pool = *tdbb->getDefaultPool();
 
 		// We have a few parameters. Get on with creating the message block
+		// Outer messages map may start with 2, but they are always in the routine start.
 		USHORT n = ++csb->csb_msg_number;
 		if (n < 2)
 			csb->csb_msg_number = n = 2;
@@ -1248,10 +1242,12 @@ void PAR_procedure_parms(thread_db* tdbb, CompilerScratch* csb, jrd_prc* procedu
 				*sourcePtr++ = PAR_parse_value(tdbb, csb);
 
 			ParameterNode* paramNode = FB_NEW_POOL(csb->csb_pool) ParameterNode(csb->csb_pool);
+			paramNode->messageNumber = message->messageNumber;
 			paramNode->message = message;
 			paramNode->argNumber = i++;
 
 			ParameterNode* paramFlagNode = FB_NEW_POOL(csb->csb_pool) ParameterNode(csb->csb_pool);
+			paramFlagNode->messageNumber = message->messageNumber;
 			paramFlagNode->message = message;
 			paramFlagNode->argNumber = i++;
 
@@ -1284,7 +1280,7 @@ RecordSourceNode* PAR_parseRecordSource(thread_db* tdbb, CompilerScratch* csb)
 		case blr_procedure3:
 		case blr_procedure4:
 		case blr_subproc:
-			return ProcedureSourceNode::parse(tdbb, csb, blrOp);
+			return ProcedureSourceNode::parse(tdbb, csb, blrOp, true);
 
 		case blr_rse:
 		case blr_lateral_rse:
@@ -1296,6 +1292,9 @@ RecordSourceNode* PAR_parseRecordSource(thread_db* tdbb, CompilerScratch* csb)
 		case blr_relation2:
 		case blr_rid2:
 			return RelationSourceNode::parse(tdbb, csb, blrOp, true);
+
+		case blr_local_table_id:
+			return LocalTableSourceNode::parse(tdbb, csb, blrOp, true);
 
 		case blr_union:
 		case blr_recurse:
@@ -1410,7 +1409,8 @@ RseNode* PAR_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 				// An outer join is only allowed when the stream count is 2
 				// and a boolean expression has been supplied
 
-				if (!rse->rse_jointype || (rse->rse_relations.getCount() == 2 && rse->rse_boolean))
+				if (rse->rse_jointype == blr_inner ||
+					(rse->rse_relations.getCount() == 2 && rse->rse_boolean))
 				{
 					// Convert right outer joins to left joins to avoid
 					// RIGHT JOIN handling at lower engine levels
@@ -1622,6 +1622,7 @@ DmlNode* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb)
 		case blr_rid:
 		case blr_relation2:
 		case blr_rid2:
+		case blr_local_table_id:
 		case blr_union:
 		case blr_recurse:
 		case blr_window:
@@ -1727,5 +1728,24 @@ static void getBlrVersion(CompilerScratch* csb)
 		PAR_error(csb, Arg::Gds(isc_metadata_corrupt) <<
 				   Arg::Gds(isc_wroblrver2) << Arg::Num(blr_version4) << Arg::Num(blr_version5/*6*/) <<
 						Arg::Num(version));
+	}
+}
+
+
+// Parse subroutines.
+static void parseSubRoutines(thread_db* tdbb, CompilerScratch* csb)
+{
+	for (auto& pair : csb->subFunctions)
+	{
+		const auto node = pair.second;
+		Jrd::ContextPoolHolder context(tdbb, &node->subCsb->csb_pool);
+		PAR_blr(tdbb, nullptr, node->blrStart, node->blrLength, nullptr, &node->subCsb, nullptr, false, 0);
+	}
+
+	for (auto& pair : csb->subProcedures)
+	{
+		const auto node = pair.second;
+		Jrd::ContextPoolHolder context(tdbb, &node->subCsb->csb_pool);
+		PAR_blr(tdbb, nullptr, node->blrStart, node->blrLength, nullptr, &node->subCsb, nullptr, false, 0);
 	}
 }

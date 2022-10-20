@@ -103,7 +103,8 @@ ConfigStorage::ConfigStorage()
 	PFnProcessIdToSessionId pfnProcessIdToSessionId =
 		(PFnProcessIdToSessionId) GetProcAddress(hmodKernel32, "ProcessIdToSessionId");
 
-	if (fb_utils::isGlobalKernelPrefix() ||
+	if (fb_utils::privateNameSpaceReady() ||
+		fb_utils::isGlobalKernelPrefix() ||
 		!pfnProcessIdToSessionId ||
 		pfnProcessIdToSessionId(GetCurrentProcessId(), &sesID) == 0 ||
 		sesID == 0)
@@ -122,15 +123,14 @@ ConfigStorage::ConfigStorage()
 	{
 		m_sharedMemory.reset(FB_NEW_POOL(getPool())
 			SharedMemory<TraceCSHeader>(filename.c_str(), TraceCSHeader::TRACE_STORAGE_MIN_SIZE, this));
+
+		checkHeader(m_sharedMemory->getHeader());
 	}
 	catch (const Exception& ex)
 	{
 		iscLogException("ConfigStorage: Cannot initialize the shared memory region", ex);
 		throw;
 	}
-
-	fb_assert(m_sharedMemory->getHeader());
-	fb_assert(m_sharedMemory->getHeader()->mhb_version == TraceCSHeader::TRACE_STORAGE_VERSION);
 
 	StorageGuard guard(this);
 	checkAudit();
@@ -186,7 +186,7 @@ bool ConfigStorage::initialize(SharedMemoryBase* sm, bool init)
 	// Initialize the shared data header
 	if (init)
 	{
-		header->init(SharedMemoryBase::SRAM_TRACE_CONFIG, TraceCSHeader::TRACE_STORAGE_VERSION);
+		initHeader(header);
 
 		header->change_number = 0;
 		header->session_number = 1;
@@ -199,12 +199,6 @@ bool ConfigStorage::initialize(SharedMemoryBase* sm, bool init)
 		header->slots_free = 0;
 		header->slots_cnt = 0;
 		memset(header->slots, 0, sizeof(TraceCSHeader::slots));
-	}
-	else
-	{
-		fb_assert(header->mhb_type == SharedMemoryBase::SRAM_TRACE_CONFIG);
-		fb_assert(header->mhb_header_version == MemoryHeader::HEADER_VERSION);
-		fb_assert(header->mhb_version == TraceCSHeader::TRACE_STORAGE_VERSION);
 	}
 
 	return true;
@@ -258,7 +252,7 @@ void ConfigStorage::checkAudit()
 			}
 			p[len] = 0;
 		}
-		else 
+		else
 		{
 			gds__log("Audit configuration file \"%s\" is empty", configFileName.c_str());
 			return;
@@ -443,7 +437,7 @@ struct SlotByOffset
 	static ULONG generate(const SlotByOffset& i) { return i.offset; }
 };
 
-typedef SortedArray<SlotByOffset, EmptyStorage<SlotByOffset>, ULONG, SlotByOffset> 
+typedef SortedArray<SlotByOffset, EmptyStorage<SlotByOffset>, ULONG, SlotByOffset>
 			SlotsByOffsetArray;
 
 
@@ -632,10 +626,10 @@ bool ConfigStorage::validate()
 ULONG ConfigStorage::getSessionSize(const TraceSession& session)
 {
 	ULONG ret = 1; // tagEnd
-	const ULONG sz = 1 + sizeof(ULONG);		// sizeof tag + sizeof len 
+	const ULONG sz = 1 + sizeof(ULONG);		// sizeof tag + sizeof len
 
 	ULONG len = session.ses_name.length();
-	if (len) 
+	if (len)
 		ret += sz + len;
 
 	if ((len = session.ses_auth.getCount()))

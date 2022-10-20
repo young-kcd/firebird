@@ -7,7 +7,7 @@ THIS_DIR=`dirname $THIS_DIR`
 
 TMP_DIR=`mktemp -d`
 VERSION=`cat $THIS_DIR/version.txt`
-BASE_URL=https://github.com/unicode-org/icu-data/raw/master/tzdata/icunew/$VERSION/44
+BASE_URL=https://github.com/unicode-org/icu-data/raw/main/tzdata/icunew/$VERSION/44
 
 echo Building update-ids...
 cd $THIS_DIR

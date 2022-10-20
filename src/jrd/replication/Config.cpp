@@ -126,7 +126,8 @@ Config::Config()
 	  pluginName(getPool()),
 	  logErrors(true),
 	  reportErrors(false),
-	  disableOnError(true)
+	  disableOnError(true),
+	  cascadeReplication(false)
 {
 }
 
@@ -152,7 +153,8 @@ Config::Config(const Config& other)
 	  pluginName(getPool(), other.pluginName),
 	  logErrors(other.logErrors),
 	  reportErrors(other.reportErrors),
-	  disableOnError(other.disableOnError)
+	  disableOnError(other.disableOnError),
+	  cascadeReplication(other.cascadeReplication)
 {
 }
 
@@ -167,8 +169,6 @@ Config* Config::get(const PathName& lookupName)
 	{
 		const PathName filename =
 			fb_utils::getPrefix(IConfigManager::DIR_CONF, REPLICATION_CFGFILE);
-
-		MemoryPool& pool = *getDefaultMemoryPool();
 
 		ConfigFile cfgFile(filename, ConfigFile::HAS_SUB_CONF |
 									 ConfigFile::NATIVE_ORDER |
@@ -286,6 +286,10 @@ Config* Config::get(const PathName& lookupName)
 				{
 					parseBoolean(value, config->disableOnError);
 				}
+				else if (key == "cascade_replication")
+				{
+					parseBoolean(value, config->cascadeReplication);
+				}
 			}
 
 			if (exactMatch)
@@ -334,15 +338,13 @@ void Config::enumerate(Firebird::Array<Config*>& replicas)
 		const PathName filename =
 			fb_utils::getPrefix(IConfigManager::DIR_CONF, REPLICATION_CFGFILE);
 
-		MemoryPool& pool = *getDefaultMemoryPool();
-
 		ConfigFile cfgFile(filename, ConfigFile::HAS_SUB_CONF |
 									 ConfigFile::NATIVE_ORDER |
 									 ConfigFile::CUSTOM_MACROS);
 
 		AutoPtr<Config> defConfig(FB_NEW Config);
 
-		bool defaultFound = false, exactMatch = false;
+		bool defaultFound = false;
 
 		for (const auto& section : cfgFile.getParameters())
 		{
@@ -382,7 +384,6 @@ void Config::enumerate(Firebird::Array<Config*>& replicas)
 				{
 					config->sourceDirectory = value.c_str();
 					PathUtils::ensureSeparator(config->sourceDirectory);
-					checkAccess(config->sourceDirectory, key);
 				}
 				else if (key == "source_guid")
 				{

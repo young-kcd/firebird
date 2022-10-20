@@ -28,7 +28,7 @@
 
 #include "firebird.h"
 #include "firebird/Interface.h"
-#include "gen/iberror.h"
+#include "iberror.h"
 #include "../common/StatusHolder.h"
 #include "../common/classes/fb_atomic.h"
 #include "../common/classes/alloc.h"
@@ -133,6 +133,7 @@ public:
 	typedef YAttachment YRef;
 
 	static const unsigned DF_RELEASE =		0x1;
+	static const unsigned DF_KEEP_NEXT =	0x2;
 
 	explicit YHelper(NextInterface* aNext, const char* m = NULL)
 		:
@@ -160,7 +161,10 @@ public:
 
 	void destroy2(unsigned dstrFlags)
 	{
-		next = NULL;
+		if (dstrFlags & DF_KEEP_NEXT)
+			next.clear();
+		else
+			next = NULL;
 
 		if (dstrFlags & DF_RELEASE)
 		{
@@ -200,7 +204,7 @@ private:
 typedef AtomicYPtr<YAttachment> AtomicAttPtr;
 typedef AtomicYPtr<YTransaction> AtomicTraPtr;
 
-class YEvents FB_FINAL :
+class YEvents final :
 	public YHelper<YEvents, Firebird::IEventsImpl<YEvents, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -213,6 +217,7 @@ public:
 
 	// IEvents implementation
 	void cancel(Firebird::CheckStatusWrapper* status);
+	void deprecatedCancel(Firebird::CheckStatusWrapper* status);
 
 public:
 	AtomicAttPtr attachment;
@@ -222,7 +227,7 @@ private:
 	Firebird::AtomicCounter destroyed;
 };
 
-class YRequest FB_FINAL :
+class YRequest final :
 	public YHelper<YRequest, Firebird::IRequestImpl<YRequest, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -245,13 +250,14 @@ public:
 		unsigned int msgType, unsigned int length, const void* message);
 	void unwind(Firebird::CheckStatusWrapper* status, int level);
 	void free(Firebird::CheckStatusWrapper* status);
+	void deprecatedFree(Firebird::CheckStatusWrapper* status);
 
 public:
 	AtomicAttPtr attachment;
 	isc_req_handle* userHandle;
 };
 
-class YTransaction FB_FINAL :
+class YTransaction final :
 	public YHelper<YTransaction, Firebird::ITransactionImpl<YTransaction, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -275,6 +281,9 @@ public:
 	Firebird::ITransaction* join(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction);
 	Firebird::ITransaction* validate(Firebird::CheckStatusWrapper* status, Firebird::IAttachment* testAtt);
 	YTransaction* enterDtc(Firebird::CheckStatusWrapper* status);
+	void deprecatedCommit(Firebird::CheckStatusWrapper* status);
+	void deprecatedRollback(Firebird::CheckStatusWrapper* status);
+	void deprecatedDisconnect(Firebird::CheckStatusWrapper* status);
 
 	void addCleanupHandler(Firebird::CheckStatusWrapper* status, CleanupCallback* callback);
 	void selfCheck();
@@ -304,7 +313,7 @@ private:
 
 typedef Firebird::RefPtr<Firebird::ITransaction> NextTransaction;
 
-class YBlob FB_FINAL :
+class YBlob final :
 	public YHelper<YBlob, Firebird::IBlobImpl<YBlob, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -324,13 +333,15 @@ public:
 	void cancel(Firebird::CheckStatusWrapper* status);
 	void close(Firebird::CheckStatusWrapper* status);
 	int seek(Firebird::CheckStatusWrapper* status, int mode, int offset);
+	void deprecatedCancel(Firebird::CheckStatusWrapper* status);
+	void deprecatedClose(Firebird::CheckStatusWrapper* status);
 
 public:
 	AtomicAttPtr attachment;
 	AtomicTraPtr transaction;
 };
 
-class YResultSet FB_FINAL :
+class YResultSet final :
 	public YHelper<YResultSet, Firebird::IResultSetImpl<YResultSet, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -353,7 +364,11 @@ public:
 	FB_BOOLEAN isBof(Firebird::CheckStatusWrapper* status);
 	Firebird::IMessageMetadata* getMetadata(Firebird::CheckStatusWrapper* status);
 	void close(Firebird::CheckStatusWrapper* status);
+	void deprecatedClose(Firebird::CheckStatusWrapper* status);
 	void setDelayedOutputFormat(Firebird::CheckStatusWrapper* status, Firebird::IMessageMetadata* format);
+	void getInfo(Firebird::CheckStatusWrapper* status,
+		unsigned int itemsLength, const unsigned char* items,
+		unsigned int bufferLength, unsigned char* buffer);
 
 public:
 	AtomicAttPtr attachment;
@@ -361,7 +376,7 @@ public:
 	YStatement* statement;
 };
 
-class YBatch FB_FINAL :
+class YBatch final :
 	public YHelper<YBatch, Firebird::IBatchImpl<YBatch, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -384,13 +399,16 @@ public:
 	void cancel(Firebird::CheckStatusWrapper* status);
 	void setDefaultBpb(Firebird::CheckStatusWrapper* status, unsigned parLength, const unsigned char* par);
 	void close(Firebird::CheckStatusWrapper* status);
+	void deprecatedClose(Firebird::CheckStatusWrapper* status);
+	void getInfo(Firebird::CheckStatusWrapper* status, unsigned int itemsLength, const unsigned char* items,
+		unsigned int bufferLength, unsigned char* buffer);
 
 public:
 	AtomicAttPtr attachment;
 };
 
 
-class YReplicator FB_FINAL :
+class YReplicator final :
 	public YHelper<YReplicator, Firebird::IReplicatorImpl<YReplicator, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -403,6 +421,7 @@ public:
 	// IReplicator implementation
 	void process(Firebird::CheckStatusWrapper* status, unsigned length, const unsigned char* data);
 	void close(Firebird::CheckStatusWrapper* status);
+	void deprecatedClose(Firebird::CheckStatusWrapper* status);
 
 public:
 	AtomicAttPtr attachment;
@@ -424,7 +443,7 @@ private:
 	bool input;
 };
 
-class YStatement FB_FINAL :
+class YStatement final :
 	public YHelper<YStatement, Firebird::IStatementImpl<YStatement, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -451,6 +470,7 @@ public:
 		unsigned int flags);
 	void setCursorName(Firebird::CheckStatusWrapper* status, const char* name);
 	void free(Firebird::CheckStatusWrapper* status);
+	void deprecatedFree(Firebird::CheckStatusWrapper* status);
 	unsigned getFlags(Firebird::CheckStatusWrapper* status);
 
 	unsigned int getTimeout(Firebird::CheckStatusWrapper* status);
@@ -485,7 +505,7 @@ public:
 	Firebird::Mutex enterMutex;
 };
 
-class YAttachment FB_FINAL :
+class YAttachment final :
 	public YHelper<YAttachment, Firebird::IAttachmentImpl<YAttachment, Firebird::CheckStatusWrapper> >,
 	public EnterCount
 {
@@ -540,6 +560,8 @@ public:
 	void ping(Firebird::CheckStatusWrapper* status);
 	void detach(Firebird::CheckStatusWrapper* status);
 	void dropDatabase(Firebird::CheckStatusWrapper* status);
+	void deprecatedDetach(Firebird::CheckStatusWrapper* status);
+	void deprecatedDropDatabase(Firebird::CheckStatusWrapper* status);
 
 	void addCleanupHandler(Firebird::CheckStatusWrapper* status, CleanupCallback* callback);
 	YTransaction* getTransaction(Firebird::ITransaction* tra);
@@ -571,7 +593,7 @@ public:
 	Firebird::StatusHolder savedStatus;	// Do not use raise() method of this class in yValve.
 };
 
-class YService FB_FINAL :
+class YService final :
 	public YHelper<YService, Firebird::IServiceImpl<YService, Firebird::CheckStatusWrapper> >,
 	public EnterCount
 {
@@ -587,12 +609,14 @@ public:
 
 	// IService implementation
 	void detach(Firebird::CheckStatusWrapper* status);
+	void deprecatedDetach(Firebird::CheckStatusWrapper* status);
 	void query(Firebird::CheckStatusWrapper* status,
 		unsigned int sendLength, const unsigned char* sendItems,
 		unsigned int receiveLength, const unsigned char* receiveItems,
 		unsigned int bufferLength, unsigned char* buffer);
 	void start(Firebird::CheckStatusWrapper* status,
 		unsigned int spbLength, const unsigned char* spb);
+	void cancel(Firebird::CheckStatusWrapper* status);
 
 public:
 	typedef Firebird::IService NextInterface;
@@ -603,7 +627,7 @@ private:
 	bool utf8Connection;		// Client talks to us using UTF8, else - system default charset
 };
 
-class Dispatcher FB_FINAL :
+class Dispatcher final :
 	public Firebird::StdPlugin<Firebird::IProviderImpl<Dispatcher, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -632,7 +656,7 @@ private:
 	Firebird::ICryptKeyCallback* cryptCallback;
 };
 
-class UtilInterface FB_FINAL :
+class UtilInterface final :
 	public Firebird::AutoIface<Firebird::IUtilImpl<UtilInterface, Firebird::CheckStatusWrapper> >
 {
 	// IUtil implementation

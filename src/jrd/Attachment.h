@@ -68,7 +68,7 @@ namespace Jrd
 	class thread_db;
 	class Database;
 	class jrd_tra;
-	class jrd_req;
+	class Request;
 	class Lock;
 	class jrd_file;
 	class Format;
@@ -94,7 +94,8 @@ namespace Jrd
 	class Trigger;
 	class TrigVector;
 	class Function;
-	class JrdStatement;
+	class Statement;
+	class ProfilerManager;
 	class Validation;
 	class Applier;
 
@@ -158,7 +159,7 @@ const ULONG ATT_async_manual_lock	= 0x01000L;	// Async mutex was locked manually
 const ULONG ATT_overwrite_check		= 0x02000L;	// Attachment checks is it possible to overwrite DB
 const ULONG ATT_system				= 0x04000L; // Special system attachment
 const ULONG ATT_creator				= 0x08000L; // This attachment created the DB
-const ULONG ATT_monitor_done		= 0x10000L; // Monitoring data is refreshed
+const ULONG ATT_monitor_disabled	= 0x10000L; // Monitoring lock is downgraded
 const ULONG ATT_security_db			= 0x20000L; // Attachment used for security purposes
 const ULONG ATT_mapping				= 0x40000L; // Attachment used for mapping auth block
 const ULONG ATT_from_thread			= 0x80000L; // Attachment from internal special thread (sweep, crypt)
@@ -166,6 +167,7 @@ const ULONG ATT_monitor_init		= 0x100000L; // Attachment is registered in monito
 const ULONG ATT_repl_reset			= 0x200000L; // Replication set has been reset
 const ULONG ATT_replicating			= 0x400000L; // Replication is active
 const ULONG ATT_resetting			= 0x800000L; // Session reset is in progress
+const ULONG ATT_worker				= 0x1000000L; // Worker attachment, managed by the engine
 
 const ULONG ATT_NO_CLEANUP			= (ATT_no_cleanup | ATT_notify_gc);
 
@@ -203,6 +205,107 @@ private:
 class StableAttachmentPart : public Firebird::RefCounted, public Firebird::GlobalStorage
 {
 public:
+	class Sync
+	{
+	public:
+		Sync()
+			: waiters(0), threadId(0), totalLocksCounter(0), currentLocksCounter(0)
+		{ }
+
+		void enter(const char* aReason)
+		{
+			ThreadId curTid = getThreadId();
+
+			if (threadId == curTid)
+			{
+				currentLocksCounter++;
+				return;
+			}
+
+			if (threadId || !syncMutex.tryEnter(aReason))
+			{
+				// we have contention with another thread
+				waiters.fetch_add(1, std::memory_order_relaxed);
+				syncMutex.enter(aReason);
+				waiters.fetch_sub(1, std::memory_order_relaxed);
+			}
+
+			threadId = curTid;
+			totalLocksCounter++;
+			fb_assert(currentLocksCounter == 0);
+			currentLocksCounter++;
+		}
+
+		bool tryEnter(const char* aReason)
+		{
+			ThreadId curTid = getThreadId();
+
+			if (threadId == curTid)
+			{
+				currentLocksCounter++;
+				return true;
+			}
+
+			if (threadId || !syncMutex.tryEnter(aReason))
+				return false;
+
+			threadId = curTid;
+			totalLocksCounter++;
+			fb_assert(currentLocksCounter == 0);
+			currentLocksCounter++;
+			return true;
+		}
+
+		void leave()
+		{
+			fb_assert(currentLocksCounter > 0);
+
+			if (--currentLocksCounter == 0)
+			{
+				threadId = 0;
+				syncMutex.leave();
+			}
+		}
+
+		bool hasContention() const
+		{
+			return (waiters.load(std::memory_order_relaxed) > 0);
+		}
+
+		FB_UINT64 getLockCounter() const
+		{
+			return totalLocksCounter;
+		}
+
+#ifdef DEV_BUILD
+		bool locked() const
+		{
+			return threadId == getThreadId();
+		}
+#endif
+
+		~Sync()
+		{
+			if (threadId == getThreadId())
+			{
+				syncMutex.leave();
+			}
+		}
+
+	private:
+		// copying is prohibited
+		Sync(const Sync&);
+		Sync& operator=(const Sync&);
+
+		Firebird::Mutex syncMutex;
+		std::atomic<int> waiters;
+		ThreadId threadId;
+		volatile FB_UINT64 totalLocksCounter;
+		int currentLocksCounter;
+	};
+
+	typedef Firebird::RaiiLockGuard<StableAttachmentPart> SyncGuard;
+
 	explicit StableAttachmentPart(Attachment* handle)
 		: att(handle), jAtt(NULL), shutError(0)
 	{ }
@@ -226,13 +329,13 @@ public:
 		shutError = 0;
 	}
 
-	Firebird::Mutex* getMutex(bool useAsync = false, bool forceAsync = false)
+	Sync* getSync(bool useAsync = false, bool forceAsync = false)
 	{
 		if (useAsync && !forceAsync)
 		{
-			fb_assert(!mainMutex.locked());
+			fb_assert(!mainSync.locked());
 		}
-		return useAsync ? &asyncMutex : &mainMutex;
+		return useAsync ? &async : &mainSync;
 	}
 
 	Firebird::Mutex* getBlockingMutex()
@@ -242,8 +345,8 @@ public:
 
 	void cancel()
 	{
-		fb_assert(asyncMutex.locked());
-		fb_assert(mainMutex.locked());
+		fb_assert(async.locked());
+		fb_assert(mainSync.locked());
 		att = NULL;
 	}
 
@@ -272,19 +375,28 @@ public:
 		return shutError;
 	}
 
-	void onIdleTimer(Firebird::TimerImpl*);
+	void onIdleTimer(Firebird::TimerImpl* timer)
+	{
+		doOnIdleTimer(timer);
+	}
+
+protected:
+	virtual void doOnIdleTimer(Firebird::TimerImpl* timer);
 
 private:
 	Attachment* att;
 	JAttachment* jAtt;
 	ISC_STATUS shutError;
 
-	// These mutexes guarantee attachment existence. After releasing both of them with possibly
+	// These syncs guarantee attachment existence. After releasing both of them with possibly
 	// zero att_use_count one should check does attachment still exists calling getHandle().
-	Firebird::Mutex mainMutex, asyncMutex;
+	Sync mainSync, async;
 	// This mutex guarantees attachment is not accessed by more than single external thread.
 	Firebird::Mutex blockingMutex;
 };
+
+typedef Firebird::RaiiLockGuard<StableAttachmentPart::Sync> AttSyncLockGuard;
+typedef Firebird::RaiiUnlockGuard<StableAttachmentPart::Sync> AttSyncUnlockGuard;
 
 //
 // the attachment block; one is created for each attachment to a database
@@ -310,7 +422,7 @@ public:
 		~SyncGuard()
 		{
 			if (jStable)
-				jStable->getMutex()->leave();
+				jStable->getSync()->leave();
 		}
 
 	private:
@@ -349,7 +461,7 @@ public:
 
 		bool lookup(SLONG id, MetaName& name)
 		{
-			if (id < (int) m_objects.getCount())
+			if (id < (int) m_objects.getCount() && m_objects[id].hasData())
 			{
 				name = m_objects[id];
 				return true;
@@ -401,6 +513,43 @@ public:
 		USHORT originalTimeZone = Firebird::TimeZoneUtil::GMT_ZONE;
 	};
 
+	class DebugOptions
+	{
+	public:
+		bool getDsqlKeepBlr() const
+		{
+			return dsqlKeepBlr;
+		}
+
+		void setDsqlKeepBlr(bool value)
+		{
+			dsqlKeepBlr = value;
+		}
+
+	private:
+		bool dsqlKeepBlr = false;
+	};
+
+	class UseCountHolder
+	{
+	public:
+		explicit UseCountHolder(Attachment* a)
+			: att(a)
+		{
+			if (att)
+				att->att_use_count++;
+		}
+
+		~UseCountHolder()
+		{
+			if (att)
+				att->att_use_count--;
+		}
+
+	private:
+		Attachment* att;
+	};
+
 public:
 	static Attachment* create(Database* dbb, JProvider* provider);
 	static void destroy(Attachment* const attachment);
@@ -424,11 +573,14 @@ private:
 	StableAttachmentPart* att_stable;
 
 public:
-	Firebird::SortedArray<jrd_req*> att_requests;	// Requests belonging to attachment
+	Firebird::SortedArray<Statement*> att_statements;	// Statements belonging to attachment
+	Firebird::SortedArray<Request*> att_requests;	// Requests belonging to attachment
 	Lock*		att_id_lock;				// Attachment lock (if any)
 	AttNumber	att_attachment_id;			// Attachment ID
 	Lock*		att_cancel_lock;			// Lock to cancel the active request
 	Lock*		att_monitor_lock;			// Lock for monitoring purposes
+	ULONG		att_monitor_generation;		// Monitoring state generation
+	Lock*		att_profiler_listener_lock;	// Lock for remote profiler listener
 	const ULONG	att_lock_owner_id;			// ID for the lock manager
 	SLONG		att_lock_owner_handle;		// Handle for the lock manager
 	ULONG		att_backup_state_counter;	// Counter of backup state locks for attachment
@@ -440,6 +592,7 @@ public:
 	ULONG		att_flags;					// Flags describing the state of the attachment
 	SSHORT		att_client_charset;			// user's charset specified in dpb
 	SSHORT		att_charset;				// current (client or external) attachment charset
+	bool 		att_in_system_routine = false;	// running a system routine
 	Lock*		att_long_locks;				// outstanding two phased locks
 #ifdef DEBUG_LCK_LIST
 	UCHAR		att_long_locks_type;		// Lock type of the first lock in list
@@ -480,6 +633,7 @@ public:
 	CoercionArray* att_dest_bind;
 	USHORT att_original_timezone;
 	USHORT att_current_timezone;
+	int att_parallel_workers;
 
 	Firebird::RefPtr<Firebird::IReplicatedSession> att_replicator;
 	Firebird::AutoPtr<Replication::TableMatcher> att_repl_matcher;
@@ -498,12 +652,12 @@ public:
 	Firebird::Array<Function*>		att_functions;			// User defined functions
 	GeneratorFinder					att_generators;
 
-	Firebird::Array<JrdStatement*>	att_internal;			// internal statements
-	Firebird::Array<JrdStatement*>	att_dyn_req;			// internal dyn statements
+	Firebird::Array<Statement*>	att_internal;			// internal statements
+	Firebird::Array<Statement*>	att_dyn_req;			// internal dyn statements
 	Firebird::ICryptKeyCallback*	att_crypt_callback;		// callback for DB crypt
 	Firebird::DecimalStatus			att_dec_status;			// error handling and rounding
 
-	jrd_req* findSystemRequest(thread_db* tdbb, USHORT id, USHORT which);
+	Request* findSystemRequest(thread_db* tdbb, USHORT id, USHORT which);
 
 	Firebird::Array<CharSetContainer*>	att_charsets;		// intl character set descriptions
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
@@ -537,6 +691,11 @@ public:
 	bool isSystem() const
 	{
 		return (att_flags & ATT_system);
+	}
+
+	bool isWorker() const
+	{
+		return (att_flags & ATT_worker);
 	}
 
 	bool isGbak() const;
@@ -636,6 +795,16 @@ public:
 
 	UserId* getUserId(const Firebird::MetaString& userName);
 
+	const Firebird::MetaString& getUserName(const Firebird::MetaString& emptyName = "") const
+	{
+		return att_user ? att_user->getUserName() : emptyName;
+	}
+
+	const Firebird::MetaString& getSqlRole(const Firebird::MetaString& emptyName = "") const
+	{
+		return att_user ? att_user->getSqlRole() : emptyName;
+	}
+
 	const UserId* getEffectiveUserId() const
 	{
 		if (att_ss_user)
@@ -643,11 +812,10 @@ public:
 		return att_user;
 	}
 
-	UserId* getEffectiveUserId()
+	const Firebird::MetaString& getEffectiveUserName(const Firebird::MetaString& emptyName = "") const
 	{
-		if (att_ss_user)
-			return att_ss_user;
-		return att_user;
+		const auto user = getEffectiveUserId();
+		return user ? user->getUserName() : emptyName;
 	}
 
 	void setInitialOptions(thread_db* tdbb, DatabaseOptions& options, bool newDb);
@@ -656,8 +824,17 @@ public:
 		return att_initial_options.getBindings();
 	}
 
+	DebugOptions& getDebugOptions()
+	{
+		return att_debug_options;
+	}
+
 	void checkReplSetLock(thread_db* tdbb);
 	void invalidateReplSet(thread_db* tdbb, bool broadcast);
+
+	ProfilerManager* getProfilerManager(thread_db* tdbb);
+	bool isProfilerActive();
+	void releaseProfilerManager();
 
 	JProvider* getProvider()
 	{
@@ -671,12 +848,12 @@ private:
 
 	unsigned int att_idle_timeout;		// seconds
 	unsigned int att_stmt_timeout;		// milliseconds
-
-	typedef Firebird::TimerWithRef<StableAttachmentPart> IdleTimer;
-	Firebird::RefPtr<IdleTimer> att_idle_timer;
+	Firebird::RefPtr<Firebird::TimerImpl> att_idle_timer;
 
 	Firebird::Array<JBatch*> att_batches;
 	InitialOptions att_initial_options;	// Initial session options
+	DebugOptions att_debug_options;
+	Firebird::AutoPtr<ProfilerManager> att_profiler_manager;	// ProfilerManager
 
 	Lock* att_repl_lock;				// Replication set lock
 	JProvider* att_provider;	// Provider which created this attachment
@@ -685,8 +862,8 @@ private:
 
 inline bool Attachment::locksmith(thread_db* tdbb, SystemPrivilege sp) const
 {
-	return (att_user && att_user->locksmith(tdbb, sp)) ||
-			(att_ss_user && att_ss_user->locksmith(tdbb, sp));
+	const auto user = getEffectiveUserId();
+	return (user && user->locksmith(tdbb, sp));
 }
 
 inline jrd_tra* Attachment::getSysTransaction()
@@ -800,6 +977,11 @@ public:
 		iter.remove();
 	}
 
+	bool hasData() const
+	{
+		return m_attachments.hasData();
+	}
+
 private:
 	AttachmentsRefHolder(const AttachmentsRefHolder&);
 
@@ -824,7 +1006,7 @@ public:
 		}
 	}
 
-private:
+protected:
 	void destroy(Attachment* attachment);
 
 	// "public" interface for internal (system) attachment

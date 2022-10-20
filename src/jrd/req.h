@@ -31,7 +31,7 @@
 #include "../jrd/exe.h"
 #include "../jrd/sort.h"
 #include "../jrd/Attachment.h"
-#include "../jrd/JrdStatement.h"
+#include "../jrd/Statement.h"
 #include "../jrd/Record.h"
 #include "../jrd/RecordNumber.h"
 #include "../common/classes/timestamp.h"
@@ -118,6 +118,7 @@ const USHORT rpb_damaged		= 128;		// record is busted
 const USHORT rpb_gc_active		= 256;		// garbage collecting dead record version
 const USHORT rpb_uk_modified	= 512;		// record key field values are changed
 const USHORT rpb_long_tranum	= 1024;		// transaction number is 64-bit
+const USHORT rpb_not_packed		= 2048;		// record (or delta) is stored "as is"
 
 // Stream flags
 
@@ -125,6 +126,7 @@ const USHORT RPB_s_update	= 0x01;	// input stream fetched for update
 const USHORT RPB_s_no_data	= 0x02;	// nobody is going to access the data
 const USHORT RPB_s_sweeper	= 0x04;	// garbage collector - skip swept pages
 const USHORT RPB_s_unstable = 0x08;	// don't use undo log, used with unstable explicit cursors
+const USHORT RPB_s_bulk		= 0x10;	// bulk operation (currently insert only)
 
 // Runtime flags
 
@@ -136,9 +138,6 @@ const USHORT RPB_just_deleted	= 0x10;	// record was just deleted by us
 
 const USHORT RPB_UNDO_FLAGS		= (RPB_undo_data | RPB_undo_read | RPB_undo_deleted);
 const USHORT RPB_CLEAR_FLAGS	= (RPB_UNDO_FLAGS | RPB_just_deleted);
-
-const unsigned int MAX_DIFFERENCES	= 1024;	// Max length of generated Differences string
-											// between two records
 
 // List of active blobs controlled by request
 
@@ -165,14 +164,111 @@ private:
 
 // request block
 
-class jrd_req : public pool_alloc<type_req>
+class Request : public pool_alloc<type_req>
 {
+private:
+	class TimeStampCache
+	{
+	public:
+		void invalidate()
+		{
+			gmtTimeStamp.invalidate();
+		}
+
+		ISC_TIMESTAMP getLocalTimeStamp(USHORT currentTimeZone) const
+		{
+			fb_assert(!gmtTimeStamp.isEmpty());
+
+			if (timeZone != currentTimeZone)
+				update(currentTimeZone);
+
+			return localTimeStamp;
+		}
+
+		ISC_TIMESTAMP getGmtTimeStamp() const
+		{
+			fb_assert(!gmtTimeStamp.isEmpty());
+			return gmtTimeStamp.value();
+		}
+
+		void setGmtTimeStamp(USHORT currentTimeZone, ISC_TIMESTAMP ts)
+		{
+			gmtTimeStamp = ts;
+			update(currentTimeZone);
+		}
+
+		ISC_TIMESTAMP_TZ getTimeStampTz(USHORT currentTimeZone) const
+		{
+			fb_assert(!gmtTimeStamp.isEmpty());
+
+			ISC_TIMESTAMP_TZ timeStampTz;
+			timeStampTz.utc_timestamp = gmtTimeStamp.value();
+			timeStampTz.time_zone = currentTimeZone;
+			return timeStampTz;
+		}
+
+		ISC_TIME_TZ getTimeTz(USHORT currentTimeZone) const
+		{
+			fb_assert(!gmtTimeStamp.isEmpty());
+
+			ISC_TIME_TZ timeTz;
+
+			if (timeZone != currentTimeZone)
+				update(currentTimeZone);
+
+			if (localTimeValid)
+			{
+				timeTz.utc_time = localTime;
+				timeTz.time_zone = timeZone;
+			}
+			else
+			{
+				ISC_TIMESTAMP_TZ timeStamp;
+				timeStamp.utc_timestamp = gmtTimeStamp.value();
+				timeStamp.time_zone = timeZone;
+
+				timeTz = Firebird::TimeZoneUtil::timeStampTzToTimeTz(timeStamp);
+
+				localTime = timeTz.utc_time;
+				localTimeValid = true;
+			}
+
+			return timeTz;
+		}
+
+		void validate(USHORT currentTimeZone)
+		{
+			if (gmtTimeStamp.isEmpty())
+			{
+				Firebird::TimeZoneUtil::validateGmtTimeStamp(gmtTimeStamp);
+				update(currentTimeZone);
+			}
+		}
+
+	private:
+		void update(USHORT currentTimeZone) const
+		{
+			localTimeStamp = Firebird::TimeZoneUtil::timeStampTzToTimeStamp(
+				getTimeStampTz(currentTimeZone), currentTimeZone);
+			timeZone = currentTimeZone;
+			localTimeValid = false;
+		}
+
+	private:
+		Firebird::TimeStamp gmtTimeStamp;		// Start time of request in GMT time zone
+
+		// These are valid only when !gmtTimeStamp.isEmpty(), so no initialization is necessary.
+		mutable ISC_TIMESTAMP localTimeStamp;	// Timestamp in timeZone's zone
+		mutable ISC_USHORT timeZone;			// Timezone borrowed from the attachment when updated
+		mutable ISC_TIME localTime;				// gmtTimeStamp converted to local time (WITH TZ)
+		mutable bool localTimeValid;			// localTime calculation is expensive. So is it valid (calculated)?
+	};
+
 public:
-	jrd_req(Attachment* attachment, /*const*/ JrdStatement* aStatement,
-			Firebird::MemoryStats* parent_stats)
+	Request(Firebird::AutoMemoryPool& pool, Attachment* attachment, /*const*/ Statement* aStatement)
 		: statement(aStatement),
-		  req_pool(statement->pool),
-		  req_memory_stats(parent_stats),
+		  req_pool(pool),
+		  req_memory_stats(&aStatement->pool->getStatsGroup()),
 		  req_blobs(req_pool),
 		  req_stats(*req_pool),
 		  req_base_stats(*req_pool),
@@ -190,39 +286,55 @@ public:
 		setAttachment(attachment);
 		req_rpb = statement->rpbsSetup;
 		impureArea.grow(statement->impureSize);
+
+		pool->setStatsGroup(req_memory_stats);
+		pool.release();
 	}
 
-	JrdStatement* getStatement()
+	Statement* getStatement()
 	{
 		return statement;
 	}
 
-	const JrdStatement* getStatement() const
+	const Statement* getStatement() const
 	{
 		return statement;
 	}
 
 	bool hasInternalStatement() const
 	{
-		return statement->flags & JrdStatement::FLAG_INTERNAL;
+		return statement->flags & Statement::FLAG_INTERNAL;
 	}
 
 	bool hasPowerfulStatement() const
 	{
-		return statement->flags & JrdStatement::FLAG_POWERFUL;
+		return statement->flags & Statement::FLAG_POWERFUL;
 	}
 
 	void setAttachment(Attachment* newAttachment)
 	{
 		req_attachment = newAttachment;
-		charSetId = statement->flags & JrdStatement::FLAG_INTERNAL ?
-			CS_METADATA : req_attachment->att_charset;
+	}
+
+	bool isRoot() const
+	{
+		return statement->requests.hasData() && this == statement->requests[0];
+	}
+
+	bool isRequestIdUnassigned() const
+	{
+		return req_id == 0;
 	}
 
 	StmtNumber getRequestId() const
 	{
 		if (!req_id)
-			req_id = JRD_get_thread_data()->getDatabase()->generateStatementId();
+		{
+			req_id = isRoot() ?
+				statement->getStatementId() :
+				JRD_get_thread_data()->getDatabase()->generateStatementId();
+		}
+
 		return req_id;
 	}
 
@@ -232,22 +344,23 @@ public:
 	}
 
 private:
-	JrdStatement* const statement;
+	Statement* const statement;
 	mutable StmtNumber	req_id;			// request identifier
+	TimeStampCache req_timeStampCache;	// time stamp cache
 
 public:
 	MemoryPool* req_pool;
+	Firebird::MemoryStats req_memory_stats;
 	Attachment*	req_attachment;			// database attachment
 	USHORT		req_incarnation;		// incarnation number
-	Firebird::MemoryStats req_memory_stats;
 
 	// Transaction pointer and doubly linked list pointers for requests in this
 	// transaction. Maintained by TRA_attach_request/TRA_detach_request.
 	jrd_tra*	req_transaction;
-	jrd_req*	req_tra_next;
-	jrd_req*	req_tra_prev;
+	Request*	req_tra_next;
+	Request*	req_tra_prev;
 
-	jrd_req*	req_caller;				// Caller of this request
+	Request*	req_caller;				// Caller of this request
 										// This field may be used to reconstruct the whole call stack
 	TempBlobIdTree req_blobs;			// Temporary BLOBs owned by this request
 	const StmtNode*	req_message;		// Current message for send/receive
@@ -259,6 +372,7 @@ public:
 	RuntimeStatistics	req_stats;
 	RuntimeStatistics	req_base_stats;
 	AffectedRows req_records_affected;	// records affected by the last statement
+	FB_UINT64 req_profiler_time;		// profiler time
 
 	const StmtNode*	req_next;			// next node for execution
 	EDS::Statement*	req_ext_stmt;		// head of list of active dynamic statements
@@ -268,14 +382,13 @@ public:
 	ULONG		req_flags;				// misc request flags
 	Savepoint*	req_savepoints;			// Looper savepoint list
 	Savepoint*	req_proc_sav_point;		// procedure savepoint list
-	Firebird::TimeStamp	req_gmt_timestamp;	// Start time of request in GMT time zone
-	unsigned int req_timeout;					// query timeout in milliseconds, set by the dsql_req::setupTimer
-	Firebird::RefPtr<TimeoutTimer> req_timer;	// timeout timer, shared with dsql_req
+	unsigned int req_timeout;					// query timeout in milliseconds, set by the DsqlRequest::setupTimer
+	Firebird::RefPtr<TimeoutTimer> req_timer;	// timeout timer, shared with DsqlRequest
 
 	Firebird::AutoPtr<Jrd::RuntimeStatistics> req_fetch_baseline; // State of request performance counters when we reported it last time
 	SINT64 req_fetch_elapsed;	// Number of clock ticks spent while fetching rows for this request since we reported it last time
 	SINT64 req_fetch_rowcount;	// Total number of rows returned by this request
-	jrd_req* req_proc_caller;	// Procedure's caller request
+	Request* req_proc_caller;	// Procedure's caller request
 	const ValueListNode* req_proc_inputs;	// and its node with input parameters
 	TraNumber req_conflict_txn;	// Transaction number for update conflict in read consistency mode
 
@@ -286,13 +399,12 @@ public:
 	SortOwner req_sorts;
 	Firebird::Array<record_param> req_rpb;	// record parameter blocks
 	Firebird::Array<UCHAR> impureArea;		// impure area
-	USHORT charSetId;						// "client" character set of the request
 	TriggerAction req_trigger_action;		// action that caused trigger to fire
 
 	// Fields to support read consistency in READ COMMITTED transactions
 	struct snapshot_data
 	{
-		jrd_req*		m_owner;
+		Request*		m_owner;
 		SnapshotHandle	m_handle;
 		CommitNumber	m_number;
 
@@ -369,21 +481,39 @@ public:
 		return tmp.m_transaction;
 	}
 
-	Firebird::TimeStamp getLocalTimeStamp() const
+	void invalidateTimeStamp()
 	{
-		ISC_TIMESTAMP_TZ timeStampTz;
-		timeStampTz.utc_timestamp = req_gmt_timestamp.value();
-		timeStampTz.time_zone = Firebird::TimeZoneUtil::GMT_ZONE;
+		req_timeStampCache.invalidate();
+	}
 
-		return Firebird::TimeZoneUtil::timeStampTzToTimeStamp(timeStampTz, req_attachment->att_current_timezone);
+	ISC_TIMESTAMP getLocalTimeStamp() const
+	{
+		return req_timeStampCache.getLocalTimeStamp(req_attachment->att_current_timezone);
+	}
+
+	ISC_TIMESTAMP getGmtTimeStamp() const
+	{
+		return req_timeStampCache.getGmtTimeStamp();
+	}
+
+	void setGmtTimeStamp(ISC_TIMESTAMP ts)
+	{
+		req_timeStampCache.setGmtTimeStamp(req_attachment->att_current_timezone, ts);
 	}
 
 	ISC_TIMESTAMP_TZ getTimeStampTz() const
 	{
-		ISC_TIMESTAMP_TZ timeStampTz;
-		timeStampTz.utc_timestamp = req_gmt_timestamp.value();
-		timeStampTz.time_zone = req_attachment->att_current_timezone;
-		return timeStampTz;
+		return req_timeStampCache.getTimeStampTz(req_attachment->att_current_timezone);
+	}
+
+	ISC_TIME_TZ getTimeTz() const
+	{
+		return req_timeStampCache.getTimeTz(req_attachment->att_current_timezone);
+	}
+
+	void validateTimeStamp()
+	{
+		req_timeStampCache.validate(req_attachment->att_current_timezone);
 	}
 };
 
@@ -401,7 +531,7 @@ const ULONG req_proc_fetch		= 0x200L;		// Fetch from procedure in progress
 const ULONG req_same_tx_upd		= 0x400L;		// record was updated by same transaction
 const ULONG req_reserved		= 0x800L;		// Request reserved for client
 const ULONG req_update_conflict	= 0x1000L;		// We need to restart request due to update conflict
-const ULONG req_restart_ready	= 0x2000L;		// Request is ready to restat in case of update conflict
+const ULONG req_restart_ready	= 0x2000L;		// Request is ready to restart in case of update conflict
 
 
 // Index lock block

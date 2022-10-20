@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../remote/remote.h"
-#include "gen/iberror.h"
+#include "iberror.h"
 #include "../common/sdl.h"
 #include "../common/gdsassert.h"
 #include "../remote/parse_proto.h"
@@ -302,6 +302,8 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 	}
 #endif
 
+	const auto port = xdrs->x_public;
+
 	switch (p->p_operation)
 	{
 	case op_reject:
@@ -504,6 +506,8 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 	case op_info_transaction:
 	case op_service_info:
 	case op_info_sql:
+	case op_info_batch:
+	case op_info_cursor:
 		info = &p->p_info;
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(info->p_info_object));
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(info->p_info_incarnation));
@@ -658,11 +662,10 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 			}
 			MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_out_message_number));
 		}
-		{ // scope
-			rem_port* port = xdrs->x_public;
-			if (port->port_protocol >= PROTOCOL_STMT_TOUT)
-				MAP(xdr_u_long, sqldata->p_sqldata_timeout);
-		}
+		if (port->port_protocol >= PROTOCOL_STMT_TOUT)
+			MAP(xdr_u_long, sqldata->p_sqldata_timeout);
+		if (port->port_protocol >= PROTOCOL_FETCH_SCROLL)
+			MAP(xdr_u_long, sqldata->p_sqldata_cursor_flags);
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -701,6 +704,7 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 		return P_TRUE(xdrs, p);
 
 	case op_fetch:
+	case op_fetch_scroll:
 		sqldata = &p->p_sqldata;
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_statement));
 		if (!xdr_sql_blr(xdrs, (SLONG) sqldata->p_sqldata_statement,
@@ -710,6 +714,11 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 		}
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_message_number));
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_messages));
+		if (p->p_operation == op_fetch_scroll)
+		{
+			MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_fetch_op));
+			MAP(xdr_long, sqldata->p_sqldata_fetch_pos);
+		}
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -819,7 +828,6 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 			P_CRYPT_CALLBACK* cc = &p->p_cc;
 			MAP(xdr_cstring, cc->p_cc_data);
 
-			rem_port* port = xdrs->x_public;
 			// If the protocol is 0 we are in the process of establishing a connection.
 			// crypt_key_callback at this phaze means server protocol is at least P15
 			if (port->port_protocol >= PROTOCOL_VERSION14 || port->port_protocol == 0)
@@ -855,7 +863,6 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 				return P_TRUE(xdrs, p);
 			}
 
-			rem_port* port = xdrs->x_public;
 			SSHORT statement_id = b->p_batch_statement;
 			Rsr* statement;
 			if (statement_id >= 0)
@@ -882,6 +889,8 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 
 			ULONG count = b->p_batch_messages;
 			ULONG size = statement->rsr_batch_size;
+			if (!size)
+				statement->rsr_batch_size = size = FB_ALIGN(statement->rsr_format->fmt_length, FB_ALIGNMENT);
 			if (xdrs->x_op == XDR_DECODE)
 			{
 				b->p_batch_data.cstr_length = (count ? count : 1) * size;
@@ -932,7 +941,6 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 			if (xdrs->x_op == XDR_FREE)
 				return P_TRUE(xdrs, p);
 
-			rem_port* port = xdrs->x_public;
 			SSHORT statement_id = b->p_batch_statement;
 			DEB_RBATCH(fprintf(stderr, "BatRem: xdr CS %d\n", statement_id));
 			Rsr* statement;
@@ -990,10 +998,9 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 
 			// Process status vectors
 			ULONG pos = 0u;
-			LocalStatus to;
 			DEB_RBATCH(fprintf(stderr, "BatRem: xdr sv %d\n", b->p_batch_vectors));
 
-			for (unsigned i = 0; i < b->p_batch_vectors; ++i, ++pos)
+			for (unsigned i = 0; i < b->p_batch_vectors; ++pos)
 			{
 				DynamicStatusVector s;
 				DynamicStatusVector* ptr = NULL;
@@ -1005,6 +1012,7 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 					if (pos == IBatchCompletionState::NO_MORE_ERRORS)
 						return P_FALSE(xdrs, p);
 
+					LocalStatus to;
 					statement->rsr_batch_ics->getStatus(&status_vector, &to, pos);
 					if (status_vector.getState() & IStatus::STATE_ERRORS)
 						continue;
@@ -1021,17 +1029,19 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 				if (xdrs->x_op == XDR_DECODE)
 				{
 					Firebird::Arg::StatusVector sv(ptr->value());
+					LocalStatus to;
 					sv.copyTo(&to);
 					delete ptr;
 					statement->rsr_batch_cs->regErrorAt(pos, &to);
 				}
+				++i;
 			}
 
 			// Process status-less errors
 			pos = 0u;
 			DEB_RBATCH(fprintf(stderr, "BatRem: xdr err %d\n", b->p_batch_errors));
 
-			for (unsigned i = 0; i < b->p_batch_errors; ++i, ++pos)
+			for (unsigned i = 0; i < b->p_batch_errors; ++pos)
 			{
 				if (xdrs->x_op == XDR_ENCODE)
 				{
@@ -1040,6 +1050,7 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 					if (pos == IBatchCompletionState::NO_MORE_ERRORS)
 						return P_FALSE(xdrs, p);
 
+					LocalStatus to;
 					statement->rsr_batch_ics->getStatus(&status_vector, &to, pos);
 					if (!(status_vector.getState() & IStatus::STATE_ERRORS))
 						continue;
@@ -1051,6 +1062,7 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 				{
 					statement->rsr_batch_cs->regErrorAt(pos, nullptr);
 				}
+				++i;
 			}
 
 			return P_TRUE(xdrs, p);
@@ -1065,6 +1077,11 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 			if (xdrs->x_op != XDR_FREE)
 				DEB_RBATCH(fprintf(stderr, "BatRem: xdr release/cancel %d\n", p->p_operation));
 
+			return P_TRUE(xdrs, p);
+		}
+
+	case op_batch_sync:
+		{
 			return P_TRUE(xdrs, p);
 		}
 

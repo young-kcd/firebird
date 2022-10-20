@@ -133,7 +133,7 @@ namespace
 				auto& pool = *attachment->att_pool;
 				const auto manager = dbb->replManager(true);
 				const auto& guid = dbb->dbb_guid;
-				const auto& userName = attachment->att_user->getUserName();
+				const auto& userName = attachment->getUserName();
 
 				attachment->att_replicator = FB_NEW Replicator(pool, manager, guid, userName);
 			}
@@ -660,6 +660,8 @@ void REPL_gen_id(thread_db* tdbb, SLONG genId, SINT64 value)
 		MET_lookup_generator_id(tdbb, genId, genName, nullptr);
 		attachment->att_generators.store(genId, genName);
 	}
+
+	fb_assert(genName.hasData());
 
 	AutoSetRestoreFlag<ULONG> noRecursion(&tdbb->tdbb_flags, TDBB_repl_in_progress, true);
 

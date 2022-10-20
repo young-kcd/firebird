@@ -47,7 +47,7 @@
 #include "../jrd/blb.h"
 #include "../jrd/ods.h"
 #include "../jrd/lls.h"
-#include "gen/iberror.h"
+#include "iberror.h"
 #include "../jrd/blob_filter.h"
 #include "../common/sdl.h"
 #include "../jrd/intl.h"
@@ -59,6 +59,7 @@
 #include "../jrd/dpm_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/evl_proto.h"
+#include "../jrd/exe_proto.h"
 #include "../jrd/filte_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../jrd/intl_proto.h"
@@ -87,7 +88,7 @@ static ArrayField* find_array(jrd_tra*, const bid*);
 static BlobFilter* find_filter(thread_db*, SSHORT, SSHORT);
 //static blob_page* get_next_page(thread_db*, blb*, WIN *);
 //static void insert_page(thread_db*, blb*);
-static void move_from_string(Jrd::thread_db*, const dsc*, dsc*, const record_param* rpb, USHORT fieldId);
+static void move_from_string(Jrd::thread_db*, const dsc*, dsc*, jrd_rel*, Record*, USHORT);
 static void move_to_string(Jrd::thread_db*, dsc*, dsc*);
 static void slice_callback(array_slice*, ULONG, dsc*);
 static blb* store_array(thread_db*, jrd_tra*, bid*);
@@ -113,7 +114,12 @@ void blb::BLB_cancel(thread_db* tdbb)
 	// Release filter control resources
 
 	if (blb_flags & BLB_temporary)
+	{
+		if (!(blb_flags & BLB_closed))
+			blb_transaction->tra_temp_blobs_count--;
+
 		delete_blob(tdbb, 0);
+	}
 
 	destroy(true);
 }
@@ -189,11 +195,14 @@ bool blb::BLB_close(thread_db* tdbb)
 
 	SET_TDBB(tdbb);
 
+	const bool alreadyClosed = (blb_flags & BLB_closed);
+
 	// Release filter control resources
 
 	if (blb_filter)
 		BLF_close_blob(tdbb, &blb_filter);
 
+	blb_flags &= ~BLB_close_on_read;
 	blb_flags |= BLB_closed;
 
 	if (!(blb_flags & BLB_temporary))
@@ -201,6 +210,9 @@ bool blb::BLB_close(thread_db* tdbb)
 		destroy(true);
 		return true;
 	}
+
+	if (!alreadyClosed)
+		blb_transaction->tra_temp_blobs_count--;
 
 	if (blb_level == 0)
 	{
@@ -267,6 +279,40 @@ blb* blb::create2(thread_db* tdbb,
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
+	const int maxTempBlobs = MAX_TEMP_BLOBS;
+	if (maxTempBlobs > 0 && transaction->tra_temp_blobs_count >= maxTempBlobs)
+	{
+		const Request* request = tdbb->getRequest();
+		string info;
+
+		if (userBlob)
+		{
+			Attachment* att = tdbb->getAttachment();
+			info = "By user application";
+			if (att->att_remote_process.hasData())
+			{
+				info += string(" (") + att->att_remote_process.c_str() + ")";
+			}
+		}
+		else if (request)
+		{
+			const Statement* const statement = request->getStatement();
+			if (statement && statement->sqlText)
+				info = string("By query: ") + *statement->sqlText;
+
+			string stack;
+			if (EXE_get_stack_trace(request, stack))
+			{
+				info += "\n";
+				info += stack;
+			}
+		}
+
+		gds__log("Too many temporary blobs (%i allowed)\n%s", maxTempBlobs, info.c_str());
+
+		ERR_post(Arg::Gds(isc_random) << Arg::Str("Too many temporary blobs"));
+	}
+
 	// Create a blob large enough to hold a single data page
 	SSHORT from, to;
 	SSHORT from_charset, to_charset;
@@ -322,6 +368,7 @@ blb* blb::create2(thread_db* tdbb,
 
 	blob->blb_space_remaining = blob->blb_clump_size;
 	blob->blb_flags |= BLB_temporary;
+	blob->blb_transaction->tra_temp_blobs_count++;
 
 	if (filter_required)
 	{
@@ -345,13 +392,13 @@ blb* blb::create2(thread_db* tdbb,
 
 	// Bind non-user blob to the request
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 	if (!userBlob && request)
 	{
 		transaction->tra_blobs->locate(blob->blb_temp_id);
 		BlobIndex* current = &transaction->tra_blobs->current();
 
-		jrd_req* blob_request = request;
+		Request* blob_request = request;
 		while (blob_request->req_caller)
 			blob_request = blob_request->req_caller;
 
@@ -949,7 +996,8 @@ SLONG blb::BLB_lseek(USHORT mode, SLONG offset)
 // which in turn calls blb::create2 that writes in the blob id. Although the
 // compiler allows to modify from_desc->dsc_address' contents when from_desc is
 // constant, this is misleading so I didn't make the source descriptor constant.
-void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const record_param* rpb, USHORT fieldId)
+void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc,
+			   jrd_rel* relation, Record* record, USHORT fieldId, bool bulk)
 {
 /**************************************
  *
@@ -980,7 +1028,7 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const record_param
 		if (!DTYPE_IS_BLOB_OR_QUAD(from_desc->dsc_dtype))
 		{
 			// anything that can be copied into a string can be copied into a blob
-			move_from_string(tdbb, from_desc, to_desc, rpb, fieldId);
+			move_from_string(tdbb, from_desc, to_desc, relation, record, fieldId);
 			return;
 		}
 	}
@@ -996,7 +1044,7 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const record_param
 
 	// We should not materialize the blob if the destination field
 	// stream (nod_union, for example) doesn't have a relation.
-	const bool simpleMove = !rpb || (rpb->rpb_relation == NULL);
+	const bool simpleMove = (relation == NULL);
 
 	// Use local copy of source blob id to not change contents of from_desc in
 	// a case when it points to materialized temporary blob (see below for
@@ -1051,15 +1099,13 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const record_param
 		return;
 	}
 
-	jrd_req* request = tdbb->getRequest();
-	jrd_rel* relation = rpb->rpb_relation;
+	Request* request = tdbb->getRequest();
 
 	if (relation->isVirtual()) {
 		ERR_post(Arg::Gds(isc_read_only));
 	}
 
 	RelationPages* relPages = relation->getPages(tdbb);
-	Record* record = rpb->rpb_record;
 
 	// If either the source value is null or the blob id itself is null
 	// (all zeros), then the blob is null.
@@ -1139,7 +1185,7 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const record_param
 					{
 						// Walk through call stack looking if our BLOB is
 						// owned by somebody from our call chain
-						jrd_req* temp_req = request;
+						Request* temp_req = request;
 						do {
 							if (blobIndex->bli_request == temp_req)
 								break;
@@ -1163,7 +1209,10 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const record_param
 
 				if (!blob || !(blob->blb_flags & BLB_closed))
 				{
-					ERR_post(Arg::Gds(isc_bad_segstr_id));
+					if (blob && (blob->blb_flags & BLB_close_on_read))
+						blob->BLB_close(tdbb);
+					else
+						ERR_post(Arg::Gds(isc_bad_segstr_id));
 				}
 
 				if (blob->blb_level && (blob->blb_pg_space_id != relPages->rel_pg_space_id))
@@ -1207,6 +1256,9 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const record_param
 #ifdef CHECK_BLOB_FIELD_ACCESS_FOR_SELECT
 	blob->blb_fld_id = fieldId;
 #endif
+	if (bulk)
+		blob->blb_flags |= BLB_bulk;
+
 	destination->set_permanent(relation->rel_id, DPM_store_blob(tdbb, blob, record));
 	// This is the only place in the engine where blobs are materialized
 	// If new places appear code below should transform to common sub-routine
@@ -1225,7 +1277,7 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const record_param
 		blobIndex->bli_materialized = true;
 		blobIndex->bli_blob_id = *destination;
 		// Assign temporary BLOB ownership to top-level request if it is not assigned yet
-		jrd_req* own_request;
+		Request* own_request;
 		if (blobIndex->bli_request) {
 			own_request = blobIndex->bli_request;
 		}
@@ -1327,7 +1379,7 @@ blb* blb::open2(thread_db* tdbb,
 			 */
 
 			// Search the index of transaction blobs for a match
-			const blb* new_blob = NULL;
+			blb* new_blob = NULL;
 			if (transaction->tra_blobs->locate(blobId.bid_temp_id()))
 			{
 				current = &transaction->tra_blobs->current();
@@ -1342,7 +1394,10 @@ blb* blb::open2(thread_db* tdbb,
 				if (!new_blob || !(new_blob->blb_flags & BLB_temporary) ||
 					!(new_blob->blb_flags & BLB_closed))
 				{
-					ERR_post(Arg::Gds(isc_bad_segstr_id));
+					if (new_blob && (new_blob->blb_flags & BLB_close_on_read))
+						new_blob->BLB_close(tdbb);
+					else
+						ERR_post(Arg::Gds(isc_bad_segstr_id));
 				}
 
 				blob->blb_lead_page = new_blob->blb_lead_page;
@@ -1542,7 +1597,7 @@ void blb::BLB_put_segment(thread_db* tdbb, const void* seg, USHORT segment_lengt
 
 	// Make sure blob is a temporary blob.  If not, complain bitterly.
 
-	if (!(blb_flags & BLB_temporary))
+	if (!(blb_flags & BLB_temporary) || (blb_flags & BLB_closed))
 		ERR_post(Arg::Gds(isc_cannot_update_old_blob));
 
 	if (blb_filter)
@@ -2082,7 +2137,7 @@ blb* blb::copy_blob(thread_db* tdbb, const bid* source, bid* destination,
  **************************************/
 	SET_TDBB(tdbb);
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 	jrd_tra* transaction = request ? request->req_transaction : tdbb->getTransaction();
 	blb* input = open2(tdbb, transaction, source, bpb_length, bpb);
 	blb* output = create(tdbb, transaction, destination);
@@ -2502,7 +2557,7 @@ void blb::insert_page(thread_db* tdbb)
 
 
 static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc,
-	const record_param* rpb, USHORT fieldId)
+							 jrd_rel* relation, Record* record, USHORT fieldId)
 {
 /**************************************
  *
@@ -2533,7 +2588,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 			status_exception::raise(Arg::Gds(isc_malformed_string));
 	}
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 	jrd_tra* transaction = request ? request->req_transaction : tdbb->getTransaction();
 	transaction = transaction->getOuter();
 
@@ -2558,7 +2613,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 	blob->BLB_put_segment(tdbb, fromstr, length);
 	blob->BLB_close(tdbb);
 	ULONG blob_temp_id = blob->getTempId();
-	blb::move(tdbb, &blob_desc, to_desc, rpb, fieldId);
+	blb::move(tdbb, &blob_desc, to_desc, relation, record, fieldId);
 
 	// 14-June-2004. Nickolay Samofatov
 	// The code below saves a lot of memory when bunches of records are
@@ -2581,7 +2636,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 			if (current->bli_materialized)
 			{
 				// Delete BLOB from request owned blob list
-				jrd_req* blob_request = current->bli_request;
+				Request* blob_request = current->bli_request;
 				if (blob_request)
 				{
 					if (blob_request->req_blobs.locate(blob_temp_id)) {
@@ -2604,7 +2659,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 				// we may still bind lifetime of blob to current top level request.
 				if (!current->bli_request)
 				{
-					jrd_req* blob_request = request;
+					Request* blob_request = request;
 					while (blob_request->req_caller)
 						blob_request = blob_request->req_caller;
 
@@ -2642,7 +2697,7 @@ static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
 	else
 		blobAsText.dsc_ttype() = ttype_ascii;
 
-	jrd_req* request = tdbb->getRequest();
+	Request* request = tdbb->getRequest();
 	jrd_tra* transaction = request ? request->req_transaction : tdbb->getTransaction();
 	transaction = transaction->getOuter();
 
@@ -2679,7 +2734,7 @@ void blb::destroy(const bool purge_flag)
 	{
 		if (blb_transaction->tra_blobs->locate(blb_temp_id))
 		{
-			jrd_req* blob_request = blb_transaction->tra_blobs->current().bli_request;
+			Request* blob_request = blb_transaction->tra_blobs->current().bli_request;
 
 			if (blob_request)
 			{

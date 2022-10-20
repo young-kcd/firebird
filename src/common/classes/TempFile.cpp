@@ -69,8 +69,11 @@ static const char* DEFAULT_PATH =
 #endif
 
 static const char* const NAME_PATTERN = "XXXXXX";
+
+#ifdef WIN_NT
 static const char* const NAME_LETTERS = "abcdefghijklmnopqrstuvwxyz0123456789";
 static const FB_SIZE_T MAX_TRIES = 256;
+#endif
 
 // we need a class here only to return memory on shutdown and avoid
 // false memory leak reports
@@ -140,7 +143,7 @@ PathName TempFile::create(const PathName& prefix, const PathName& directory)
 // Creates a temporary file and returns its name.
 // In error case store exception in status arg.
 //
-// Make sure exception will not be passed to the end-user as it 
+// Make sure exception will not be passed to the end-user as it
 // contains server-side directory and it could break security!
 //
 

@@ -204,6 +204,9 @@
     <ClCompile Include="..\..\..\src\common\MsgMetadata.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\common\MsgUtil.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\common\DynamicStrings.cpp">
       <Filter>common</Filter>
     </ClCompile>
@@ -244,6 +247,9 @@
       <Filter>common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\common\Int128.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\common\Task.cpp">
       <Filter>common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\common\classes\TimerImpl.cpp">
@@ -387,6 +393,9 @@
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\common\classes\DbImplementation.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\common\classes\DoublyLinkedList.h">
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\common\classes\fb_atomic.h">
@@ -551,6 +560,9 @@
     <ClInclude Include="..\..\..\src\common\MsgMetadata.h">
       <Filter>headers</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\common\MsgUtil.h">
+      <Filter>headers</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\src\common\DynamicStrings.h">
       <Filter>headers</Filter>
     </ClInclude>
@@ -591,6 +603,9 @@
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\common\Int128.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\common\Task.h">
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\common\classes\TimerImpl.h">

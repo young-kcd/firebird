@@ -39,7 +39,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
 #include "../jrd/val.h"
-#include "gen/iberror.h"
+#include "iberror.h"
 #include "../jrd/intl.h"
 #include "../common/gdsassert.h"
 #include "../common/TimeZoneUtil.h"
@@ -580,10 +580,7 @@ SLONG EngineCallbacks::getLocalDate()
 	thread_db* tdbb = JRD_get_thread_data();
 
 	if (tdbb && (tdbb->getType() == ThreadData::tddDBB) && tdbb->getRequest())
-	{
-		fb_assert(!tdbb->getRequest()->req_gmt_timestamp.isEmpty());
-		return tdbb->getRequest()->getLocalTimeStamp().value().timestamp_date;
-	}
+		return tdbb->getRequest()->getLocalTimeStamp().timestamp_date;
 
 	return TimeZoneUtil::timeStampTzToTimeStamp(
 		TimeZoneUtil::getCurrentSystemTimeStamp(), getSessionTimeZone()).timestamp_date;
@@ -595,10 +592,7 @@ ISC_TIMESTAMP EngineCallbacks::getCurrentGmtTimeStamp()
 	thread_db* tdbb = JRD_get_thread_data();
 
 	if (tdbb && (tdbb->getType() == ThreadData::tddDBB) && tdbb->getRequest())
-	{
-		fb_assert(!tdbb->getRequest()->req_gmt_timestamp.isEmpty());
-		return tdbb->getRequest()->req_gmt_timestamp.value();
-	}
+		return tdbb->getRequest()->getGmtTimeStamp();
 
 	return TimeZoneUtil::timeStampTzToTimeStamp(TimeZoneUtil::getCurrentSystemTimeStamp(), TimeZoneUtil::GMT_ZONE);
 }

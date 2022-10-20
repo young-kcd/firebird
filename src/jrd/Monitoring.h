@@ -244,9 +244,9 @@ struct MonitoringHeader : public Firebird::MemoryHeader
 };
 
 
-class MonitoringData FB_FINAL : public Firebird::PermanentStorage, public Firebird::IpcObject
+class MonitoringData final : public Firebird::PermanentStorage, public Firebird::IpcObject
 {
-	static const USHORT MONITOR_VERSION = 5;
+	static const USHORT MONITOR_VERSION = 6;
 	static const ULONG DEFAULT_SIZE = 1048576;
 
 	typedef MonitoringHeader Header;
@@ -255,6 +255,7 @@ class MonitoringData FB_FINAL : public Firebird::PermanentStorage, public Firebi
 	{
 		AttNumber attId;
 		TEXT userName[USERNAME_LENGTH + 1];
+		ULONG generation;
 		ULONG length;
 	};
 
@@ -319,20 +320,24 @@ public:
 	explicit MonitoringData(Database*);
 	~MonitoringData();
 
-	bool initialize(Firebird::SharedMemoryBase*, bool);
-	void mutexBug(int osErrorCode, const char* text);
+	bool initialize(Firebird::SharedMemoryBase*, bool) override;
+	void mutexBug(int osErrorCode, const char* text) override;
+
+	USHORT getType() const override { return Firebird::SharedMemoryBase::SRAM_DATABASE_SNAPSHOT; }
+	USHORT getVersion() const override { return MONITOR_VERSION; }
+	const char* getName() const override { return "MonitoringData"; }
 
 	void initSharedFile();
 
 	void acquire();
 	void release();
 
+	void enumerate(const char*, ULONG, SessionList&);
 	void read(const char*, TempSpace&);
-	ULONG setup(AttNumber, const char*);
+	ULONG setup(AttNumber, const char*, ULONG);
 	void write(ULONG, ULONG, const void*);
 
 	void cleanup(AttNumber);
-	void enumerate(SessionList&, const char*);
 
 private:
 	// copying is prohibited
@@ -375,10 +380,22 @@ protected:
 class Monitoring
 {
 public:
+	static int blockingAst(void* ast_object);
+
+	static ULONG checkGeneration(const Database* dbb, const Attachment* attachment)
+	{
+		const auto generation = dbb->getMonitorGeneration();
+
+		if (generation != attachment->att_monitor_generation)
+			return generation;
+
+		return 0;
+	}
+
 	static void checkState(thread_db* tdbb);
 	static SnapshotData* getSnapshot(thread_db* tdbb);
 
-	static void dumpAttachment(thread_db* tdbb, Attachment* attachment);
+	static void dumpAttachment(thread_db* tdbb, Attachment* attachment, ULONG generation);
 
 	static void publishAttachment(thread_db* tdbb);
 	static void cleanupAttachment(thread_db* tdbb);
@@ -389,8 +406,9 @@ private:
 
 	static void putAttachment(SnapshotData::DumpRecord&, const Attachment*);
 	static void putTransaction(SnapshotData::DumpRecord&, const jrd_tra*);
-	static void putRequest(SnapshotData::DumpRecord&, const jrd_req*, const Firebird::string&);
-	static void putCall(SnapshotData::DumpRecord&, const jrd_req*);
+	static void putStatement(SnapshotData::DumpRecord&, const Statement*, const Firebird::string&);
+	static void putRequest(SnapshotData::DumpRecord&, const Request*, const Firebird::string&);
+	static void putCall(SnapshotData::DumpRecord&, const Request*);
 	static void putStatistics(SnapshotData::DumpRecord&, const RuntimeStatistics&, int, int);
 	static void putContextVars(SnapshotData::DumpRecord&, const Firebird::StringMap&, SINT64, bool);
 	static void putMemoryUsage(SnapshotData::DumpRecord&, const Firebird::MemoryStats&, int, int);

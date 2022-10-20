@@ -22,6 +22,7 @@
 #include "../jrd/req.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/vio_proto.h"
+#include "../jrd/optimizer/Optimizer.h"
 
 #include "RecordSource.h"
 
@@ -33,18 +34,21 @@ using namespace Jrd;
 // ------------------------------
 
 SingularStream::SingularStream(CompilerScratch* csb, RecordSource* next)
-	: m_next(next), m_streams(csb->csb_pool)
+	: RecordSource(csb),
+	  m_next(next),
+	  m_streams(csb->csb_pool)
 {
 	fb_assert(m_next);
 
 	m_next->findUsedStreams(m_streams);
 
 	m_impure = csb->allocImpure<Impure>();
+	m_cardinality = MINIMUM_CARDINALITY;
 }
 
-void SingularStream::open(thread_db* tdbb) const
+void SingularStream::internalOpen(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open;
@@ -54,7 +58,7 @@ void SingularStream::open(thread_db* tdbb) const
 
 void SingularStream::close(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 
 	invalidateRecords(request);
 
@@ -68,11 +72,11 @@ void SingularStream::close(thread_db* tdbb) const
 	}
 }
 
-bool SingularStream::getRecord(thread_db* tdbb) const
+bool SingularStream::internalGetRecord(thread_db* tdbb) const
 {
 	JRD_reschedule(tdbb);
 
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
@@ -83,16 +87,16 @@ bool SingularStream::getRecord(thread_db* tdbb) const
 
 	if (m_next->getRecord(tdbb))
 	{
-		doGetRecord(tdbb);
+		process(tdbb);
 		return true;
 	}
 
 	return false;
 }
 
-void SingularStream::doGetRecord(thread_db* tdbb) const
+void SingularStream::process(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	const FB_SIZE_T streamCount = m_streams.getCount();
@@ -142,12 +146,21 @@ bool SingularStream::lockRecord(thread_db* tdbb) const
 	return m_next->lockRecord(tdbb);
 }
 
-void SingularStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
+void SingularStream::getChildren(Array<const RecordSource*>& children) const
+{
+	children.add(m_next);
+}
+
+void SingularStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level, bool recurse) const
 {
 	if (detailed)
+	{
 		plan += printIndent(++level) + "Singularity Check";
+		printOptInfo(plan);
+	}
 
-	m_next->print(tdbb, plan, detailed, level);
+	if (recurse)
+		m_next->print(tdbb, plan, detailed, level, recurse);
 }
 
 void SingularStream::markRecursive()
@@ -160,7 +173,7 @@ void SingularStream::findUsedStreams(StreamList& streams, bool expandAll) const
 	m_next->findUsedStreams(streams, expandAll);
 }
 
-void SingularStream::invalidateRecords(jrd_req* request) const
+void SingularStream::invalidateRecords(Request* request) const
 {
 	m_next->invalidateRecords(request);
 }

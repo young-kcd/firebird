@@ -30,9 +30,9 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <errno.h>
+#include "../common/classes/alloc.h"
 #include "../common/ThreadStart.h"
 #include "../yvalve/gds_proto.h"
-#include "../common/isc_s_proto.h"
 #include "../common/gdsassert.h"
 
 #ifdef WIN_NT
@@ -210,7 +210,10 @@ void Thread::kill(Handle& thread)
 ThreadId Thread::getId()
 {
 #ifdef USE_LWP_AS_THREAD_ID
-	return syscall(SYS_gettid);
+	static __thread int tid = 0;
+	if (!tid)
+		tid = syscall(SYS_gettid);
+	return tid;
 #else
 	return pthread_self();
 #endif
@@ -342,7 +345,7 @@ void Thread::waitForCompletion(Handle& handle)
 	// exiting, OS notifies every DLL about it, and acquires loader lock. In such
 	// scenario waiting on thread handle will never succeed.
 	if (!Firebird::dDllUnloadTID) {
-		WaitForSingleObject(handle, 500);
+		WaitForSingleObject(handle, 10000);
 	}
 	CloseHandle(handle);
 	handle = 0;

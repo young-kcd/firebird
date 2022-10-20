@@ -601,7 +601,7 @@ ULONG IntlUtil::toLower(Jrd::CharSet* cs, ULONG srcLen, const UCHAR* src, ULONG 
 	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16_str;
 	UCHAR* utf16_ptr;
 
-	if (dstLen >= utf16_length)	// if dst buffer is sufficient large, use it as intermediate
+	if (dst != src && dstLen >= utf16_length)	// if dst buffer is sufficient large, use it as intermediate
 		utf16_ptr = dst;
 	else
 		utf16_ptr = utf16_str.getBuffer(utf16_length);
@@ -627,7 +627,7 @@ ULONG IntlUtil::toUpper(Jrd::CharSet* cs, ULONG srcLen, const UCHAR* src, ULONG 
 	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16_str;
 	UCHAR* utf16_ptr;
 
-	if (dstLen >= utf16_length)	// if dst buffer is sufficient large, use it as intermediate
+	if (dst != src && dstLen >= utf16_length)	// if dst buffer is sufficient large, use it as intermediate
 		utf16_ptr = dst;
 	else
 		utf16_ptr = utf16_str.getBuffer(utf16_length);
@@ -664,7 +664,7 @@ bool IntlUtil::readOneChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR* end, 
 }
 
 
-// Transform ICU-VERSION attribute (given by the user) in COLL-VERSION (to be stored).
+// Add COLL-VERSION attribute.
 bool IntlUtil::setupIcuAttributes(charset* cs, const string& specificAttributes,
 	const string& configInfo, string& newSpecificAttributes)
 {
@@ -681,10 +681,19 @@ bool IntlUtil::setupIcuAttributes(charset* cs, const string& specificAttributes,
 	map.get("ICU-VERSION", icuVersion);
 
 	string collVersion;
-	if (!UnicodeUtil::getCollVersion(icuVersion, configInfo, collVersion))
+	auto icu = UnicodeUtil::getCollVersion(icuVersion, configInfo, collVersion);
+
+	if (!icu)
 		return false;
 
-	map.remove("ICU-VERSION");
+	if (icuVersion.isEmpty())
+	{
+		int majorVersion, minorVersion;
+		UnicodeUtil::getICUVersion(icu, majorVersion, minorVersion);
+		icuVersion.printf("%d.%d", majorVersion, minorVersion);
+		map.put("ICU-VERSION", icuVersion);
+	}
+
 	map.remove("COLL-VERSION");
 
 	if (collVersion.hasData())
@@ -778,16 +787,6 @@ bool IntlUtil::readAttributeChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR*
 	}
 
 	return false;
-}
-
-
-void IntlUtil::getDefaultCollationAttributes(UCharBuffer& collAttributes, charset& cs)
-{
-	string attributes("ICU-VERSION=");
-	attributes += Jrd::UnicodeUtil::getDefaultIcuVersion();
-	setupIcuAttributes(&cs, attributes, "", attributes);
-
-	collAttributes.push(reinterpret_cast<const UCHAR*>(attributes.c_str()), attributes.length());
 }
 
 

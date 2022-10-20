@@ -39,7 +39,6 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
-#include "../jrd/opt_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/cvt_proto.h"
 #include "../jrd/CryptoManager.h"
@@ -47,6 +46,7 @@
 #include "../jrd/RecordBuffer.h"
 #include "../jrd/Monitoring.h"
 #include "../jrd/Function.h"
+#include "../jrd/optimizer/Optimizer.h"
 
 #ifdef WIN_NT
 #include <process.h>
@@ -64,8 +64,8 @@ namespace
 	class DumpWriter : public SnapshotData::DumpRecord::Writer
 	{
 	public:
-		DumpWriter(MonitoringData* data, AttNumber att_id, const char* user_name)
-			: dump(data), offset(dump->setup(att_id, user_name))
+		DumpWriter(MonitoringData* data, AttNumber att_id, const char* user_name, ULONG generation)
+			: dump(data), offset(dump->setup(att_id, user_name, generation))
 		{
 			fb_assert(offset);
 		}
@@ -190,16 +190,15 @@ void MonitoringData::initSharedFile()
 	{
 		m_sharedMemory.reset(FB_NEW_POOL(getPool())
 			SharedMemory<MonitoringHeader>(name.c_str(), DEFAULT_SIZE, this));
+
+		const auto header = m_sharedMemory->getHeader();
+		checkHeader(header);
 	}
 	catch (const Exception& ex)
 	{
 		iscLogException("MonitoringData: Cannot initialize the shared memory region", ex);
 		throw;
 	}
-
-	fb_assert(m_sharedMemory->getHeader()->mhb_type == SharedMemoryBase::SRAM_DATABASE_SNAPSHOT);
-	fb_assert(m_sharedMemory->getHeader()->mhb_header_version == MemoryHeader::HEADER_VERSION);
-	fb_assert(m_sharedMemory->getHeader()->mhb_version == MONITOR_VERSION);
 }
 
 
@@ -248,7 +247,36 @@ void MonitoringData::release()
 }
 
 
-void MonitoringData::read(const char* user_name, TempSpace& temp)
+void MonitoringData::enumerate(const char* userName, ULONG generation, SessionList& sessions)
+{
+	const bool init = sessions.isEmpty();
+
+	// When initializing, collect all sessions older than the given generation.
+	// Otherwise, remove sessions that have updated their generation.
+
+	for (ULONG offset = alignOffset(sizeof(Header)); offset < m_sharedMemory->getHeader()->used;)
+	{
+		const auto ptr = (UCHAR*) m_sharedMemory->getHeader() + offset;
+		const auto element = (Element*) ptr;
+		const ULONG length = alignOffset(sizeof(Element) + element->length);
+
+		if (!userName || !strcmp(element->userName, userName)) // permitted
+		{
+			if (init)
+			{
+				if (element->generation < generation)
+					sessions.add(element->attId);
+			}
+			else if (element->generation >= generation)
+				sessions.findAndRemove(element->attId);
+		}
+
+		offset += length;
+	}
+}
+
+
+void MonitoringData::read(const char* userName, TempSpace& temp)
 {
 	offset_t position = temp.getSize();
 
@@ -256,11 +284,11 @@ void MonitoringData::read(const char* user_name, TempSpace& temp)
 
 	for (ULONG offset = alignOffset(sizeof(Header)); offset < m_sharedMemory->getHeader()->used;)
 	{
-		UCHAR* const ptr = (UCHAR*) m_sharedMemory->getHeader() + offset;
-		const Element* const element = (Element*) ptr;
+		const auto ptr = (UCHAR*) m_sharedMemory->getHeader() + offset;
+		const auto element = (Element*) ptr;
 		const ULONG length = alignOffset(sizeof(Element) + element->length);
 
-		if (!user_name || !strcmp(element->userName, user_name))
+		if (!userName || !strcmp(element->userName, userName)) // permitted
 		{
 			temp.write(position, ptr + sizeof(Element), element->length);
 			position += element->length;
@@ -271,7 +299,7 @@ void MonitoringData::read(const char* user_name, TempSpace& temp)
 }
 
 
-ULONG MonitoringData::setup(AttNumber att_id, const char* user_name)
+ULONG MonitoringData::setup(AttNumber att_id, const char* userName, ULONG generation)
 {
 	const ULONG offset = alignOffset(m_sharedMemory->getHeader()->used);
 	const ULONG delta = offset + sizeof(Element) - m_sharedMemory->getHeader()->used;
@@ -280,10 +308,11 @@ ULONG MonitoringData::setup(AttNumber att_id, const char* user_name)
 
 	// Prepare for writing new data at the tail
 
-	UCHAR* const ptr = (UCHAR*) m_sharedMemory->getHeader() + offset;
-	Element* const element = (Element*) ptr;
+	const auto ptr = (UCHAR*) m_sharedMemory->getHeader() + offset;
+	const auto element = (Element*) ptr;
 	element->attId = att_id;
-	snprintf(element->userName, sizeof(element->userName), "%s", user_name);
+	snprintf(element->userName, sizeof(element->userName), "%s", userName);
+	element->generation = generation;
 	element->length = 0;
 	m_sharedMemory->getHeader()->used += delta;
 	return offset;
@@ -296,8 +325,8 @@ void MonitoringData::write(ULONG offset, ULONG length, const void* buffer)
 
 	// Write data item at the tail
 
-	UCHAR* const ptr = (UCHAR*) m_sharedMemory->getHeader() + offset;
-	Element* const element = (Element*) ptr;
+	const auto ptr = (UCHAR*) m_sharedMemory->getHeader() + offset;
+	const auto element = (Element*) ptr;
 	memcpy(ptr + sizeof(Element) + element->length, buffer, length);
 	element->length += length;
 	m_sharedMemory->getHeader()->used += length;
@@ -310,8 +339,8 @@ void MonitoringData::cleanup(AttNumber att_id)
 
 	for (ULONG offset = alignOffset(sizeof(Header)); offset < m_sharedMemory->getHeader()->used;)
 	{
-		UCHAR* const ptr = (UCHAR*) m_sharedMemory->getHeader() + offset;
-		const Element* const element = (Element*) ptr;
+		const auto ptr = (UCHAR*) m_sharedMemory->getHeader() + offset;
+		const auto element = (Element*) ptr;
 		const ULONG length = alignOffset(sizeof(Element) + element->length);
 
 		if (element->attId == att_id)
@@ -328,24 +357,6 @@ void MonitoringData::cleanup(AttNumber att_id)
 
 			break;
 		}
-
-		offset += length;
-	}
-}
-
-
-void MonitoringData::enumerate(SessionList& sessions, const char* user_name)
-{
-	// Return IDs for all known (and permitted) sessions
-
-	for (ULONG offset = alignOffset(sizeof(Header)); offset < m_sharedMemory->getHeader()->used;)
-	{
-		UCHAR* const ptr = (UCHAR*) m_sharedMemory->getHeader() + offset;
-		const Element* const element = (Element*) ptr;
-		const ULONG length = alignOffset(sizeof(Element) + element->length);
-
-		if (!user_name || !strcmp(element->userName, user_name))
-			sessions.add(element->attId);
 
 		offset += length;
 	}
@@ -389,7 +400,7 @@ bool MonitoringData::initialize(SharedMemoryBase* sm, bool initialize)
 		MonitoringHeader* const header = reinterpret_cast<MonitoringHeader*>(sm->sh_mem_header);
 
 		// Initialize the shared data header
-		header->init(SharedMemoryBase::SRAM_DATABASE_SNAPSHOT, MONITOR_VERSION);
+		initHeader(header);
 
 		header->used = alignOffset(sizeof(Header));
 		header->allocated = sm->sh_mem_length_mapped;
@@ -410,9 +421,7 @@ ULONG MonitoringData::alignOffset(ULONG unaligned)
 
 MonitoringSnapshot* MonitoringSnapshot::create(thread_db* tdbb)
 {
-	SET_TDBB(tdbb);
-
-	jrd_tra* transaction = tdbb->getTransaction();
+	const auto transaction = tdbb->getTransaction();
 	fb_assert(transaction);
 
 	if (!transaction->tra_mon_snapshot)
@@ -430,73 +439,84 @@ MonitoringSnapshot* MonitoringSnapshot::create(thread_db* tdbb)
 MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 	: SnapshotData(pool)
 {
-	SET_TDBB(tdbb);
-
 	PAG_header(tdbb, true);
 
-	Database* const dbb = tdbb->getDatabase();
-	fb_assert(dbb);
+	const auto dbb = tdbb->getDatabase();
+	const auto attachment = tdbb->getAttachment();
 
-	Attachment* const attachment = tdbb->getAttachment();
-	fb_assert(attachment);
-
-	const AttNumber self_att_id = attachment->att_attachment_id;
+	const auto selfAttId = attachment->att_attachment_id;
 
 	// Initialize record buffers
-	RecordBuffer* const dbb_buffer = allocBuffer(tdbb, pool, rel_mon_database);
-	RecordBuffer* const att_buffer = allocBuffer(tdbb, pool, rel_mon_attachments);
-	RecordBuffer* const tra_buffer = allocBuffer(tdbb, pool, rel_mon_transactions);
-	RecordBuffer* const stmt_buffer = allocBuffer(tdbb, pool, rel_mon_statements);
-	RecordBuffer* const call_buffer = allocBuffer(tdbb, pool, rel_mon_calls);
-	RecordBuffer* const io_stat_buffer = allocBuffer(tdbb, pool, rel_mon_io_stats);
-	RecordBuffer* const rec_stat_buffer = allocBuffer(tdbb, pool, rel_mon_rec_stats);
-	RecordBuffer* const ctx_var_buffer = allocBuffer(tdbb, pool, rel_mon_ctx_vars);
-	RecordBuffer* const mem_usage_buffer = allocBuffer(tdbb, pool, rel_mon_mem_usage);
-	RecordBuffer* const tab_stat_buffer = allocBuffer(tdbb, pool, rel_mon_tab_stats);
+	const auto dbb_buffer = allocBuffer(tdbb, pool, rel_mon_database);
+	const auto att_buffer = allocBuffer(tdbb, pool, rel_mon_attachments);
+	const auto tra_buffer = allocBuffer(tdbb, pool, rel_mon_transactions);
+	const auto cmp_stmt_buffer = dbb->getEncodedOdsVersion() >= ODS_13_1 ?
+		allocBuffer(tdbb, pool, rel_mon_compiled_statements) :
+		nullptr;
+	const auto stmt_buffer = allocBuffer(tdbb, pool, rel_mon_statements);
+	const auto call_buffer = allocBuffer(tdbb, pool, rel_mon_calls);
+	const auto io_stat_buffer = allocBuffer(tdbb, pool, rel_mon_io_stats);
+	const auto rec_stat_buffer = allocBuffer(tdbb, pool, rel_mon_rec_stats);
+	const auto ctx_var_buffer = allocBuffer(tdbb, pool, rel_mon_ctx_vars);
+	const auto mem_usage_buffer = allocBuffer(tdbb, pool, rel_mon_mem_usage);
+	const auto tab_stat_buffer = allocBuffer(tdbb, pool, rel_mon_tab_stats);
 
-	// Dump our own data and downgrade the lock, if required
+	// Increment the global monitor generation
 
-	Monitoring::dumpAttachment(tdbb, attachment);
+	const auto generation = dbb->newMonitorGeneration();
 
-	if (!(attachment->att_flags & ATT_monitor_done))
-	{
-		LCK_convert(tdbb, attachment->att_monitor_lock, LCK_SR, LCK_NO_WAIT);
-		attachment->att_flags |= ATT_monitor_done;
-	}
+	// Dump state of our own attachment
 
-	// Enumerate active sessions
+	Monitoring::dumpAttachment(tdbb, attachment, generation);
 
-	const bool locksmith = attachment->locksmith(tdbb, MONITOR_ANY_ATTACHMENT);
-	const char* user_name_ptr = locksmith ? NULL : attachment->att_user ?
-		attachment->att_user->getUserName().c_str() : "";
+	// Enumerate active sessions and ensure they have dumped their state.
+	// Check that by comparing the session generation with the current one.
 
-	MonitoringData::SessionList sessions(pool);
+	const auto locksmith = attachment->locksmith(tdbb, MONITOR_ANY_ATTACHMENT);
+	const auto userName = attachment->getEffectiveUserName();
+	const auto userNamePtr = locksmith ? nullptr : userName.c_str();
 
 	Lock temp_lock(tdbb, sizeof(AttNumber), LCK_monitor), *lock = &temp_lock;
+	MonitoringData::SessionList sessions(pool);
 
-	{ // scope for the guard
+	do
+	{
+		ThreadStatusGuard tempStatus(tdbb);
 
-		MonitoringData::Guard guard(dbb->dbb_monitoring_data);
-		dbb->dbb_monitoring_data->enumerate(sessions, user_name_ptr);
-	}
+		{ // scope for the guard
 
-	// Signal other sessions to dump their state
-
-	{ // scope for the temporary status
-
-		ThreadStatusGuard temp_status(tdbb);
-
-		for (AttNumber* iter = sessions.begin(); iter != sessions.end(); iter++)
-		{
-			if (*iter != self_att_id)
-			{
-				lock->setKey(*iter);
-
-				if (LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT))
-					LCK_release(tdbb, lock);
-			}
+			MonitoringData::Guard guard(dbb->dbb_monitoring_data);
+			dbb->dbb_monitoring_data->enumerate(userNamePtr, generation, sessions);
 		}
-	}
+
+		if (!sessions.hasData())
+			break;
+
+		const auto attId = sessions.pop();
+		fb_assert(attId != selfAttId);
+		lock->setKey(attId);
+
+		// Try getting an exclusive lock first.
+		// Success means session is dead and must be garbage collected.
+
+		if (LCK_lock(tdbb, lock, LCK_EX, LCK_NO_WAIT))
+		{
+			LCK_release(tdbb, lock);
+			dbb->dbb_monitoring_data->cleanup(attId);
+			continue;
+		}
+
+		// Ping the session via AST to dump its state
+
+		if (!LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT))
+		{
+			fb_assert(false);
+			ERR_punt();
+		}
+
+		LCK_release(tdbb, lock);
+
+	} while (sessions.hasData());
 
 	// Collect monitoring data. Start by gathering database-level info,
 	// it goes directly to the temporary space (as it's not stored in the shared dump).
@@ -511,31 +531,13 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 		Monitoring::putDatabase(tdbb, tempRecord);
 	}
 
-	// Read the dump into a temporary space. While being there,
-	// also check for dead sessions and garbage collect them.
+	// Read the dump into a temporary space
 
 	{ // scope for the guard
 
 		MonitoringData::Guard guard(dbb->dbb_monitoring_data);
 
-		ThreadStatusGuard temp_status(tdbb);
-		lock->lck_type = LCK_attachment;
-
-		for (AttNumber* iter = sessions.begin(); iter != sessions.end(); iter++)
-		{
-			if (*iter != self_att_id)
-			{
-				lock->setKey(*iter);
-
-				if (LCK_lock(tdbb, lock, LCK_EX, LCK_NO_WAIT))
-				{
-					LCK_release(tdbb, lock);
-					dbb->dbb_monitoring_data->cleanup(*iter);
-				}
-			}
-		}
-
-		dbb->dbb_monitoring_data->read(user_name_ptr, temp_space);
+		dbb->dbb_monitoring_data->read(userNamePtr, temp_space);
 	}
 
 	// Parse the dump
@@ -547,8 +549,8 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 	{
 		const int rid = dumpRecord.getRelationId();
 
-		RecordBuffer* buffer = NULL;
-		Record* record = NULL;
+		RecordBuffer* buffer = nullptr;
+		Record* record = nullptr;
 
 		switch (rid)
 		{
@@ -560,6 +562,9 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 			break;
 		case rel_mon_transactions:
 			buffer = tra_buffer;
+			break;
+		case rel_mon_compiled_statements:
+			buffer = cmp_stmt_buffer;
 			break;
 		case rel_mon_statements:
 			buffer = stmt_buffer;
@@ -635,7 +640,7 @@ RecordBuffer* SnapshotData::getData(int id) const
 			return m_snapshot[i].data;
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 
@@ -795,7 +800,7 @@ void SnapshotData::putField(thread_db* tdbb, Record* record, const DumpField& fi
 				fb_assert(false);
 
 			blobIdx.bli_request->req_blobs.fastRemove();
-			blobIdx.bli_request = NULL;
+			blobIdx.bli_request = nullptr;
 		}
 	}
 
@@ -901,8 +906,8 @@ void Monitoring::putDatabase(thread_db* tdbb, SnapshotData::DumpRecord& record)
 	// crypt thread status
 	if (dbb->dbb_crypto_manager)
 	{
-		record.storeInteger(f_mon_db_crypt_page, dbb->dbb_crypto_manager->getCurrentPage());
-		record.storeInteger(f_mon_db_crypt_state, dbb->dbb_crypto_manager->getCurrentState());
+		record.storeInteger(f_mon_db_crypt_page, dbb->dbb_crypto_manager->getCurrentPage(tdbb));
+		record.storeInteger(f_mon_db_crypt_state, dbb->dbb_crypto_manager->getCurrentState(tdbb));
 	}
 
 	// database owner
@@ -911,13 +916,13 @@ void Monitoring::putDatabase(thread_db* tdbb, SnapshotData::DumpRecord& record)
 	// security database type
 	PathName secDbName;
 	string secDbType = "Other";
-	expandDatabaseName(dbb->dbb_config->getSecurityDatabase(), secDbName, NULL);
+	expandDatabaseName(dbb->dbb_config->getSecurityDatabase(), secDbName, nullptr);
 	if (secDbName == dbb->dbb_filename)
 		secDbType = "Self";
 	else
 	{
 		PathName defDbName;
-		expandDatabaseName(Config::getDefaultConfig()->getSecurityDatabase(), defDbName, NULL);
+		expandDatabaseName(Config::getDefaultConfig()->getSecurityDatabase(), defDbName, nullptr);
 		if (secDbName == defDbName)
 			secDbType = "Default";
 	}
@@ -969,7 +974,7 @@ void Monitoring::putAttachment(SnapshotData::DumpRecord& record, const Jrd::Atta
 	ISC_systemToUtf8(attName);
 
 	// user (MUST BE ALWAYS THE FIRST ITEM PASSED!)
-	record.storeString(f_mon_att_user, attachment->att_user->getUserName());
+	record.storeString(f_mon_att_user, attachment->getUserName());
 	// attachment id
 	record.storeInteger(f_mon_att_id, attachment->att_attachment_id);
 	// process id
@@ -980,7 +985,7 @@ void Monitoring::putAttachment(SnapshotData::DumpRecord& record, const Jrd::Atta
 	// attachment name
 	record.storeString(f_mon_att_name, attName);
 	// role
-	record.storeString(f_mon_att_role, attachment->att_user->getSqlRole());
+	record.storeString(f_mon_att_role, attachment->getSqlRole());
 	// remote protocol
 	record.storeString(f_mon_att_remote_proto, attachment->att_network_protocol);
 	// remote address
@@ -1039,7 +1044,7 @@ void Monitoring::putAttachment(SnapshotData::DumpRecord& record, const Jrd::Atta
 	// statement timeout, milliseconds
 	record.storeInteger(f_mon_att_stmt_timeout, attachment->getStatementTimeout());
 
-	if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_13_1)
+	if (dbb->getEncodedOdsVersion() >= ODS_13_1)
 	{
 		char timeZoneBuffer[TimeZoneUtil::MAX_SIZE];
 		TimeZoneUtil::format(timeZoneBuffer, sizeof(timeZoneBuffer), attachment->att_current_timezone);
@@ -1072,7 +1077,7 @@ void Monitoring::putTransaction(SnapshotData::DumpRecord& record, const jrd_tra*
 	record.reset(rel_mon_transactions);
 
 	int temp = mon_state_idle;
-	for (const jrd_req* request = transaction->tra_requests;
+	for (const Request* request = transaction->tra_requests;
 		request; request = request->req_tra_next)
 	{
 		if (request->req_transaction && (request->req_flags & req_active))
@@ -1134,10 +1139,54 @@ void Monitoring::putTransaction(SnapshotData::DumpRecord& record, const jrd_tra*
 }
 
 
-void Monitoring::putRequest(SnapshotData::DumpRecord& record, const jrd_req* request,
+void Monitoring::putStatement(SnapshotData::DumpRecord& record, const Statement* statement, const string& plan)
+{
+	fb_assert(statement);
+
+	record.reset(rel_mon_compiled_statements);
+
+	// compiled statement id
+	record.storeInteger(f_mon_cmp_stmt_id, statement->getStatementId());
+
+	// sql text
+	if (statement->sqlText)
+		record.storeString(f_mon_cmp_stmt_sql_text, *statement->sqlText);
+
+	// explained plan
+	if (plan.hasData())
+		record.storeString(f_mon_cmp_stmt_expl_plan, plan);
+
+	// object name/type
+	if (const auto routine = statement->getRoutine())
+	{
+		if (routine->getName().package.hasData())
+			record.storeString(f_mon_cmp_stmt_pkg_name, routine->getName().package);
+
+		record.storeString(f_mon_cmp_stmt_name, routine->getName().identifier);
+		record.storeInteger(f_mon_cmp_stmt_type, routine->getObjectType());
+	}
+	else if (!statement->triggerName.isEmpty())
+	{
+		record.storeString(f_mon_cmp_stmt_name, statement->triggerName);
+		record.storeInteger(f_mon_cmp_stmt_type, obj_trigger);
+	}
+
+	// statistics
+	const int stat_id = fb_utils::genUniqueId();
+	record.storeGlobalId(f_mon_cmp_stmt_stat_id, getGlobalId(stat_id));
+
+	record.write();
+
+	putMemoryUsage(record, statement->pool->getStatsGroup(), stat_id, stat_cmp_statement);
+}
+
+
+void Monitoring::putRequest(SnapshotData::DumpRecord& record, const Request* request,
 							const string& plan)
 {
 	fb_assert(request);
+
+	const auto dbb = request->req_attachment->att_database;
 
 	record.reset(rel_mon_statements);
 
@@ -1165,7 +1214,7 @@ void Monitoring::putRequest(SnapshotData::DumpRecord& record, const jrd_req* req
 	else
 		record.storeInteger(f_mon_stmt_state, mon_state_idle);
 
-	const JrdStatement* const statement = request->getStatement();
+	const Statement* const statement = request->getStatement();
 
 	// sql text
 	if (statement->sqlText)
@@ -1181,6 +1230,10 @@ void Monitoring::putRequest(SnapshotData::DumpRecord& record, const jrd_req* req
 
 	// statement timeout, milliseconds
 	record.storeInteger(f_mon_stmt_timeout, request->req_timeout);
+
+	if (dbb->getEncodedOdsVersion() >= ODS_13_1)
+		record.storeInteger(f_mon_stmt_cmp_stmt_id, statement->getStatementId());
+
 	record.write();
 
 	putStatistics(record, request->req_stats, stat_id, stat_statement);
@@ -1188,15 +1241,16 @@ void Monitoring::putRequest(SnapshotData::DumpRecord& record, const jrd_req* req
 }
 
 
-void Monitoring::putCall(SnapshotData::DumpRecord& record, const jrd_req* request)
+void Monitoring::putCall(SnapshotData::DumpRecord& record, const Request* request)
 {
 	fb_assert(request);
 
-	const jrd_req* initialRequest = request->req_caller;
+	const auto dbb = request->req_attachment->att_database;
+	auto initialRequest = request->req_caller;
+
 	while (initialRequest->req_caller)
-	{
 		initialRequest = initialRequest->req_caller;
-	}
+
 	fb_assert(initialRequest);
 
 	record.reset(rel_mon_calls);
@@ -1209,8 +1263,8 @@ void Monitoring::putCall(SnapshotData::DumpRecord& record, const jrd_req* reques
 	if (initialRequest != request->req_caller)
 		record.storeInteger(f_mon_call_caller_id, request->req_caller->getRequestId());
 
-	const JrdStatement* statement = request->getStatement();
-	const Routine* routine = statement->getRoutine();
+	const auto statement = request->getStatement();
+	const auto routine = statement->getRoutine();
 
 	// object name/type
 	if (routine)
@@ -1241,8 +1295,11 @@ void Monitoring::putCall(SnapshotData::DumpRecord& record, const jrd_req* reques
 		record.storeInteger(f_mon_call_src_column, request->req_src_column);
 	}
 
+	if (dbb->getEncodedOdsVersion() >= ODS_13_1)
+		record.storeInteger(f_mon_call_cmp_stmt_id, statement->getStatementId());
+
 	// statistics
-	const int stat_id = fb_utils::genUniqueId();
+	const auto stat_id = fb_utils::genUniqueId();
 	record.storeGlobalId(f_mon_call_stat_id, getGlobalId(stat_id));
 
 	record.write();
@@ -1256,7 +1313,7 @@ void Monitoring::putStatistics(SnapshotData::DumpRecord& record, const RuntimeSt
 							   int stat_id, int stat_group)
 {
 	// statistics id
-	const SINT64 id = getGlobalId(stat_id);
+	const auto id = getGlobalId(stat_id);
 
 	// physical I/O statistics
 	record.reset(rel_mon_io_stats);
@@ -1293,7 +1350,7 @@ void Monitoring::putStatistics(SnapshotData::DumpRecord& record, const RuntimeSt
 
 	for (RuntimeStatistics::Iterator iter = statistics.begin(); iter != statistics.end(); ++iter)
 	{
-		const SINT64 rec_stat_id = getGlobalId(fb_utils::genUniqueId());
+		const auto rec_stat_id = getGlobalId(fb_utils::genUniqueId());
 
 		record.reset(rel_mon_tab_stats);
 		record.storeGlobalId(f_mon_tab_stat_id, id);
@@ -1349,7 +1406,7 @@ void Monitoring::putMemoryUsage(SnapshotData::DumpRecord& record, const MemorySt
 								int stat_id, int stat_group)
 {
 	// statistics id
-	const SINT64 id = getGlobalId(stat_id);
+	const auto id = getGlobalId(stat_id);
 
 	// memory usage
 	record.reset(rel_mon_mem_usage);
@@ -1366,43 +1423,53 @@ void Monitoring::putMemoryUsage(SnapshotData::DumpRecord& record, const MemorySt
 
 void Monitoring::checkState(thread_db* tdbb)
 {
-	SET_TDBB(tdbb);
+	const auto dbb = tdbb->getDatabase();
+	const auto attachment = tdbb->getAttachment();
 
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
+	if (!(attachment && (attachment->att_flags & ATT_monitor_init)))
+		return;
 
-	if (attachment->att_flags & ATT_monitor_done)
+	if (const auto generation = checkGeneration(dbb, attachment))
+	{
+		// Dump attachment state
+		dumpAttachment(tdbb, attachment, generation);
+	}
+
+	if (attachment->att_flags & ATT_monitor_disabled)
 	{
 		// Enable signal handler for the monitoring stuff
-		attachment->att_flags &= ~ATT_monitor_done;
+		attachment->att_flags &= ~ATT_monitor_disabled;
 		LCK_convert(tdbb, attachment->att_monitor_lock, LCK_EX, LCK_WAIT);
 	}
 }
 
 
-void Monitoring::dumpAttachment(thread_db* tdbb, Attachment* attachment)
+void Monitoring::dumpAttachment(thread_db* tdbb, Attachment* attachment, ULONG generation)
 {
 	if (!attachment->att_user)
 		return;
 
-	Database* const dbb = tdbb->getDatabase();
-	MemoryPool& pool = *dbb->dbb_permanent;
+	const auto dbb = tdbb->getDatabase();
+	auto& pool = *dbb->dbb_permanent;
 
 	attachment->mergeStats();
 
-	const AttNumber att_id = attachment->att_attachment_id;
-	const MetaString& user_name = attachment->att_user->getUserName();
+	const auto attId = attachment->att_attachment_id;
+	const auto userName = attachment->getUserName();
 
 	fb_assert(dbb->dbb_monitoring_data);
 
-	MonitoringData::Guard guard(dbb->dbb_monitoring_data);
-	dbb->dbb_monitoring_data->cleanup(att_id);
+	attachment->att_monitor_generation = generation;
 
-	DumpWriter writer(dbb->dbb_monitoring_data, att_id, user_name.c_str());
+	MonitoringData::Guard guard(dbb->dbb_monitoring_data);
+	dbb->dbb_monitoring_data->cleanup(attId);
+
+	DumpWriter writer(dbb->dbb_monitoring_data, attId, userName.c_str(), generation);
 	SnapshotData::DumpRecord record(pool, writer);
 
 	putAttachment(record, attachment);
 
-	jrd_tra* transaction = NULL;
+	jrd_tra* transaction = nullptr;
 
 	// Transaction information
 
@@ -1417,14 +1484,14 @@ void Monitoring::dumpAttachment(thread_db* tdbb, Attachment* attachment)
 	for (transaction = attachment->att_transactions; transaction;
 		 transaction = transaction->tra_next)
 	{
-		for (jrd_req* request = transaction->tra_requests;
+		for (Request* request = transaction->tra_requests;
 			request && (request->req_flags & req_active) && (request->req_transaction == transaction);
 			request = request->req_caller)
 		{
 			request->adjustCallerStats();
 
 			if (!(request->getStatement()->flags &
-					(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)) &&
+					(Statement::FLAG_INTERNAL | Statement::FLAG_SYS_TRIGGER)) &&
 				request->req_caller)
 			{
 				putCall(record, request);
@@ -1432,18 +1499,29 @@ void Monitoring::dumpAttachment(thread_db* tdbb, Attachment* attachment)
 		}
 	}
 
+	if (dbb->getEncodedOdsVersion() >= ODS_13_1)
+	{
+		// Statement information
+
+		for (const auto statement : attachment->att_statements)
+		{
+			if (!(statement->flags & (Statement::FLAG_INTERNAL | Statement::FLAG_SYS_TRIGGER)))
+			{
+				const string plan = Optimizer::getPlan(tdbb, statement, true);
+				putStatement(record, statement, plan);
+			}
+		}
+	}
+
 	// Request information
 
-	for (const jrd_req* const* i = attachment->att_requests.begin();
-		 i != attachment->att_requests.end();
-		 ++i)
+	for (const auto request : attachment->att_requests)
 	{
-		const jrd_req* const request = *i;
+		const auto statement = request->getStatement();
 
-		if (!(request->getStatement()->flags &
-				(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)))
+		if (!(statement->flags & (Statement::FLAG_INTERNAL | Statement::FLAG_SYS_TRIGGER)))
 		{
-			const string plan = OPT_get_plan(tdbb, request, true);
+			const string plan = Optimizer::getPlan(tdbb, statement, true);
 			putRequest(record, request, plan);
 		}
 	}
@@ -1452,16 +1530,18 @@ void Monitoring::dumpAttachment(thread_db* tdbb, Attachment* attachment)
 
 void Monitoring::publishAttachment(thread_db* tdbb)
 {
-	Database* const dbb = tdbb->getDatabase();
-	Attachment* const attachment = tdbb->getAttachment();
+	const auto dbb = tdbb->getDatabase();
+	const auto attachment = tdbb->getAttachment();
 
-	const char* user_name = attachment->att_user ?
-		attachment->att_user->getUserName().c_str() : "";
+	const auto userName = attachment->getUserName().c_str();
 
 	fb_assert(dbb->dbb_monitoring_data);
 
+	const auto generation = attachment->att_monitor_generation =
+		dbb->getMonitorGeneration();
+
 	MonitoringData::Guard guard(dbb->dbb_monitoring_data);
-	dbb->dbb_monitoring_data->setup(attachment->att_attachment_id, user_name);
+	dbb->dbb_monitoring_data->setup(attachment->att_attachment_id, userName, generation);
 
 	attachment->att_flags |= ATT_monitor_init;
 }
@@ -1469,8 +1549,8 @@ void Monitoring::publishAttachment(thread_db* tdbb)
 
 void Monitoring::cleanupAttachment(thread_db* tdbb)
 {
-	Database* const dbb = tdbb->getDatabase();
-	Attachment* const attachment = tdbb->getAttachment();
+	const auto dbb = tdbb->getDatabase();
+	const auto attachment = tdbb->getAttachment();
 
 	if (attachment->att_flags & ATT_monitor_init)
 	{

@@ -151,6 +151,7 @@ Manager::Manager(const string& dbId,
 		}
 
 		ClumpletWriter dpb(ClumpletReader::dpbList, MAX_DPB_SIZE);
+		dpb.insertByte(isc_dpb_no_db_triggers, 1);
 
 		if (login.hasData())
 		{
@@ -185,12 +186,21 @@ Manager::Manager(const string& dbId,
 
 Manager::~Manager()
 {
-	for (auto& buffer : m_buffers)
+	fb_assert(m_shutdown);
+	fb_assert(m_replicas.isEmpty());
+
+	for (auto buffer : m_queue)
+		delete buffer;
+
+	for (auto buffer : m_buffers)
 		delete buffer;
 }
 
 void Manager::shutdown()
 {
+	if (m_shutdown)
+		return;
+
 	m_shutdown = true;
 
 	m_workingSemaphore.release();
@@ -198,23 +208,13 @@ void Manager::shutdown()
 
 	MutexLockGuard guard(m_queueMutex, FB_FUNCTION);
 
-	for (auto& buffer : m_queue)
-	{
-		if (buffer)
-		{
-			releaseBuffer(buffer);
-			buffer = nullptr;
-		}
-	}
-
 	// Detach from synchronous replicas
 
-	FbLocalStatus localStatus;
-
-	for (auto& iter : m_replicas)
+	for (auto iter : m_replicas)
 	{
-		iter->replicator->close(&localStatus);
-		iter->attachment->detach(&localStatus);
+		iter->replicator->release();
+		iter->attachment->release();
+		delete iter;
 	}
 
 	m_replicas.clear();
@@ -239,13 +239,16 @@ void Manager::releaseBuffer(UCharBuffer* buffer)
 
 	MutexLockGuard guard(m_buffersMutex, FB_FUNCTION);
 
-	fb_assert(!m_buffers.exist(buffer));
-	m_buffers.add(buffer);
+	if (!m_buffers.exist(buffer))
+		m_buffers.add(buffer);
 }
 
-void Manager::flush(UCharBuffer* buffer, bool sync)
+void Manager::flush(UCharBuffer* buffer, bool sync, bool prepare)
 {
+	fb_assert(!m_shutdown);
 	fb_assert(buffer && buffer->hasData());
+
+	const auto prepareBuffer = prepare ? buffer : nullptr;
 
 	MutexLockGuard guard(m_queueMutex, FB_FUNCTION);
 
@@ -256,10 +259,9 @@ void Manager::flush(UCharBuffer* buffer, bool sync)
 	// If the background thread is lagging too far behind,
 	// replicate packets synchronously rather than relying
 	// on the background thread to catch up any time soon
-	if (!sync && m_queueSize > MAX_BG_WRITER_LAG)
-		sync = true;
+	const bool lagging = (m_queueSize > MAX_BG_WRITER_LAG);
 
-	if (sync)
+	if (sync || prepare || lagging)
 	{
 		const auto tdbb = JRD_get_thread_data();
 		const auto dbb = tdbb->getDatabase();
@@ -268,29 +270,54 @@ void Manager::flush(UCharBuffer* buffer, bool sync)
 		{
 			if (buffer)
 			{
-				const auto length = (ULONG) buffer->getCount();
+				auto length = (ULONG) buffer->getCount();
+				fb_assert(length);
+				bool hasData = true;
 
 				if (m_changeLog)
 				{
-					const auto sequence = m_changeLog->write(length, buffer->begin(), true);
-
-					if (sequence != m_sequence)
+					if (prepareBuffer == buffer)
 					{
-						dbb->setReplSequence(tdbb, sequence);
-						m_sequence = sequence;
+						// Remove the opPrepareTransaction command from the journal
+						fb_assert(buffer->back() == opPrepareTransaction);
+
+						const auto block = (Block*) buffer->begin();
+						block->length -= sizeof(UCHAR);
+						length -= sizeof(UCHAR);
+						hasData = (block->length != 0);
+					}
+
+					if (hasData)
+					{
+						const auto sequence = m_changeLog->write(length, buffer->begin(), sync);
+
+						if (sequence != m_sequence)
+						{
+							dbb->setReplSequence(tdbb, sequence);
+							m_sequence = sequence;
+						}
+					}
+
+					if (prepareBuffer == buffer)
+					{
+						const auto block = (Block*) buffer->begin();
+						block->length += sizeof(UCHAR);
+						length += sizeof(UCHAR);
 					}
 				}
 
-				for (auto& iter : m_replicas)
+				for (auto iter : m_replicas)
 				{
-					iter->status.check();
-					iter->replicator->process(&iter->status, length, buffer->begin());
-					iter->status.check();
+					if (iter->status.isSuccess())
+						iter->replicator->process(&iter->status, length, buffer->begin());
 				}
 
 				m_queueSize -= length;
 				releaseBuffer(buffer);
-				buffer = NULL;
+				buffer = nullptr;
+
+				for (auto iter : m_replicas)
+					iter->status.check();
 			}
 		}
 
@@ -326,21 +353,17 @@ void Manager::bgWriter()
 					fb_assert(length);
 
 					if (m_changeLog)
-					{
 						m_changeLog->write(length, buffer->begin(), false);
-					}
 
-					for (auto& iter : m_replicas)
+					for (auto iter : m_replicas)
 					{
 						if (iter->status.isSuccess())
-						{
 							iter->replicator->process(&iter->status, length, buffer->begin());
-						}
 					}
 
 					m_queueSize -= length;
 					releaseBuffer(buffer);
-					buffer = NULL;
+					buffer = nullptr;
 				}
 			}
 

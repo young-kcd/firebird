@@ -115,6 +115,18 @@ namespace Firebird
 			}
 		}
 
+		RefPtr(RefPtr&& r)
+			: ptr(r.ptr)
+		{
+			r.ptr = nullptr;
+		}
+
+		RefPtr(MemoryPool&, RefPtr&& r)
+			: ptr(r.ptr)
+		{
+			r.ptr = nullptr;
+		}
+
 		~RefPtr()
 		{
 			if (ptr)
@@ -132,9 +144,19 @@ namespace Firebird
 
 		void moveFrom(RefPtr& r)
 		{
-			assign(NULL);
-			ptr = r.ptr;
-			r.ptr = NULL;
+			if (this != &r)
+			{
+				assign(nullptr);
+				ptr = r.ptr;
+				r.ptr = nullptr;
+			}
+		}
+
+		T* clear()		// nullify pointer w/o calling release
+		{
+			T* rc = ptr;
+			ptr = NULL;
+			return rc;
 		}
 
 		T* operator=(T* p)
@@ -145,6 +167,12 @@ namespace Firebird
 		T* operator=(const RefPtr& r)
 		{
 			return assign(r.ptr);
+		}
+
+		T* operator=(RefPtr&& r)
+		{
+			moveFrom(r);
+			return ptr;
 		}
 
 		operator T*()
@@ -192,6 +220,11 @@ namespace Firebird
 			return ptr;
 		}
 
+		const T* getPtr() const
+		{
+			return ptr;
+		}
+
 	protected:
 		T* assign(T* const p)
 		{
@@ -217,6 +250,18 @@ namespace Firebird
 	private:
 		T* ptr;
 	};
+
+	template <typename T>
+	RefPtr<T> makeRef(T* o)
+	{
+		return RefPtr<T>(o);
+	}
+
+	template <typename T>
+	RefPtr<T> makeNoIncRef(T* arg)
+	{
+		return RefPtr<T>(REF_NO_INCR, arg);
+	}
 
 	template <typename T>
 	class AnyRef : public T, public RefCounted

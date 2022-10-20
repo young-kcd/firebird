@@ -7,6 +7,23 @@
 #define CLOOP_CARG
 #endif
 
+#ifndef CLOOP_NOEXCEPT
+#if __cplusplus >= 201103L
+#define CLOOP_NOEXCEPT noexcept
+#else
+#define CLOOP_NOEXCEPT throw()
+#endif
+#endif
+
+
+#ifndef CLOOP_CONSTEXPR
+#if __cplusplus >= 201103L
+#define CLOOP_CONSTEXPR constexpr
+#else
+#define CLOOP_CONSTEXPR const
+#endif
+#endif
+
 
 namespace Firebird
 {
@@ -121,8 +138,13 @@ namespace Firebird
 	class IReplicatedRecord;
 	class IReplicatedTransaction;
 	class IReplicatedSession;
+	class IProfilerPlugin;
+	class IProfilerSession;
+	class IProfilerStats;
 
 	// Interfaces declarations
+
+#define FIREBIRD_IVERSIONED_VERSION 1u
 
 	class IVersioned
 	{
@@ -146,16 +168,18 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 1;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IVERSIONED_VERSION;
 	};
+
+#define FIREBIRD_IREFERENCE_COUNTED_VERSION 2u
 
 	class IReferenceCounted : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *addRef)(IReferenceCounted* self) throw();
-			int (CLOOP_CARG *release)(IReferenceCounted* self) throw();
+			void (CLOOP_CARG *addRef)(IReferenceCounted* self) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *release)(IReferenceCounted* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -169,7 +193,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IREFERENCE_COUNTED_VERSION;
 
 		void addRef()
 		{
@@ -183,12 +207,14 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IDISPOSABLE_VERSION 2u
+
 	class IDisposable : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *dispose)(IDisposable* self) throw();
+			void (CLOOP_CARG *dispose)(IDisposable* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -202,7 +228,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IDISPOSABLE_VERSION;
 
 		void dispose()
 		{
@@ -210,20 +236,22 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ISTATUS_VERSION 3u
+
 	class IStatus : public IDisposable
 	{
 	public:
 		struct VTable : public IDisposable::VTable
 		{
-			void (CLOOP_CARG *init)(IStatus* self) throw();
-			unsigned (CLOOP_CARG *getState)(const IStatus* self) throw();
-			void (CLOOP_CARG *setErrors2)(IStatus* self, unsigned length, const intptr_t* value) throw();
-			void (CLOOP_CARG *setWarnings2)(IStatus* self, unsigned length, const intptr_t* value) throw();
-			void (CLOOP_CARG *setErrors)(IStatus* self, const intptr_t* value) throw();
-			void (CLOOP_CARG *setWarnings)(IStatus* self, const intptr_t* value) throw();
-			const intptr_t* (CLOOP_CARG *getErrors)(const IStatus* self) throw();
-			const intptr_t* (CLOOP_CARG *getWarnings)(const IStatus* self) throw();
-			IStatus* (CLOOP_CARG *clone)(const IStatus* self) throw();
+			void (CLOOP_CARG *init)(IStatus* self) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getState)(const IStatus* self) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setErrors2)(IStatus* self, unsigned length, const intptr_t* value) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setWarnings2)(IStatus* self, unsigned length, const intptr_t* value) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setErrors)(IStatus* self, const intptr_t* value) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setWarnings)(IStatus* self, const intptr_t* value) CLOOP_NOEXCEPT;
+			const intptr_t* (CLOOP_CARG *getErrors)(const IStatus* self) CLOOP_NOEXCEPT;
+			const intptr_t* (CLOOP_CARG *getWarnings)(const IStatus* self) CLOOP_NOEXCEPT;
+			IStatus* (CLOOP_CARG *clone)(const IStatus* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -237,14 +265,14 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ISTATUS_VERSION;
 
-		static const unsigned STATE_WARNINGS = 0x1;
-		static const unsigned STATE_ERRORS = 0x2;
-		static const int RESULT_ERROR = -1;
-		static const int RESULT_OK = 0;
-		static const int RESULT_NO_DATA = 1;
-		static const int RESULT_SEGMENT = 2;
+		static CLOOP_CONSTEXPR unsigned STATE_WARNINGS = 0x1;
+		static CLOOP_CONSTEXPR unsigned STATE_ERRORS = 0x2;
+		static CLOOP_CONSTEXPR int RESULT_ERROR = -1;
+		static CLOOP_CONSTEXPR int RESULT_OK = 0;
+		static CLOOP_CONSTEXPR int RESULT_NO_DATA = 1;
+		static CLOOP_CONSTEXPR int RESULT_SEGMENT = 2;
 
 		void init()
 		{
@@ -296,23 +324,25 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IMASTER_VERSION 2u
+
 	class IMaster : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			IStatus* (CLOOP_CARG *getStatus)(IMaster* self) throw();
-			IProvider* (CLOOP_CARG *getDispatcher)(IMaster* self) throw();
-			IPluginManager* (CLOOP_CARG *getPluginManager)(IMaster* self) throw();
-			ITimerControl* (CLOOP_CARG *getTimerControl)(IMaster* self) throw();
-			IDtc* (CLOOP_CARG *getDtc)(IMaster* self) throw();
-			IAttachment* (CLOOP_CARG *registerAttachment)(IMaster* self, IProvider* provider, IAttachment* attachment) throw();
-			ITransaction* (CLOOP_CARG *registerTransaction)(IMaster* self, IAttachment* attachment, ITransaction* transaction) throw();
-			IMetadataBuilder* (CLOOP_CARG *getMetadataBuilder)(IMaster* self, IStatus* status, unsigned fieldCount) throw();
-			int (CLOOP_CARG *serverMode)(IMaster* self, int mode) throw();
-			IUtil* (CLOOP_CARG *getUtilInterface)(IMaster* self) throw();
-			IConfigManager* (CLOOP_CARG *getConfigManager)(IMaster* self) throw();
-			FB_BOOLEAN (CLOOP_CARG *getProcessExiting)(IMaster* self) throw();
+			IStatus* (CLOOP_CARG *getStatus)(IMaster* self) CLOOP_NOEXCEPT;
+			IProvider* (CLOOP_CARG *getDispatcher)(IMaster* self) CLOOP_NOEXCEPT;
+			IPluginManager* (CLOOP_CARG *getPluginManager)(IMaster* self) CLOOP_NOEXCEPT;
+			ITimerControl* (CLOOP_CARG *getTimerControl)(IMaster* self) CLOOP_NOEXCEPT;
+			IDtc* (CLOOP_CARG *getDtc)(IMaster* self) CLOOP_NOEXCEPT;
+			IAttachment* (CLOOP_CARG *registerAttachment)(IMaster* self, IProvider* provider, IAttachment* attachment) CLOOP_NOEXCEPT;
+			ITransaction* (CLOOP_CARG *registerTransaction)(IMaster* self, IAttachment* attachment, ITransaction* transaction) CLOOP_NOEXCEPT;
+			IMetadataBuilder* (CLOOP_CARG *getMetadataBuilder)(IMaster* self, IStatus* status, unsigned fieldCount) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *serverMode)(IMaster* self, int mode) CLOOP_NOEXCEPT;
+			IUtil* (CLOOP_CARG *getUtilInterface)(IMaster* self) CLOOP_NOEXCEPT;
+			IConfigManager* (CLOOP_CARG *getConfigManager)(IMaster* self) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *getProcessExiting)(IMaster* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -326,7 +356,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IMASTER_VERSION;
 
 		IStatus* getStatus()
 		{
@@ -403,13 +433,15 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IPLUGIN_BASE_VERSION 3u
+
 	class IPluginBase : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *setOwner)(IPluginBase* self, IReferenceCounted* r) throw();
-			IReferenceCounted* (CLOOP_CARG *getOwner)(IPluginBase* self) throw();
+			void (CLOOP_CARG *setOwner)(IPluginBase* self, IReferenceCounted* r) CLOOP_NOEXCEPT;
+			IReferenceCounted* (CLOOP_CARG *getOwner)(IPluginBase* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -423,7 +455,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IPLUGIN_BASE_VERSION;
 
 		void setOwner(IReferenceCounted* r)
 		{
@@ -437,16 +469,18 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IPLUGIN_SET_VERSION 3u
+
 	class IPluginSet : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			const char* (CLOOP_CARG *getName)(const IPluginSet* self) throw();
-			const char* (CLOOP_CARG *getModuleName)(const IPluginSet* self) throw();
-			IPluginBase* (CLOOP_CARG *getPlugin)(IPluginSet* self, IStatus* status) throw();
-			void (CLOOP_CARG *next)(IPluginSet* self, IStatus* status) throw();
-			void (CLOOP_CARG *set)(IPluginSet* self, IStatus* status, const char* s) throw();
+			const char* (CLOOP_CARG *getName)(const IPluginSet* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getModuleName)(const IPluginSet* self) CLOOP_NOEXCEPT;
+			IPluginBase* (CLOOP_CARG *getPlugin)(IPluginSet* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *next)(IPluginSet* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *set)(IPluginSet* self, IStatus* status, const char* s) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -460,7 +494,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IPLUGIN_SET_VERSION;
 
 		const char* getName() const
 		{
@@ -497,16 +531,18 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ICONFIG_ENTRY_VERSION 3u
+
 	class IConfigEntry : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			const char* (CLOOP_CARG *getName)(IConfigEntry* self) throw();
-			const char* (CLOOP_CARG *getValue)(IConfigEntry* self) throw();
-			ISC_INT64 (CLOOP_CARG *getIntValue)(IConfigEntry* self) throw();
-			FB_BOOLEAN (CLOOP_CARG *getBoolValue)(IConfigEntry* self) throw();
-			IConfig* (CLOOP_CARG *getSubConfig)(IConfigEntry* self, IStatus* status) throw();
+			const char* (CLOOP_CARG *getName)(IConfigEntry* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getValue)(IConfigEntry* self) CLOOP_NOEXCEPT;
+			ISC_INT64 (CLOOP_CARG *getIntValue)(IConfigEntry* self) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *getBoolValue)(IConfigEntry* self) CLOOP_NOEXCEPT;
+			IConfig* (CLOOP_CARG *getSubConfig)(IConfigEntry* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -520,7 +556,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ICONFIG_ENTRY_VERSION;
 
 		const char* getName()
 		{
@@ -555,14 +591,16 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ICONFIG_VERSION 3u
+
 	class IConfig : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			IConfigEntry* (CLOOP_CARG *find)(IConfig* self, IStatus* status, const char* name) throw();
-			IConfigEntry* (CLOOP_CARG *findValue)(IConfig* self, IStatus* status, const char* name, const char* value) throw();
-			IConfigEntry* (CLOOP_CARG *findPos)(IConfig* self, IStatus* status, const char* name, unsigned pos) throw();
+			IConfigEntry* (CLOOP_CARG *find)(IConfig* self, IStatus* status, const char* name) CLOOP_NOEXCEPT;
+			IConfigEntry* (CLOOP_CARG *findValue)(IConfig* self, IStatus* status, const char* name, const char* value) CLOOP_NOEXCEPT;
+			IConfigEntry* (CLOOP_CARG *findPos)(IConfig* self, IStatus* status, const char* name, unsigned pos) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -576,7 +614,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ICONFIG_VERSION;
 
 		template <typename StatusType> IConfigEntry* find(StatusType* status, const char* name)
 		{
@@ -603,16 +641,18 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IFIREBIRD_CONF_VERSION 4u
+
 	class IFirebirdConf : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			unsigned (CLOOP_CARG *getKey)(IFirebirdConf* self, const char* name) throw();
-			ISC_INT64 (CLOOP_CARG *asInteger)(IFirebirdConf* self, unsigned key) throw();
-			const char* (CLOOP_CARG *asString)(IFirebirdConf* self, unsigned key) throw();
-			FB_BOOLEAN (CLOOP_CARG *asBoolean)(IFirebirdConf* self, unsigned key) throw();
-			unsigned (CLOOP_CARG *getVersion)(IFirebirdConf* self, IStatus* status) throw();
+			unsigned (CLOOP_CARG *getKey)(IFirebirdConf* self, const char* name) CLOOP_NOEXCEPT;
+			ISC_INT64 (CLOOP_CARG *asInteger)(IFirebirdConf* self, unsigned key) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *asString)(IFirebirdConf* self, unsigned key) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *asBoolean)(IFirebirdConf* self, unsigned key) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getVersion)(IFirebirdConf* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -626,7 +666,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 4;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IFIREBIRD_CONF_VERSION;
 
 		unsigned getKey(const char* name)
 		{
@@ -667,15 +707,17 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IPLUGIN_CONFIG_VERSION 3u
+
 	class IPluginConfig : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			const char* (CLOOP_CARG *getConfigFileName)(IPluginConfig* self) throw();
-			IConfig* (CLOOP_CARG *getDefaultConfig)(IPluginConfig* self, IStatus* status) throw();
-			IFirebirdConf* (CLOOP_CARG *getFirebirdConf)(IPluginConfig* self, IStatus* status) throw();
-			void (CLOOP_CARG *setReleaseDelay)(IPluginConfig* self, IStatus* status, ISC_UINT64 microSeconds) throw();
+			const char* (CLOOP_CARG *getConfigFileName)(IPluginConfig* self) CLOOP_NOEXCEPT;
+			IConfig* (CLOOP_CARG *getDefaultConfig)(IPluginConfig* self, IStatus* status) CLOOP_NOEXCEPT;
+			IFirebirdConf* (CLOOP_CARG *getFirebirdConf)(IPluginConfig* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setReleaseDelay)(IPluginConfig* self, IStatus* status, ISC_UINT64 microSeconds) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -689,7 +731,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IPLUGIN_CONFIG_VERSION;
 
 		const char* getConfigFileName()
 		{
@@ -721,12 +763,14 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IPLUGIN_FACTORY_VERSION 2u
+
 	class IPluginFactory : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			IPluginBase* (CLOOP_CARG *createPlugin)(IPluginFactory* self, IStatus* status, IPluginConfig* factoryParameter) throw();
+			IPluginBase* (CLOOP_CARG *createPlugin)(IPluginFactory* self, IStatus* status, IPluginConfig* factoryParameter) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -740,7 +784,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IPLUGIN_FACTORY_VERSION;
 
 		template <typename StatusType> IPluginBase* createPlugin(StatusType* status, IPluginConfig* factoryParameter)
 		{
@@ -751,13 +795,15 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IPLUGIN_MODULE_VERSION 3u
+
 	class IPluginModule : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *doClean)(IPluginModule* self) throw();
-			void (CLOOP_CARG *threadDetach)(IPluginModule* self) throw();
+			void (CLOOP_CARG *doClean)(IPluginModule* self) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *threadDetach)(IPluginModule* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -771,7 +817,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IPLUGIN_MODULE_VERSION;
 
 		void doClean()
 		{
@@ -788,17 +834,19 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IPLUGIN_MANAGER_VERSION 2u
+
 	class IPluginManager : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *registerPluginFactory)(IPluginManager* self, unsigned pluginType, const char* defaultName, IPluginFactory* factory) throw();
-			void (CLOOP_CARG *registerModule)(IPluginManager* self, IPluginModule* cleanup) throw();
-			void (CLOOP_CARG *unregisterModule)(IPluginManager* self, IPluginModule* cleanup) throw();
-			IPluginSet* (CLOOP_CARG *getPlugins)(IPluginManager* self, IStatus* status, unsigned pluginType, const char* namesList, IFirebirdConf* firebirdConf) throw();
-			IConfig* (CLOOP_CARG *getConfig)(IPluginManager* self, IStatus* status, const char* filename) throw();
-			void (CLOOP_CARG *releasePlugin)(IPluginManager* self, IPluginBase* plugin) throw();
+			void (CLOOP_CARG *registerPluginFactory)(IPluginManager* self, unsigned pluginType, const char* defaultName, IPluginFactory* factory) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *registerModule)(IPluginManager* self, IPluginModule* cleanup) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *unregisterModule)(IPluginManager* self, IPluginModule* cleanup) CLOOP_NOEXCEPT;
+			IPluginSet* (CLOOP_CARG *getPlugins)(IPluginManager* self, IStatus* status, unsigned pluginType, const char* namesList, IFirebirdConf* firebirdConf) CLOOP_NOEXCEPT;
+			IConfig* (CLOOP_CARG *getConfig)(IPluginManager* self, IStatus* status, const char* filename) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *releasePlugin)(IPluginManager* self, IPluginBase* plugin) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -812,20 +860,21 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IPLUGIN_MANAGER_VERSION;
 
-		static const unsigned TYPE_PROVIDER = 1;
-		static const unsigned TYPE_FIRST_NON_LIB = 2;
-		static const unsigned TYPE_AUTH_SERVER = 3;
-		static const unsigned TYPE_AUTH_CLIENT = 4;
-		static const unsigned TYPE_AUTH_USER_MANAGEMENT = 5;
-		static const unsigned TYPE_EXTERNAL_ENGINE = 6;
-		static const unsigned TYPE_TRACE = 7;
-		static const unsigned TYPE_WIRE_CRYPT = 8;
-		static const unsigned TYPE_DB_CRYPT = 9;
-		static const unsigned TYPE_KEY_HOLDER = 10;
-		static const unsigned TYPE_REPLICATOR = 11;
-		static const unsigned TYPE_COUNT = 12;
+		static CLOOP_CONSTEXPR unsigned TYPE_PROVIDER = 1;
+		static CLOOP_CONSTEXPR unsigned TYPE_FIRST_NON_LIB = 2;
+		static CLOOP_CONSTEXPR unsigned TYPE_AUTH_SERVER = 3;
+		static CLOOP_CONSTEXPR unsigned TYPE_AUTH_CLIENT = 4;
+		static CLOOP_CONSTEXPR unsigned TYPE_AUTH_USER_MANAGEMENT = 5;
+		static CLOOP_CONSTEXPR unsigned TYPE_EXTERNAL_ENGINE = 6;
+		static CLOOP_CONSTEXPR unsigned TYPE_TRACE = 7;
+		static CLOOP_CONSTEXPR unsigned TYPE_WIRE_CRYPT = 8;
+		static CLOOP_CONSTEXPR unsigned TYPE_DB_CRYPT = 9;
+		static CLOOP_CONSTEXPR unsigned TYPE_KEY_HOLDER = 10;
+		static CLOOP_CONSTEXPR unsigned TYPE_REPLICATOR = 11;
+		static CLOOP_CONSTEXPR unsigned TYPE_PROFILER = 12;
+		static CLOOP_CONSTEXPR unsigned TYPE_COUNT = 13;
 
 		void registerPluginFactory(unsigned pluginType, const char* defaultName, IPluginFactory* factory)
 		{
@@ -864,15 +913,17 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ICRYPT_KEY_VERSION 2u
+
 	class ICryptKey : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *setSymmetric)(ICryptKey* self, IStatus* status, const char* type, unsigned keyLength, const void* key) throw();
-			void (CLOOP_CARG *setAsymmetric)(ICryptKey* self, IStatus* status, const char* type, unsigned encryptKeyLength, const void* encryptKey, unsigned decryptKeyLength, const void* decryptKey) throw();
-			const void* (CLOOP_CARG *getEncryptKey)(ICryptKey* self, unsigned* length) throw();
-			const void* (CLOOP_CARG *getDecryptKey)(ICryptKey* self, unsigned* length) throw();
+			void (CLOOP_CARG *setSymmetric)(ICryptKey* self, IStatus* status, const char* type, unsigned keyLength, const void* key) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setAsymmetric)(ICryptKey* self, IStatus* status, const char* type, unsigned encryptKeyLength, const void* encryptKey, unsigned decryptKeyLength, const void* decryptKey) CLOOP_NOEXCEPT;
+			const void* (CLOOP_CARG *getEncryptKey)(ICryptKey* self, unsigned* length) CLOOP_NOEXCEPT;
+			const void* (CLOOP_CARG *getDecryptKey)(ICryptKey* self, unsigned* length) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -886,7 +937,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ICRYPT_KEY_VERSION;
 
 		template <typename StatusType> void setSymmetric(StatusType* status, const char* type, unsigned keyLength, const void* key)
 		{
@@ -915,18 +966,20 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ICONFIG_MANAGER_VERSION 3u
+
 	class IConfigManager : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			const char* (CLOOP_CARG *getDirectory)(IConfigManager* self, unsigned code) throw();
-			IFirebirdConf* (CLOOP_CARG *getFirebirdConf)(IConfigManager* self) throw();
-			IFirebirdConf* (CLOOP_CARG *getDatabaseConf)(IConfigManager* self, const char* dbName) throw();
-			IConfig* (CLOOP_CARG *getPluginConfig)(IConfigManager* self, const char* configuredPlugin) throw();
-			const char* (CLOOP_CARG *getInstallDirectory)(IConfigManager* self) throw();
-			const char* (CLOOP_CARG *getRootDirectory)(IConfigManager* self) throw();
-			const char* (CLOOP_CARG *getDefaultSecurityDb)(IConfigManager* self) throw();
+			const char* (CLOOP_CARG *getDirectory)(IConfigManager* self, unsigned code) CLOOP_NOEXCEPT;
+			IFirebirdConf* (CLOOP_CARG *getFirebirdConf)(IConfigManager* self) CLOOP_NOEXCEPT;
+			IFirebirdConf* (CLOOP_CARG *getDatabaseConf)(IConfigManager* self, const char* dbName) CLOOP_NOEXCEPT;
+			IConfig* (CLOOP_CARG *getPluginConfig)(IConfigManager* self, const char* configuredPlugin) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getInstallDirectory)(IConfigManager* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getRootDirectory)(IConfigManager* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getDefaultSecurityDb)(IConfigManager* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -940,27 +993,27 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ICONFIG_MANAGER_VERSION;
 
-		static const unsigned DIR_BIN = 0;
-		static const unsigned DIR_SBIN = 1;
-		static const unsigned DIR_CONF = 2;
-		static const unsigned DIR_LIB = 3;
-		static const unsigned DIR_INC = 4;
-		static const unsigned DIR_DOC = 5;
-		static const unsigned DIR_UDF = 6;
-		static const unsigned DIR_SAMPLE = 7;
-		static const unsigned DIR_SAMPLEDB = 8;
-		static const unsigned DIR_HELP = 9;
-		static const unsigned DIR_INTL = 10;
-		static const unsigned DIR_MISC = 11;
-		static const unsigned DIR_SECDB = 12;
-		static const unsigned DIR_MSG = 13;
-		static const unsigned DIR_LOG = 14;
-		static const unsigned DIR_GUARD = 15;
-		static const unsigned DIR_PLUGINS = 16;
-		static const unsigned DIR_TZDATA = 17;
-		static const unsigned DIR_COUNT = 18;
+		static CLOOP_CONSTEXPR unsigned DIR_BIN = 0;
+		static CLOOP_CONSTEXPR unsigned DIR_SBIN = 1;
+		static CLOOP_CONSTEXPR unsigned DIR_CONF = 2;
+		static CLOOP_CONSTEXPR unsigned DIR_LIB = 3;
+		static CLOOP_CONSTEXPR unsigned DIR_INC = 4;
+		static CLOOP_CONSTEXPR unsigned DIR_DOC = 5;
+		static CLOOP_CONSTEXPR unsigned DIR_UDF = 6;
+		static CLOOP_CONSTEXPR unsigned DIR_SAMPLE = 7;
+		static CLOOP_CONSTEXPR unsigned DIR_SAMPLEDB = 8;
+		static CLOOP_CONSTEXPR unsigned DIR_HELP = 9;
+		static CLOOP_CONSTEXPR unsigned DIR_INTL = 10;
+		static CLOOP_CONSTEXPR unsigned DIR_MISC = 11;
+		static CLOOP_CONSTEXPR unsigned DIR_SECDB = 12;
+		static CLOOP_CONSTEXPR unsigned DIR_MSG = 13;
+		static CLOOP_CONSTEXPR unsigned DIR_LOG = 14;
+		static CLOOP_CONSTEXPR unsigned DIR_GUARD = 15;
+		static CLOOP_CONSTEXPR unsigned DIR_PLUGINS = 16;
+		static CLOOP_CONSTEXPR unsigned DIR_TZDATA = 17;
+		static CLOOP_CONSTEXPR unsigned DIR_COUNT = 18;
 
 		const char* getDirectory(unsigned code)
 		{
@@ -1009,12 +1062,14 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IEVENT_CALLBACK_VERSION 3u
+
 	class IEventCallback : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *eventCallbackFunction)(IEventCallback* self, unsigned length, const unsigned char* events) throw();
+			void (CLOOP_CARG *eventCallbackFunction)(IEventCallback* self, unsigned length, const unsigned char* events) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -1028,7 +1083,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IEVENT_CALLBACK_VERSION;
 
 		void eventCallbackFunction(unsigned length, const unsigned char* events)
 		{
@@ -1036,17 +1091,21 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IBLOB_VERSION 4u
+
 	class IBlob : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *getInfo)(IBlob* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw();
-			int (CLOOP_CARG *getSegment)(IBlob* self, IStatus* status, unsigned bufferLength, void* buffer, unsigned* segmentLength) throw();
-			void (CLOOP_CARG *putSegment)(IBlob* self, IStatus* status, unsigned length, const void* buffer) throw();
-			void (CLOOP_CARG *cancel)(IBlob* self, IStatus* status) throw();
-			void (CLOOP_CARG *close)(IBlob* self, IStatus* status) throw();
-			int (CLOOP_CARG *seek)(IBlob* self, IStatus* status, int mode, int offset) throw();
+			void (CLOOP_CARG *getInfo)(IBlob* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *getSegment)(IBlob* self, IStatus* status, unsigned bufferLength, void* buffer, unsigned* segmentLength) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *putSegment)(IBlob* self, IStatus* status, unsigned length, const void* buffer) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *deprecatedCancel)(IBlob* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *deprecatedClose)(IBlob* self, IStatus* status) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *seek)(IBlob* self, IStatus* status, int mode, int offset) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *cancel)(IBlob* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *close)(IBlob* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -1060,7 +1119,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IBLOB_VERSION;
 
 		template <typename StatusType> void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
@@ -1084,17 +1143,17 @@ namespace Firebird
 			StatusType::checkException(status);
 		}
 
-		template <typename StatusType> void cancel(StatusType* status)
+		template <typename StatusType> void deprecatedCancel(StatusType* status)
 		{
 			StatusType::clearException(status);
-			static_cast<VTable*>(this->cloopVTable)->cancel(this, status);
+			static_cast<VTable*>(this->cloopVTable)->deprecatedCancel(this, status);
 			StatusType::checkException(status);
 		}
 
-		template <typename StatusType> void close(StatusType* status)
+		template <typename StatusType> void deprecatedClose(StatusType* status)
 		{
 			StatusType::clearException(status);
-			static_cast<VTable*>(this->cloopVTable)->close(this, status);
+			static_cast<VTable*>(this->cloopVTable)->deprecatedClose(this, status);
 			StatusType::checkException(status);
 		}
 
@@ -1105,23 +1164,64 @@ namespace Firebird
 			StatusType::checkException(status);
 			return ret;
 		}
+
+		template <typename StatusType> void cancel(StatusType* status)
+		{
+			if (cloopVTable->version < 4)
+			{
+				if (FB_UsedInYValve) {
+					StatusType::setVersionError(status, "IBlob", cloopVTable->version, 4);
+					StatusType::checkException(status);
+				}
+				else {
+					deprecatedCancel(status);
+				}
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->cancel(this, status);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void close(StatusType* status)
+		{
+			if (cloopVTable->version < 4)
+			{
+				if (FB_UsedInYValve) {
+					StatusType::setVersionError(status, "IBlob", cloopVTable->version, 4);
+					StatusType::checkException(status);
+				}
+				else {
+					deprecatedClose(status);
+				}
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->close(this, status);
+			StatusType::checkException(status);
+		}
 	};
+
+#define FIREBIRD_ITRANSACTION_VERSION 4u
 
 	class ITransaction : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *getInfo)(ITransaction* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw();
-			void (CLOOP_CARG *prepare)(ITransaction* self, IStatus* status, unsigned msgLength, const unsigned char* message) throw();
-			void (CLOOP_CARG *commit)(ITransaction* self, IStatus* status) throw();
-			void (CLOOP_CARG *commitRetaining)(ITransaction* self, IStatus* status) throw();
-			void (CLOOP_CARG *rollback)(ITransaction* self, IStatus* status) throw();
-			void (CLOOP_CARG *rollbackRetaining)(ITransaction* self, IStatus* status) throw();
-			void (CLOOP_CARG *disconnect)(ITransaction* self, IStatus* status) throw();
-			ITransaction* (CLOOP_CARG *join)(ITransaction* self, IStatus* status, ITransaction* transaction) throw();
-			ITransaction* (CLOOP_CARG *validate)(ITransaction* self, IStatus* status, IAttachment* attachment) throw();
-			ITransaction* (CLOOP_CARG *enterDtc)(ITransaction* self, IStatus* status) throw();
+			void (CLOOP_CARG *getInfo)(ITransaction* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *prepare)(ITransaction* self, IStatus* status, unsigned msgLength, const unsigned char* message) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *deprecatedCommit)(ITransaction* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *commitRetaining)(ITransaction* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *deprecatedRollback)(ITransaction* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *rollbackRetaining)(ITransaction* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *deprecatedDisconnect)(ITransaction* self, IStatus* status) CLOOP_NOEXCEPT;
+			ITransaction* (CLOOP_CARG *join)(ITransaction* self, IStatus* status, ITransaction* transaction) CLOOP_NOEXCEPT;
+			ITransaction* (CLOOP_CARG *validate)(ITransaction* self, IStatus* status, IAttachment* attachment) CLOOP_NOEXCEPT;
+			ITransaction* (CLOOP_CARG *enterDtc)(ITransaction* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *commit)(ITransaction* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *rollback)(ITransaction* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *disconnect)(ITransaction* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -1135,7 +1235,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ITRANSACTION_VERSION;
 
 		template <typename StatusType> void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
@@ -1151,10 +1251,10 @@ namespace Firebird
 			StatusType::checkException(status);
 		}
 
-		template <typename StatusType> void commit(StatusType* status)
+		template <typename StatusType> void deprecatedCommit(StatusType* status)
 		{
 			StatusType::clearException(status);
-			static_cast<VTable*>(this->cloopVTable)->commit(this, status);
+			static_cast<VTable*>(this->cloopVTable)->deprecatedCommit(this, status);
 			StatusType::checkException(status);
 		}
 
@@ -1165,10 +1265,10 @@ namespace Firebird
 			StatusType::checkException(status);
 		}
 
-		template <typename StatusType> void rollback(StatusType* status)
+		template <typename StatusType> void deprecatedRollback(StatusType* status)
 		{
 			StatusType::clearException(status);
-			static_cast<VTable*>(this->cloopVTable)->rollback(this, status);
+			static_cast<VTable*>(this->cloopVTable)->deprecatedRollback(this, status);
 			StatusType::checkException(status);
 		}
 
@@ -1179,10 +1279,10 @@ namespace Firebird
 			StatusType::checkException(status);
 		}
 
-		template <typename StatusType> void disconnect(StatusType* status)
+		template <typename StatusType> void deprecatedDisconnect(StatusType* status)
 		{
 			StatusType::clearException(status);
-			static_cast<VTable*>(this->cloopVTable)->disconnect(this, status);
+			static_cast<VTable*>(this->cloopVTable)->deprecatedDisconnect(this, status);
 			StatusType::checkException(status);
 		}
 
@@ -1209,30 +1309,86 @@ namespace Firebird
 			StatusType::checkException(status);
 			return ret;
 		}
+
+		template <typename StatusType> void commit(StatusType* status)
+		{
+			if (cloopVTable->version < 4)
+			{
+				if (FB_UsedInYValve) {
+					StatusType::setVersionError(status, "ITransaction", cloopVTable->version, 4);
+					StatusType::checkException(status);
+				}
+				else {
+					deprecatedCommit(status);
+				}
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->commit(this, status);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void rollback(StatusType* status)
+		{
+			if (cloopVTable->version < 4)
+			{
+				if (FB_UsedInYValve) {
+					StatusType::setVersionError(status, "ITransaction", cloopVTable->version, 4);
+					StatusType::checkException(status);
+				}
+				else {
+					deprecatedRollback(status);
+				}
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->rollback(this, status);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void disconnect(StatusType* status)
+		{
+			if (cloopVTable->version < 4)
+			{
+				if (FB_UsedInYValve) {
+					StatusType::setVersionError(status, "ITransaction", cloopVTable->version, 4);
+					StatusType::checkException(status);
+				}
+				else {
+					deprecatedDisconnect(status);
+				}
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->disconnect(this, status);
+			StatusType::checkException(status);
+		}
 	};
+
+#define FIREBIRD_IMESSAGE_METADATA_VERSION 4u
 
 	class IMessageMetadata : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			unsigned (CLOOP_CARG *getCount)(IMessageMetadata* self, IStatus* status) throw();
-			const char* (CLOOP_CARG *getField)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
-			const char* (CLOOP_CARG *getRelation)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
-			const char* (CLOOP_CARG *getOwner)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
-			const char* (CLOOP_CARG *getAlias)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
-			unsigned (CLOOP_CARG *getType)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
-			FB_BOOLEAN (CLOOP_CARG *isNullable)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
-			int (CLOOP_CARG *getSubType)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
-			unsigned (CLOOP_CARG *getLength)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
-			int (CLOOP_CARG *getScale)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
-			unsigned (CLOOP_CARG *getCharSet)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
-			unsigned (CLOOP_CARG *getOffset)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
-			unsigned (CLOOP_CARG *getNullOffset)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
-			IMetadataBuilder* (CLOOP_CARG *getBuilder)(IMessageMetadata* self, IStatus* status) throw();
-			unsigned (CLOOP_CARG *getMessageLength)(IMessageMetadata* self, IStatus* status) throw();
-			unsigned (CLOOP_CARG *getAlignment)(IMessageMetadata* self, IStatus* status) throw();
-			unsigned (CLOOP_CARG *getAlignedLength)(IMessageMetadata* self, IStatus* status) throw();
+			unsigned (CLOOP_CARG *getCount)(IMessageMetadata* self, IStatus* status) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getField)(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getRelation)(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getOwner)(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getAlias)(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getType)(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *isNullable)(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *getSubType)(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getLength)(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *getScale)(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getCharSet)(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getOffset)(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getNullOffset)(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT;
+			IMetadataBuilder* (CLOOP_CARG *getBuilder)(IMessageMetadata* self, IStatus* status) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getMessageLength)(IMessageMetadata* self, IStatus* status) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getAlignment)(IMessageMetadata* self, IStatus* status) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getAlignedLength)(IMessageMetadata* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -1246,7 +1402,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 4;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IMESSAGE_METADATA_VERSION;
 
 		template <typename StatusType> unsigned getCount(StatusType* status)
 		{
@@ -1397,25 +1553,27 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IMETADATA_BUILDER_VERSION 4u
+
 	class IMetadataBuilder : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *setType)(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned type) throw();
-			void (CLOOP_CARG *setSubType)(IMetadataBuilder* self, IStatus* status, unsigned index, int subType) throw();
-			void (CLOOP_CARG *setLength)(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned length) throw();
-			void (CLOOP_CARG *setCharSet)(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned charSet) throw();
-			void (CLOOP_CARG *setScale)(IMetadataBuilder* self, IStatus* status, unsigned index, int scale) throw();
-			void (CLOOP_CARG *truncate)(IMetadataBuilder* self, IStatus* status, unsigned count) throw();
-			void (CLOOP_CARG *moveNameToIndex)(IMetadataBuilder* self, IStatus* status, const char* name, unsigned index) throw();
-			void (CLOOP_CARG *remove)(IMetadataBuilder* self, IStatus* status, unsigned index) throw();
-			unsigned (CLOOP_CARG *addField)(IMetadataBuilder* self, IStatus* status) throw();
-			IMessageMetadata* (CLOOP_CARG *getMetadata)(IMetadataBuilder* self, IStatus* status) throw();
-			void (CLOOP_CARG *setField)(IMetadataBuilder* self, IStatus* status, unsigned index, const char* field) throw();
-			void (CLOOP_CARG *setRelation)(IMetadataBuilder* self, IStatus* status, unsigned index, const char* relation) throw();
-			void (CLOOP_CARG *setOwner)(IMetadataBuilder* self, IStatus* status, unsigned index, const char* owner) throw();
-			void (CLOOP_CARG *setAlias)(IMetadataBuilder* self, IStatus* status, unsigned index, const char* alias) throw();
+			void (CLOOP_CARG *setType)(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned type) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setSubType)(IMetadataBuilder* self, IStatus* status, unsigned index, int subType) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setLength)(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned length) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setCharSet)(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned charSet) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setScale)(IMetadataBuilder* self, IStatus* status, unsigned index, int scale) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *truncate)(IMetadataBuilder* self, IStatus* status, unsigned count) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *moveNameToIndex)(IMetadataBuilder* self, IStatus* status, const char* name, unsigned index) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *remove)(IMetadataBuilder* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *addField)(IMetadataBuilder* self, IStatus* status) CLOOP_NOEXCEPT;
+			IMessageMetadata* (CLOOP_CARG *getMetadata)(IMetadataBuilder* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setField)(IMetadataBuilder* self, IStatus* status, unsigned index, const char* field) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setRelation)(IMetadataBuilder* self, IStatus* status, unsigned index, const char* relation) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setOwner)(IMetadataBuilder* self, IStatus* status, unsigned index, const char* owner) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setAlias)(IMetadataBuilder* self, IStatus* status, unsigned index, const char* alias) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -1429,7 +1587,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 4;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IMETADATA_BUILDER_VERSION;
 
 		template <typename StatusType> void setType(StatusType* status, unsigned index, unsigned type)
 		{
@@ -1556,22 +1714,26 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IRESULT_SET_VERSION 5u
+
 	class IResultSet : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			int (CLOOP_CARG *fetchNext)(IResultSet* self, IStatus* status, void* message) throw();
-			int (CLOOP_CARG *fetchPrior)(IResultSet* self, IStatus* status, void* message) throw();
-			int (CLOOP_CARG *fetchFirst)(IResultSet* self, IStatus* status, void* message) throw();
-			int (CLOOP_CARG *fetchLast)(IResultSet* self, IStatus* status, void* message) throw();
-			int (CLOOP_CARG *fetchAbsolute)(IResultSet* self, IStatus* status, int position, void* message) throw();
-			int (CLOOP_CARG *fetchRelative)(IResultSet* self, IStatus* status, int offset, void* message) throw();
-			FB_BOOLEAN (CLOOP_CARG *isEof)(IResultSet* self, IStatus* status) throw();
-			FB_BOOLEAN (CLOOP_CARG *isBof)(IResultSet* self, IStatus* status) throw();
-			IMessageMetadata* (CLOOP_CARG *getMetadata)(IResultSet* self, IStatus* status) throw();
-			void (CLOOP_CARG *close)(IResultSet* self, IStatus* status) throw();
-			void (CLOOP_CARG *setDelayedOutputFormat)(IResultSet* self, IStatus* status, IMessageMetadata* format) throw();
+			int (CLOOP_CARG *fetchNext)(IResultSet* self, IStatus* status, void* message) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *fetchPrior)(IResultSet* self, IStatus* status, void* message) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *fetchFirst)(IResultSet* self, IStatus* status, void* message) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *fetchLast)(IResultSet* self, IStatus* status, void* message) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *fetchAbsolute)(IResultSet* self, IStatus* status, int position, void* message) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *fetchRelative)(IResultSet* self, IStatus* status, int offset, void* message) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *isEof)(IResultSet* self, IStatus* status) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *isBof)(IResultSet* self, IStatus* status) CLOOP_NOEXCEPT;
+			IMessageMetadata* (CLOOP_CARG *getMetadata)(IResultSet* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *deprecatedClose)(IResultSet* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setDelayedOutputFormat)(IResultSet* self, IStatus* status, IMessageMetadata* format) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *close)(IResultSet* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *getInfo)(IResultSet* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -1585,7 +1747,9 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IRESULT_SET_VERSION;
+
+		static CLOOP_CONSTEXPR unsigned char INF_RECORD_COUNT = 10;
 
 		template <typename StatusType> int fetchNext(StatusType* status, void* message)
 		{
@@ -1659,10 +1823,10 @@ namespace Firebird
 			return ret;
 		}
 
-		template <typename StatusType> void close(StatusType* status)
+		template <typename StatusType> void deprecatedClose(StatusType* status)
 		{
 			StatusType::clearException(status);
-			static_cast<VTable*>(this->cloopVTable)->close(this, status);
+			static_cast<VTable*>(this->cloopVTable)->deprecatedClose(this, status);
 			StatusType::checkException(status);
 		}
 
@@ -1672,27 +1836,61 @@ namespace Firebird
 			static_cast<VTable*>(this->cloopVTable)->setDelayedOutputFormat(this, status, format);
 			StatusType::checkException(status);
 		}
+
+		template <typename StatusType> void close(StatusType* status)
+		{
+			if (cloopVTable->version < 4)
+			{
+				if (FB_UsedInYValve) {
+					StatusType::setVersionError(status, "IResultSet", cloopVTable->version, 4);
+					StatusType::checkException(status);
+				}
+				else {
+					deprecatedClose(status);
+				}
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->close(this, status);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
+		{
+			if (cloopVTable->version < 5)
+			{
+				StatusType::setVersionError(status, "IResultSet", cloopVTable->version, 5);
+				StatusType::checkException(status);
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status, itemsLength, items, bufferLength, buffer);
+			StatusType::checkException(status);
+		}
 	};
+
+#define FIREBIRD_ISTATEMENT_VERSION 5u
 
 	class IStatement : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *getInfo)(IStatement* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw();
-			unsigned (CLOOP_CARG *getType)(IStatement* self, IStatus* status) throw();
-			const char* (CLOOP_CARG *getPlan)(IStatement* self, IStatus* status, FB_BOOLEAN detailed) throw();
-			ISC_UINT64 (CLOOP_CARG *getAffectedRecords)(IStatement* self, IStatus* status) throw();
-			IMessageMetadata* (CLOOP_CARG *getInputMetadata)(IStatement* self, IStatus* status) throw();
-			IMessageMetadata* (CLOOP_CARG *getOutputMetadata)(IStatement* self, IStatus* status) throw();
-			ITransaction* (CLOOP_CARG *execute)(IStatement* self, IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) throw();
-			IResultSet* (CLOOP_CARG *openCursor)(IStatement* self, IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, unsigned flags) throw();
-			void (CLOOP_CARG *setCursorName)(IStatement* self, IStatus* status, const char* name) throw();
-			void (CLOOP_CARG *free)(IStatement* self, IStatus* status) throw();
-			unsigned (CLOOP_CARG *getFlags)(IStatement* self, IStatus* status) throw();
-			unsigned (CLOOP_CARG *getTimeout)(IStatement* self, IStatus* status) throw();
-			void (CLOOP_CARG *setTimeout)(IStatement* self, IStatus* status, unsigned timeOut) throw();
-			IBatch* (CLOOP_CARG *createBatch)(IStatement* self, IStatus* status, IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par) throw();
+			void (CLOOP_CARG *getInfo)(IStatement* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getType)(IStatement* self, IStatus* status) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getPlan)(IStatement* self, IStatus* status, FB_BOOLEAN detailed) CLOOP_NOEXCEPT;
+			ISC_UINT64 (CLOOP_CARG *getAffectedRecords)(IStatement* self, IStatus* status) CLOOP_NOEXCEPT;
+			IMessageMetadata* (CLOOP_CARG *getInputMetadata)(IStatement* self, IStatus* status) CLOOP_NOEXCEPT;
+			IMessageMetadata* (CLOOP_CARG *getOutputMetadata)(IStatement* self, IStatus* status) CLOOP_NOEXCEPT;
+			ITransaction* (CLOOP_CARG *execute)(IStatement* self, IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) CLOOP_NOEXCEPT;
+			IResultSet* (CLOOP_CARG *openCursor)(IStatement* self, IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, unsigned flags) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setCursorName)(IStatement* self, IStatus* status, const char* name) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *deprecatedFree)(IStatement* self, IStatus* status) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getFlags)(IStatement* self, IStatus* status) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getTimeout)(IStatement* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setTimeout)(IStatement* self, IStatus* status, unsigned timeOut) CLOOP_NOEXCEPT;
+			IBatch* (CLOOP_CARG *createBatch)(IStatement* self, IStatus* status, IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *free)(IStatement* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -1706,21 +1904,21 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 4;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ISTATEMENT_VERSION;
 
-		static const unsigned PREPARE_PREFETCH_NONE = 0x0;
-		static const unsigned PREPARE_PREFETCH_TYPE = 0x1;
-		static const unsigned PREPARE_PREFETCH_INPUT_PARAMETERS = 0x2;
-		static const unsigned PREPARE_PREFETCH_OUTPUT_PARAMETERS = 0x4;
-		static const unsigned PREPARE_PREFETCH_LEGACY_PLAN = 0x8;
-		static const unsigned PREPARE_PREFETCH_DETAILED_PLAN = 0x10;
-		static const unsigned PREPARE_PREFETCH_AFFECTED_RECORDS = 0x20;
-		static const unsigned PREPARE_PREFETCH_FLAGS = 0x40;
-		static const unsigned PREPARE_PREFETCH_METADATA = IStatement::PREPARE_PREFETCH_TYPE | IStatement::PREPARE_PREFETCH_FLAGS | IStatement::PREPARE_PREFETCH_INPUT_PARAMETERS | IStatement::PREPARE_PREFETCH_OUTPUT_PARAMETERS;
-		static const unsigned PREPARE_PREFETCH_ALL = IStatement::PREPARE_PREFETCH_METADATA | IStatement::PREPARE_PREFETCH_LEGACY_PLAN | IStatement::PREPARE_PREFETCH_DETAILED_PLAN | IStatement::PREPARE_PREFETCH_AFFECTED_RECORDS;
-		static const unsigned FLAG_HAS_CURSOR = 0x1;
-		static const unsigned FLAG_REPEAT_EXECUTE = 0x2;
-		static const unsigned CURSOR_TYPE_SCROLLABLE = 0x1;
+		static CLOOP_CONSTEXPR unsigned PREPARE_PREFETCH_NONE = 0x0;
+		static CLOOP_CONSTEXPR unsigned PREPARE_PREFETCH_TYPE = 0x1;
+		static CLOOP_CONSTEXPR unsigned PREPARE_PREFETCH_INPUT_PARAMETERS = 0x2;
+		static CLOOP_CONSTEXPR unsigned PREPARE_PREFETCH_OUTPUT_PARAMETERS = 0x4;
+		static CLOOP_CONSTEXPR unsigned PREPARE_PREFETCH_LEGACY_PLAN = 0x8;
+		static CLOOP_CONSTEXPR unsigned PREPARE_PREFETCH_DETAILED_PLAN = 0x10;
+		static CLOOP_CONSTEXPR unsigned PREPARE_PREFETCH_AFFECTED_RECORDS = 0x20;
+		static CLOOP_CONSTEXPR unsigned PREPARE_PREFETCH_FLAGS = 0x40;
+		static CLOOP_CONSTEXPR unsigned PREPARE_PREFETCH_METADATA = IStatement::PREPARE_PREFETCH_TYPE | IStatement::PREPARE_PREFETCH_FLAGS | IStatement::PREPARE_PREFETCH_INPUT_PARAMETERS | IStatement::PREPARE_PREFETCH_OUTPUT_PARAMETERS;
+		static CLOOP_CONSTEXPR unsigned PREPARE_PREFETCH_ALL = IStatement::PREPARE_PREFETCH_METADATA | IStatement::PREPARE_PREFETCH_LEGACY_PLAN | IStatement::PREPARE_PREFETCH_DETAILED_PLAN | IStatement::PREPARE_PREFETCH_AFFECTED_RECORDS;
+		static CLOOP_CONSTEXPR unsigned FLAG_HAS_CURSOR = 0x1;
+		static CLOOP_CONSTEXPR unsigned FLAG_REPEAT_EXECUTE = 0x2;
+		static CLOOP_CONSTEXPR unsigned CURSOR_TYPE_SCROLLABLE = 0x1;
 
 		template <typename StatusType> void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
@@ -1792,10 +1990,10 @@ namespace Firebird
 			StatusType::checkException(status);
 		}
 
-		template <typename StatusType> void free(StatusType* status)
+		template <typename StatusType> void deprecatedFree(StatusType* status)
 		{
 			StatusType::clearException(status);
-			static_cast<VTable*>(this->cloopVTable)->free(this, status);
+			static_cast<VTable*>(this->cloopVTable)->deprecatedFree(this, status);
 			StatusType::checkException(status);
 		}
 
@@ -1847,24 +2045,46 @@ namespace Firebird
 			StatusType::checkException(status);
 			return ret;
 		}
+
+		template <typename StatusType> void free(StatusType* status)
+		{
+			if (cloopVTable->version < 5)
+			{
+				if (FB_UsedInYValve) {
+					StatusType::setVersionError(status, "IStatement", cloopVTable->version, 5);
+					StatusType::checkException(status);
+				}
+				else {
+					deprecatedFree(status);
+				}
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->free(this, status);
+			StatusType::checkException(status);
+		}
 	};
+
+#define FIREBIRD_IBATCH_VERSION 4u
 
 	class IBatch : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *add)(IBatch* self, IStatus* status, unsigned count, const void* inBuffer) throw();
-			void (CLOOP_CARG *addBlob)(IBatch* self, IStatus* status, unsigned length, const void* inBuffer, ISC_QUAD* blobId, unsigned parLength, const unsigned char* par) throw();
-			void (CLOOP_CARG *appendBlobData)(IBatch* self, IStatus* status, unsigned length, const void* inBuffer) throw();
-			void (CLOOP_CARG *addBlobStream)(IBatch* self, IStatus* status, unsigned length, const void* inBuffer) throw();
-			void (CLOOP_CARG *registerBlob)(IBatch* self, IStatus* status, const ISC_QUAD* existingBlob, ISC_QUAD* blobId) throw();
-			IBatchCompletionState* (CLOOP_CARG *execute)(IBatch* self, IStatus* status, ITransaction* transaction) throw();
-			void (CLOOP_CARG *cancel)(IBatch* self, IStatus* status) throw();
-			unsigned (CLOOP_CARG *getBlobAlignment)(IBatch* self, IStatus* status) throw();
-			IMessageMetadata* (CLOOP_CARG *getMetadata)(IBatch* self, IStatus* status) throw();
-			void (CLOOP_CARG *setDefaultBpb)(IBatch* self, IStatus* status, unsigned parLength, const unsigned char* par) throw();
-			void (CLOOP_CARG *close)(IBatch* self, IStatus* status) throw();
+			void (CLOOP_CARG *add)(IBatch* self, IStatus* status, unsigned count, const void* inBuffer) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *addBlob)(IBatch* self, IStatus* status, unsigned length, const void* inBuffer, ISC_QUAD* blobId, unsigned parLength, const unsigned char* par) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *appendBlobData)(IBatch* self, IStatus* status, unsigned length, const void* inBuffer) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *addBlobStream)(IBatch* self, IStatus* status, unsigned length, const void* inBuffer) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *registerBlob)(IBatch* self, IStatus* status, const ISC_QUAD* existingBlob, ISC_QUAD* blobId) CLOOP_NOEXCEPT;
+			IBatchCompletionState* (CLOOP_CARG *execute)(IBatch* self, IStatus* status, ITransaction* transaction) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *cancel)(IBatch* self, IStatus* status) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getBlobAlignment)(IBatch* self, IStatus* status) CLOOP_NOEXCEPT;
+			IMessageMetadata* (CLOOP_CARG *getMetadata)(IBatch* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setDefaultBpb)(IBatch* self, IStatus* status, unsigned parLength, const unsigned char* par) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *deprecatedClose)(IBatch* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *close)(IBatch* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *getInfo)(IBatch* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -1878,19 +2098,25 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IBATCH_VERSION;
 
-		static const unsigned char VERSION1 = 1;
-		static const unsigned char TAG_MULTIERROR = 1;
-		static const unsigned char TAG_RECORD_COUNTS = 2;
-		static const unsigned char TAG_BUFFER_BYTES_SIZE = 3;
-		static const unsigned char TAG_BLOB_POLICY = 4;
-		static const unsigned char TAG_DETAILED_ERRORS = 5;
-		static const unsigned char BLOB_NONE = 0;
-		static const unsigned char BLOB_ID_ENGINE = 1;
-		static const unsigned char BLOB_ID_USER = 2;
-		static const unsigned char BLOB_STREAM = 3;
-		static const unsigned BLOB_SEGHDR_ALIGN = 2;
+		static CLOOP_CONSTEXPR unsigned char VERSION1 = 1;
+		static CLOOP_CONSTEXPR unsigned char CURRENT_VERSION = IBatch::VERSION1;
+		static CLOOP_CONSTEXPR unsigned char TAG_MULTIERROR = 1;
+		static CLOOP_CONSTEXPR unsigned char TAG_RECORD_COUNTS = 2;
+		static CLOOP_CONSTEXPR unsigned char TAG_BUFFER_BYTES_SIZE = 3;
+		static CLOOP_CONSTEXPR unsigned char TAG_BLOB_POLICY = 4;
+		static CLOOP_CONSTEXPR unsigned char TAG_DETAILED_ERRORS = 5;
+		static CLOOP_CONSTEXPR unsigned char INF_BUFFER_BYTES_SIZE = 10;
+		static CLOOP_CONSTEXPR unsigned char INF_DATA_BYTES_SIZE = 11;
+		static CLOOP_CONSTEXPR unsigned char INF_BLOBS_BYTES_SIZE = 12;
+		static CLOOP_CONSTEXPR unsigned char INF_BLOB_ALIGNMENT = 13;
+		static CLOOP_CONSTEXPR unsigned char INF_BLOB_HEADER = 14;
+		static CLOOP_CONSTEXPR unsigned char BLOB_NONE = 0;
+		static CLOOP_CONSTEXPR unsigned char BLOB_ID_ENGINE = 1;
+		static CLOOP_CONSTEXPR unsigned char BLOB_ID_USER = 2;
+		static CLOOP_CONSTEXPR unsigned char BLOB_STREAM = 3;
+		static CLOOP_CONSTEXPR unsigned BLOB_SEGHDR_ALIGN = 2;
 
 		template <typename StatusType> void add(StatusType* status, unsigned count, const void* inBuffer)
 		{
@@ -1965,23 +2191,56 @@ namespace Firebird
 			StatusType::checkException(status);
 		}
 
+		template <typename StatusType> void deprecatedClose(StatusType* status)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->deprecatedClose(this, status);
+			StatusType::checkException(status);
+		}
+
 		template <typename StatusType> void close(StatusType* status)
 		{
+			if (cloopVTable->version < 4)
+			{
+				if (FB_UsedInYValve) {
+					StatusType::setVersionError(status, "IBatch", cloopVTable->version, 4);
+					StatusType::checkException(status);
+				}
+				else {
+					deprecatedClose(status);
+				}
+				return;
+			}
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->close(this, status);
 			StatusType::checkException(status);
 		}
+
+		template <typename StatusType> void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
+		{
+			if (cloopVTable->version < 4)
+			{
+				StatusType::setVersionError(status, "IBatch", cloopVTable->version, 4);
+				StatusType::checkException(status);
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status, itemsLength, items, bufferLength, buffer);
+			StatusType::checkException(status);
+		}
 	};
+
+#define FIREBIRD_IBATCH_COMPLETION_STATE_VERSION 3u
 
 	class IBatchCompletionState : public IDisposable
 	{
 	public:
 		struct VTable : public IDisposable::VTable
 		{
-			unsigned (CLOOP_CARG *getSize)(IBatchCompletionState* self, IStatus* status) throw();
-			int (CLOOP_CARG *getState)(IBatchCompletionState* self, IStatus* status, unsigned pos) throw();
-			unsigned (CLOOP_CARG *findError)(IBatchCompletionState* self, IStatus* status, unsigned pos) throw();
-			void (CLOOP_CARG *getStatus)(IBatchCompletionState* self, IStatus* status, IStatus* to, unsigned pos) throw();
+			unsigned (CLOOP_CARG *getSize)(IBatchCompletionState* self, IStatus* status) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *getState)(IBatchCompletionState* self, IStatus* status, unsigned pos) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *findError)(IBatchCompletionState* self, IStatus* status, unsigned pos) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *getStatus)(IBatchCompletionState* self, IStatus* status, IStatus* to, unsigned pos) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -1995,11 +2254,11 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IBATCH_COMPLETION_STATE_VERSION;
 
-		static const int EXECUTE_FAILED = -1;
-		static const int SUCCESS_NO_INFO = -2;
-		static const unsigned NO_MORE_ERRORS = 0xffffffff;
+		static CLOOP_CONSTEXPR int EXECUTE_FAILED = -1;
+		static CLOOP_CONSTEXPR int SUCCESS_NO_INFO = -2;
+		static CLOOP_CONSTEXPR unsigned NO_MORE_ERRORS = 0xffffffff;
 
 		template <typename StatusType> unsigned getSize(StatusType* status)
 		{
@@ -2033,13 +2292,16 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IREPLICATOR_VERSION 4u
+
 	class IReplicator : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *process)(IReplicator* self, IStatus* status, unsigned length, const unsigned char* data) throw();
-			void (CLOOP_CARG *close)(IReplicator* self, IStatus* status) throw();
+			void (CLOOP_CARG *process)(IReplicator* self, IStatus* status, unsigned length, const unsigned char* data) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *deprecatedClose)(IReplicator* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *close)(IReplicator* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -2053,7 +2315,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IREPLICATOR_VERSION;
 
 		template <typename StatusType> void process(StatusType* status, unsigned length, const unsigned char* data)
 		{
@@ -2062,26 +2324,47 @@ namespace Firebird
 			StatusType::checkException(status);
 		}
 
+		template <typename StatusType> void deprecatedClose(StatusType* status)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->deprecatedClose(this, status);
+			StatusType::checkException(status);
+		}
+
 		template <typename StatusType> void close(StatusType* status)
 		{
+			if (cloopVTable->version < 4)
+			{
+				if (FB_UsedInYValve) {
+					StatusType::setVersionError(status, "IReplicator", cloopVTable->version, 4);
+					StatusType::checkException(status);
+				}
+				else {
+					deprecatedClose(status);
+				}
+				return;
+			}
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->close(this, status);
 			StatusType::checkException(status);
 		}
 	};
 
+#define FIREBIRD_IREQUEST_VERSION 4u
+
 	class IRequest : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *receive)(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, void* message) throw();
-			void (CLOOP_CARG *send)(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, const void* message) throw();
-			void (CLOOP_CARG *getInfo)(IRequest* self, IStatus* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw();
-			void (CLOOP_CARG *start)(IRequest* self, IStatus* status, ITransaction* tra, int level) throw();
-			void (CLOOP_CARG *startAndSend)(IRequest* self, IStatus* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const void* message) throw();
-			void (CLOOP_CARG *unwind)(IRequest* self, IStatus* status, int level) throw();
-			void (CLOOP_CARG *free)(IRequest* self, IStatus* status) throw();
+			void (CLOOP_CARG *receive)(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, void* message) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *send)(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, const void* message) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *getInfo)(IRequest* self, IStatus* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *start)(IRequest* self, IStatus* status, ITransaction* tra, int level) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *startAndSend)(IRequest* self, IStatus* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const void* message) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *unwind)(IRequest* self, IStatus* status, int level) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *deprecatedFree)(IRequest* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *free)(IRequest* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -2095,7 +2378,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IREQUEST_VERSION;
 
 		template <typename StatusType> void receive(StatusType* status, int level, unsigned msgType, unsigned length, void* message)
 		{
@@ -2139,20 +2422,41 @@ namespace Firebird
 			StatusType::checkException(status);
 		}
 
+		template <typename StatusType> void deprecatedFree(StatusType* status)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->deprecatedFree(this, status);
+			StatusType::checkException(status);
+		}
+
 		template <typename StatusType> void free(StatusType* status)
 		{
+			if (cloopVTable->version < 4)
+			{
+				if (FB_UsedInYValve) {
+					StatusType::setVersionError(status, "IRequest", cloopVTable->version, 4);
+					StatusType::checkException(status);
+				}
+				else {
+					deprecatedFree(status);
+				}
+				return;
+			}
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->free(this, status);
 			StatusType::checkException(status);
 		}
 	};
 
+#define FIREBIRD_IEVENTS_VERSION 4u
+
 	class IEvents : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *cancel)(IEvents* self, IStatus* status) throw();
+			void (CLOOP_CARG *deprecatedCancel)(IEvents* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *cancel)(IEvents* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -2166,45 +2470,67 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IEVENTS_VERSION;
+
+		template <typename StatusType> void deprecatedCancel(StatusType* status)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->deprecatedCancel(this, status);
+			StatusType::checkException(status);
+		}
 
 		template <typename StatusType> void cancel(StatusType* status)
 		{
+			if (cloopVTable->version < 4)
+			{
+				if (FB_UsedInYValve) {
+					StatusType::setVersionError(status, "IEvents", cloopVTable->version, 4);
+					StatusType::checkException(status);
+				}
+				else {
+					deprecatedCancel(status);
+				}
+				return;
+			}
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->cancel(this, status);
 			StatusType::checkException(status);
 		}
 	};
 
+#define FIREBIRD_IATTACHMENT_VERSION 5u
+
 	class IAttachment : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *getInfo)(IAttachment* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw();
-			ITransaction* (CLOOP_CARG *startTransaction)(IAttachment* self, IStatus* status, unsigned tpbLength, const unsigned char* tpb) throw();
-			ITransaction* (CLOOP_CARG *reconnectTransaction)(IAttachment* self, IStatus* status, unsigned length, const unsigned char* id) throw();
-			IRequest* (CLOOP_CARG *compileRequest)(IAttachment* self, IStatus* status, unsigned blrLength, const unsigned char* blr) throw();
-			void (CLOOP_CARG *transactRequest)(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned blrLength, const unsigned char* blr, unsigned inMsgLength, const unsigned char* inMsg, unsigned outMsgLength, unsigned char* outMsg) throw();
-			IBlob* (CLOOP_CARG *createBlob)(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) throw();
-			IBlob* (CLOOP_CARG *openBlob)(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) throw();
-			int (CLOOP_CARG *getSlice)(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) throw();
-			void (CLOOP_CARG *putSlice)(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) throw();
-			void (CLOOP_CARG *executeDyn)(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned length, const unsigned char* dyn) throw();
-			IStatement* (CLOOP_CARG *prepare)(IAttachment* self, IStatus* status, ITransaction* tra, unsigned stmtLength, const char* sqlStmt, unsigned dialect, unsigned flags) throw();
-			ITransaction* (CLOOP_CARG *execute)(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) throw();
-			IResultSet* (CLOOP_CARG *openCursor)(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const char* cursorName, unsigned cursorFlags) throw();
-			IEvents* (CLOOP_CARG *queEvents)(IAttachment* self, IStatus* status, IEventCallback* callback, unsigned length, const unsigned char* events) throw();
-			void (CLOOP_CARG *cancelOperation)(IAttachment* self, IStatus* status, int option) throw();
-			void (CLOOP_CARG *ping)(IAttachment* self, IStatus* status) throw();
-			void (CLOOP_CARG *detach)(IAttachment* self, IStatus* status) throw();
-			void (CLOOP_CARG *dropDatabase)(IAttachment* self, IStatus* status) throw();
-			unsigned (CLOOP_CARG *getIdleTimeout)(IAttachment* self, IStatus* status) throw();
-			void (CLOOP_CARG *setIdleTimeout)(IAttachment* self, IStatus* status, unsigned timeOut) throw();
-			unsigned (CLOOP_CARG *getStatementTimeout)(IAttachment* self, IStatus* status) throw();
-			void (CLOOP_CARG *setStatementTimeout)(IAttachment* self, IStatus* status, unsigned timeOut) throw();
-			IBatch* (CLOOP_CARG *createBatch)(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par) throw();
-			IReplicator* (CLOOP_CARG *createReplicator)(IAttachment* self, IStatus* status) throw();
+			void (CLOOP_CARG *getInfo)(IAttachment* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) CLOOP_NOEXCEPT;
+			ITransaction* (CLOOP_CARG *startTransaction)(IAttachment* self, IStatus* status, unsigned tpbLength, const unsigned char* tpb) CLOOP_NOEXCEPT;
+			ITransaction* (CLOOP_CARG *reconnectTransaction)(IAttachment* self, IStatus* status, unsigned length, const unsigned char* id) CLOOP_NOEXCEPT;
+			IRequest* (CLOOP_CARG *compileRequest)(IAttachment* self, IStatus* status, unsigned blrLength, const unsigned char* blr) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *transactRequest)(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned blrLength, const unsigned char* blr, unsigned inMsgLength, const unsigned char* inMsg, unsigned outMsgLength, unsigned char* outMsg) CLOOP_NOEXCEPT;
+			IBlob* (CLOOP_CARG *createBlob)(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) CLOOP_NOEXCEPT;
+			IBlob* (CLOOP_CARG *openBlob)(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *getSlice)(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *putSlice)(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *executeDyn)(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned length, const unsigned char* dyn) CLOOP_NOEXCEPT;
+			IStatement* (CLOOP_CARG *prepare)(IAttachment* self, IStatus* status, ITransaction* tra, unsigned stmtLength, const char* sqlStmt, unsigned dialect, unsigned flags) CLOOP_NOEXCEPT;
+			ITransaction* (CLOOP_CARG *execute)(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) CLOOP_NOEXCEPT;
+			IResultSet* (CLOOP_CARG *openCursor)(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const char* cursorName, unsigned cursorFlags) CLOOP_NOEXCEPT;
+			IEvents* (CLOOP_CARG *queEvents)(IAttachment* self, IStatus* status, IEventCallback* callback, unsigned length, const unsigned char* events) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *cancelOperation)(IAttachment* self, IStatus* status, int option) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *ping)(IAttachment* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *deprecatedDetach)(IAttachment* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *deprecatedDropDatabase)(IAttachment* self, IStatus* status) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getIdleTimeout)(IAttachment* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setIdleTimeout)(IAttachment* self, IStatus* status, unsigned timeOut) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getStatementTimeout)(IAttachment* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setStatementTimeout)(IAttachment* self, IStatus* status, unsigned timeOut) CLOOP_NOEXCEPT;
+			IBatch* (CLOOP_CARG *createBatch)(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par) CLOOP_NOEXCEPT;
+			IReplicator* (CLOOP_CARG *createReplicator)(IAttachment* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *detach)(IAttachment* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *dropDatabase)(IAttachment* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -2218,7 +2544,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 4;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IATTACHMENT_VERSION;
 
 		template <typename StatusType> void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
@@ -2342,17 +2668,17 @@ namespace Firebird
 			StatusType::checkException(status);
 		}
 
-		template <typename StatusType> void detach(StatusType* status)
+		template <typename StatusType> void deprecatedDetach(StatusType* status)
 		{
 			StatusType::clearException(status);
-			static_cast<VTable*>(this->cloopVTable)->detach(this, status);
+			static_cast<VTable*>(this->cloopVTable)->deprecatedDetach(this, status);
 			StatusType::checkException(status);
 		}
 
-		template <typename StatusType> void dropDatabase(StatusType* status)
+		template <typename StatusType> void deprecatedDropDatabase(StatusType* status)
 		{
 			StatusType::clearException(status);
-			static_cast<VTable*>(this->cloopVTable)->dropDatabase(this, status);
+			static_cast<VTable*>(this->cloopVTable)->deprecatedDropDatabase(this, status);
 			StatusType::checkException(status);
 		}
 
@@ -2437,16 +2763,56 @@ namespace Firebird
 			StatusType::checkException(status);
 			return ret;
 		}
+
+		template <typename StatusType> void detach(StatusType* status)
+		{
+			if (cloopVTable->version < 5)
+			{
+				if (FB_UsedInYValve) {
+					StatusType::setVersionError(status, "IAttachment", cloopVTable->version, 5);
+					StatusType::checkException(status);
+				}
+				else {
+					deprecatedDetach(status);
+				}
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->detach(this, status);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void dropDatabase(StatusType* status)
+		{
+			if (cloopVTable->version < 5)
+			{
+				if (FB_UsedInYValve) {
+					StatusType::setVersionError(status, "IAttachment", cloopVTable->version, 5);
+					StatusType::checkException(status);
+				}
+				else {
+					deprecatedDropDatabase(status);
+				}
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->dropDatabase(this, status);
+			StatusType::checkException(status);
+		}
 	};
+
+#define FIREBIRD_ISERVICE_VERSION 5u
 
 	class IService : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *detach)(IService* self, IStatus* status) throw();
-			void (CLOOP_CARG *query)(IService* self, IStatus* status, unsigned sendLength, const unsigned char* sendItems, unsigned receiveLength, const unsigned char* receiveItems, unsigned bufferLength, unsigned char* buffer) throw();
-			void (CLOOP_CARG *start)(IService* self, IStatus* status, unsigned spbLength, const unsigned char* spb) throw();
+			void (CLOOP_CARG *deprecatedDetach)(IService* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *query)(IService* self, IStatus* status, unsigned sendLength, const unsigned char* sendItems, unsigned receiveLength, const unsigned char* receiveItems, unsigned bufferLength, unsigned char* buffer) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *start)(IService* self, IStatus* status, unsigned spbLength, const unsigned char* spb) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *detach)(IService* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *cancel)(IService* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -2460,12 +2826,12 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ISERVICE_VERSION;
 
-		template <typename StatusType> void detach(StatusType* status)
+		template <typename StatusType> void deprecatedDetach(StatusType* status)
 		{
 			StatusType::clearException(status);
-			static_cast<VTable*>(this->cloopVTable)->detach(this, status);
+			static_cast<VTable*>(this->cloopVTable)->deprecatedDetach(this, status);
 			StatusType::checkException(status);
 		}
 
@@ -2482,18 +2848,51 @@ namespace Firebird
 			static_cast<VTable*>(this->cloopVTable)->start(this, status, spbLength, spb);
 			StatusType::checkException(status);
 		}
+
+		template <typename StatusType> void detach(StatusType* status)
+		{
+			if (cloopVTable->version < 4)
+			{
+				if (FB_UsedInYValve) {
+					StatusType::setVersionError(status, "IService", cloopVTable->version, 4);
+					StatusType::checkException(status);
+				}
+				else {
+					deprecatedDetach(status);
+				}
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->detach(this, status);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void cancel(StatusType* status)
+		{
+			if (cloopVTable->version < 5)
+			{
+				StatusType::setVersionError(status, "IService", cloopVTable->version, 5);
+				StatusType::checkException(status);
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->cancel(this, status);
+			StatusType::checkException(status);
+		}
 	};
+
+#define FIREBIRD_IPROVIDER_VERSION 4u
 
 	class IProvider : public IPluginBase
 	{
 	public:
 		struct VTable : public IPluginBase::VTable
 		{
-			IAttachment* (CLOOP_CARG *attachDatabase)(IProvider* self, IStatus* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) throw();
-			IAttachment* (CLOOP_CARG *createDatabase)(IProvider* self, IStatus* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) throw();
-			IService* (CLOOP_CARG *attachServiceManager)(IProvider* self, IStatus* status, const char* service, unsigned spbLength, const unsigned char* spb) throw();
-			void (CLOOP_CARG *shutdown)(IProvider* self, IStatus* status, unsigned timeout, const int reason) throw();
-			void (CLOOP_CARG *setDbCryptCallback)(IProvider* self, IStatus* status, ICryptKeyCallback* cryptCallback) throw();
+			IAttachment* (CLOOP_CARG *attachDatabase)(IProvider* self, IStatus* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) CLOOP_NOEXCEPT;
+			IAttachment* (CLOOP_CARG *createDatabase)(IProvider* self, IStatus* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) CLOOP_NOEXCEPT;
+			IService* (CLOOP_CARG *attachServiceManager)(IProvider* self, IStatus* status, const char* service, unsigned spbLength, const unsigned char* spb) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *shutdown)(IProvider* self, IStatus* status, unsigned timeout, const int reason) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setDbCryptCallback)(IProvider* self, IStatus* status, ICryptKeyCallback* cryptCallback) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -2507,7 +2906,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 4;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IPROVIDER_VERSION;
 
 		template <typename StatusType> IAttachment* attachDatabase(StatusType* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb)
 		{
@@ -2548,14 +2947,16 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IDTC_START_VERSION 3u
+
 	class IDtcStart : public IDisposable
 	{
 	public:
 		struct VTable : public IDisposable::VTable
 		{
-			void (CLOOP_CARG *addAttachment)(IDtcStart* self, IStatus* status, IAttachment* att) throw();
-			void (CLOOP_CARG *addWithTpb)(IDtcStart* self, IStatus* status, IAttachment* att, unsigned length, const unsigned char* tpb) throw();
-			ITransaction* (CLOOP_CARG *start)(IDtcStart* self, IStatus* status) throw();
+			void (CLOOP_CARG *addAttachment)(IDtcStart* self, IStatus* status, IAttachment* att) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *addWithTpb)(IDtcStart* self, IStatus* status, IAttachment* att, unsigned length, const unsigned char* tpb) CLOOP_NOEXCEPT;
+			ITransaction* (CLOOP_CARG *start)(IDtcStart* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -2569,7 +2970,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IDTC_START_VERSION;
 
 		template <typename StatusType> void addAttachment(StatusType* status, IAttachment* att)
 		{
@@ -2594,13 +2995,15 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IDTC_VERSION 2u
+
 	class IDtc : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			ITransaction* (CLOOP_CARG *join)(IDtc* self, IStatus* status, ITransaction* one, ITransaction* two) throw();
-			IDtcStart* (CLOOP_CARG *startBuilder)(IDtc* self, IStatus* status) throw();
+			ITransaction* (CLOOP_CARG *join)(IDtc* self, IStatus* status, ITransaction* one, ITransaction* two) CLOOP_NOEXCEPT;
+			IDtcStart* (CLOOP_CARG *startBuilder)(IDtc* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -2614,7 +3017,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IDTC_VERSION;
 
 		template <typename StatusType> ITransaction* join(StatusType* status, ITransaction* one, ITransaction* two)
 		{
@@ -2632,6 +3035,8 @@ namespace Firebird
 			return ret;
 		}
 	};
+
+#define FIREBIRD_IAUTH_VERSION 4u
 
 	class IAuth : public IPluginBase
 	{
@@ -2651,23 +3056,25 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 4;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IAUTH_VERSION;
 
-		static const int AUTH_FAILED = -1;
-		static const int AUTH_SUCCESS = 0;
-		static const int AUTH_MORE_DATA = 1;
-		static const int AUTH_CONTINUE = 2;
+		static CLOOP_CONSTEXPR int AUTH_FAILED = -1;
+		static CLOOP_CONSTEXPR int AUTH_SUCCESS = 0;
+		static CLOOP_CONSTEXPR int AUTH_MORE_DATA = 1;
+		static CLOOP_CONSTEXPR int AUTH_CONTINUE = 2;
 	};
+
+#define FIREBIRD_IWRITER_VERSION 2u
 
 	class IWriter : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *reset)(IWriter* self) throw();
-			void (CLOOP_CARG *add)(IWriter* self, IStatus* status, const char* name) throw();
-			void (CLOOP_CARG *setType)(IWriter* self, IStatus* status, const char* value) throw();
-			void (CLOOP_CARG *setDb)(IWriter* self, IStatus* status, const char* value) throw();
+			void (CLOOP_CARG *reset)(IWriter* self) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *add)(IWriter* self, IStatus* status, const char* name) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setType)(IWriter* self, IStatus* status, const char* value) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setDb)(IWriter* self, IStatus* status, const char* value) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -2681,7 +3088,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IWRITER_VERSION;
 
 		void reset()
 		{
@@ -2710,15 +3117,17 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ISERVER_BLOCK_VERSION 2u
+
 	class IServerBlock : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			const char* (CLOOP_CARG *getLogin)(IServerBlock* self) throw();
-			const unsigned char* (CLOOP_CARG *getData)(IServerBlock* self, unsigned* length) throw();
-			void (CLOOP_CARG *putData)(IServerBlock* self, IStatus* status, unsigned length, const void* data) throw();
-			ICryptKey* (CLOOP_CARG *newKey)(IServerBlock* self, IStatus* status) throw();
+			const char* (CLOOP_CARG *getLogin)(IServerBlock* self) CLOOP_NOEXCEPT;
+			const unsigned char* (CLOOP_CARG *getData)(IServerBlock* self, unsigned* length) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *putData)(IServerBlock* self, IStatus* status, unsigned length, const void* data) CLOOP_NOEXCEPT;
+			ICryptKey* (CLOOP_CARG *newKey)(IServerBlock* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -2732,7 +3141,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ISERVER_BLOCK_VERSION;
 
 		const char* getLogin()
 		{
@@ -2762,17 +3171,19 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ICLIENT_BLOCK_VERSION 4u
+
 	class IClientBlock : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			const char* (CLOOP_CARG *getLogin)(IClientBlock* self) throw();
-			const char* (CLOOP_CARG *getPassword)(IClientBlock* self) throw();
-			const unsigned char* (CLOOP_CARG *getData)(IClientBlock* self, unsigned* length) throw();
-			void (CLOOP_CARG *putData)(IClientBlock* self, IStatus* status, unsigned length, const void* data) throw();
-			ICryptKey* (CLOOP_CARG *newKey)(IClientBlock* self, IStatus* status) throw();
-			IAuthBlock* (CLOOP_CARG *getAuthBlock)(IClientBlock* self, IStatus* status) throw();
+			const char* (CLOOP_CARG *getLogin)(IClientBlock* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getPassword)(IClientBlock* self) CLOOP_NOEXCEPT;
+			const unsigned char* (CLOOP_CARG *getData)(IClientBlock* self, unsigned* length) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *putData)(IClientBlock* self, IStatus* status, unsigned length, const void* data) CLOOP_NOEXCEPT;
+			ICryptKey* (CLOOP_CARG *newKey)(IClientBlock* self, IStatus* status) CLOOP_NOEXCEPT;
+			IAuthBlock* (CLOOP_CARG *getAuthBlock)(IClientBlock* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -2786,7 +3197,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 4;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ICLIENT_BLOCK_VERSION;
 
 		const char* getLogin()
 		{
@@ -2836,13 +3247,15 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ISERVER_VERSION 6u
+
 	class IServer : public IAuth
 	{
 	public:
 		struct VTable : public IAuth::VTable
 		{
-			int (CLOOP_CARG *authenticate)(IServer* self, IStatus* status, IServerBlock* sBlock, IWriter* writerInterface) throw();
-			void (CLOOP_CARG *setDbCryptCallback)(IServer* self, IStatus* status, ICryptKeyCallback* cryptCallback) throw();
+			int (CLOOP_CARG *authenticate)(IServer* self, IStatus* status, IServerBlock* sBlock, IWriter* writerInterface) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setDbCryptCallback)(IServer* self, IStatus* status, ICryptKeyCallback* cryptCallback) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -2856,7 +3269,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 6;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ISERVER_VERSION;
 
 		template <typename StatusType> int authenticate(StatusType* status, IServerBlock* sBlock, IWriter* writerInterface)
 		{
@@ -2880,12 +3293,14 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ICLIENT_VERSION 5u
+
 	class IClient : public IAuth
 	{
 	public:
 		struct VTable : public IAuth::VTable
 		{
-			int (CLOOP_CARG *authenticate)(IClient* self, IStatus* status, IClientBlock* cBlock) throw();
+			int (CLOOP_CARG *authenticate)(IClient* self, IStatus* status, IClientBlock* cBlock) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -2899,7 +3314,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 5;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ICLIENT_VERSION;
 
 		template <typename StatusType> int authenticate(StatusType* status, IClientBlock* cBlock)
 		{
@@ -2910,14 +3325,16 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IUSER_FIELD_VERSION 2u
+
 	class IUserField : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			int (CLOOP_CARG *entered)(IUserField* self) throw();
-			int (CLOOP_CARG *specified)(IUserField* self) throw();
-			void (CLOOP_CARG *setEntered)(IUserField* self, IStatus* status, int newValue) throw();
+			int (CLOOP_CARG *entered)(IUserField* self) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *specified)(IUserField* self) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setEntered)(IUserField* self, IStatus* status, int newValue) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -2931,7 +3348,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IUSER_FIELD_VERSION;
 
 		int entered()
 		{
@@ -2953,13 +3370,15 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ICHAR_USER_FIELD_VERSION 3u
+
 	class ICharUserField : public IUserField
 	{
 	public:
 		struct VTable : public IUserField::VTable
 		{
-			const char* (CLOOP_CARG *get)(ICharUserField* self) throw();
-			void (CLOOP_CARG *set)(ICharUserField* self, IStatus* status, const char* newValue) throw();
+			const char* (CLOOP_CARG *get)(ICharUserField* self) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *set)(ICharUserField* self, IStatus* status, const char* newValue) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -2973,7 +3392,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ICHAR_USER_FIELD_VERSION;
 
 		const char* get()
 		{
@@ -2989,13 +3408,15 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IINT_USER_FIELD_VERSION 3u
+
 	class IIntUserField : public IUserField
 	{
 	public:
 		struct VTable : public IUserField::VTable
 		{
-			int (CLOOP_CARG *get)(IIntUserField* self) throw();
-			void (CLOOP_CARG *set)(IIntUserField* self, IStatus* status, int newValue) throw();
+			int (CLOOP_CARG *get)(IIntUserField* self) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *set)(IIntUserField* self, IStatus* status, int newValue) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -3009,7 +3430,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IINT_USER_FIELD_VERSION;
 
 		int get()
 		{
@@ -3025,22 +3446,24 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IUSER_VERSION 2u
+
 	class IUser : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			unsigned (CLOOP_CARG *operation)(IUser* self) throw();
-			ICharUserField* (CLOOP_CARG *userName)(IUser* self) throw();
-			ICharUserField* (CLOOP_CARG *password)(IUser* self) throw();
-			ICharUserField* (CLOOP_CARG *firstName)(IUser* self) throw();
-			ICharUserField* (CLOOP_CARG *lastName)(IUser* self) throw();
-			ICharUserField* (CLOOP_CARG *middleName)(IUser* self) throw();
-			ICharUserField* (CLOOP_CARG *comment)(IUser* self) throw();
-			ICharUserField* (CLOOP_CARG *attributes)(IUser* self) throw();
-			IIntUserField* (CLOOP_CARG *active)(IUser* self) throw();
-			IIntUserField* (CLOOP_CARG *admin)(IUser* self) throw();
-			void (CLOOP_CARG *clear)(IUser* self, IStatus* status) throw();
+			unsigned (CLOOP_CARG *operation)(IUser* self) CLOOP_NOEXCEPT;
+			ICharUserField* (CLOOP_CARG *userName)(IUser* self) CLOOP_NOEXCEPT;
+			ICharUserField* (CLOOP_CARG *password)(IUser* self) CLOOP_NOEXCEPT;
+			ICharUserField* (CLOOP_CARG *firstName)(IUser* self) CLOOP_NOEXCEPT;
+			ICharUserField* (CLOOP_CARG *lastName)(IUser* self) CLOOP_NOEXCEPT;
+			ICharUserField* (CLOOP_CARG *middleName)(IUser* self) CLOOP_NOEXCEPT;
+			ICharUserField* (CLOOP_CARG *comment)(IUser* self) CLOOP_NOEXCEPT;
+			ICharUserField* (CLOOP_CARG *attributes)(IUser* self) CLOOP_NOEXCEPT;
+			IIntUserField* (CLOOP_CARG *active)(IUser* self) CLOOP_NOEXCEPT;
+			IIntUserField* (CLOOP_CARG *admin)(IUser* self) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *clear)(IUser* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -3054,14 +3477,14 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IUSER_VERSION;
 
-		static const unsigned OP_USER_ADD = 1;
-		static const unsigned OP_USER_MODIFY = 2;
-		static const unsigned OP_USER_DELETE = 3;
-		static const unsigned OP_USER_DISPLAY = 4;
-		static const unsigned OP_USER_SET_MAP = 5;
-		static const unsigned OP_USER_DROP_MAP = 6;
+		static CLOOP_CONSTEXPR unsigned OP_USER_ADD = 1;
+		static CLOOP_CONSTEXPR unsigned OP_USER_MODIFY = 2;
+		static CLOOP_CONSTEXPR unsigned OP_USER_DELETE = 3;
+		static CLOOP_CONSTEXPR unsigned OP_USER_DISPLAY = 4;
+		static CLOOP_CONSTEXPR unsigned OP_USER_SET_MAP = 5;
+		static CLOOP_CONSTEXPR unsigned OP_USER_DROP_MAP = 6;
 
 		unsigned operation()
 		{
@@ -3131,12 +3554,14 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ILIST_USERS_VERSION 2u
+
 	class IListUsers : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *list)(IListUsers* self, IStatus* status, IUser* user) throw();
+			void (CLOOP_CARG *list)(IListUsers* self, IStatus* status, IUser* user) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -3150,7 +3575,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ILIST_USERS_VERSION;
 
 		template <typename StatusType> void list(StatusType* status, IUser* user)
 		{
@@ -3160,18 +3585,20 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ILOGON_INFO_VERSION 3u
+
 	class ILogonInfo : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			const char* (CLOOP_CARG *name)(ILogonInfo* self) throw();
-			const char* (CLOOP_CARG *role)(ILogonInfo* self) throw();
-			const char* (CLOOP_CARG *networkProtocol)(ILogonInfo* self) throw();
-			const char* (CLOOP_CARG *remoteAddress)(ILogonInfo* self) throw();
-			const unsigned char* (CLOOP_CARG *authBlock)(ILogonInfo* self, unsigned* length) throw();
-			IAttachment* (CLOOP_CARG *attachment)(ILogonInfo* self, IStatus* status) throw();
-			ITransaction* (CLOOP_CARG *transaction)(ILogonInfo* self, IStatus* status) throw();
+			const char* (CLOOP_CARG *name)(ILogonInfo* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *role)(ILogonInfo* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *networkProtocol)(ILogonInfo* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *remoteAddress)(ILogonInfo* self) CLOOP_NOEXCEPT;
+			const unsigned char* (CLOOP_CARG *authBlock)(ILogonInfo* self, unsigned* length) CLOOP_NOEXCEPT;
+			IAttachment* (CLOOP_CARG *attachment)(ILogonInfo* self, IStatus* status) CLOOP_NOEXCEPT;
+			ITransaction* (CLOOP_CARG *transaction)(ILogonInfo* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -3185,7 +3612,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ILOGON_INFO_VERSION;
 
 		const char* name()
 		{
@@ -3246,15 +3673,17 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IMANAGEMENT_VERSION 4u
+
 	class IManagement : public IPluginBase
 	{
 	public:
 		struct VTable : public IPluginBase::VTable
 		{
-			void (CLOOP_CARG *start)(IManagement* self, IStatus* status, ILogonInfo* logonInfo) throw();
-			int (CLOOP_CARG *execute)(IManagement* self, IStatus* status, IUser* user, IListUsers* callback) throw();
-			void (CLOOP_CARG *commit)(IManagement* self, IStatus* status) throw();
-			void (CLOOP_CARG *rollback)(IManagement* self, IStatus* status) throw();
+			void (CLOOP_CARG *start)(IManagement* self, IStatus* status, ILogonInfo* logonInfo) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *execute)(IManagement* self, IStatus* status, IUser* user, IListUsers* callback) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *commit)(IManagement* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *rollback)(IManagement* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -3268,7 +3697,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 4;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IMANAGEMENT_VERSION;
 
 		template <typename StatusType> void start(StatusType* status, ILogonInfo* logonInfo)
 		{
@@ -3300,18 +3729,20 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IAUTH_BLOCK_VERSION 2u
+
 	class IAuthBlock : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			const char* (CLOOP_CARG *getType)(IAuthBlock* self) throw();
-			const char* (CLOOP_CARG *getName)(IAuthBlock* self) throw();
-			const char* (CLOOP_CARG *getPlugin)(IAuthBlock* self) throw();
-			const char* (CLOOP_CARG *getSecurityDb)(IAuthBlock* self) throw();
-			const char* (CLOOP_CARG *getOriginalPlugin)(IAuthBlock* self) throw();
-			FB_BOOLEAN (CLOOP_CARG *next)(IAuthBlock* self, IStatus* status) throw();
-			FB_BOOLEAN (CLOOP_CARG *first)(IAuthBlock* self, IStatus* status) throw();
+			const char* (CLOOP_CARG *getType)(IAuthBlock* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getName)(IAuthBlock* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getPlugin)(IAuthBlock* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getSecurityDb)(IAuthBlock* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getOriginalPlugin)(IAuthBlock* self) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *next)(IAuthBlock* self, IStatus* status) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *first)(IAuthBlock* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -3325,7 +3756,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IAUTH_BLOCK_VERSION;
 
 		const char* getType()
 		{
@@ -3374,17 +3805,19 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IWIRE_CRYPT_PLUGIN_VERSION 5u
+
 	class IWireCryptPlugin : public IPluginBase
 	{
 	public:
 		struct VTable : public IPluginBase::VTable
 		{
-			const char* (CLOOP_CARG *getKnownTypes)(IWireCryptPlugin* self, IStatus* status) throw();
-			void (CLOOP_CARG *setKey)(IWireCryptPlugin* self, IStatus* status, ICryptKey* key) throw();
-			void (CLOOP_CARG *encrypt)(IWireCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw();
-			void (CLOOP_CARG *decrypt)(IWireCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw();
-			const unsigned char* (CLOOP_CARG *getSpecificData)(IWireCryptPlugin* self, IStatus* status, const char* keyType, unsigned* length) throw();
-			void (CLOOP_CARG *setSpecificData)(IWireCryptPlugin* self, IStatus* status, const char* keyType, unsigned length, const unsigned char* data) throw();
+			const char* (CLOOP_CARG *getKnownTypes)(IWireCryptPlugin* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setKey)(IWireCryptPlugin* self, IStatus* status, ICryptKey* key) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *encrypt)(IWireCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *decrypt)(IWireCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) CLOOP_NOEXCEPT;
+			const unsigned char* (CLOOP_CARG *getSpecificData)(IWireCryptPlugin* self, IStatus* status, const char* keyType, unsigned* length) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setSpecificData)(IWireCryptPlugin* self, IStatus* status, const char* keyType, unsigned length, const unsigned char* data) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -3398,7 +3831,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 5;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IWIRE_CRYPT_PLUGIN_VERSION;
 
 		template <typename StatusType> const char* getKnownTypes(StatusType* status)
 		{
@@ -3457,12 +3890,14 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ICRYPT_KEY_CALLBACK_VERSION 2u
+
 	class ICryptKeyCallback : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			unsigned (CLOOP_CARG *callback)(ICryptKeyCallback* self, unsigned dataLength, const void* data, unsigned bufferLength, void* buffer) throw();
+			unsigned (CLOOP_CARG *callback)(ICryptKeyCallback* self, unsigned dataLength, const void* data, unsigned bufferLength, void* buffer) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -3476,7 +3911,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ICRYPT_KEY_CALLBACK_VERSION;
 
 		unsigned callback(unsigned dataLength, const void* data, unsigned bufferLength, void* buffer)
 		{
@@ -3485,15 +3920,17 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IKEY_HOLDER_PLUGIN_VERSION 5u
+
 	class IKeyHolderPlugin : public IPluginBase
 	{
 	public:
 		struct VTable : public IPluginBase::VTable
 		{
-			int (CLOOP_CARG *keyCallback)(IKeyHolderPlugin* self, IStatus* status, ICryptKeyCallback* callback) throw();
-			ICryptKeyCallback* (CLOOP_CARG *keyHandle)(IKeyHolderPlugin* self, IStatus* status, const char* keyName) throw();
-			FB_BOOLEAN (CLOOP_CARG *useOnlyOwnKeys)(IKeyHolderPlugin* self, IStatus* status) throw();
-			ICryptKeyCallback* (CLOOP_CARG *chainHandle)(IKeyHolderPlugin* self, IStatus* status) throw();
+			int (CLOOP_CARG *keyCallback)(IKeyHolderPlugin* self, IStatus* status, ICryptKeyCallback* callback) CLOOP_NOEXCEPT;
+			ICryptKeyCallback* (CLOOP_CARG *keyHandle)(IKeyHolderPlugin* self, IStatus* status, const char* keyName) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *useOnlyOwnKeys)(IKeyHolderPlugin* self, IStatus* status) CLOOP_NOEXCEPT;
+			ICryptKeyCallback* (CLOOP_CARG *chainHandle)(IKeyHolderPlugin* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -3507,7 +3944,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 5;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IKEY_HOLDER_PLUGIN_VERSION;
 
 		template <typename StatusType> int keyCallback(StatusType* status, ICryptKeyCallback* callback)
 		{
@@ -3554,12 +3991,14 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IDB_CRYPT_INFO_VERSION 3u
+
 	class IDbCryptInfo : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			const char* (CLOOP_CARG *getDatabaseFullPath)(IDbCryptInfo* self, IStatus* status) throw();
+			const char* (CLOOP_CARG *getDatabaseFullPath)(IDbCryptInfo* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -3573,7 +4012,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IDB_CRYPT_INFO_VERSION;
 
 		template <typename StatusType> const char* getDatabaseFullPath(StatusType* status)
 		{
@@ -3584,15 +4023,17 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IDB_CRYPT_PLUGIN_VERSION 5u
+
 	class IDbCryptPlugin : public IPluginBase
 	{
 	public:
 		struct VTable : public IPluginBase::VTable
 		{
-			void (CLOOP_CARG *setKey)(IDbCryptPlugin* self, IStatus* status, unsigned length, IKeyHolderPlugin** sources, const char* keyName) throw();
-			void (CLOOP_CARG *encrypt)(IDbCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw();
-			void (CLOOP_CARG *decrypt)(IDbCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw();
-			void (CLOOP_CARG *setInfo)(IDbCryptPlugin* self, IStatus* status, IDbCryptInfo* info) throw();
+			void (CLOOP_CARG *setKey)(IDbCryptPlugin* self, IStatus* status, unsigned length, IKeyHolderPlugin** sources, const char* keyName) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *encrypt)(IDbCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *decrypt)(IDbCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setInfo)(IDbCryptPlugin* self, IStatus* status, IDbCryptInfo* info) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -3606,7 +4047,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 5;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IDB_CRYPT_PLUGIN_VERSION;
 
 		template <typename StatusType> void setKey(StatusType* status, unsigned length, IKeyHolderPlugin** sources, const char* keyName)
 		{
@@ -3643,21 +4084,23 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IEXTERNAL_CONTEXT_VERSION 2u
+
 	class IExternalContext : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			IMaster* (CLOOP_CARG *getMaster)(IExternalContext* self) throw();
-			IExternalEngine* (CLOOP_CARG *getEngine)(IExternalContext* self, IStatus* status) throw();
-			IAttachment* (CLOOP_CARG *getAttachment)(IExternalContext* self, IStatus* status) throw();
-			ITransaction* (CLOOP_CARG *getTransaction)(IExternalContext* self, IStatus* status) throw();
-			const char* (CLOOP_CARG *getUserName)(IExternalContext* self) throw();
-			const char* (CLOOP_CARG *getDatabaseName)(IExternalContext* self) throw();
-			const char* (CLOOP_CARG *getClientCharSet)(IExternalContext* self) throw();
-			int (CLOOP_CARG *obtainInfoCode)(IExternalContext* self) throw();
-			void* (CLOOP_CARG *getInfo)(IExternalContext* self, int code) throw();
-			void* (CLOOP_CARG *setInfo)(IExternalContext* self, int code, void* value) throw();
+			IMaster* (CLOOP_CARG *getMaster)(IExternalContext* self) CLOOP_NOEXCEPT;
+			IExternalEngine* (CLOOP_CARG *getEngine)(IExternalContext* self, IStatus* status) CLOOP_NOEXCEPT;
+			IAttachment* (CLOOP_CARG *getAttachment)(IExternalContext* self, IStatus* status) CLOOP_NOEXCEPT;
+			ITransaction* (CLOOP_CARG *getTransaction)(IExternalContext* self, IStatus* status) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getUserName)(IExternalContext* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getDatabaseName)(IExternalContext* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getClientCharSet)(IExternalContext* self) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *obtainInfoCode)(IExternalContext* self) CLOOP_NOEXCEPT;
+			void* (CLOOP_CARG *getInfo)(IExternalContext* self, int code) CLOOP_NOEXCEPT;
+			void* (CLOOP_CARG *setInfo)(IExternalContext* self, int code, void* value) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -3671,7 +4114,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IEXTERNAL_CONTEXT_VERSION;
 
 		IMaster* getMaster()
 		{
@@ -3740,12 +4183,14 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IEXTERNAL_RESULT_SET_VERSION 3u
+
 	class IExternalResultSet : public IDisposable
 	{
 	public:
 		struct VTable : public IDisposable::VTable
 		{
-			FB_BOOLEAN (CLOOP_CARG *fetch)(IExternalResultSet* self, IStatus* status) throw();
+			FB_BOOLEAN (CLOOP_CARG *fetch)(IExternalResultSet* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -3759,7 +4204,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IEXTERNAL_RESULT_SET_VERSION;
 
 		template <typename StatusType> FB_BOOLEAN fetch(StatusType* status)
 		{
@@ -3770,13 +4215,15 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IEXTERNAL_FUNCTION_VERSION 3u
+
 	class IExternalFunction : public IDisposable
 	{
 	public:
 		struct VTable : public IDisposable::VTable
 		{
-			void (CLOOP_CARG *getCharSet)(IExternalFunction* self, IStatus* status, IExternalContext* context, char* name, unsigned nameSize) throw();
-			void (CLOOP_CARG *execute)(IExternalFunction* self, IStatus* status, IExternalContext* context, void* inMsg, void* outMsg) throw();
+			void (CLOOP_CARG *getCharSet)(IExternalFunction* self, IStatus* status, IExternalContext* context, char* name, unsigned nameSize) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *execute)(IExternalFunction* self, IStatus* status, IExternalContext* context, void* inMsg, void* outMsg) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -3790,7 +4237,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IEXTERNAL_FUNCTION_VERSION;
 
 		template <typename StatusType> void getCharSet(StatusType* status, IExternalContext* context, char* name, unsigned nameSize)
 		{
@@ -3807,13 +4254,15 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IEXTERNAL_PROCEDURE_VERSION 3u
+
 	class IExternalProcedure : public IDisposable
 	{
 	public:
 		struct VTable : public IDisposable::VTable
 		{
-			void (CLOOP_CARG *getCharSet)(IExternalProcedure* self, IStatus* status, IExternalContext* context, char* name, unsigned nameSize) throw();
-			IExternalResultSet* (CLOOP_CARG *open)(IExternalProcedure* self, IStatus* status, IExternalContext* context, void* inMsg, void* outMsg) throw();
+			void (CLOOP_CARG *getCharSet)(IExternalProcedure* self, IStatus* status, IExternalContext* context, char* name, unsigned nameSize) CLOOP_NOEXCEPT;
+			IExternalResultSet* (CLOOP_CARG *open)(IExternalProcedure* self, IStatus* status, IExternalContext* context, void* inMsg, void* outMsg) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -3827,7 +4276,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IEXTERNAL_PROCEDURE_VERSION;
 
 		template <typename StatusType> void getCharSet(StatusType* status, IExternalContext* context, char* name, unsigned nameSize)
 		{
@@ -3845,13 +4294,15 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IEXTERNAL_TRIGGER_VERSION 3u
+
 	class IExternalTrigger : public IDisposable
 	{
 	public:
 		struct VTable : public IDisposable::VTable
 		{
-			void (CLOOP_CARG *getCharSet)(IExternalTrigger* self, IStatus* status, IExternalContext* context, char* name, unsigned nameSize) throw();
-			void (CLOOP_CARG *execute)(IExternalTrigger* self, IStatus* status, IExternalContext* context, unsigned action, void* oldMsg, void* newMsg) throw();
+			void (CLOOP_CARG *getCharSet)(IExternalTrigger* self, IStatus* status, IExternalContext* context, char* name, unsigned nameSize) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *execute)(IExternalTrigger* self, IStatus* status, IExternalContext* context, unsigned action, void* oldMsg, void* newMsg) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -3865,20 +4316,20 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IEXTERNAL_TRIGGER_VERSION;
 
-		static const unsigned TYPE_BEFORE = 1;
-		static const unsigned TYPE_AFTER = 2;
-		static const unsigned TYPE_DATABASE = 3;
-		static const unsigned ACTION_INSERT = 1;
-		static const unsigned ACTION_UPDATE = 2;
-		static const unsigned ACTION_DELETE = 3;
-		static const unsigned ACTION_CONNECT = 4;
-		static const unsigned ACTION_DISCONNECT = 5;
-		static const unsigned ACTION_TRANS_START = 6;
-		static const unsigned ACTION_TRANS_COMMIT = 7;
-		static const unsigned ACTION_TRANS_ROLLBACK = 8;
-		static const unsigned ACTION_DDL = 9;
+		static CLOOP_CONSTEXPR unsigned TYPE_BEFORE = 1;
+		static CLOOP_CONSTEXPR unsigned TYPE_AFTER = 2;
+		static CLOOP_CONSTEXPR unsigned TYPE_DATABASE = 3;
+		static CLOOP_CONSTEXPR unsigned ACTION_INSERT = 1;
+		static CLOOP_CONSTEXPR unsigned ACTION_UPDATE = 2;
+		static CLOOP_CONSTEXPR unsigned ACTION_DELETE = 3;
+		static CLOOP_CONSTEXPR unsigned ACTION_CONNECT = 4;
+		static CLOOP_CONSTEXPR unsigned ACTION_DISCONNECT = 5;
+		static CLOOP_CONSTEXPR unsigned ACTION_TRANS_START = 6;
+		static CLOOP_CONSTEXPR unsigned ACTION_TRANS_COMMIT = 7;
+		static CLOOP_CONSTEXPR unsigned ACTION_TRANS_ROLLBACK = 8;
+		static CLOOP_CONSTEXPR unsigned ACTION_DDL = 9;
 
 		template <typename StatusType> void getCharSet(StatusType* status, IExternalContext* context, char* name, unsigned nameSize)
 		{
@@ -3895,20 +4346,22 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IROUTINE_METADATA_VERSION 2u
+
 	class IRoutineMetadata : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			const char* (CLOOP_CARG *getPackage)(const IRoutineMetadata* self, IStatus* status) throw();
-			const char* (CLOOP_CARG *getName)(const IRoutineMetadata* self, IStatus* status) throw();
-			const char* (CLOOP_CARG *getEntryPoint)(const IRoutineMetadata* self, IStatus* status) throw();
-			const char* (CLOOP_CARG *getBody)(const IRoutineMetadata* self, IStatus* status) throw();
-			IMessageMetadata* (CLOOP_CARG *getInputMetadata)(const IRoutineMetadata* self, IStatus* status) throw();
-			IMessageMetadata* (CLOOP_CARG *getOutputMetadata)(const IRoutineMetadata* self, IStatus* status) throw();
-			IMessageMetadata* (CLOOP_CARG *getTriggerMetadata)(const IRoutineMetadata* self, IStatus* status) throw();
-			const char* (CLOOP_CARG *getTriggerTable)(const IRoutineMetadata* self, IStatus* status) throw();
-			unsigned (CLOOP_CARG *getTriggerType)(const IRoutineMetadata* self, IStatus* status) throw();
+			const char* (CLOOP_CARG *getPackage)(const IRoutineMetadata* self, IStatus* status) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getName)(const IRoutineMetadata* self, IStatus* status) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getEntryPoint)(const IRoutineMetadata* self, IStatus* status) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getBody)(const IRoutineMetadata* self, IStatus* status) CLOOP_NOEXCEPT;
+			IMessageMetadata* (CLOOP_CARG *getInputMetadata)(const IRoutineMetadata* self, IStatus* status) CLOOP_NOEXCEPT;
+			IMessageMetadata* (CLOOP_CARG *getOutputMetadata)(const IRoutineMetadata* self, IStatus* status) CLOOP_NOEXCEPT;
+			IMessageMetadata* (CLOOP_CARG *getTriggerMetadata)(const IRoutineMetadata* self, IStatus* status) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getTriggerTable)(const IRoutineMetadata* self, IStatus* status) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getTriggerType)(const IRoutineMetadata* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -3922,7 +4375,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IROUTINE_METADATA_VERSION;
 
 		template <typename StatusType> const char* getPackage(StatusType* status) const
 		{
@@ -3997,17 +4450,19 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IEXTERNAL_ENGINE_VERSION 4u
+
 	class IExternalEngine : public IPluginBase
 	{
 	public:
 		struct VTable : public IPluginBase::VTable
 		{
-			void (CLOOP_CARG *open)(IExternalEngine* self, IStatus* status, IExternalContext* context, char* charSet, unsigned charSetSize) throw();
-			void (CLOOP_CARG *openAttachment)(IExternalEngine* self, IStatus* status, IExternalContext* context) throw();
-			void (CLOOP_CARG *closeAttachment)(IExternalEngine* self, IStatus* status, IExternalContext* context) throw();
-			IExternalFunction* (CLOOP_CARG *makeFunction)(IExternalEngine* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) throw();
-			IExternalProcedure* (CLOOP_CARG *makeProcedure)(IExternalEngine* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) throw();
-			IExternalTrigger* (CLOOP_CARG *makeTrigger)(IExternalEngine* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder) throw();
+			void (CLOOP_CARG *open)(IExternalEngine* self, IStatus* status, IExternalContext* context, char* charSet, unsigned charSetSize) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *openAttachment)(IExternalEngine* self, IStatus* status, IExternalContext* context) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *closeAttachment)(IExternalEngine* self, IStatus* status, IExternalContext* context) CLOOP_NOEXCEPT;
+			IExternalFunction* (CLOOP_CARG *makeFunction)(IExternalEngine* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) CLOOP_NOEXCEPT;
+			IExternalProcedure* (CLOOP_CARG *makeProcedure)(IExternalEngine* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) CLOOP_NOEXCEPT;
+			IExternalTrigger* (CLOOP_CARG *makeTrigger)(IExternalEngine* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -4021,7 +4476,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 4;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IEXTERNAL_ENGINE_VERSION;
 
 		template <typename StatusType> void open(StatusType* status, IExternalContext* context, char* charSet, unsigned charSetSize)
 		{
@@ -4069,12 +4524,14 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ITIMER_VERSION 3u
+
 	class ITimer : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *handler)(ITimer* self) throw();
+			void (CLOOP_CARG *handler)(ITimer* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -4088,7 +4545,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ITIMER_VERSION;
 
 		void handler()
 		{
@@ -4096,13 +4553,15 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ITIMER_CONTROL_VERSION 2u
+
 	class ITimerControl : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *start)(ITimerControl* self, IStatus* status, ITimer* timer, ISC_UINT64 microSeconds) throw();
-			void (CLOOP_CARG *stop)(ITimerControl* self, IStatus* status, ITimer* timer) throw();
+			void (CLOOP_CARG *start)(ITimerControl* self, IStatus* status, ITimer* timer, ISC_UINT64 microSeconds) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *stop)(ITimerControl* self, IStatus* status, ITimer* timer) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -4116,7 +4575,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ITIMER_CONTROL_VERSION;
 
 		template <typename StatusType> void start(StatusType* status, ITimer* timer, ISC_UINT64 microSeconds)
 		{
@@ -4133,12 +4592,14 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IVERSION_CALLBACK_VERSION 2u
+
 	class IVersionCallback : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *callback)(IVersionCallback* self, IStatus* status, const char* text) throw();
+			void (CLOOP_CARG *callback)(IVersionCallback* self, IStatus* status, const char* text) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -4152,7 +4613,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IVERSION_CALLBACK_VERSION;
 
 		template <typename StatusType> void callback(StatusType* status, const char* text)
 		{
@@ -4162,33 +4623,35 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IUTIL_VERSION 4u
+
 	class IUtil : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *getFbVersion)(IUtil* self, IStatus* status, IAttachment* att, IVersionCallback* callback) throw();
-			void (CLOOP_CARG *loadBlob)(IUtil* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) throw();
-			void (CLOOP_CARG *dumpBlob)(IUtil* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) throw();
-			void (CLOOP_CARG *getPerfCounters)(IUtil* self, IStatus* status, IAttachment* att, const char* countersSet, ISC_INT64* counters) throw();
-			IAttachment* (CLOOP_CARG *executeCreateDatabase)(IUtil* self, IStatus* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb) throw();
-			void (CLOOP_CARG *decodeDate)(IUtil* self, ISC_DATE date, unsigned* year, unsigned* month, unsigned* day) throw();
-			void (CLOOP_CARG *decodeTime)(IUtil* self, ISC_TIME time, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions) throw();
-			ISC_DATE (CLOOP_CARG *encodeDate)(IUtil* self, unsigned year, unsigned month, unsigned day) throw();
-			ISC_TIME (CLOOP_CARG *encodeTime)(IUtil* self, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions) throw();
-			unsigned (CLOOP_CARG *formatStatus)(IUtil* self, char* buffer, unsigned bufferSize, IStatus* status) throw();
-			unsigned (CLOOP_CARG *getClientVersion)(IUtil* self) throw();
-			IXpbBuilder* (CLOOP_CARG *getXpbBuilder)(IUtil* self, IStatus* status, unsigned kind, const unsigned char* buf, unsigned len) throw();
-			unsigned (CLOOP_CARG *setOffsets)(IUtil* self, IStatus* status, IMessageMetadata* metadata, IOffsetsCallback* callback) throw();
-			IDecFloat16* (CLOOP_CARG *getDecFloat16)(IUtil* self, IStatus* status) throw();
-			IDecFloat34* (CLOOP_CARG *getDecFloat34)(IUtil* self, IStatus* status) throw();
-			void (CLOOP_CARG *decodeTimeTz)(IUtil* self, IStatus* status, const ISC_TIME_TZ* timeTz, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) throw();
-			void (CLOOP_CARG *decodeTimeStampTz)(IUtil* self, IStatus* status, const ISC_TIMESTAMP_TZ* timeStampTz, unsigned* year, unsigned* month, unsigned* day, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) throw();
-			void (CLOOP_CARG *encodeTimeTz)(IUtil* self, IStatus* status, ISC_TIME_TZ* timeTz, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone) throw();
-			void (CLOOP_CARG *encodeTimeStampTz)(IUtil* self, IStatus* status, ISC_TIMESTAMP_TZ* timeStampTz, unsigned year, unsigned month, unsigned day, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone) throw();
-			IInt128* (CLOOP_CARG *getInt128)(IUtil* self, IStatus* status) throw();
-			void (CLOOP_CARG *decodeTimeTzEx)(IUtil* self, IStatus* status, const ISC_TIME_TZ_EX* timeTz, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) throw();
-			void (CLOOP_CARG *decodeTimeStampTzEx)(IUtil* self, IStatus* status, const ISC_TIMESTAMP_TZ_EX* timeStampTz, unsigned* year, unsigned* month, unsigned* day, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) throw();
+			void (CLOOP_CARG *getFbVersion)(IUtil* self, IStatus* status, IAttachment* att, IVersionCallback* callback) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *loadBlob)(IUtil* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *dumpBlob)(IUtil* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *getPerfCounters)(IUtil* self, IStatus* status, IAttachment* att, const char* countersSet, ISC_INT64* counters) CLOOP_NOEXCEPT;
+			IAttachment* (CLOOP_CARG *executeCreateDatabase)(IUtil* self, IStatus* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *decodeDate)(IUtil* self, ISC_DATE date, unsigned* year, unsigned* month, unsigned* day) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *decodeTime)(IUtil* self, ISC_TIME time, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions) CLOOP_NOEXCEPT;
+			ISC_DATE (CLOOP_CARG *encodeDate)(IUtil* self, unsigned year, unsigned month, unsigned day) CLOOP_NOEXCEPT;
+			ISC_TIME (CLOOP_CARG *encodeTime)(IUtil* self, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *formatStatus)(IUtil* self, char* buffer, unsigned bufferSize, IStatus* status) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getClientVersion)(IUtil* self) CLOOP_NOEXCEPT;
+			IXpbBuilder* (CLOOP_CARG *getXpbBuilder)(IUtil* self, IStatus* status, unsigned kind, const unsigned char* buf, unsigned len) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *setOffsets)(IUtil* self, IStatus* status, IMessageMetadata* metadata, IOffsetsCallback* callback) CLOOP_NOEXCEPT;
+			IDecFloat16* (CLOOP_CARG *getDecFloat16)(IUtil* self, IStatus* status) CLOOP_NOEXCEPT;
+			IDecFloat34* (CLOOP_CARG *getDecFloat34)(IUtil* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *decodeTimeTz)(IUtil* self, IStatus* status, const ISC_TIME_TZ* timeTz, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *decodeTimeStampTz)(IUtil* self, IStatus* status, const ISC_TIMESTAMP_TZ* timeStampTz, unsigned* year, unsigned* month, unsigned* day, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *encodeTimeTz)(IUtil* self, IStatus* status, ISC_TIME_TZ* timeTz, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *encodeTimeStampTz)(IUtil* self, IStatus* status, ISC_TIMESTAMP_TZ* timeStampTz, unsigned year, unsigned month, unsigned day, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone) CLOOP_NOEXCEPT;
+			IInt128* (CLOOP_CARG *getInt128)(IUtil* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *decodeTimeTzEx)(IUtil* self, IStatus* status, const ISC_TIME_TZ_EX* timeTz, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *decodeTimeStampTzEx)(IUtil* self, IStatus* status, const ISC_TIMESTAMP_TZ_EX* timeStampTz, unsigned* year, unsigned* month, unsigned* day, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -4202,7 +4665,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 4;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IUTIL_VERSION;
 
 		template <typename StatusType> void getFbVersion(StatusType* status, IAttachment* att, IVersionCallback* callback)
 		{
@@ -4411,12 +4874,14 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IOFFSETS_CALLBACK_VERSION 2u
+
 	class IOffsetsCallback : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *setOffset)(IOffsetsCallback* self, IStatus* status, unsigned index, unsigned offset, unsigned nullOffset) throw();
+			void (CLOOP_CARG *setOffset)(IOffsetsCallback* self, IStatus* status, unsigned index, unsigned offset, unsigned nullOffset) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -4430,7 +4895,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IOFFSETS_CALLBACK_VERSION;
 
 		template <typename StatusType> void setOffset(StatusType* status, unsigned index, unsigned offset, unsigned nullOffset)
 		{
@@ -4440,31 +4905,33 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IXPB_BUILDER_VERSION 3u
+
 	class IXpbBuilder : public IDisposable
 	{
 	public:
 		struct VTable : public IDisposable::VTable
 		{
-			void (CLOOP_CARG *clear)(IXpbBuilder* self, IStatus* status) throw();
-			void (CLOOP_CARG *removeCurrent)(IXpbBuilder* self, IStatus* status) throw();
-			void (CLOOP_CARG *insertInt)(IXpbBuilder* self, IStatus* status, unsigned char tag, int value) throw();
-			void (CLOOP_CARG *insertBigInt)(IXpbBuilder* self, IStatus* status, unsigned char tag, ISC_INT64 value) throw();
-			void (CLOOP_CARG *insertBytes)(IXpbBuilder* self, IStatus* status, unsigned char tag, const void* bytes, unsigned length) throw();
-			void (CLOOP_CARG *insertString)(IXpbBuilder* self, IStatus* status, unsigned char tag, const char* str) throw();
-			void (CLOOP_CARG *insertTag)(IXpbBuilder* self, IStatus* status, unsigned char tag) throw();
-			FB_BOOLEAN (CLOOP_CARG *isEof)(IXpbBuilder* self, IStatus* status) throw();
-			void (CLOOP_CARG *moveNext)(IXpbBuilder* self, IStatus* status) throw();
-			void (CLOOP_CARG *rewind)(IXpbBuilder* self, IStatus* status) throw();
-			FB_BOOLEAN (CLOOP_CARG *findFirst)(IXpbBuilder* self, IStatus* status, unsigned char tag) throw();
-			FB_BOOLEAN (CLOOP_CARG *findNext)(IXpbBuilder* self, IStatus* status) throw();
-			unsigned char (CLOOP_CARG *getTag)(IXpbBuilder* self, IStatus* status) throw();
-			unsigned (CLOOP_CARG *getLength)(IXpbBuilder* self, IStatus* status) throw();
-			int (CLOOP_CARG *getInt)(IXpbBuilder* self, IStatus* status) throw();
-			ISC_INT64 (CLOOP_CARG *getBigInt)(IXpbBuilder* self, IStatus* status) throw();
-			const char* (CLOOP_CARG *getString)(IXpbBuilder* self, IStatus* status) throw();
-			const unsigned char* (CLOOP_CARG *getBytes)(IXpbBuilder* self, IStatus* status) throw();
-			unsigned (CLOOP_CARG *getBufferLength)(IXpbBuilder* self, IStatus* status) throw();
-			const unsigned char* (CLOOP_CARG *getBuffer)(IXpbBuilder* self, IStatus* status) throw();
+			void (CLOOP_CARG *clear)(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *removeCurrent)(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *insertInt)(IXpbBuilder* self, IStatus* status, unsigned char tag, int value) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *insertBigInt)(IXpbBuilder* self, IStatus* status, unsigned char tag, ISC_INT64 value) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *insertBytes)(IXpbBuilder* self, IStatus* status, unsigned char tag, const void* bytes, unsigned length) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *insertString)(IXpbBuilder* self, IStatus* status, unsigned char tag, const char* str) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *insertTag)(IXpbBuilder* self, IStatus* status, unsigned char tag) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *isEof)(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *moveNext)(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *rewind)(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *findFirst)(IXpbBuilder* self, IStatus* status, unsigned char tag) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *findNext)(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT;
+			unsigned char (CLOOP_CARG *getTag)(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getLength)(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *getInt)(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT;
+			ISC_INT64 (CLOOP_CARG *getBigInt)(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getString)(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT;
+			const unsigned char* (CLOOP_CARG *getBytes)(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getBufferLength)(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT;
+			const unsigned char* (CLOOP_CARG *getBuffer)(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -4478,17 +4945,19 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IXPB_BUILDER_VERSION;
 
-		static const unsigned DPB = 1;
-		static const unsigned SPB_ATTACH = 2;
-		static const unsigned SPB_START = 3;
-		static const unsigned TPB = 4;
-		static const unsigned BATCH = 5;
-		static const unsigned BPB = 6;
-		static const unsigned SPB_SEND = 7;
-		static const unsigned SPB_RECEIVE = 8;
-		static const unsigned SPB_RESPONSE = 9;
+		static CLOOP_CONSTEXPR unsigned DPB = 1;
+		static CLOOP_CONSTEXPR unsigned SPB_ATTACH = 2;
+		static CLOOP_CONSTEXPR unsigned SPB_START = 3;
+		static CLOOP_CONSTEXPR unsigned TPB = 4;
+		static CLOOP_CONSTEXPR unsigned BATCH = 5;
+		static CLOOP_CONSTEXPR unsigned BPB = 6;
+		static CLOOP_CONSTEXPR unsigned SPB_SEND = 7;
+		static CLOOP_CONSTEXPR unsigned SPB_RECEIVE = 8;
+		static CLOOP_CONSTEXPR unsigned SPB_RESPONSE = 9;
+		static CLOOP_CONSTEXPR unsigned INFO_SEND = 10;
+		static CLOOP_CONSTEXPR unsigned INFO_RESPONSE = 11;
 
 		template <typename StatusType> void clear(StatusType* status)
 		{
@@ -4642,20 +5111,22 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ITRACE_CONNECTION_VERSION 2u
+
 	class ITraceConnection : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			unsigned (CLOOP_CARG *getKind)(ITraceConnection* self) throw();
-			int (CLOOP_CARG *getProcessID)(ITraceConnection* self) throw();
-			const char* (CLOOP_CARG *getUserName)(ITraceConnection* self) throw();
-			const char* (CLOOP_CARG *getRoleName)(ITraceConnection* self) throw();
-			const char* (CLOOP_CARG *getCharSet)(ITraceConnection* self) throw();
-			const char* (CLOOP_CARG *getRemoteProtocol)(ITraceConnection* self) throw();
-			const char* (CLOOP_CARG *getRemoteAddress)(ITraceConnection* self) throw();
-			int (CLOOP_CARG *getRemoteProcessID)(ITraceConnection* self) throw();
-			const char* (CLOOP_CARG *getRemoteProcessName)(ITraceConnection* self) throw();
+			unsigned (CLOOP_CARG *getKind)(ITraceConnection* self) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *getProcessID)(ITraceConnection* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getUserName)(ITraceConnection* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getRoleName)(ITraceConnection* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getCharSet)(ITraceConnection* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getRemoteProtocol)(ITraceConnection* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getRemoteAddress)(ITraceConnection* self) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *getRemoteProcessID)(ITraceConnection* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getRemoteProcessName)(ITraceConnection* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -4669,10 +5140,10 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ITRACE_CONNECTION_VERSION;
 
-		static const unsigned KIND_DATABASE = 1;
-		static const unsigned KIND_SERVICE = 2;
+		static CLOOP_CONSTEXPR unsigned KIND_DATABASE = 1;
+		static CLOOP_CONSTEXPR unsigned KIND_SERVICE = 2;
 
 		unsigned getKind()
 		{
@@ -4729,13 +5200,15 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ITRACE_DATABASE_CONNECTION_VERSION 3u
+
 	class ITraceDatabaseConnection : public ITraceConnection
 	{
 	public:
 		struct VTable : public ITraceConnection::VTable
 		{
-			ISC_INT64 (CLOOP_CARG *getConnectionID)(ITraceDatabaseConnection* self) throw();
-			const char* (CLOOP_CARG *getDatabaseName)(ITraceDatabaseConnection* self) throw();
+			ISC_INT64 (CLOOP_CARG *getConnectionID)(ITraceDatabaseConnection* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getDatabaseName)(ITraceDatabaseConnection* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -4749,7 +5222,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ITRACE_DATABASE_CONNECTION_VERSION;
 
 		ISC_INT64 getConnectionID()
 		{
@@ -4764,18 +5237,20 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ITRACE_TRANSACTION_VERSION 3u
+
 	class ITraceTransaction : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			ISC_INT64 (CLOOP_CARG *getTransactionID)(ITraceTransaction* self) throw();
-			FB_BOOLEAN (CLOOP_CARG *getReadOnly)(ITraceTransaction* self) throw();
-			int (CLOOP_CARG *getWait)(ITraceTransaction* self) throw();
-			unsigned (CLOOP_CARG *getIsolation)(ITraceTransaction* self) throw();
-			PerformanceInfo* (CLOOP_CARG *getPerf)(ITraceTransaction* self) throw();
-			ISC_INT64 (CLOOP_CARG *getInitialID)(ITraceTransaction* self) throw();
-			ISC_INT64 (CLOOP_CARG *getPreviousID)(ITraceTransaction* self) throw();
+			ISC_INT64 (CLOOP_CARG *getTransactionID)(ITraceTransaction* self) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *getReadOnly)(ITraceTransaction* self) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *getWait)(ITraceTransaction* self) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getIsolation)(ITraceTransaction* self) CLOOP_NOEXCEPT;
+			PerformanceInfo* (CLOOP_CARG *getPerf)(ITraceTransaction* self) CLOOP_NOEXCEPT;
+			ISC_INT64 (CLOOP_CARG *getInitialID)(ITraceTransaction* self) CLOOP_NOEXCEPT;
+			ISC_INT64 (CLOOP_CARG *getPreviousID)(ITraceTransaction* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -4789,13 +5264,13 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ITRACE_TRANSACTION_VERSION;
 
-		static const unsigned ISOLATION_CONSISTENCY = 1;
-		static const unsigned ISOLATION_CONCURRENCY = 2;
-		static const unsigned ISOLATION_READ_COMMITTED_RECVER = 3;
-		static const unsigned ISOLATION_READ_COMMITTED_NORECVER = 4;
-		static const unsigned ISOLATION_READ_COMMITTED_READ_CONSISTENCY = 5;
+		static CLOOP_CONSTEXPR unsigned ISOLATION_CONSISTENCY = 1;
+		static CLOOP_CONSTEXPR unsigned ISOLATION_CONCURRENCY = 2;
+		static CLOOP_CONSTEXPR unsigned ISOLATION_READ_COMMITTED_RECVER = 3;
+		static CLOOP_CONSTEXPR unsigned ISOLATION_READ_COMMITTED_NORECVER = 4;
+		static CLOOP_CONSTEXPR unsigned ISOLATION_READ_COMMITTED_READ_CONSISTENCY = 5;
 
 		ISC_INT64 getTransactionID()
 		{
@@ -4848,14 +5323,16 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ITRACE_PARAMS_VERSION 3u
+
 	class ITraceParams : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			unsigned (CLOOP_CARG *getCount)(ITraceParams* self) throw();
-			const dsc* (CLOOP_CARG *getParam)(ITraceParams* self, unsigned idx) throw();
-			const char* (CLOOP_CARG *getTextUTF8)(ITraceParams* self, IStatus* status, unsigned idx) throw();
+			unsigned (CLOOP_CARG *getCount)(ITraceParams* self) CLOOP_NOEXCEPT;
+			const dsc* (CLOOP_CARG *getParam)(ITraceParams* self, unsigned idx) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getTextUTF8)(ITraceParams* self, IStatus* status, unsigned idx) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -4869,7 +5346,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ITRACE_PARAMS_VERSION;
 
 		unsigned getCount()
 		{
@@ -4898,13 +5375,15 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ITRACE_STATEMENT_VERSION 2u
+
 	class ITraceStatement : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			ISC_INT64 (CLOOP_CARG *getStmtID)(ITraceStatement* self) throw();
-			PerformanceInfo* (CLOOP_CARG *getPerf)(ITraceStatement* self) throw();
+			ISC_INT64 (CLOOP_CARG *getStmtID)(ITraceStatement* self) CLOOP_NOEXCEPT;
+			PerformanceInfo* (CLOOP_CARG *getPerf)(ITraceStatement* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -4918,7 +5397,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ITRACE_STATEMENT_VERSION;
 
 		ISC_INT64 getStmtID()
 		{
@@ -4933,16 +5412,18 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ITRACE_SQLSTATEMENT_VERSION 3u
+
 	class ITraceSQLStatement : public ITraceStatement
 	{
 	public:
 		struct VTable : public ITraceStatement::VTable
 		{
-			const char* (CLOOP_CARG *getText)(ITraceSQLStatement* self) throw();
-			const char* (CLOOP_CARG *getPlan)(ITraceSQLStatement* self) throw();
-			ITraceParams* (CLOOP_CARG *getInputs)(ITraceSQLStatement* self) throw();
-			const char* (CLOOP_CARG *getTextUTF8)(ITraceSQLStatement* self) throw();
-			const char* (CLOOP_CARG *getExplainedPlan)(ITraceSQLStatement* self) throw();
+			const char* (CLOOP_CARG *getText)(ITraceSQLStatement* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getPlan)(ITraceSQLStatement* self) CLOOP_NOEXCEPT;
+			ITraceParams* (CLOOP_CARG *getInputs)(ITraceSQLStatement* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getTextUTF8)(ITraceSQLStatement* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getExplainedPlan)(ITraceSQLStatement* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -4956,7 +5437,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ITRACE_SQLSTATEMENT_VERSION;
 
 		const char* getText()
 		{
@@ -4989,14 +5470,16 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ITRACE_BLRSTATEMENT_VERSION 3u
+
 	class ITraceBLRStatement : public ITraceStatement
 	{
 	public:
 		struct VTable : public ITraceStatement::VTable
 		{
-			const unsigned char* (CLOOP_CARG *getData)(ITraceBLRStatement* self) throw();
-			unsigned (CLOOP_CARG *getDataLength)(ITraceBLRStatement* self) throw();
-			const char* (CLOOP_CARG *getText)(ITraceBLRStatement* self) throw();
+			const unsigned char* (CLOOP_CARG *getData)(ITraceBLRStatement* self) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getDataLength)(ITraceBLRStatement* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getText)(ITraceBLRStatement* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -5010,7 +5493,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ITRACE_BLRSTATEMENT_VERSION;
 
 		const unsigned char* getData()
 		{
@@ -5031,14 +5514,16 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ITRACE_DYNREQUEST_VERSION 2u
+
 	class ITraceDYNRequest : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			const unsigned char* (CLOOP_CARG *getData)(ITraceDYNRequest* self) throw();
-			unsigned (CLOOP_CARG *getDataLength)(ITraceDYNRequest* self) throw();
-			const char* (CLOOP_CARG *getText)(ITraceDYNRequest* self) throw();
+			const unsigned char* (CLOOP_CARG *getData)(ITraceDYNRequest* self) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getDataLength)(ITraceDYNRequest* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getText)(ITraceDYNRequest* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -5052,7 +5537,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ITRACE_DYNREQUEST_VERSION;
 
 		const unsigned char* getData()
 		{
@@ -5073,14 +5558,16 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ITRACE_CONTEXT_VARIABLE_VERSION 2u
+
 	class ITraceContextVariable : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			const char* (CLOOP_CARG *getNameSpace)(ITraceContextVariable* self) throw();
-			const char* (CLOOP_CARG *getVarName)(ITraceContextVariable* self) throw();
-			const char* (CLOOP_CARG *getVarValue)(ITraceContextVariable* self) throw();
+			const char* (CLOOP_CARG *getNameSpace)(ITraceContextVariable* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getVarName)(ITraceContextVariable* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getVarValue)(ITraceContextVariable* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -5094,7 +5581,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ITRACE_CONTEXT_VARIABLE_VERSION;
 
 		const char* getNameSpace()
 		{
@@ -5115,14 +5602,16 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ITRACE_PROCEDURE_VERSION 2u
+
 	class ITraceProcedure : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			const char* (CLOOP_CARG *getProcName)(ITraceProcedure* self) throw();
-			ITraceParams* (CLOOP_CARG *getInputs)(ITraceProcedure* self) throw();
-			PerformanceInfo* (CLOOP_CARG *getPerf)(ITraceProcedure* self) throw();
+			const char* (CLOOP_CARG *getProcName)(ITraceProcedure* self) CLOOP_NOEXCEPT;
+			ITraceParams* (CLOOP_CARG *getInputs)(ITraceProcedure* self) CLOOP_NOEXCEPT;
+			PerformanceInfo* (CLOOP_CARG *getPerf)(ITraceProcedure* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -5136,7 +5625,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ITRACE_PROCEDURE_VERSION;
 
 		const char* getProcName()
 		{
@@ -5157,15 +5646,17 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ITRACE_FUNCTION_VERSION 2u
+
 	class ITraceFunction : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			const char* (CLOOP_CARG *getFuncName)(ITraceFunction* self) throw();
-			ITraceParams* (CLOOP_CARG *getInputs)(ITraceFunction* self) throw();
-			ITraceParams* (CLOOP_CARG *getResult)(ITraceFunction* self) throw();
-			PerformanceInfo* (CLOOP_CARG *getPerf)(ITraceFunction* self) throw();
+			const char* (CLOOP_CARG *getFuncName)(ITraceFunction* self) CLOOP_NOEXCEPT;
+			ITraceParams* (CLOOP_CARG *getInputs)(ITraceFunction* self) CLOOP_NOEXCEPT;
+			ITraceParams* (CLOOP_CARG *getResult)(ITraceFunction* self) CLOOP_NOEXCEPT;
+			PerformanceInfo* (CLOOP_CARG *getPerf)(ITraceFunction* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -5179,7 +5670,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ITRACE_FUNCTION_VERSION;
 
 		const char* getFuncName()
 		{
@@ -5206,16 +5697,18 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ITRACE_TRIGGER_VERSION 2u
+
 	class ITraceTrigger : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			const char* (CLOOP_CARG *getTriggerName)(ITraceTrigger* self) throw();
-			const char* (CLOOP_CARG *getRelationName)(ITraceTrigger* self) throw();
-			int (CLOOP_CARG *getAction)(ITraceTrigger* self) throw();
-			int (CLOOP_CARG *getWhich)(ITraceTrigger* self) throw();
-			PerformanceInfo* (CLOOP_CARG *getPerf)(ITraceTrigger* self) throw();
+			const char* (CLOOP_CARG *getTriggerName)(ITraceTrigger* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getRelationName)(ITraceTrigger* self) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *getAction)(ITraceTrigger* self) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *getWhich)(ITraceTrigger* self) CLOOP_NOEXCEPT;
+			PerformanceInfo* (CLOOP_CARG *getPerf)(ITraceTrigger* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -5229,11 +5722,11 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ITRACE_TRIGGER_VERSION;
 
-		static const unsigned TYPE_ALL = 0;
-		static const unsigned TYPE_BEFORE = 1;
-		static const unsigned TYPE_AFTER = 2;
+		static CLOOP_CONSTEXPR unsigned TYPE_ALL = 0;
+		static CLOOP_CONSTEXPR unsigned TYPE_BEFORE = 1;
+		static CLOOP_CONSTEXPR unsigned TYPE_AFTER = 2;
 
 		const char* getTriggerName()
 		{
@@ -5266,14 +5759,16 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ITRACE_SERVICE_CONNECTION_VERSION 3u
+
 	class ITraceServiceConnection : public ITraceConnection
 	{
 	public:
 		struct VTable : public ITraceConnection::VTable
 		{
-			void* (CLOOP_CARG *getServiceID)(ITraceServiceConnection* self) throw();
-			const char* (CLOOP_CARG *getServiceMgr)(ITraceServiceConnection* self) throw();
-			const char* (CLOOP_CARG *getServiceName)(ITraceServiceConnection* self) throw();
+			void* (CLOOP_CARG *getServiceID)(ITraceServiceConnection* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getServiceMgr)(ITraceServiceConnection* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getServiceName)(ITraceServiceConnection* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -5287,7 +5782,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ITRACE_SERVICE_CONNECTION_VERSION;
 
 		void* getServiceID()
 		{
@@ -5308,15 +5803,17 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ITRACE_STATUS_VECTOR_VERSION 2u
+
 	class ITraceStatusVector : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			FB_BOOLEAN (CLOOP_CARG *hasError)(ITraceStatusVector* self) throw();
-			FB_BOOLEAN (CLOOP_CARG *hasWarning)(ITraceStatusVector* self) throw();
-			IStatus* (CLOOP_CARG *getStatus)(ITraceStatusVector* self) throw();
-			const char* (CLOOP_CARG *getText)(ITraceStatusVector* self) throw();
+			FB_BOOLEAN (CLOOP_CARG *hasError)(ITraceStatusVector* self) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *hasWarning)(ITraceStatusVector* self) CLOOP_NOEXCEPT;
+			IStatus* (CLOOP_CARG *getStatus)(ITraceStatusVector* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getText)(ITraceStatusVector* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -5330,7 +5827,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ITRACE_STATUS_VECTOR_VERSION;
 
 		FB_BOOLEAN hasError()
 		{
@@ -5357,16 +5854,18 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ITRACE_SWEEP_INFO_VERSION 2u
+
 	class ITraceSweepInfo : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			ISC_INT64 (CLOOP_CARG *getOIT)(ITraceSweepInfo* self) throw();
-			ISC_INT64 (CLOOP_CARG *getOST)(ITraceSweepInfo* self) throw();
-			ISC_INT64 (CLOOP_CARG *getOAT)(ITraceSweepInfo* self) throw();
-			ISC_INT64 (CLOOP_CARG *getNext)(ITraceSweepInfo* self) throw();
-			PerformanceInfo* (CLOOP_CARG *getPerf)(ITraceSweepInfo* self) throw();
+			ISC_INT64 (CLOOP_CARG *getOIT)(ITraceSweepInfo* self) CLOOP_NOEXCEPT;
+			ISC_INT64 (CLOOP_CARG *getOST)(ITraceSweepInfo* self) CLOOP_NOEXCEPT;
+			ISC_INT64 (CLOOP_CARG *getOAT)(ITraceSweepInfo* self) CLOOP_NOEXCEPT;
+			ISC_INT64 (CLOOP_CARG *getNext)(ITraceSweepInfo* self) CLOOP_NOEXCEPT;
+			PerformanceInfo* (CLOOP_CARG *getPerf)(ITraceSweepInfo* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -5380,7 +5879,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ITRACE_SWEEP_INFO_VERSION;
 
 		ISC_INT64 getOIT()
 		{
@@ -5413,13 +5912,15 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ITRACE_LOG_WRITER_VERSION 4u
+
 	class ITraceLogWriter : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			unsigned (CLOOP_CARG *write)(ITraceLogWriter* self, const void* buf, unsigned size) throw();
-			unsigned (CLOOP_CARG *write_s)(ITraceLogWriter* self, IStatus* status, const void* buf, unsigned size) throw();
+			unsigned (CLOOP_CARG *write)(ITraceLogWriter* self, const void* buf, unsigned size) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *write_s)(ITraceLogWriter* self, IStatus* status, const void* buf, unsigned size) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -5433,7 +5934,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 4;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ITRACE_LOG_WRITER_VERSION;
 
 		unsigned write(const void* buf, unsigned size)
 		{
@@ -5456,18 +5957,20 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ITRACE_INIT_INFO_VERSION 2u
+
 	class ITraceInitInfo : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			const char* (CLOOP_CARG *getConfigText)(ITraceInitInfo* self) throw();
-			int (CLOOP_CARG *getTraceSessionID)(ITraceInitInfo* self) throw();
-			const char* (CLOOP_CARG *getTraceSessionName)(ITraceInitInfo* self) throw();
-			const char* (CLOOP_CARG *getFirebirdRootDirectory)(ITraceInitInfo* self) throw();
-			const char* (CLOOP_CARG *getDatabaseName)(ITraceInitInfo* self) throw();
-			ITraceDatabaseConnection* (CLOOP_CARG *getConnection)(ITraceInitInfo* self) throw();
-			ITraceLogWriter* (CLOOP_CARG *getLogWriter)(ITraceInitInfo* self) throw();
+			const char* (CLOOP_CARG *getConfigText)(ITraceInitInfo* self) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *getTraceSessionID)(ITraceInitInfo* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getTraceSessionName)(ITraceInitInfo* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getFirebirdRootDirectory)(ITraceInitInfo* self) CLOOP_NOEXCEPT;
+			const char* (CLOOP_CARG *getDatabaseName)(ITraceInitInfo* self) CLOOP_NOEXCEPT;
+			ITraceDatabaseConnection* (CLOOP_CARG *getConnection)(ITraceInitInfo* self) CLOOP_NOEXCEPT;
+			ITraceLogWriter* (CLOOP_CARG *getLogWriter)(ITraceInitInfo* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -5481,7 +5984,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ITRACE_INIT_INFO_VERSION;
 
 		const char* getConfigText()
 		{
@@ -5526,32 +6029,35 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_ITRACE_PLUGIN_VERSION 4u
+
 	class ITracePlugin : public IReferenceCounted
 	{
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			const char* (CLOOP_CARG *trace_get_error)(ITracePlugin* self) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_attach)(ITracePlugin* self, ITraceDatabaseConnection* connection, FB_BOOLEAN create_db, unsigned att_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_detach)(ITracePlugin* self, ITraceDatabaseConnection* connection, FB_BOOLEAN drop_db) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_transaction_start)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, unsigned tpb_length, const unsigned char* tpb, unsigned tra_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_transaction_end)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, FB_BOOLEAN commit, FB_BOOLEAN retain_context, unsigned tra_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_proc_execute)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceProcedure* procedure, FB_BOOLEAN started, unsigned proc_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_trigger_execute)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceTrigger* trigger, FB_BOOLEAN started, unsigned trig_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_set_context)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceContextVariable* variable) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_dsql_prepare)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, ISC_INT64 time_millis, unsigned req_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_dsql_free)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceSQLStatement* statement, unsigned option) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_dsql_execute)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, FB_BOOLEAN started, unsigned req_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_blr_compile)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceBLRStatement* statement, ISC_INT64 time_millis, unsigned req_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_blr_execute)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceBLRStatement* statement, unsigned req_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_dyn_execute)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceDYNRequest* request, ISC_INT64 time_millis, unsigned req_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_service_attach)(ITracePlugin* self, ITraceServiceConnection* service, unsigned att_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_service_start)(ITracePlugin* self, ITraceServiceConnection* service, unsigned switches_length, const char* switches, unsigned start_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_service_query)(ITracePlugin* self, ITraceServiceConnection* service, unsigned send_item_length, const unsigned char* send_items, unsigned recv_item_length, const unsigned char* recv_items, unsigned query_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_service_detach)(ITracePlugin* self, ITraceServiceConnection* service, unsigned detach_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_event_error)(ITracePlugin* self, ITraceConnection* connection, ITraceStatusVector* status, const char* function) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_event_sweep)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceSweepInfo* sweep, unsigned sweep_state) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_func_execute)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceFunction* function, FB_BOOLEAN started, unsigned func_result) throw();
+			const char* (CLOOP_CARG *trace_get_error)(ITracePlugin* self) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *trace_attach)(ITracePlugin* self, ITraceDatabaseConnection* connection, FB_BOOLEAN create_db, unsigned att_result) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *trace_detach)(ITracePlugin* self, ITraceDatabaseConnection* connection, FB_BOOLEAN drop_db) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *trace_transaction_start)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, unsigned tpb_length, const unsigned char* tpb, unsigned tra_result) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *trace_transaction_end)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, FB_BOOLEAN commit, FB_BOOLEAN retain_context, unsigned tra_result) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *trace_proc_execute)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceProcedure* procedure, FB_BOOLEAN started, unsigned proc_result) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *trace_trigger_execute)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceTrigger* trigger, FB_BOOLEAN started, unsigned trig_result) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *trace_set_context)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceContextVariable* variable) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *trace_dsql_prepare)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, ISC_INT64 time_millis, unsigned req_result) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *trace_dsql_free)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceSQLStatement* statement, unsigned option) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *trace_dsql_execute)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, FB_BOOLEAN started, unsigned req_result) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *trace_blr_compile)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceBLRStatement* statement, ISC_INT64 time_millis, unsigned req_result) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *trace_blr_execute)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceBLRStatement* statement, unsigned req_result) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *trace_dyn_execute)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceDYNRequest* request, ISC_INT64 time_millis, unsigned req_result) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *trace_service_attach)(ITracePlugin* self, ITraceServiceConnection* service, unsigned att_result) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *trace_service_start)(ITracePlugin* self, ITraceServiceConnection* service, unsigned switches_length, const char* switches, unsigned start_result) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *trace_service_query)(ITracePlugin* self, ITraceServiceConnection* service, unsigned send_item_length, const unsigned char* send_items, unsigned recv_item_length, const unsigned char* recv_items, unsigned query_result) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *trace_service_detach)(ITracePlugin* self, ITraceServiceConnection* service, unsigned detach_result) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *trace_event_error)(ITracePlugin* self, ITraceConnection* connection, ITraceStatusVector* status, const char* function) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *trace_event_sweep)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceSweepInfo* sweep, unsigned sweep_state) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *trace_func_execute)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceFunction* function, FB_BOOLEAN started, unsigned func_result) CLOOP_NOEXCEPT;
+			FB_BOOLEAN (CLOOP_CARG *trace_dsql_restart)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, unsigned number) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -5565,15 +6071,15 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ITRACE_PLUGIN_VERSION;
 
-		static const unsigned RESULT_SUCCESS = 0;
-		static const unsigned RESULT_FAILED = 1;
-		static const unsigned RESULT_UNAUTHORIZED = 2;
-		static const unsigned SWEEP_STATE_STARTED = 1;
-		static const unsigned SWEEP_STATE_FINISHED = 2;
-		static const unsigned SWEEP_STATE_FAILED = 3;
-		static const unsigned SWEEP_STATE_PROGRESS = 4;
+		static CLOOP_CONSTEXPR unsigned RESULT_SUCCESS = 0;
+		static CLOOP_CONSTEXPR unsigned RESULT_FAILED = 1;
+		static CLOOP_CONSTEXPR unsigned RESULT_UNAUTHORIZED = 2;
+		static CLOOP_CONSTEXPR unsigned SWEEP_STATE_STARTED = 1;
+		static CLOOP_CONSTEXPR unsigned SWEEP_STATE_FINISHED = 2;
+		static CLOOP_CONSTEXPR unsigned SWEEP_STATE_FAILED = 3;
+		static CLOOP_CONSTEXPR unsigned SWEEP_STATE_PROGRESS = 4;
 
 		const char* trace_get_error()
 		{
@@ -5700,15 +6206,27 @@ namespace Firebird
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_func_execute(this, connection, transaction, function, started, func_result);
 			return ret;
 		}
+
+		FB_BOOLEAN trace_dsql_restart(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, unsigned number)
+		{
+			if (cloopVTable->version < 4)
+			{
+				return 0;
+			}
+			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_dsql_restart(this, connection, transaction, statement, number);
+			return ret;
+		}
 	};
+
+#define FIREBIRD_ITRACE_FACTORY_VERSION 4u
 
 	class ITraceFactory : public IPluginBase
 	{
 	public:
 		struct VTable : public IPluginBase::VTable
 		{
-			ISC_UINT64 (CLOOP_CARG *trace_needs)(ITraceFactory* self) throw();
-			ITracePlugin* (CLOOP_CARG *trace_create)(ITraceFactory* self, IStatus* status, ITraceInitInfo* init_info) throw();
+			ISC_UINT64 (CLOOP_CARG *trace_needs)(ITraceFactory* self) CLOOP_NOEXCEPT;
+			ITracePlugin* (CLOOP_CARG *trace_create)(ITraceFactory* self, IStatus* status, ITraceInitInfo* init_info) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -5722,29 +6240,29 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 4;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_ITRACE_FACTORY_VERSION;
 
-		static const unsigned TRACE_EVENT_ATTACH = 0;
-		static const unsigned TRACE_EVENT_DETACH = 1;
-		static const unsigned TRACE_EVENT_TRANSACTION_START = 2;
-		static const unsigned TRACE_EVENT_TRANSACTION_END = 3;
-		static const unsigned TRACE_EVENT_SET_CONTEXT = 4;
-		static const unsigned TRACE_EVENT_PROC_EXECUTE = 5;
-		static const unsigned TRACE_EVENT_TRIGGER_EXECUTE = 6;
-		static const unsigned TRACE_EVENT_DSQL_PREPARE = 7;
-		static const unsigned TRACE_EVENT_DSQL_FREE = 8;
-		static const unsigned TRACE_EVENT_DSQL_EXECUTE = 9;
-		static const unsigned TRACE_EVENT_BLR_COMPILE = 10;
-		static const unsigned TRACE_EVENT_BLR_EXECUTE = 11;
-		static const unsigned TRACE_EVENT_DYN_EXECUTE = 12;
-		static const unsigned TRACE_EVENT_SERVICE_ATTACH = 13;
-		static const unsigned TRACE_EVENT_SERVICE_START = 14;
-		static const unsigned TRACE_EVENT_SERVICE_QUERY = 15;
-		static const unsigned TRACE_EVENT_SERVICE_DETACH = 16;
-		static const unsigned TRACE_EVENT_ERROR = 17;
-		static const unsigned TRACE_EVENT_SWEEP = 18;
-		static const unsigned TRACE_EVENT_FUNC_EXECUTE = 19;
-		static const unsigned TRACE_EVENT_MAX = 20;
+		static CLOOP_CONSTEXPR unsigned TRACE_EVENT_ATTACH = 0;
+		static CLOOP_CONSTEXPR unsigned TRACE_EVENT_DETACH = 1;
+		static CLOOP_CONSTEXPR unsigned TRACE_EVENT_TRANSACTION_START = 2;
+		static CLOOP_CONSTEXPR unsigned TRACE_EVENT_TRANSACTION_END = 3;
+		static CLOOP_CONSTEXPR unsigned TRACE_EVENT_SET_CONTEXT = 4;
+		static CLOOP_CONSTEXPR unsigned TRACE_EVENT_PROC_EXECUTE = 5;
+		static CLOOP_CONSTEXPR unsigned TRACE_EVENT_TRIGGER_EXECUTE = 6;
+		static CLOOP_CONSTEXPR unsigned TRACE_EVENT_DSQL_PREPARE = 7;
+		static CLOOP_CONSTEXPR unsigned TRACE_EVENT_DSQL_FREE = 8;
+		static CLOOP_CONSTEXPR unsigned TRACE_EVENT_DSQL_EXECUTE = 9;
+		static CLOOP_CONSTEXPR unsigned TRACE_EVENT_BLR_COMPILE = 10;
+		static CLOOP_CONSTEXPR unsigned TRACE_EVENT_BLR_EXECUTE = 11;
+		static CLOOP_CONSTEXPR unsigned TRACE_EVENT_DYN_EXECUTE = 12;
+		static CLOOP_CONSTEXPR unsigned TRACE_EVENT_SERVICE_ATTACH = 13;
+		static CLOOP_CONSTEXPR unsigned TRACE_EVENT_SERVICE_START = 14;
+		static CLOOP_CONSTEXPR unsigned TRACE_EVENT_SERVICE_QUERY = 15;
+		static CLOOP_CONSTEXPR unsigned TRACE_EVENT_SERVICE_DETACH = 16;
+		static CLOOP_CONSTEXPR unsigned TRACE_EVENT_ERROR = 17;
+		static CLOOP_CONSTEXPR unsigned TRACE_EVENT_SWEEP = 18;
+		static CLOOP_CONSTEXPR unsigned TRACE_EVENT_FUNC_EXECUTE = 19;
+		static CLOOP_CONSTEXPR unsigned TRACE_EVENT_MAX = 20;
 
 		ISC_UINT64 trace_needs()
 		{
@@ -5761,13 +6279,15 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IUDR_FUNCTION_FACTORY_VERSION 3u
+
 	class IUdrFunctionFactory : public IDisposable
 	{
 	public:
 		struct VTable : public IDisposable::VTable
 		{
-			void (CLOOP_CARG *setup)(IUdrFunctionFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) throw();
-			IExternalFunction* (CLOOP_CARG *newItem)(IUdrFunctionFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata) throw();
+			void (CLOOP_CARG *setup)(IUdrFunctionFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) CLOOP_NOEXCEPT;
+			IExternalFunction* (CLOOP_CARG *newItem)(IUdrFunctionFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -5781,7 +6301,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IUDR_FUNCTION_FACTORY_VERSION;
 
 		template <typename StatusType> void setup(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 		{
@@ -5799,13 +6319,15 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IUDR_PROCEDURE_FACTORY_VERSION 3u
+
 	class IUdrProcedureFactory : public IDisposable
 	{
 	public:
 		struct VTable : public IDisposable::VTable
 		{
-			void (CLOOP_CARG *setup)(IUdrProcedureFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) throw();
-			IExternalProcedure* (CLOOP_CARG *newItem)(IUdrProcedureFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata) throw();
+			void (CLOOP_CARG *setup)(IUdrProcedureFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) CLOOP_NOEXCEPT;
+			IExternalProcedure* (CLOOP_CARG *newItem)(IUdrProcedureFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -5819,7 +6341,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IUDR_PROCEDURE_FACTORY_VERSION;
 
 		template <typename StatusType> void setup(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 		{
@@ -5837,13 +6359,15 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IUDR_TRIGGER_FACTORY_VERSION 3u
+
 	class IUdrTriggerFactory : public IDisposable
 	{
 	public:
 		struct VTable : public IDisposable::VTable
 		{
-			void (CLOOP_CARG *setup)(IUdrTriggerFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder) throw();
-			IExternalTrigger* (CLOOP_CARG *newItem)(IUdrTriggerFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata) throw();
+			void (CLOOP_CARG *setup)(IUdrTriggerFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder) CLOOP_NOEXCEPT;
+			IExternalTrigger* (CLOOP_CARG *newItem)(IUdrTriggerFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -5857,7 +6381,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IUDR_TRIGGER_FACTORY_VERSION;
 
 		template <typename StatusType> void setup(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder)
 		{
@@ -5875,15 +6399,17 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IUDR_PLUGIN_VERSION 2u
+
 	class IUdrPlugin : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			IMaster* (CLOOP_CARG *getMaster)(IUdrPlugin* self) throw();
-			void (CLOOP_CARG *registerFunction)(IUdrPlugin* self, IStatus* status, const char* name, IUdrFunctionFactory* factory) throw();
-			void (CLOOP_CARG *registerProcedure)(IUdrPlugin* self, IStatus* status, const char* name, IUdrProcedureFactory* factory) throw();
-			void (CLOOP_CARG *registerTrigger)(IUdrPlugin* self, IStatus* status, const char* name, IUdrTriggerFactory* factory) throw();
+			IMaster* (CLOOP_CARG *getMaster)(IUdrPlugin* self) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *registerFunction)(IUdrPlugin* self, IStatus* status, const char* name, IUdrFunctionFactory* factory) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *registerProcedure)(IUdrPlugin* self, IStatus* status, const char* name, IUdrProcedureFactory* factory) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *registerTrigger)(IUdrPlugin* self, IStatus* status, const char* name, IUdrTriggerFactory* factory) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -5897,7 +6423,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IUDR_PLUGIN_VERSION;
 
 		IMaster* getMaster()
 		{
@@ -5927,15 +6453,17 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IDEC_FLOAT16_VERSION 2u
+
 	class IDecFloat16 : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *toBcd)(IDecFloat16* self, const FB_DEC16* from, int* sign, unsigned char* bcd, int* exp) throw();
-			void (CLOOP_CARG *toString)(IDecFloat16* self, IStatus* status, const FB_DEC16* from, unsigned bufferLength, char* buffer) throw();
-			void (CLOOP_CARG *fromBcd)(IDecFloat16* self, int sign, const unsigned char* bcd, int exp, FB_DEC16* to) throw();
-			void (CLOOP_CARG *fromString)(IDecFloat16* self, IStatus* status, const char* from, FB_DEC16* to) throw();
+			void (CLOOP_CARG *toBcd)(IDecFloat16* self, const FB_DEC16* from, int* sign, unsigned char* bcd, int* exp) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *toString)(IDecFloat16* self, IStatus* status, const FB_DEC16* from, unsigned bufferLength, char* buffer) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *fromBcd)(IDecFloat16* self, int sign, const unsigned char* bcd, int exp, FB_DEC16* to) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *fromString)(IDecFloat16* self, IStatus* status, const char* from, FB_DEC16* to) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -5949,10 +6477,10 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IDEC_FLOAT16_VERSION;
 
-		static const unsigned BCD_SIZE = 16;
-		static const unsigned STRING_SIZE = 24;
+		static CLOOP_CONSTEXPR unsigned BCD_SIZE = 16;
+		static CLOOP_CONSTEXPR unsigned STRING_SIZE = 24;
 
 		void toBcd(const FB_DEC16* from, int* sign, unsigned char* bcd, int* exp)
 		{
@@ -5979,15 +6507,17 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IDEC_FLOAT34_VERSION 2u
+
 	class IDecFloat34 : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *toBcd)(IDecFloat34* self, const FB_DEC34* from, int* sign, unsigned char* bcd, int* exp) throw();
-			void (CLOOP_CARG *toString)(IDecFloat34* self, IStatus* status, const FB_DEC34* from, unsigned bufferLength, char* buffer) throw();
-			void (CLOOP_CARG *fromBcd)(IDecFloat34* self, int sign, const unsigned char* bcd, int exp, FB_DEC34* to) throw();
-			void (CLOOP_CARG *fromString)(IDecFloat34* self, IStatus* status, const char* from, FB_DEC34* to) throw();
+			void (CLOOP_CARG *toBcd)(IDecFloat34* self, const FB_DEC34* from, int* sign, unsigned char* bcd, int* exp) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *toString)(IDecFloat34* self, IStatus* status, const FB_DEC34* from, unsigned bufferLength, char* buffer) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *fromBcd)(IDecFloat34* self, int sign, const unsigned char* bcd, int exp, FB_DEC34* to) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *fromString)(IDecFloat34* self, IStatus* status, const char* from, FB_DEC34* to) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -6001,10 +6531,10 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IDEC_FLOAT34_VERSION;
 
-		static const unsigned BCD_SIZE = 34;
-		static const unsigned STRING_SIZE = 43;
+		static CLOOP_CONSTEXPR unsigned BCD_SIZE = 34;
+		static CLOOP_CONSTEXPR unsigned STRING_SIZE = 43;
 
 		void toBcd(const FB_DEC34* from, int* sign, unsigned char* bcd, int* exp)
 		{
@@ -6031,13 +6561,15 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IINT128_VERSION 2u
+
 	class IInt128 : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *toString)(IInt128* self, IStatus* status, const FB_I128* from, int scale, unsigned bufferLength, char* buffer) throw();
-			void (CLOOP_CARG *fromString)(IInt128* self, IStatus* status, int scale, const char* from, FB_I128* to) throw();
+			void (CLOOP_CARG *toString)(IInt128* self, IStatus* status, const FB_I128* from, int scale, unsigned bufferLength, char* buffer) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *fromString)(IInt128* self, IStatus* status, int scale, const char* from, FB_I128* to) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -6051,9 +6583,9 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IINT128_VERSION;
 
-		static const unsigned STRING_SIZE = 46;
+		static CLOOP_CONSTEXPR unsigned STRING_SIZE = 46;
 
 		template <typename StatusType> void toString(StatusType* status, const FB_I128* from, int scale, unsigned bufferLength, char* buffer)
 		{
@@ -6070,18 +6602,20 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IREPLICATED_FIELD_VERSION 2u
+
 	class IReplicatedField : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			const char* (CLOOP_CARG *getName)(IReplicatedField* self) throw();
-			unsigned (CLOOP_CARG *getType)(IReplicatedField* self) throw();
-			int (CLOOP_CARG *getSubType)(IReplicatedField* self) throw();
-			int (CLOOP_CARG *getScale)(IReplicatedField* self) throw();
-			unsigned (CLOOP_CARG *getLength)(IReplicatedField* self) throw();
-			unsigned (CLOOP_CARG *getCharSet)(IReplicatedField* self) throw();
-			const void* (CLOOP_CARG *getData)(IReplicatedField* self) throw();
+			const char* (CLOOP_CARG *getName)(IReplicatedField* self) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getType)(IReplicatedField* self) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *getSubType)(IReplicatedField* self) CLOOP_NOEXCEPT;
+			int (CLOOP_CARG *getScale)(IReplicatedField* self) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getLength)(IReplicatedField* self) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getCharSet)(IReplicatedField* self) CLOOP_NOEXCEPT;
+			const void* (CLOOP_CARG *getData)(IReplicatedField* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -6095,7 +6629,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IREPLICATED_FIELD_VERSION;
 
 		const char* getName()
 		{
@@ -6140,15 +6674,17 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IREPLICATED_RECORD_VERSION 2u
+
 	class IReplicatedRecord : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			unsigned (CLOOP_CARG *getCount)(IReplicatedRecord* self) throw();
-			IReplicatedField* (CLOOP_CARG *getField)(IReplicatedRecord* self, unsigned index) throw();
-			unsigned (CLOOP_CARG *getRawLength)(IReplicatedRecord* self) throw();
-			const unsigned char* (CLOOP_CARG *getRawData)(IReplicatedRecord* self) throw();
+			unsigned (CLOOP_CARG *getCount)(IReplicatedRecord* self) CLOOP_NOEXCEPT;
+			IReplicatedField* (CLOOP_CARG *getField)(IReplicatedRecord* self, unsigned index) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getRawLength)(IReplicatedRecord* self) CLOOP_NOEXCEPT;
+			const unsigned char* (CLOOP_CARG *getRawData)(IReplicatedRecord* self) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -6162,7 +6698,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IREPLICATED_RECORD_VERSION;
 
 		unsigned getCount()
 		{
@@ -6189,22 +6725,24 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IREPLICATED_TRANSACTION_VERSION 3u
+
 	class IReplicatedTransaction : public IDisposable
 	{
 	public:
 		struct VTable : public IDisposable::VTable
 		{
-			void (CLOOP_CARG *prepare)(IReplicatedTransaction* self, IStatus* status) throw();
-			void (CLOOP_CARG *commit)(IReplicatedTransaction* self, IStatus* status) throw();
-			void (CLOOP_CARG *rollback)(IReplicatedTransaction* self, IStatus* status) throw();
-			void (CLOOP_CARG *startSavepoint)(IReplicatedTransaction* self, IStatus* status) throw();
-			void (CLOOP_CARG *releaseSavepoint)(IReplicatedTransaction* self, IStatus* status) throw();
-			void (CLOOP_CARG *rollbackSavepoint)(IReplicatedTransaction* self, IStatus* status) throw();
-			void (CLOOP_CARG *insertRecord)(IReplicatedTransaction* self, IStatus* status, const char* name, IReplicatedRecord* record) throw();
-			void (CLOOP_CARG *updateRecord)(IReplicatedTransaction* self, IStatus* status, const char* name, IReplicatedRecord* orgRecord, IReplicatedRecord* newRecord) throw();
-			void (CLOOP_CARG *deleteRecord)(IReplicatedTransaction* self, IStatus* status, const char* name, IReplicatedRecord* record) throw();
-			void (CLOOP_CARG *executeSql)(IReplicatedTransaction* self, IStatus* status, const char* sql) throw();
-			void (CLOOP_CARG *executeSqlIntl)(IReplicatedTransaction* self, IStatus* status, unsigned charset, const char* sql) throw();
+			void (CLOOP_CARG *prepare)(IReplicatedTransaction* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *commit)(IReplicatedTransaction* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *rollback)(IReplicatedTransaction* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *startSavepoint)(IReplicatedTransaction* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *releaseSavepoint)(IReplicatedTransaction* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *rollbackSavepoint)(IReplicatedTransaction* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *insertRecord)(IReplicatedTransaction* self, IStatus* status, const char* name, IReplicatedRecord* record) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *updateRecord)(IReplicatedTransaction* self, IStatus* status, const char* name, IReplicatedRecord* orgRecord, IReplicatedRecord* newRecord) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *deleteRecord)(IReplicatedTransaction* self, IStatus* status, const char* name, IReplicatedRecord* record) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *executeSql)(IReplicatedTransaction* self, IStatus* status, const char* sql) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *executeSqlIntl)(IReplicatedTransaction* self, IStatus* status, unsigned charset, const char* sql) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -6218,7 +6756,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IREPLICATED_TRANSACTION_VERSION;
 
 		template <typename StatusType> void prepare(StatusType* status)
 		{
@@ -6298,15 +6836,17 @@ namespace Firebird
 		}
 	};
 
+#define FIREBIRD_IREPLICATED_SESSION_VERSION 4u
+
 	class IReplicatedSession : public IPluginBase
 	{
 	public:
 		struct VTable : public IPluginBase::VTable
 		{
-			FB_BOOLEAN (CLOOP_CARG *init)(IReplicatedSession* self, IStatus* status, IAttachment* attachment) throw();
-			IReplicatedTransaction* (CLOOP_CARG *startTransaction)(IReplicatedSession* self, IStatus* status, ITransaction* transaction, ISC_INT64 number) throw();
-			void (CLOOP_CARG *cleanupTransaction)(IReplicatedSession* self, IStatus* status, ISC_INT64 number) throw();
-			void (CLOOP_CARG *setSequence)(IReplicatedSession* self, IStatus* status, const char* name, ISC_INT64 value) throw();
+			FB_BOOLEAN (CLOOP_CARG *init)(IReplicatedSession* self, IStatus* status, IAttachment* attachment) CLOOP_NOEXCEPT;
+			IReplicatedTransaction* (CLOOP_CARG *startTransaction)(IReplicatedSession* self, IStatus* status, ITransaction* transaction, ISC_INT64 number) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *cleanupTransaction)(IReplicatedSession* self, IStatus* status, ISC_INT64 number) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *setSequence)(IReplicatedSession* self, IStatus* status, const char* name, ISC_INT64 value) CLOOP_NOEXCEPT;
 		};
 
 	protected:
@@ -6320,7 +6860,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 4;
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IREPLICATED_SESSION_VERSION;
 
 		template <typename StatusType> FB_BOOLEAN init(StatusType* status, IAttachment* attachment)
 		{
@@ -6350,6 +6890,206 @@ namespace Firebird
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setSequence(this, status, name, value);
 			StatusType::checkException(status);
+		}
+	};
+
+#define FIREBIRD_IPROFILER_PLUGIN_VERSION 4u
+
+	class IProfilerPlugin : public IPluginBase
+	{
+	public:
+		struct VTable : public IPluginBase::VTable
+		{
+			void (CLOOP_CARG *init)(IProfilerPlugin* self, IStatus* status, IAttachment* attachment) CLOOP_NOEXCEPT;
+			IProfilerSession* (CLOOP_CARG *startSession)(IProfilerPlugin* self, IStatus* status, const char* description, const char* options, ISC_TIMESTAMP_TZ timestamp) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *flush)(IProfilerPlugin* self, IStatus* status) CLOOP_NOEXCEPT;
+		};
+
+	protected:
+		IProfilerPlugin(DoNotInherit)
+			: IPluginBase(DoNotInherit())
+		{
+		}
+
+		~IProfilerPlugin()
+		{
+		}
+
+	public:
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IPROFILER_PLUGIN_VERSION;
+
+		template <typename StatusType> void init(StatusType* status, IAttachment* attachment)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->init(this, status, attachment);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> IProfilerSession* startSession(StatusType* status, const char* description, const char* options, ISC_TIMESTAMP_TZ timestamp)
+		{
+			StatusType::clearException(status);
+			IProfilerSession* ret = static_cast<VTable*>(this->cloopVTable)->startSession(this, status, description, options, timestamp);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> void flush(StatusType* status)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->flush(this, status);
+			StatusType::checkException(status);
+		}
+	};
+
+#define FIREBIRD_IPROFILER_SESSION_VERSION 3u
+
+	class IProfilerSession : public IDisposable
+	{
+	public:
+		struct VTable : public IDisposable::VTable
+		{
+			ISC_INT64 (CLOOP_CARG *getId)(IProfilerSession* self) CLOOP_NOEXCEPT;
+			unsigned (CLOOP_CARG *getFlags)(IProfilerSession* self) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *cancel)(IProfilerSession* self, IStatus* status) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *finish)(IProfilerSession* self, IStatus* status, ISC_TIMESTAMP_TZ timestamp) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *defineStatement)(IProfilerSession* self, IStatus* status, ISC_INT64 statementId, ISC_INT64 parentStatementId, const char* type, const char* packageName, const char* routineName, const char* sqlText) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *defineRecordSource)(IProfilerSession* self, ISC_INT64 statementId, unsigned cursorId, unsigned recSourceId, const char* accessPath, unsigned parentRecSourceId) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *onRequestStart)(IProfilerSession* self, IStatus* status, ISC_INT64 requestId, ISC_INT64 statementId, ISC_INT64 callerRequestId, ISC_TIMESTAMP_TZ timestamp) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *onRequestFinish)(IProfilerSession* self, IStatus* status, ISC_INT64 requestId, ISC_TIMESTAMP_TZ timestamp, IProfilerStats* stats) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *beforePsqlLineColumn)(IProfilerSession* self, ISC_INT64 requestId, unsigned line, unsigned column) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *afterPsqlLineColumn)(IProfilerSession* self, ISC_INT64 requestId, unsigned line, unsigned column, IProfilerStats* stats) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *beforeRecordSourceOpen)(IProfilerSession* self, ISC_INT64 requestId, unsigned cursorId, unsigned recSourceId) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *afterRecordSourceOpen)(IProfilerSession* self, ISC_INT64 requestId, unsigned cursorId, unsigned recSourceId, IProfilerStats* stats) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *beforeRecordSourceGetRecord)(IProfilerSession* self, ISC_INT64 requestId, unsigned cursorId, unsigned recSourceId) CLOOP_NOEXCEPT;
+			void (CLOOP_CARG *afterRecordSourceGetRecord)(IProfilerSession* self, ISC_INT64 requestId, unsigned cursorId, unsigned recSourceId, IProfilerStats* stats) CLOOP_NOEXCEPT;
+		};
+
+	protected:
+		IProfilerSession(DoNotInherit)
+			: IDisposable(DoNotInherit())
+		{
+		}
+
+		~IProfilerSession()
+		{
+		}
+
+	public:
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IPROFILER_SESSION_VERSION;
+
+		static CLOOP_CONSTEXPR unsigned FLAG_BEFORE_EVENTS = 0x1;
+		static CLOOP_CONSTEXPR unsigned FLAG_AFTER_EVENTS = 0x2;
+
+		ISC_INT64 getId()
+		{
+			ISC_INT64 ret = static_cast<VTable*>(this->cloopVTable)->getId(this);
+			return ret;
+		}
+
+		unsigned getFlags()
+		{
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getFlags(this);
+			return ret;
+		}
+
+		template <typename StatusType> void cancel(StatusType* status)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->cancel(this, status);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void finish(StatusType* status, ISC_TIMESTAMP_TZ timestamp)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->finish(this, status, timestamp);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void defineStatement(StatusType* status, ISC_INT64 statementId, ISC_INT64 parentStatementId, const char* type, const char* packageName, const char* routineName, const char* sqlText)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->defineStatement(this, status, statementId, parentStatementId, type, packageName, routineName, sqlText);
+			StatusType::checkException(status);
+		}
+
+		void defineRecordSource(ISC_INT64 statementId, unsigned cursorId, unsigned recSourceId, const char* accessPath, unsigned parentRecSourceId)
+		{
+			static_cast<VTable*>(this->cloopVTable)->defineRecordSource(this, statementId, cursorId, recSourceId, accessPath, parentRecSourceId);
+		}
+
+		template <typename StatusType> void onRequestStart(StatusType* status, ISC_INT64 requestId, ISC_INT64 statementId, ISC_INT64 callerRequestId, ISC_TIMESTAMP_TZ timestamp)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->onRequestStart(this, status, requestId, statementId, callerRequestId, timestamp);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void onRequestFinish(StatusType* status, ISC_INT64 requestId, ISC_TIMESTAMP_TZ timestamp, IProfilerStats* stats)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->onRequestFinish(this, status, requestId, timestamp, stats);
+			StatusType::checkException(status);
+		}
+
+		void beforePsqlLineColumn(ISC_INT64 requestId, unsigned line, unsigned column)
+		{
+			static_cast<VTable*>(this->cloopVTable)->beforePsqlLineColumn(this, requestId, line, column);
+		}
+
+		void afterPsqlLineColumn(ISC_INT64 requestId, unsigned line, unsigned column, IProfilerStats* stats)
+		{
+			static_cast<VTable*>(this->cloopVTable)->afterPsqlLineColumn(this, requestId, line, column, stats);
+		}
+
+		void beforeRecordSourceOpen(ISC_INT64 requestId, unsigned cursorId, unsigned recSourceId)
+		{
+			static_cast<VTable*>(this->cloopVTable)->beforeRecordSourceOpen(this, requestId, cursorId, recSourceId);
+		}
+
+		void afterRecordSourceOpen(ISC_INT64 requestId, unsigned cursorId, unsigned recSourceId, IProfilerStats* stats)
+		{
+			static_cast<VTable*>(this->cloopVTable)->afterRecordSourceOpen(this, requestId, cursorId, recSourceId, stats);
+		}
+
+		void beforeRecordSourceGetRecord(ISC_INT64 requestId, unsigned cursorId, unsigned recSourceId)
+		{
+			static_cast<VTable*>(this->cloopVTable)->beforeRecordSourceGetRecord(this, requestId, cursorId, recSourceId);
+		}
+
+		void afterRecordSourceGetRecord(ISC_INT64 requestId, unsigned cursorId, unsigned recSourceId, IProfilerStats* stats)
+		{
+			static_cast<VTable*>(this->cloopVTable)->afterRecordSourceGetRecord(this, requestId, cursorId, recSourceId, stats);
+		}
+	};
+
+#define FIREBIRD_IPROFILER_STATS_VERSION 2u
+
+	class IProfilerStats : public IVersioned
+	{
+	public:
+		struct VTable : public IVersioned::VTable
+		{
+			ISC_UINT64 (CLOOP_CARG *getElapsedTime)(IProfilerStats* self) CLOOP_NOEXCEPT;
+		};
+
+	protected:
+		IProfilerStats(DoNotInherit)
+			: IVersioned(DoNotInherit())
+		{
+		}
+
+		~IProfilerStats()
+		{
+		}
+
+	public:
+		static CLOOP_CONSTEXPR unsigned VERSION = FIREBIRD_IPROFILER_STATS_VERSION;
+
+		ISC_UINT64 getElapsedTime()
+		{
+			ISC_UINT64 ret = static_cast<VTable*>(this->cloopVTable)->getElapsedTime(this);
+			return ret;
 		}
 	};
 
@@ -6411,7 +7151,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6423,7 +7163,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6474,7 +7214,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6532,7 +7272,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopinitDispatcher(IStatus* self) throw()
+		static void CLOOP_CARG cloopinitDispatcher(IStatus* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6544,7 +7284,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetStateDispatcher(const IStatus* self) throw()
+		static unsigned CLOOP_CARG cloopgetStateDispatcher(const IStatus* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6557,7 +7297,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetErrors2Dispatcher(IStatus* self, unsigned length, const intptr_t* value) throw()
+		static void CLOOP_CARG cloopsetErrors2Dispatcher(IStatus* self, unsigned length, const intptr_t* value) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6569,7 +7309,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetWarnings2Dispatcher(IStatus* self, unsigned length, const intptr_t* value) throw()
+		static void CLOOP_CARG cloopsetWarnings2Dispatcher(IStatus* self, unsigned length, const intptr_t* value) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6581,7 +7321,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetErrorsDispatcher(IStatus* self, const intptr_t* value) throw()
+		static void CLOOP_CARG cloopsetErrorsDispatcher(IStatus* self, const intptr_t* value) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6593,7 +7333,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetWarningsDispatcher(IStatus* self, const intptr_t* value) throw()
+		static void CLOOP_CARG cloopsetWarningsDispatcher(IStatus* self, const intptr_t* value) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6605,7 +7345,7 @@ namespace Firebird
 			}
 		}
 
-		static const intptr_t* CLOOP_CARG cloopgetErrorsDispatcher(const IStatus* self) throw()
+		static const intptr_t* CLOOP_CARG cloopgetErrorsDispatcher(const IStatus* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6618,7 +7358,7 @@ namespace Firebird
 			}
 		}
 
-		static const intptr_t* CLOOP_CARG cloopgetWarningsDispatcher(const IStatus* self) throw()
+		static const intptr_t* CLOOP_CARG cloopgetWarningsDispatcher(const IStatus* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6631,7 +7371,7 @@ namespace Firebird
 			}
 		}
 
-		static IStatus* CLOOP_CARG cloopcloneDispatcher(const IStatus* self) throw()
+		static IStatus* CLOOP_CARG cloopcloneDispatcher(const IStatus* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6644,7 +7384,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6712,7 +7452,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static IStatus* CLOOP_CARG cloopgetStatusDispatcher(IMaster* self) throw()
+		static IStatus* CLOOP_CARG cloopgetStatusDispatcher(IMaster* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6725,7 +7465,7 @@ namespace Firebird
 			}
 		}
 
-		static IProvider* CLOOP_CARG cloopgetDispatcherDispatcher(IMaster* self) throw()
+		static IProvider* CLOOP_CARG cloopgetDispatcherDispatcher(IMaster* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6738,7 +7478,7 @@ namespace Firebird
 			}
 		}
 
-		static IPluginManager* CLOOP_CARG cloopgetPluginManagerDispatcher(IMaster* self) throw()
+		static IPluginManager* CLOOP_CARG cloopgetPluginManagerDispatcher(IMaster* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6751,7 +7491,7 @@ namespace Firebird
 			}
 		}
 
-		static ITimerControl* CLOOP_CARG cloopgetTimerControlDispatcher(IMaster* self) throw()
+		static ITimerControl* CLOOP_CARG cloopgetTimerControlDispatcher(IMaster* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6764,7 +7504,7 @@ namespace Firebird
 			}
 		}
 
-		static IDtc* CLOOP_CARG cloopgetDtcDispatcher(IMaster* self) throw()
+		static IDtc* CLOOP_CARG cloopgetDtcDispatcher(IMaster* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6777,7 +7517,7 @@ namespace Firebird
 			}
 		}
 
-		static IAttachment* CLOOP_CARG cloopregisterAttachmentDispatcher(IMaster* self, IProvider* provider, IAttachment* attachment) throw()
+		static IAttachment* CLOOP_CARG cloopregisterAttachmentDispatcher(IMaster* self, IProvider* provider, IAttachment* attachment) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6790,7 +7530,7 @@ namespace Firebird
 			}
 		}
 
-		static ITransaction* CLOOP_CARG cloopregisterTransactionDispatcher(IMaster* self, IAttachment* attachment, ITransaction* transaction) throw()
+		static ITransaction* CLOOP_CARG cloopregisterTransactionDispatcher(IMaster* self, IAttachment* attachment, ITransaction* transaction) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6803,7 +7543,7 @@ namespace Firebird
 			}
 		}
 
-		static IMetadataBuilder* CLOOP_CARG cloopgetMetadataBuilderDispatcher(IMaster* self, IStatus* status, unsigned fieldCount) throw()
+		static IMetadataBuilder* CLOOP_CARG cloopgetMetadataBuilderDispatcher(IMaster* self, IStatus* status, unsigned fieldCount) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -6818,7 +7558,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopserverModeDispatcher(IMaster* self, int mode) throw()
+		static int CLOOP_CARG cloopserverModeDispatcher(IMaster* self, int mode) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6831,7 +7571,7 @@ namespace Firebird
 			}
 		}
 
-		static IUtil* CLOOP_CARG cloopgetUtilInterfaceDispatcher(IMaster* self) throw()
+		static IUtil* CLOOP_CARG cloopgetUtilInterfaceDispatcher(IMaster* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6844,7 +7584,7 @@ namespace Firebird
 			}
 		}
 
-		static IConfigManager* CLOOP_CARG cloopgetConfigManagerDispatcher(IMaster* self) throw()
+		static IConfigManager* CLOOP_CARG cloopgetConfigManagerDispatcher(IMaster* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6857,7 +7597,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloopgetProcessExitingDispatcher(IMaster* self) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopgetProcessExitingDispatcher(IMaster* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6921,7 +7661,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6933,7 +7673,7 @@ namespace Firebird
 			}
 		}
 
-		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6946,7 +7686,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -6958,7 +7698,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7015,7 +7755,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetNameDispatcher(const IPluginSet* self) throw()
+		static const char* CLOOP_CARG cloopgetNameDispatcher(const IPluginSet* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7028,7 +7768,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetModuleNameDispatcher(const IPluginSet* self) throw()
+		static const char* CLOOP_CARG cloopgetModuleNameDispatcher(const IPluginSet* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7041,7 +7781,7 @@ namespace Firebird
 			}
 		}
 
-		static IPluginBase* CLOOP_CARG cloopgetPluginDispatcher(IPluginSet* self, IStatus* status) throw()
+		static IPluginBase* CLOOP_CARG cloopgetPluginDispatcher(IPluginSet* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -7056,7 +7796,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopnextDispatcher(IPluginSet* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopnextDispatcher(IPluginSet* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -7070,7 +7810,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetDispatcher(IPluginSet* self, IStatus* status, const char* s) throw()
+		static void CLOOP_CARG cloopsetDispatcher(IPluginSet* self, IStatus* status, const char* s) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -7084,7 +7824,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7096,7 +7836,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7156,7 +7896,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetNameDispatcher(IConfigEntry* self) throw()
+		static const char* CLOOP_CARG cloopgetNameDispatcher(IConfigEntry* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7169,7 +7909,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetValueDispatcher(IConfigEntry* self) throw()
+		static const char* CLOOP_CARG cloopgetValueDispatcher(IConfigEntry* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7182,7 +7922,7 @@ namespace Firebird
 			}
 		}
 
-		static ISC_INT64 CLOOP_CARG cloopgetIntValueDispatcher(IConfigEntry* self) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetIntValueDispatcher(IConfigEntry* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7195,7 +7935,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloopgetBoolValueDispatcher(IConfigEntry* self) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopgetBoolValueDispatcher(IConfigEntry* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7208,7 +7948,7 @@ namespace Firebird
 			}
 		}
 
-		static IConfig* CLOOP_CARG cloopgetSubConfigDispatcher(IConfigEntry* self, IStatus* status) throw()
+		static IConfig* CLOOP_CARG cloopgetSubConfigDispatcher(IConfigEntry* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -7223,7 +7963,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7235,7 +7975,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7293,7 +8033,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static IConfigEntry* CLOOP_CARG cloopfindDispatcher(IConfig* self, IStatus* status, const char* name) throw()
+		static IConfigEntry* CLOOP_CARG cloopfindDispatcher(IConfig* self, IStatus* status, const char* name) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -7308,7 +8048,7 @@ namespace Firebird
 			}
 		}
 
-		static IConfigEntry* CLOOP_CARG cloopfindValueDispatcher(IConfig* self, IStatus* status, const char* name, const char* value) throw()
+		static IConfigEntry* CLOOP_CARG cloopfindValueDispatcher(IConfig* self, IStatus* status, const char* name, const char* value) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -7323,7 +8063,7 @@ namespace Firebird
 			}
 		}
 
-		static IConfigEntry* CLOOP_CARG cloopfindPosDispatcher(IConfig* self, IStatus* status, const char* name, unsigned pos) throw()
+		static IConfigEntry* CLOOP_CARG cloopfindPosDispatcher(IConfig* self, IStatus* status, const char* name, unsigned pos) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -7338,7 +8078,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7350,7 +8090,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7408,7 +8148,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static unsigned CLOOP_CARG cloopgetKeyDispatcher(IFirebirdConf* self, const char* name) throw()
+		static unsigned CLOOP_CARG cloopgetKeyDispatcher(IFirebirdConf* self, const char* name) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7421,7 +8161,7 @@ namespace Firebird
 			}
 		}
 
-		static ISC_INT64 CLOOP_CARG cloopasIntegerDispatcher(IFirebirdConf* self, unsigned key) throw()
+		static ISC_INT64 CLOOP_CARG cloopasIntegerDispatcher(IFirebirdConf* self, unsigned key) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7434,7 +8174,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopasStringDispatcher(IFirebirdConf* self, unsigned key) throw()
+		static const char* CLOOP_CARG cloopasStringDispatcher(IFirebirdConf* self, unsigned key) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7447,7 +8187,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloopasBooleanDispatcher(IFirebirdConf* self, unsigned key) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopasBooleanDispatcher(IFirebirdConf* self, unsigned key) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7460,7 +8200,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetVersionDispatcher(IFirebirdConf* self, IStatus* status) throw()
+		static unsigned CLOOP_CARG cloopgetVersionDispatcher(IFirebirdConf* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -7475,7 +8215,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7487,7 +8227,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7546,7 +8286,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetConfigFileNameDispatcher(IPluginConfig* self) throw()
+		static const char* CLOOP_CARG cloopgetConfigFileNameDispatcher(IPluginConfig* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7559,7 +8299,7 @@ namespace Firebird
 			}
 		}
 
-		static IConfig* CLOOP_CARG cloopgetDefaultConfigDispatcher(IPluginConfig* self, IStatus* status) throw()
+		static IConfig* CLOOP_CARG cloopgetDefaultConfigDispatcher(IPluginConfig* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -7574,7 +8314,7 @@ namespace Firebird
 			}
 		}
 
-		static IFirebirdConf* CLOOP_CARG cloopgetFirebirdConfDispatcher(IPluginConfig* self, IStatus* status) throw()
+		static IFirebirdConf* CLOOP_CARG cloopgetFirebirdConfDispatcher(IPluginConfig* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -7589,7 +8329,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetReleaseDelayDispatcher(IPluginConfig* self, IStatus* status, ISC_UINT64 microSeconds) throw()
+		static void CLOOP_CARG cloopsetReleaseDelayDispatcher(IPluginConfig* self, IStatus* status, ISC_UINT64 microSeconds) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -7603,7 +8343,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7615,7 +8355,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7668,7 +8408,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static IPluginBase* CLOOP_CARG cloopcreatePluginDispatcher(IPluginFactory* self, IStatus* status, IPluginConfig* factoryParameter) throw()
+		static IPluginBase* CLOOP_CARG cloopcreatePluginDispatcher(IPluginFactory* self, IStatus* status, IPluginConfig* factoryParameter) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -7721,7 +8461,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopdoCleanDispatcher(IPluginModule* self) throw()
+		static void CLOOP_CARG cloopdoCleanDispatcher(IPluginModule* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7733,7 +8473,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopthreadDetachDispatcher(IPluginModule* self) throw()
+		static void CLOOP_CARG cloopthreadDetachDispatcher(IPluginModule* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7788,7 +8528,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopregisterPluginFactoryDispatcher(IPluginManager* self, unsigned pluginType, const char* defaultName, IPluginFactory* factory) throw()
+		static void CLOOP_CARG cloopregisterPluginFactoryDispatcher(IPluginManager* self, unsigned pluginType, const char* defaultName, IPluginFactory* factory) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7800,7 +8540,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopregisterModuleDispatcher(IPluginManager* self, IPluginModule* cleanup) throw()
+		static void CLOOP_CARG cloopregisterModuleDispatcher(IPluginManager* self, IPluginModule* cleanup) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7812,7 +8552,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopunregisterModuleDispatcher(IPluginManager* self, IPluginModule* cleanup) throw()
+		static void CLOOP_CARG cloopunregisterModuleDispatcher(IPluginManager* self, IPluginModule* cleanup) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7824,7 +8564,7 @@ namespace Firebird
 			}
 		}
 
-		static IPluginSet* CLOOP_CARG cloopgetPluginsDispatcher(IPluginManager* self, IStatus* status, unsigned pluginType, const char* namesList, IFirebirdConf* firebirdConf) throw()
+		static IPluginSet* CLOOP_CARG cloopgetPluginsDispatcher(IPluginManager* self, IStatus* status, unsigned pluginType, const char* namesList, IFirebirdConf* firebirdConf) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -7839,7 +8579,7 @@ namespace Firebird
 			}
 		}
 
-		static IConfig* CLOOP_CARG cloopgetConfigDispatcher(IPluginManager* self, IStatus* status, const char* filename) throw()
+		static IConfig* CLOOP_CARG cloopgetConfigDispatcher(IPluginManager* self, IStatus* status, const char* filename) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -7854,7 +8594,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopreleasePluginDispatcher(IPluginManager* self, IPluginBase* plugin) throw()
+		static void CLOOP_CARG cloopreleasePluginDispatcher(IPluginManager* self, IPluginBase* plugin) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7911,7 +8651,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopsetSymmetricDispatcher(ICryptKey* self, IStatus* status, const char* type, unsigned keyLength, const void* key) throw()
+		static void CLOOP_CARG cloopsetSymmetricDispatcher(ICryptKey* self, IStatus* status, const char* type, unsigned keyLength, const void* key) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -7925,7 +8665,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetAsymmetricDispatcher(ICryptKey* self, IStatus* status, const char* type, unsigned encryptKeyLength, const void* encryptKey, unsigned decryptKeyLength, const void* decryptKey) throw()
+		static void CLOOP_CARG cloopsetAsymmetricDispatcher(ICryptKey* self, IStatus* status, const char* type, unsigned encryptKeyLength, const void* encryptKey, unsigned decryptKeyLength, const void* decryptKey) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -7939,7 +8679,7 @@ namespace Firebird
 			}
 		}
 
-		static const void* CLOOP_CARG cloopgetEncryptKeyDispatcher(ICryptKey* self, unsigned* length) throw()
+		static const void* CLOOP_CARG cloopgetEncryptKeyDispatcher(ICryptKey* self, unsigned* length) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -7952,7 +8692,7 @@ namespace Firebird
 			}
 		}
 
-		static const void* CLOOP_CARG cloopgetDecryptKeyDispatcher(ICryptKey* self, unsigned* length) throw()
+		static const void* CLOOP_CARG cloopgetDecryptKeyDispatcher(ICryptKey* self, unsigned* length) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -8011,7 +8751,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetDirectoryDispatcher(IConfigManager* self, unsigned code) throw()
+		static const char* CLOOP_CARG cloopgetDirectoryDispatcher(IConfigManager* self, unsigned code) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -8024,7 +8764,7 @@ namespace Firebird
 			}
 		}
 
-		static IFirebirdConf* CLOOP_CARG cloopgetFirebirdConfDispatcher(IConfigManager* self) throw()
+		static IFirebirdConf* CLOOP_CARG cloopgetFirebirdConfDispatcher(IConfigManager* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -8037,7 +8777,7 @@ namespace Firebird
 			}
 		}
 
-		static IFirebirdConf* CLOOP_CARG cloopgetDatabaseConfDispatcher(IConfigManager* self, const char* dbName) throw()
+		static IFirebirdConf* CLOOP_CARG cloopgetDatabaseConfDispatcher(IConfigManager* self, const char* dbName) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -8050,7 +8790,7 @@ namespace Firebird
 			}
 		}
 
-		static IConfig* CLOOP_CARG cloopgetPluginConfigDispatcher(IConfigManager* self, const char* configuredPlugin) throw()
+		static IConfig* CLOOP_CARG cloopgetPluginConfigDispatcher(IConfigManager* self, const char* configuredPlugin) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -8063,7 +8803,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetInstallDirectoryDispatcher(IConfigManager* self) throw()
+		static const char* CLOOP_CARG cloopgetInstallDirectoryDispatcher(IConfigManager* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -8076,7 +8816,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRootDirectoryDispatcher(IConfigManager* self) throw()
+		static const char* CLOOP_CARG cloopgetRootDirectoryDispatcher(IConfigManager* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -8089,7 +8829,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetDefaultSecurityDbDispatcher(IConfigManager* self) throw()
+		static const char* CLOOP_CARG cloopgetDefaultSecurityDbDispatcher(IConfigManager* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -8147,7 +8887,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopeventCallbackFunctionDispatcher(IEventCallback* self, unsigned length, const unsigned char* events) throw()
+		static void CLOOP_CARG cloopeventCallbackFunctionDispatcher(IEventCallback* self, unsigned length, const unsigned char* events) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -8159,7 +8899,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -8171,7 +8911,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -8219,16 +8959,18 @@ namespace Firebird
 					this->getInfo = &Name::cloopgetInfoDispatcher;
 					this->getSegment = &Name::cloopgetSegmentDispatcher;
 					this->putSegment = &Name::cloopputSegmentDispatcher;
+					this->deprecatedCancel = &Name::cloopdeprecatedCancelDispatcher;
+					this->deprecatedClose = &Name::cloopdeprecatedCloseDispatcher;
+					this->seek = &Name::cloopseekDispatcher;
 					this->cancel = &Name::cloopcancelDispatcher;
 					this->close = &Name::cloopcloseDispatcher;
-					this->seek = &Name::cloopseekDispatcher;
 				}
 			} vTable;
 
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopgetInfoDispatcher(IBlob* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw()
+		static void CLOOP_CARG cloopgetInfoDispatcher(IBlob* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8242,7 +8984,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopgetSegmentDispatcher(IBlob* self, IStatus* status, unsigned bufferLength, void* buffer, unsigned* segmentLength) throw()
+		static int CLOOP_CARG cloopgetSegmentDispatcher(IBlob* self, IStatus* status, unsigned bufferLength, void* buffer, unsigned* segmentLength) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8257,7 +8999,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopputSegmentDispatcher(IBlob* self, IStatus* status, unsigned length, const void* buffer) throw()
+		static void CLOOP_CARG cloopputSegmentDispatcher(IBlob* self, IStatus* status, unsigned length, const void* buffer) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8271,13 +9013,13 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopcancelDispatcher(IBlob* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopdeprecatedCancelDispatcher(IBlob* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
 			try
 			{
-				static_cast<Name*>(self)->Name::cancel(&status2);
+				static_cast<Name*>(self)->Name::deprecatedCancel(&status2);
 			}
 			catch (...)
 			{
@@ -8285,13 +9027,13 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopcloseDispatcher(IBlob* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopdeprecatedCloseDispatcher(IBlob* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
 			try
 			{
-				static_cast<Name*>(self)->Name::close(&status2);
+				static_cast<Name*>(self)->Name::deprecatedClose(&status2);
 			}
 			catch (...)
 			{
@@ -8299,7 +9041,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopseekDispatcher(IBlob* self, IStatus* status, int mode, int offset) throw()
+		static int CLOOP_CARG cloopseekDispatcher(IBlob* self, IStatus* status, int mode, int offset) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8314,7 +9056,35 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopcancelDispatcher(IBlob* self, IStatus* status) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::cancel(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopcloseDispatcher(IBlob* self, IStatus* status) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::close(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -8326,7 +9096,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -8356,9 +9126,11 @@ namespace Firebird
 		virtual void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
 		virtual int getSegment(StatusType* status, unsigned bufferLength, void* buffer, unsigned* segmentLength) = 0;
 		virtual void putSegment(StatusType* status, unsigned length, const void* buffer) = 0;
+		virtual void deprecatedCancel(StatusType* status) = 0;
+		virtual void deprecatedClose(StatusType* status) = 0;
+		virtual int seek(StatusType* status, int mode, int offset) = 0;
 		virtual void cancel(StatusType* status) = 0;
 		virtual void close(StatusType* status) = 0;
-		virtual int seek(StatusType* status, int mode, int offset) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
@@ -8378,21 +9150,24 @@ namespace Firebird
 					this->release = &Name::cloopreleaseDispatcher;
 					this->getInfo = &Name::cloopgetInfoDispatcher;
 					this->prepare = &Name::cloopprepareDispatcher;
-					this->commit = &Name::cloopcommitDispatcher;
+					this->deprecatedCommit = &Name::cloopdeprecatedCommitDispatcher;
 					this->commitRetaining = &Name::cloopcommitRetainingDispatcher;
-					this->rollback = &Name::clooprollbackDispatcher;
+					this->deprecatedRollback = &Name::cloopdeprecatedRollbackDispatcher;
 					this->rollbackRetaining = &Name::clooprollbackRetainingDispatcher;
-					this->disconnect = &Name::cloopdisconnectDispatcher;
+					this->deprecatedDisconnect = &Name::cloopdeprecatedDisconnectDispatcher;
 					this->join = &Name::cloopjoinDispatcher;
 					this->validate = &Name::cloopvalidateDispatcher;
 					this->enterDtc = &Name::cloopenterDtcDispatcher;
+					this->commit = &Name::cloopcommitDispatcher;
+					this->rollback = &Name::clooprollbackDispatcher;
+					this->disconnect = &Name::cloopdisconnectDispatcher;
 				}
 			} vTable;
 
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopgetInfoDispatcher(ITransaction* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw()
+		static void CLOOP_CARG cloopgetInfoDispatcher(ITransaction* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8406,7 +9181,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopprepareDispatcher(ITransaction* self, IStatus* status, unsigned msgLength, const unsigned char* message) throw()
+		static void CLOOP_CARG cloopprepareDispatcher(ITransaction* self, IStatus* status, unsigned msgLength, const unsigned char* message) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8420,13 +9195,13 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopcommitDispatcher(ITransaction* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopdeprecatedCommitDispatcher(ITransaction* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
 			try
 			{
-				static_cast<Name*>(self)->Name::commit(&status2);
+				static_cast<Name*>(self)->Name::deprecatedCommit(&status2);
 			}
 			catch (...)
 			{
@@ -8434,7 +9209,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopcommitRetainingDispatcher(ITransaction* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopcommitRetainingDispatcher(ITransaction* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8448,13 +9223,13 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG clooprollbackDispatcher(ITransaction* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopdeprecatedRollbackDispatcher(ITransaction* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
 			try
 			{
-				static_cast<Name*>(self)->Name::rollback(&status2);
+				static_cast<Name*>(self)->Name::deprecatedRollback(&status2);
 			}
 			catch (...)
 			{
@@ -8462,7 +9237,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG clooprollbackRetainingDispatcher(ITransaction* self, IStatus* status) throw()
+		static void CLOOP_CARG clooprollbackRetainingDispatcher(ITransaction* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8476,13 +9251,13 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdisconnectDispatcher(ITransaction* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopdeprecatedDisconnectDispatcher(ITransaction* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
 			try
 			{
-				static_cast<Name*>(self)->Name::disconnect(&status2);
+				static_cast<Name*>(self)->Name::deprecatedDisconnect(&status2);
 			}
 			catch (...)
 			{
@@ -8490,7 +9265,7 @@ namespace Firebird
 			}
 		}
 
-		static ITransaction* CLOOP_CARG cloopjoinDispatcher(ITransaction* self, IStatus* status, ITransaction* transaction) throw()
+		static ITransaction* CLOOP_CARG cloopjoinDispatcher(ITransaction* self, IStatus* status, ITransaction* transaction) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8505,7 +9280,7 @@ namespace Firebird
 			}
 		}
 
-		static ITransaction* CLOOP_CARG cloopvalidateDispatcher(ITransaction* self, IStatus* status, IAttachment* attachment) throw()
+		static ITransaction* CLOOP_CARG cloopvalidateDispatcher(ITransaction* self, IStatus* status, IAttachment* attachment) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8520,7 +9295,7 @@ namespace Firebird
 			}
 		}
 
-		static ITransaction* CLOOP_CARG cloopenterDtcDispatcher(ITransaction* self, IStatus* status) throw()
+		static ITransaction* CLOOP_CARG cloopenterDtcDispatcher(ITransaction* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8535,7 +9310,49 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopcommitDispatcher(ITransaction* self, IStatus* status) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::commit(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG clooprollbackDispatcher(ITransaction* self, IStatus* status) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::rollback(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopdisconnectDispatcher(ITransaction* self, IStatus* status) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::disconnect(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -8547,7 +9364,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -8576,14 +9393,17 @@ namespace Firebird
 
 		virtual void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
 		virtual void prepare(StatusType* status, unsigned msgLength, const unsigned char* message) = 0;
-		virtual void commit(StatusType* status) = 0;
+		virtual void deprecatedCommit(StatusType* status) = 0;
 		virtual void commitRetaining(StatusType* status) = 0;
-		virtual void rollback(StatusType* status) = 0;
+		virtual void deprecatedRollback(StatusType* status) = 0;
 		virtual void rollbackRetaining(StatusType* status) = 0;
-		virtual void disconnect(StatusType* status) = 0;
+		virtual void deprecatedDisconnect(StatusType* status) = 0;
 		virtual ITransaction* join(StatusType* status, ITransaction* transaction) = 0;
 		virtual ITransaction* validate(StatusType* status, IAttachment* attachment) = 0;
 		virtual ITransaction* enterDtc(StatusType* status) = 0;
+		virtual void commit(StatusType* status) = 0;
+		virtual void rollback(StatusType* status) = 0;
+		virtual void disconnect(StatusType* status) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
@@ -8624,7 +9444,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static unsigned CLOOP_CARG cloopgetCountDispatcher(IMessageMetadata* self, IStatus* status) throw()
+		static unsigned CLOOP_CARG cloopgetCountDispatcher(IMessageMetadata* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8639,7 +9459,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetFieldDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
+		static const char* CLOOP_CARG cloopgetFieldDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8654,7 +9474,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRelationDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
+		static const char* CLOOP_CARG cloopgetRelationDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8669,7 +9489,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetOwnerDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
+		static const char* CLOOP_CARG cloopgetOwnerDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8684,7 +9504,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetAliasDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
+		static const char* CLOOP_CARG cloopgetAliasDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8699,7 +9519,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetTypeDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
+		static unsigned CLOOP_CARG cloopgetTypeDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8714,7 +9534,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloopisNullableDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopisNullableDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8729,7 +9549,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopgetSubTypeDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
+		static int CLOOP_CARG cloopgetSubTypeDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8744,7 +9564,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetLengthDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
+		static unsigned CLOOP_CARG cloopgetLengthDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8759,7 +9579,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopgetScaleDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
+		static int CLOOP_CARG cloopgetScaleDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8774,7 +9594,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetCharSetDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
+		static unsigned CLOOP_CARG cloopgetCharSetDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8789,7 +9609,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetOffsetDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
+		static unsigned CLOOP_CARG cloopgetOffsetDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8804,7 +9624,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetNullOffsetDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
+		static unsigned CLOOP_CARG cloopgetNullOffsetDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8819,7 +9639,7 @@ namespace Firebird
 			}
 		}
 
-		static IMetadataBuilder* CLOOP_CARG cloopgetBuilderDispatcher(IMessageMetadata* self, IStatus* status) throw()
+		static IMetadataBuilder* CLOOP_CARG cloopgetBuilderDispatcher(IMessageMetadata* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8834,7 +9654,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetMessageLengthDispatcher(IMessageMetadata* self, IStatus* status) throw()
+		static unsigned CLOOP_CARG cloopgetMessageLengthDispatcher(IMessageMetadata* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8849,7 +9669,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetAlignmentDispatcher(IMessageMetadata* self, IStatus* status) throw()
+		static unsigned CLOOP_CARG cloopgetAlignmentDispatcher(IMessageMetadata* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8864,7 +9684,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetAlignedLengthDispatcher(IMessageMetadata* self, IStatus* status) throw()
+		static unsigned CLOOP_CARG cloopgetAlignedLengthDispatcher(IMessageMetadata* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8879,7 +9699,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -8891,7 +9711,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -8972,7 +9792,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopsetTypeDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned type) throw()
+		static void CLOOP_CARG cloopsetTypeDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned type) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -8986,7 +9806,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetSubTypeDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, int subType) throw()
+		static void CLOOP_CARG cloopsetSubTypeDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, int subType) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9000,7 +9820,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetLengthDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned length) throw()
+		static void CLOOP_CARG cloopsetLengthDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned length) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9014,7 +9834,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetCharSetDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned charSet) throw()
+		static void CLOOP_CARG cloopsetCharSetDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned charSet) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9028,7 +9848,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetScaleDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, int scale) throw()
+		static void CLOOP_CARG cloopsetScaleDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, int scale) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9042,7 +9862,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG clooptruncateDispatcher(IMetadataBuilder* self, IStatus* status, unsigned count) throw()
+		static void CLOOP_CARG clooptruncateDispatcher(IMetadataBuilder* self, IStatus* status, unsigned count) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9056,7 +9876,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopmoveNameToIndexDispatcher(IMetadataBuilder* self, IStatus* status, const char* name, unsigned index) throw()
+		static void CLOOP_CARG cloopmoveNameToIndexDispatcher(IMetadataBuilder* self, IStatus* status, const char* name, unsigned index) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9070,7 +9890,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopremoveDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index) throw()
+		static void CLOOP_CARG cloopremoveDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9084,7 +9904,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopaddFieldDispatcher(IMetadataBuilder* self, IStatus* status) throw()
+		static unsigned CLOOP_CARG cloopaddFieldDispatcher(IMetadataBuilder* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9099,7 +9919,7 @@ namespace Firebird
 			}
 		}
 
-		static IMessageMetadata* CLOOP_CARG cloopgetMetadataDispatcher(IMetadataBuilder* self, IStatus* status) throw()
+		static IMessageMetadata* CLOOP_CARG cloopgetMetadataDispatcher(IMetadataBuilder* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9114,7 +9934,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetFieldDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, const char* field) throw()
+		static void CLOOP_CARG cloopsetFieldDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, const char* field) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9128,7 +9948,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetRelationDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, const char* relation) throw()
+		static void CLOOP_CARG cloopsetRelationDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, const char* relation) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9142,7 +9962,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, const char* owner) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, const char* owner) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9156,7 +9976,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetAliasDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, const char* alias) throw()
+		static void CLOOP_CARG cloopsetAliasDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, const char* alias) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9170,7 +9990,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -9182,7 +10002,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -9249,15 +10069,17 @@ namespace Firebird
 					this->isEof = &Name::cloopisEofDispatcher;
 					this->isBof = &Name::cloopisBofDispatcher;
 					this->getMetadata = &Name::cloopgetMetadataDispatcher;
-					this->close = &Name::cloopcloseDispatcher;
+					this->deprecatedClose = &Name::cloopdeprecatedCloseDispatcher;
 					this->setDelayedOutputFormat = &Name::cloopsetDelayedOutputFormatDispatcher;
+					this->close = &Name::cloopcloseDispatcher;
+					this->getInfo = &Name::cloopgetInfoDispatcher;
 				}
 			} vTable;
 
 			this->cloopVTable = &vTable;
 		}
 
-		static int CLOOP_CARG cloopfetchNextDispatcher(IResultSet* self, IStatus* status, void* message) throw()
+		static int CLOOP_CARG cloopfetchNextDispatcher(IResultSet* self, IStatus* status, void* message) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9272,7 +10094,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopfetchPriorDispatcher(IResultSet* self, IStatus* status, void* message) throw()
+		static int CLOOP_CARG cloopfetchPriorDispatcher(IResultSet* self, IStatus* status, void* message) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9287,7 +10109,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopfetchFirstDispatcher(IResultSet* self, IStatus* status, void* message) throw()
+		static int CLOOP_CARG cloopfetchFirstDispatcher(IResultSet* self, IStatus* status, void* message) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9302,7 +10124,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopfetchLastDispatcher(IResultSet* self, IStatus* status, void* message) throw()
+		static int CLOOP_CARG cloopfetchLastDispatcher(IResultSet* self, IStatus* status, void* message) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9317,7 +10139,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopfetchAbsoluteDispatcher(IResultSet* self, IStatus* status, int position, void* message) throw()
+		static int CLOOP_CARG cloopfetchAbsoluteDispatcher(IResultSet* self, IStatus* status, int position, void* message) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9332,7 +10154,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopfetchRelativeDispatcher(IResultSet* self, IStatus* status, int offset, void* message) throw()
+		static int CLOOP_CARG cloopfetchRelativeDispatcher(IResultSet* self, IStatus* status, int offset, void* message) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9347,7 +10169,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloopisEofDispatcher(IResultSet* self, IStatus* status) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopisEofDispatcher(IResultSet* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9362,7 +10184,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloopisBofDispatcher(IResultSet* self, IStatus* status) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopisBofDispatcher(IResultSet* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9377,7 +10199,7 @@ namespace Firebird
 			}
 		}
 
-		static IMessageMetadata* CLOOP_CARG cloopgetMetadataDispatcher(IResultSet* self, IStatus* status) throw()
+		static IMessageMetadata* CLOOP_CARG cloopgetMetadataDispatcher(IResultSet* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9392,13 +10214,13 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopcloseDispatcher(IResultSet* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopdeprecatedCloseDispatcher(IResultSet* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
 			try
 			{
-				static_cast<Name*>(self)->Name::close(&status2);
+				static_cast<Name*>(self)->Name::deprecatedClose(&status2);
 			}
 			catch (...)
 			{
@@ -9406,7 +10228,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetDelayedOutputFormatDispatcher(IResultSet* self, IStatus* status, IMessageMetadata* format) throw()
+		static void CLOOP_CARG cloopsetDelayedOutputFormatDispatcher(IResultSet* self, IStatus* status, IMessageMetadata* format) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9420,7 +10242,35 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopcloseDispatcher(IResultSet* self, IStatus* status) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::close(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopgetInfoDispatcher(IResultSet* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::getInfo(&status2, itemsLength, items, bufferLength, buffer);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -9432,7 +10282,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -9468,8 +10318,10 @@ namespace Firebird
 		virtual FB_BOOLEAN isEof(StatusType* status) = 0;
 		virtual FB_BOOLEAN isBof(StatusType* status) = 0;
 		virtual IMessageMetadata* getMetadata(StatusType* status) = 0;
-		virtual void close(StatusType* status) = 0;
+		virtual void deprecatedClose(StatusType* status) = 0;
 		virtual void setDelayedOutputFormat(StatusType* status, IMessageMetadata* format) = 0;
+		virtual void close(StatusType* status) = 0;
+		virtual void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
@@ -9496,18 +10348,19 @@ namespace Firebird
 					this->execute = &Name::cloopexecuteDispatcher;
 					this->openCursor = &Name::cloopopenCursorDispatcher;
 					this->setCursorName = &Name::cloopsetCursorNameDispatcher;
-					this->free = &Name::cloopfreeDispatcher;
+					this->deprecatedFree = &Name::cloopdeprecatedFreeDispatcher;
 					this->getFlags = &Name::cloopgetFlagsDispatcher;
 					this->getTimeout = &Name::cloopgetTimeoutDispatcher;
 					this->setTimeout = &Name::cloopsetTimeoutDispatcher;
 					this->createBatch = &Name::cloopcreateBatchDispatcher;
+					this->free = &Name::cloopfreeDispatcher;
 				}
 			} vTable;
 
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopgetInfoDispatcher(IStatement* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw()
+		static void CLOOP_CARG cloopgetInfoDispatcher(IStatement* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9521,7 +10374,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetTypeDispatcher(IStatement* self, IStatus* status) throw()
+		static unsigned CLOOP_CARG cloopgetTypeDispatcher(IStatement* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9536,7 +10389,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetPlanDispatcher(IStatement* self, IStatus* status, FB_BOOLEAN detailed) throw()
+		static const char* CLOOP_CARG cloopgetPlanDispatcher(IStatement* self, IStatus* status, FB_BOOLEAN detailed) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9551,7 +10404,7 @@ namespace Firebird
 			}
 		}
 
-		static ISC_UINT64 CLOOP_CARG cloopgetAffectedRecordsDispatcher(IStatement* self, IStatus* status) throw()
+		static ISC_UINT64 CLOOP_CARG cloopgetAffectedRecordsDispatcher(IStatement* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9566,7 +10419,7 @@ namespace Firebird
 			}
 		}
 
-		static IMessageMetadata* CLOOP_CARG cloopgetInputMetadataDispatcher(IStatement* self, IStatus* status) throw()
+		static IMessageMetadata* CLOOP_CARG cloopgetInputMetadataDispatcher(IStatement* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9581,7 +10434,7 @@ namespace Firebird
 			}
 		}
 
-		static IMessageMetadata* CLOOP_CARG cloopgetOutputMetadataDispatcher(IStatement* self, IStatus* status) throw()
+		static IMessageMetadata* CLOOP_CARG cloopgetOutputMetadataDispatcher(IStatement* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9596,7 +10449,7 @@ namespace Firebird
 			}
 		}
 
-		static ITransaction* CLOOP_CARG cloopexecuteDispatcher(IStatement* self, IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) throw()
+		static ITransaction* CLOOP_CARG cloopexecuteDispatcher(IStatement* self, IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9611,7 +10464,7 @@ namespace Firebird
 			}
 		}
 
-		static IResultSet* CLOOP_CARG cloopopenCursorDispatcher(IStatement* self, IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, unsigned flags) throw()
+		static IResultSet* CLOOP_CARG cloopopenCursorDispatcher(IStatement* self, IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, unsigned flags) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9626,7 +10479,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetCursorNameDispatcher(IStatement* self, IStatus* status, const char* name) throw()
+		static void CLOOP_CARG cloopsetCursorNameDispatcher(IStatement* self, IStatus* status, const char* name) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9640,13 +10493,13 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopfreeDispatcher(IStatement* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopdeprecatedFreeDispatcher(IStatement* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
 			try
 			{
-				static_cast<Name*>(self)->Name::free(&status2);
+				static_cast<Name*>(self)->Name::deprecatedFree(&status2);
 			}
 			catch (...)
 			{
@@ -9654,7 +10507,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetFlagsDispatcher(IStatement* self, IStatus* status) throw()
+		static unsigned CLOOP_CARG cloopgetFlagsDispatcher(IStatement* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9669,7 +10522,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetTimeoutDispatcher(IStatement* self, IStatus* status) throw()
+		static unsigned CLOOP_CARG cloopgetTimeoutDispatcher(IStatement* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9684,7 +10537,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetTimeoutDispatcher(IStatement* self, IStatus* status, unsigned timeOut) throw()
+		static void CLOOP_CARG cloopsetTimeoutDispatcher(IStatement* self, IStatus* status, unsigned timeOut) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9698,7 +10551,7 @@ namespace Firebird
 			}
 		}
 
-		static IBatch* CLOOP_CARG cloopcreateBatchDispatcher(IStatement* self, IStatus* status, IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par) throw()
+		static IBatch* CLOOP_CARG cloopcreateBatchDispatcher(IStatement* self, IStatus* status, IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9713,7 +10566,21 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopfreeDispatcher(IStatement* self, IStatus* status) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::free(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -9725,7 +10592,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -9761,11 +10628,12 @@ namespace Firebird
 		virtual ITransaction* execute(StatusType* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) = 0;
 		virtual IResultSet* openCursor(StatusType* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, unsigned flags) = 0;
 		virtual void setCursorName(StatusType* status, const char* name) = 0;
-		virtual void free(StatusType* status) = 0;
+		virtual void deprecatedFree(StatusType* status) = 0;
 		virtual unsigned getFlags(StatusType* status) = 0;
 		virtual unsigned getTimeout(StatusType* status) = 0;
 		virtual void setTimeout(StatusType* status, unsigned timeOut) = 0;
 		virtual IBatch* createBatch(StatusType* status, IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par) = 0;
+		virtual void free(StatusType* status) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
@@ -9793,14 +10661,16 @@ namespace Firebird
 					this->getBlobAlignment = &Name::cloopgetBlobAlignmentDispatcher;
 					this->getMetadata = &Name::cloopgetMetadataDispatcher;
 					this->setDefaultBpb = &Name::cloopsetDefaultBpbDispatcher;
+					this->deprecatedClose = &Name::cloopdeprecatedCloseDispatcher;
 					this->close = &Name::cloopcloseDispatcher;
+					this->getInfo = &Name::cloopgetInfoDispatcher;
 				}
 			} vTable;
 
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopaddDispatcher(IBatch* self, IStatus* status, unsigned count, const void* inBuffer) throw()
+		static void CLOOP_CARG cloopaddDispatcher(IBatch* self, IStatus* status, unsigned count, const void* inBuffer) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9814,7 +10684,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddBlobDispatcher(IBatch* self, IStatus* status, unsigned length, const void* inBuffer, ISC_QUAD* blobId, unsigned parLength, const unsigned char* par) throw()
+		static void CLOOP_CARG cloopaddBlobDispatcher(IBatch* self, IStatus* status, unsigned length, const void* inBuffer, ISC_QUAD* blobId, unsigned parLength, const unsigned char* par) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9828,7 +10698,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopappendBlobDataDispatcher(IBatch* self, IStatus* status, unsigned length, const void* inBuffer) throw()
+		static void CLOOP_CARG cloopappendBlobDataDispatcher(IBatch* self, IStatus* status, unsigned length, const void* inBuffer) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9842,7 +10712,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddBlobStreamDispatcher(IBatch* self, IStatus* status, unsigned length, const void* inBuffer) throw()
+		static void CLOOP_CARG cloopaddBlobStreamDispatcher(IBatch* self, IStatus* status, unsigned length, const void* inBuffer) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9856,7 +10726,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopregisterBlobDispatcher(IBatch* self, IStatus* status, const ISC_QUAD* existingBlob, ISC_QUAD* blobId) throw()
+		static void CLOOP_CARG cloopregisterBlobDispatcher(IBatch* self, IStatus* status, const ISC_QUAD* existingBlob, ISC_QUAD* blobId) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9870,7 +10740,7 @@ namespace Firebird
 			}
 		}
 
-		static IBatchCompletionState* CLOOP_CARG cloopexecuteDispatcher(IBatch* self, IStatus* status, ITransaction* transaction) throw()
+		static IBatchCompletionState* CLOOP_CARG cloopexecuteDispatcher(IBatch* self, IStatus* status, ITransaction* transaction) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9885,7 +10755,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopcancelDispatcher(IBatch* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopcancelDispatcher(IBatch* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9899,7 +10769,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetBlobAlignmentDispatcher(IBatch* self, IStatus* status) throw()
+		static unsigned CLOOP_CARG cloopgetBlobAlignmentDispatcher(IBatch* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9914,7 +10784,7 @@ namespace Firebird
 			}
 		}
 
-		static IMessageMetadata* CLOOP_CARG cloopgetMetadataDispatcher(IBatch* self, IStatus* status) throw()
+		static IMessageMetadata* CLOOP_CARG cloopgetMetadataDispatcher(IBatch* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9929,7 +10799,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetDefaultBpbDispatcher(IBatch* self, IStatus* status, unsigned parLength, const unsigned char* par) throw()
+		static void CLOOP_CARG cloopsetDefaultBpbDispatcher(IBatch* self, IStatus* status, unsigned parLength, const unsigned char* par) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9943,7 +10813,21 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopcloseDispatcher(IBatch* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopdeprecatedCloseDispatcher(IBatch* self, IStatus* status) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::deprecatedClose(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopcloseDispatcher(IBatch* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -9957,7 +10841,21 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopgetInfoDispatcher(IBatch* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::getInfo(&status2, itemsLength, items, bufferLength, buffer);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -9969,7 +10867,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -10006,7 +10904,9 @@ namespace Firebird
 		virtual unsigned getBlobAlignment(StatusType* status) = 0;
 		virtual IMessageMetadata* getMetadata(StatusType* status) = 0;
 		virtual void setDefaultBpb(StatusType* status, unsigned parLength, const unsigned char* par) = 0;
+		virtual void deprecatedClose(StatusType* status) = 0;
 		virtual void close(StatusType* status) = 0;
+		virtual void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
@@ -10033,7 +10933,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static unsigned CLOOP_CARG cloopgetSizeDispatcher(IBatchCompletionState* self, IStatus* status) throw()
+		static unsigned CLOOP_CARG cloopgetSizeDispatcher(IBatchCompletionState* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10048,7 +10948,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopgetStateDispatcher(IBatchCompletionState* self, IStatus* status, unsigned pos) throw()
+		static int CLOOP_CARG cloopgetStateDispatcher(IBatchCompletionState* self, IStatus* status, unsigned pos) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10063,7 +10963,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopfindErrorDispatcher(IBatchCompletionState* self, IStatus* status, unsigned pos) throw()
+		static unsigned CLOOP_CARG cloopfindErrorDispatcher(IBatchCompletionState* self, IStatus* status, unsigned pos) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10078,7 +10978,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopgetStatusDispatcher(IBatchCompletionState* self, IStatus* status, IStatus* to, unsigned pos) throw()
+		static void CLOOP_CARG cloopgetStatusDispatcher(IBatchCompletionState* self, IStatus* status, IStatus* to, unsigned pos) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10092,7 +10992,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -10140,6 +11040,7 @@ namespace Firebird
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->process = &Name::cloopprocessDispatcher;
+					this->deprecatedClose = &Name::cloopdeprecatedCloseDispatcher;
 					this->close = &Name::cloopcloseDispatcher;
 				}
 			} vTable;
@@ -10147,7 +11048,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopprocessDispatcher(IReplicator* self, IStatus* status, unsigned length, const unsigned char* data) throw()
+		static void CLOOP_CARG cloopprocessDispatcher(IReplicator* self, IStatus* status, unsigned length, const unsigned char* data) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10161,7 +11062,21 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopcloseDispatcher(IReplicator* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopdeprecatedCloseDispatcher(IReplicator* self, IStatus* status) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::deprecatedClose(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopcloseDispatcher(IReplicator* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10175,7 +11090,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -10187,7 +11102,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -10215,6 +11130,7 @@ namespace Firebird
 		}
 
 		virtual void process(StatusType* status, unsigned length, const unsigned char* data) = 0;
+		virtual void deprecatedClose(StatusType* status) = 0;
 		virtual void close(StatusType* status) = 0;
 	};
 
@@ -10239,6 +11155,7 @@ namespace Firebird
 					this->start = &Name::cloopstartDispatcher;
 					this->startAndSend = &Name::cloopstartAndSendDispatcher;
 					this->unwind = &Name::cloopunwindDispatcher;
+					this->deprecatedFree = &Name::cloopdeprecatedFreeDispatcher;
 					this->free = &Name::cloopfreeDispatcher;
 				}
 			} vTable;
@@ -10246,7 +11163,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopreceiveDispatcher(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, void* message) throw()
+		static void CLOOP_CARG cloopreceiveDispatcher(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, void* message) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10260,7 +11177,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsendDispatcher(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, const void* message) throw()
+		static void CLOOP_CARG cloopsendDispatcher(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, const void* message) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10274,7 +11191,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopgetInfoDispatcher(IRequest* self, IStatus* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw()
+		static void CLOOP_CARG cloopgetInfoDispatcher(IRequest* self, IStatus* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10288,7 +11205,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopstartDispatcher(IRequest* self, IStatus* status, ITransaction* tra, int level) throw()
+		static void CLOOP_CARG cloopstartDispatcher(IRequest* self, IStatus* status, ITransaction* tra, int level) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10302,7 +11219,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopstartAndSendDispatcher(IRequest* self, IStatus* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const void* message) throw()
+		static void CLOOP_CARG cloopstartAndSendDispatcher(IRequest* self, IStatus* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const void* message) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10316,7 +11233,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopunwindDispatcher(IRequest* self, IStatus* status, int level) throw()
+		static void CLOOP_CARG cloopunwindDispatcher(IRequest* self, IStatus* status, int level) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10330,7 +11247,21 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopfreeDispatcher(IRequest* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopdeprecatedFreeDispatcher(IRequest* self, IStatus* status) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::deprecatedFree(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopfreeDispatcher(IRequest* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10344,7 +11275,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -10356,7 +11287,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -10389,6 +11320,7 @@ namespace Firebird
 		virtual void start(StatusType* status, ITransaction* tra, int level) = 0;
 		virtual void startAndSend(StatusType* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const void* message) = 0;
 		virtual void unwind(StatusType* status, int level) = 0;
+		virtual void deprecatedFree(StatusType* status) = 0;
 		virtual void free(StatusType* status) = 0;
 	};
 
@@ -10407,6 +11339,7 @@ namespace Firebird
 					this->version = Base::VERSION;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
+					this->deprecatedCancel = &Name::cloopdeprecatedCancelDispatcher;
 					this->cancel = &Name::cloopcancelDispatcher;
 				}
 			} vTable;
@@ -10414,7 +11347,21 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopcancelDispatcher(IEvents* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopdeprecatedCancelDispatcher(IEvents* self, IStatus* status) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::deprecatedCancel(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopcancelDispatcher(IEvents* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10428,7 +11375,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -10440,7 +11387,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -10467,6 +11414,7 @@ namespace Firebird
 		{
 		}
 
+		virtual void deprecatedCancel(StatusType* status) = 0;
 		virtual void cancel(StatusType* status) = 0;
 	};
 
@@ -10501,21 +11449,23 @@ namespace Firebird
 					this->queEvents = &Name::cloopqueEventsDispatcher;
 					this->cancelOperation = &Name::cloopcancelOperationDispatcher;
 					this->ping = &Name::clooppingDispatcher;
-					this->detach = &Name::cloopdetachDispatcher;
-					this->dropDatabase = &Name::cloopdropDatabaseDispatcher;
+					this->deprecatedDetach = &Name::cloopdeprecatedDetachDispatcher;
+					this->deprecatedDropDatabase = &Name::cloopdeprecatedDropDatabaseDispatcher;
 					this->getIdleTimeout = &Name::cloopgetIdleTimeoutDispatcher;
 					this->setIdleTimeout = &Name::cloopsetIdleTimeoutDispatcher;
 					this->getStatementTimeout = &Name::cloopgetStatementTimeoutDispatcher;
 					this->setStatementTimeout = &Name::cloopsetStatementTimeoutDispatcher;
 					this->createBatch = &Name::cloopcreateBatchDispatcher;
 					this->createReplicator = &Name::cloopcreateReplicatorDispatcher;
+					this->detach = &Name::cloopdetachDispatcher;
+					this->dropDatabase = &Name::cloopdropDatabaseDispatcher;
 				}
 			} vTable;
 
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopgetInfoDispatcher(IAttachment* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw()
+		static void CLOOP_CARG cloopgetInfoDispatcher(IAttachment* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10529,7 +11479,7 @@ namespace Firebird
 			}
 		}
 
-		static ITransaction* CLOOP_CARG cloopstartTransactionDispatcher(IAttachment* self, IStatus* status, unsigned tpbLength, const unsigned char* tpb) throw()
+		static ITransaction* CLOOP_CARG cloopstartTransactionDispatcher(IAttachment* self, IStatus* status, unsigned tpbLength, const unsigned char* tpb) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10544,7 +11494,7 @@ namespace Firebird
 			}
 		}
 
-		static ITransaction* CLOOP_CARG cloopreconnectTransactionDispatcher(IAttachment* self, IStatus* status, unsigned length, const unsigned char* id) throw()
+		static ITransaction* CLOOP_CARG cloopreconnectTransactionDispatcher(IAttachment* self, IStatus* status, unsigned length, const unsigned char* id) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10559,7 +11509,7 @@ namespace Firebird
 			}
 		}
 
-		static IRequest* CLOOP_CARG cloopcompileRequestDispatcher(IAttachment* self, IStatus* status, unsigned blrLength, const unsigned char* blr) throw()
+		static IRequest* CLOOP_CARG cloopcompileRequestDispatcher(IAttachment* self, IStatus* status, unsigned blrLength, const unsigned char* blr) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10574,7 +11524,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG clooptransactRequestDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned blrLength, const unsigned char* blr, unsigned inMsgLength, const unsigned char* inMsg, unsigned outMsgLength, unsigned char* outMsg) throw()
+		static void CLOOP_CARG clooptransactRequestDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned blrLength, const unsigned char* blr, unsigned inMsgLength, const unsigned char* inMsg, unsigned outMsgLength, unsigned char* outMsg) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10588,7 +11538,7 @@ namespace Firebird
 			}
 		}
 
-		static IBlob* CLOOP_CARG cloopcreateBlobDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) throw()
+		static IBlob* CLOOP_CARG cloopcreateBlobDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10603,7 +11553,7 @@ namespace Firebird
 			}
 		}
 
-		static IBlob* CLOOP_CARG cloopopenBlobDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) throw()
+		static IBlob* CLOOP_CARG cloopopenBlobDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10618,7 +11568,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopgetSliceDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) throw()
+		static int CLOOP_CARG cloopgetSliceDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10633,7 +11583,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopputSliceDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) throw()
+		static void CLOOP_CARG cloopputSliceDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10647,7 +11597,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopexecuteDynDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned length, const unsigned char* dyn) throw()
+		static void CLOOP_CARG cloopexecuteDynDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned length, const unsigned char* dyn) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10661,7 +11611,7 @@ namespace Firebird
 			}
 		}
 
-		static IStatement* CLOOP_CARG cloopprepareDispatcher(IAttachment* self, IStatus* status, ITransaction* tra, unsigned stmtLength, const char* sqlStmt, unsigned dialect, unsigned flags) throw()
+		static IStatement* CLOOP_CARG cloopprepareDispatcher(IAttachment* self, IStatus* status, ITransaction* tra, unsigned stmtLength, const char* sqlStmt, unsigned dialect, unsigned flags) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10676,7 +11626,7 @@ namespace Firebird
 			}
 		}
 
-		static ITransaction* CLOOP_CARG cloopexecuteDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) throw()
+		static ITransaction* CLOOP_CARG cloopexecuteDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10691,7 +11641,7 @@ namespace Firebird
 			}
 		}
 
-		static IResultSet* CLOOP_CARG cloopopenCursorDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const char* cursorName, unsigned cursorFlags) throw()
+		static IResultSet* CLOOP_CARG cloopopenCursorDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const char* cursorName, unsigned cursorFlags) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10706,7 +11656,7 @@ namespace Firebird
 			}
 		}
 
-		static IEvents* CLOOP_CARG cloopqueEventsDispatcher(IAttachment* self, IStatus* status, IEventCallback* callback, unsigned length, const unsigned char* events) throw()
+		static IEvents* CLOOP_CARG cloopqueEventsDispatcher(IAttachment* self, IStatus* status, IEventCallback* callback, unsigned length, const unsigned char* events) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10721,7 +11671,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopcancelOperationDispatcher(IAttachment* self, IStatus* status, int option) throw()
+		static void CLOOP_CARG cloopcancelOperationDispatcher(IAttachment* self, IStatus* status, int option) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10735,7 +11685,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG clooppingDispatcher(IAttachment* self, IStatus* status) throw()
+		static void CLOOP_CARG clooppingDispatcher(IAttachment* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10749,13 +11699,13 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdetachDispatcher(IAttachment* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopdeprecatedDetachDispatcher(IAttachment* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
 			try
 			{
-				static_cast<Name*>(self)->Name::detach(&status2);
+				static_cast<Name*>(self)->Name::deprecatedDetach(&status2);
 			}
 			catch (...)
 			{
@@ -10763,13 +11713,13 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdropDatabaseDispatcher(IAttachment* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopdeprecatedDropDatabaseDispatcher(IAttachment* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
 			try
 			{
-				static_cast<Name*>(self)->Name::dropDatabase(&status2);
+				static_cast<Name*>(self)->Name::deprecatedDropDatabase(&status2);
 			}
 			catch (...)
 			{
@@ -10777,7 +11727,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetIdleTimeoutDispatcher(IAttachment* self, IStatus* status) throw()
+		static unsigned CLOOP_CARG cloopgetIdleTimeoutDispatcher(IAttachment* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10792,7 +11742,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetIdleTimeoutDispatcher(IAttachment* self, IStatus* status, unsigned timeOut) throw()
+		static void CLOOP_CARG cloopsetIdleTimeoutDispatcher(IAttachment* self, IStatus* status, unsigned timeOut) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10806,7 +11756,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetStatementTimeoutDispatcher(IAttachment* self, IStatus* status) throw()
+		static unsigned CLOOP_CARG cloopgetStatementTimeoutDispatcher(IAttachment* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10821,7 +11771,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetStatementTimeoutDispatcher(IAttachment* self, IStatus* status, unsigned timeOut) throw()
+		static void CLOOP_CARG cloopsetStatementTimeoutDispatcher(IAttachment* self, IStatus* status, unsigned timeOut) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10835,7 +11785,7 @@ namespace Firebird
 			}
 		}
 
-		static IBatch* CLOOP_CARG cloopcreateBatchDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par) throw()
+		static IBatch* CLOOP_CARG cloopcreateBatchDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10850,7 +11800,7 @@ namespace Firebird
 			}
 		}
 
-		static IReplicator* CLOOP_CARG cloopcreateReplicatorDispatcher(IAttachment* self, IStatus* status) throw()
+		static IReplicator* CLOOP_CARG cloopcreateReplicatorDispatcher(IAttachment* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10865,7 +11815,35 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopdetachDispatcher(IAttachment* self, IStatus* status) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::detach(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopdropDatabaseDispatcher(IAttachment* self, IStatus* status) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::dropDatabase(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -10877,7 +11855,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -10920,14 +11898,16 @@ namespace Firebird
 		virtual IEvents* queEvents(StatusType* status, IEventCallback* callback, unsigned length, const unsigned char* events) = 0;
 		virtual void cancelOperation(StatusType* status, int option) = 0;
 		virtual void ping(StatusType* status) = 0;
-		virtual void detach(StatusType* status) = 0;
-		virtual void dropDatabase(StatusType* status) = 0;
+		virtual void deprecatedDetach(StatusType* status) = 0;
+		virtual void deprecatedDropDatabase(StatusType* status) = 0;
 		virtual unsigned getIdleTimeout(StatusType* status) = 0;
 		virtual void setIdleTimeout(StatusType* status, unsigned timeOut) = 0;
 		virtual unsigned getStatementTimeout(StatusType* status) = 0;
 		virtual void setStatementTimeout(StatusType* status, unsigned timeOut) = 0;
 		virtual IBatch* createBatch(StatusType* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par) = 0;
 		virtual IReplicator* createReplicator(StatusType* status) = 0;
+		virtual void detach(StatusType* status) = 0;
+		virtual void dropDatabase(StatusType* status) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
@@ -10945,22 +11925,24 @@ namespace Firebird
 					this->version = Base::VERSION;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
-					this->detach = &Name::cloopdetachDispatcher;
+					this->deprecatedDetach = &Name::cloopdeprecatedDetachDispatcher;
 					this->query = &Name::cloopqueryDispatcher;
 					this->start = &Name::cloopstartDispatcher;
+					this->detach = &Name::cloopdetachDispatcher;
+					this->cancel = &Name::cloopcancelDispatcher;
 				}
 			} vTable;
 
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopdetachDispatcher(IService* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopdeprecatedDetachDispatcher(IService* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
 			try
 			{
-				static_cast<Name*>(self)->Name::detach(&status2);
+				static_cast<Name*>(self)->Name::deprecatedDetach(&status2);
 			}
 			catch (...)
 			{
@@ -10968,7 +11950,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopqueryDispatcher(IService* self, IStatus* status, unsigned sendLength, const unsigned char* sendItems, unsigned receiveLength, const unsigned char* receiveItems, unsigned bufferLength, unsigned char* buffer) throw()
+		static void CLOOP_CARG cloopqueryDispatcher(IService* self, IStatus* status, unsigned sendLength, const unsigned char* sendItems, unsigned receiveLength, const unsigned char* receiveItems, unsigned bufferLength, unsigned char* buffer) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10982,7 +11964,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopstartDispatcher(IService* self, IStatus* status, unsigned spbLength, const unsigned char* spb) throw()
+		static void CLOOP_CARG cloopstartDispatcher(IService* self, IStatus* status, unsigned spbLength, const unsigned char* spb) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -10996,7 +11978,35 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopdetachDispatcher(IService* self, IStatus* status) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::detach(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopcancelDispatcher(IService* self, IStatus* status) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::cancel(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11008,7 +12018,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11035,9 +12045,11 @@ namespace Firebird
 		{
 		}
 
-		virtual void detach(StatusType* status) = 0;
+		virtual void deprecatedDetach(StatusType* status) = 0;
 		virtual void query(StatusType* status, unsigned sendLength, const unsigned char* sendItems, unsigned receiveLength, const unsigned char* receiveItems, unsigned bufferLength, unsigned char* buffer) = 0;
 		virtual void start(StatusType* status, unsigned spbLength, const unsigned char* spb) = 0;
+		virtual void detach(StatusType* status) = 0;
+		virtual void cancel(StatusType* status) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
@@ -11068,7 +12080,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static IAttachment* CLOOP_CARG cloopattachDatabaseDispatcher(IProvider* self, IStatus* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) throw()
+		static IAttachment* CLOOP_CARG cloopattachDatabaseDispatcher(IProvider* self, IStatus* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -11083,7 +12095,7 @@ namespace Firebird
 			}
 		}
 
-		static IAttachment* CLOOP_CARG cloopcreateDatabaseDispatcher(IProvider* self, IStatus* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) throw()
+		static IAttachment* CLOOP_CARG cloopcreateDatabaseDispatcher(IProvider* self, IStatus* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -11098,7 +12110,7 @@ namespace Firebird
 			}
 		}
 
-		static IService* CLOOP_CARG cloopattachServiceManagerDispatcher(IProvider* self, IStatus* status, const char* service, unsigned spbLength, const unsigned char* spb) throw()
+		static IService* CLOOP_CARG cloopattachServiceManagerDispatcher(IProvider* self, IStatus* status, const char* service, unsigned spbLength, const unsigned char* spb) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -11113,7 +12125,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopshutdownDispatcher(IProvider* self, IStatus* status, unsigned timeout, const int reason) throw()
+		static void CLOOP_CARG cloopshutdownDispatcher(IProvider* self, IStatus* status, unsigned timeout, const int reason) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -11127,7 +12139,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetDbCryptCallbackDispatcher(IProvider* self, IStatus* status, ICryptKeyCallback* cryptCallback) throw()
+		static void CLOOP_CARG cloopsetDbCryptCallbackDispatcher(IProvider* self, IStatus* status, ICryptKeyCallback* cryptCallback) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -11141,7 +12153,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11153,7 +12165,7 @@ namespace Firebird
 			}
 		}
 
-		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11166,7 +12178,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11178,7 +12190,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11235,7 +12247,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopaddAttachmentDispatcher(IDtcStart* self, IStatus* status, IAttachment* att) throw()
+		static void CLOOP_CARG cloopaddAttachmentDispatcher(IDtcStart* self, IStatus* status, IAttachment* att) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -11249,7 +12261,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddWithTpbDispatcher(IDtcStart* self, IStatus* status, IAttachment* att, unsigned length, const unsigned char* tpb) throw()
+		static void CLOOP_CARG cloopaddWithTpbDispatcher(IDtcStart* self, IStatus* status, IAttachment* att, unsigned length, const unsigned char* tpb) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -11263,7 +12275,7 @@ namespace Firebird
 			}
 		}
 
-		static ITransaction* CLOOP_CARG cloopstartDispatcher(IDtcStart* self, IStatus* status) throw()
+		static ITransaction* CLOOP_CARG cloopstartDispatcher(IDtcStart* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -11278,7 +12290,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11330,7 +12342,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static ITransaction* CLOOP_CARG cloopjoinDispatcher(IDtc* self, IStatus* status, ITransaction* one, ITransaction* two) throw()
+		static ITransaction* CLOOP_CARG cloopjoinDispatcher(IDtc* self, IStatus* status, ITransaction* one, ITransaction* two) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -11345,7 +12357,7 @@ namespace Firebird
 			}
 		}
 
-		static IDtcStart* CLOOP_CARG cloopstartBuilderDispatcher(IDtc* self, IStatus* status) throw()
+		static IDtcStart* CLOOP_CARG cloopstartBuilderDispatcher(IDtc* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -11401,7 +12413,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11413,7 +12425,7 @@ namespace Firebird
 			}
 		}
 
-		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11426,7 +12438,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11438,7 +12450,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11490,7 +12502,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopresetDispatcher(IWriter* self) throw()
+		static void CLOOP_CARG cloopresetDispatcher(IWriter* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11502,7 +12514,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddDispatcher(IWriter* self, IStatus* status, const char* name) throw()
+		static void CLOOP_CARG cloopaddDispatcher(IWriter* self, IStatus* status, const char* name) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -11516,7 +12528,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetTypeDispatcher(IWriter* self, IStatus* status, const char* value) throw()
+		static void CLOOP_CARG cloopsetTypeDispatcher(IWriter* self, IStatus* status, const char* value) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -11530,7 +12542,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetDbDispatcher(IWriter* self, IStatus* status, const char* value) throw()
+		static void CLOOP_CARG cloopsetDbDispatcher(IWriter* self, IStatus* status, const char* value) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -11587,7 +12599,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetLoginDispatcher(IServerBlock* self) throw()
+		static const char* CLOOP_CARG cloopgetLoginDispatcher(IServerBlock* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11600,7 +12612,7 @@ namespace Firebird
 			}
 		}
 
-		static const unsigned char* CLOOP_CARG cloopgetDataDispatcher(IServerBlock* self, unsigned* length) throw()
+		static const unsigned char* CLOOP_CARG cloopgetDataDispatcher(IServerBlock* self, unsigned* length) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11613,7 +12625,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopputDataDispatcher(IServerBlock* self, IStatus* status, unsigned length, const void* data) throw()
+		static void CLOOP_CARG cloopputDataDispatcher(IServerBlock* self, IStatus* status, unsigned length, const void* data) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -11627,7 +12639,7 @@ namespace Firebird
 			}
 		}
 
-		static ICryptKey* CLOOP_CARG cloopnewKeyDispatcher(IServerBlock* self, IStatus* status) throw()
+		static ICryptKey* CLOOP_CARG cloopnewKeyDispatcher(IServerBlock* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -11689,7 +12701,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetLoginDispatcher(IClientBlock* self) throw()
+		static const char* CLOOP_CARG cloopgetLoginDispatcher(IClientBlock* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11702,7 +12714,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetPasswordDispatcher(IClientBlock* self) throw()
+		static const char* CLOOP_CARG cloopgetPasswordDispatcher(IClientBlock* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11715,7 +12727,7 @@ namespace Firebird
 			}
 		}
 
-		static const unsigned char* CLOOP_CARG cloopgetDataDispatcher(IClientBlock* self, unsigned* length) throw()
+		static const unsigned char* CLOOP_CARG cloopgetDataDispatcher(IClientBlock* self, unsigned* length) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11728,7 +12740,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopputDataDispatcher(IClientBlock* self, IStatus* status, unsigned length, const void* data) throw()
+		static void CLOOP_CARG cloopputDataDispatcher(IClientBlock* self, IStatus* status, unsigned length, const void* data) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -11742,7 +12754,7 @@ namespace Firebird
 			}
 		}
 
-		static ICryptKey* CLOOP_CARG cloopnewKeyDispatcher(IClientBlock* self, IStatus* status) throw()
+		static ICryptKey* CLOOP_CARG cloopnewKeyDispatcher(IClientBlock* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -11757,7 +12769,7 @@ namespace Firebird
 			}
 		}
 
-		static IAuthBlock* CLOOP_CARG cloopgetAuthBlockDispatcher(IClientBlock* self, IStatus* status) throw()
+		static IAuthBlock* CLOOP_CARG cloopgetAuthBlockDispatcher(IClientBlock* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -11772,7 +12784,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11784,7 +12796,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11844,7 +12856,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static int CLOOP_CARG cloopauthenticateDispatcher(IServer* self, IStatus* status, IServerBlock* sBlock, IWriter* writerInterface) throw()
+		static int CLOOP_CARG cloopauthenticateDispatcher(IServer* self, IStatus* status, IServerBlock* sBlock, IWriter* writerInterface) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -11859,7 +12871,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetDbCryptCallbackDispatcher(IServer* self, IStatus* status, ICryptKeyCallback* cryptCallback) throw()
+		static void CLOOP_CARG cloopsetDbCryptCallbackDispatcher(IServer* self, IStatus* status, ICryptKeyCallback* cryptCallback) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -11873,7 +12885,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11885,7 +12897,7 @@ namespace Firebird
 			}
 		}
 
-		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11898,7 +12910,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11910,7 +12922,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11965,7 +12977,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static int CLOOP_CARG cloopauthenticateDispatcher(IClient* self, IStatus* status, IClientBlock* cBlock) throw()
+		static int CLOOP_CARG cloopauthenticateDispatcher(IClient* self, IStatus* status, IClientBlock* cBlock) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -11980,7 +12992,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -11992,7 +13004,7 @@ namespace Firebird
 			}
 		}
 
-		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12005,7 +13017,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12017,7 +13029,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12069,7 +13081,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static int CLOOP_CARG cloopenteredDispatcher(IUserField* self) throw()
+		static int CLOOP_CARG cloopenteredDispatcher(IUserField* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12082,7 +13094,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopspecifiedDispatcher(IUserField* self) throw()
+		static int CLOOP_CARG cloopspecifiedDispatcher(IUserField* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12095,7 +13107,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetEnteredDispatcher(IUserField* self, IStatus* status, int newValue) throw()
+		static void CLOOP_CARG cloopsetEnteredDispatcher(IUserField* self, IStatus* status, int newValue) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -12152,7 +13164,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetDispatcher(ICharUserField* self) throw()
+		static const char* CLOOP_CARG cloopgetDispatcher(ICharUserField* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12165,7 +13177,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetDispatcher(ICharUserField* self, IStatus* status, const char* newValue) throw()
+		static void CLOOP_CARG cloopsetDispatcher(ICharUserField* self, IStatus* status, const char* newValue) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -12179,7 +13191,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopenteredDispatcher(IUserField* self) throw()
+		static int CLOOP_CARG cloopenteredDispatcher(IUserField* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12192,7 +13204,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopspecifiedDispatcher(IUserField* self) throw()
+		static int CLOOP_CARG cloopspecifiedDispatcher(IUserField* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12205,7 +13217,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetEnteredDispatcher(IUserField* self, IStatus* status, int newValue) throw()
+		static void CLOOP_CARG cloopsetEnteredDispatcher(IUserField* self, IStatus* status, int newValue) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -12261,7 +13273,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static int CLOOP_CARG cloopgetDispatcher(IIntUserField* self) throw()
+		static int CLOOP_CARG cloopgetDispatcher(IIntUserField* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12274,7 +13286,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetDispatcher(IIntUserField* self, IStatus* status, int newValue) throw()
+		static void CLOOP_CARG cloopsetDispatcher(IIntUserField* self, IStatus* status, int newValue) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -12288,7 +13300,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopenteredDispatcher(IUserField* self) throw()
+		static int CLOOP_CARG cloopenteredDispatcher(IUserField* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12301,7 +13313,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopspecifiedDispatcher(IUserField* self) throw()
+		static int CLOOP_CARG cloopspecifiedDispatcher(IUserField* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12314,7 +13326,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetEnteredDispatcher(IUserField* self, IStatus* status, int newValue) throw()
+		static void CLOOP_CARG cloopsetEnteredDispatcher(IUserField* self, IStatus* status, int newValue) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -12376,7 +13388,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static unsigned CLOOP_CARG cloopoperationDispatcher(IUser* self) throw()
+		static unsigned CLOOP_CARG cloopoperationDispatcher(IUser* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12389,7 +13401,7 @@ namespace Firebird
 			}
 		}
 
-		static ICharUserField* CLOOP_CARG cloopuserNameDispatcher(IUser* self) throw()
+		static ICharUserField* CLOOP_CARG cloopuserNameDispatcher(IUser* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12402,7 +13414,7 @@ namespace Firebird
 			}
 		}
 
-		static ICharUserField* CLOOP_CARG clooppasswordDispatcher(IUser* self) throw()
+		static ICharUserField* CLOOP_CARG clooppasswordDispatcher(IUser* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12415,7 +13427,7 @@ namespace Firebird
 			}
 		}
 
-		static ICharUserField* CLOOP_CARG cloopfirstNameDispatcher(IUser* self) throw()
+		static ICharUserField* CLOOP_CARG cloopfirstNameDispatcher(IUser* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12428,7 +13440,7 @@ namespace Firebird
 			}
 		}
 
-		static ICharUserField* CLOOP_CARG clooplastNameDispatcher(IUser* self) throw()
+		static ICharUserField* CLOOP_CARG clooplastNameDispatcher(IUser* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12441,7 +13453,7 @@ namespace Firebird
 			}
 		}
 
-		static ICharUserField* CLOOP_CARG cloopmiddleNameDispatcher(IUser* self) throw()
+		static ICharUserField* CLOOP_CARG cloopmiddleNameDispatcher(IUser* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12454,7 +13466,7 @@ namespace Firebird
 			}
 		}
 
-		static ICharUserField* CLOOP_CARG cloopcommentDispatcher(IUser* self) throw()
+		static ICharUserField* CLOOP_CARG cloopcommentDispatcher(IUser* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12467,7 +13479,7 @@ namespace Firebird
 			}
 		}
 
-		static ICharUserField* CLOOP_CARG cloopattributesDispatcher(IUser* self) throw()
+		static ICharUserField* CLOOP_CARG cloopattributesDispatcher(IUser* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12480,7 +13492,7 @@ namespace Firebird
 			}
 		}
 
-		static IIntUserField* CLOOP_CARG cloopactiveDispatcher(IUser* self) throw()
+		static IIntUserField* CLOOP_CARG cloopactiveDispatcher(IUser* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12493,7 +13505,7 @@ namespace Firebird
 			}
 		}
 
-		static IIntUserField* CLOOP_CARG cloopadminDispatcher(IUser* self) throw()
+		static IIntUserField* CLOOP_CARG cloopadminDispatcher(IUser* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12506,7 +13518,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopclearDispatcher(IUser* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopclearDispatcher(IUser* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -12567,7 +13579,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG clooplistDispatcher(IListUsers* self, IStatus* status, IUser* user) throw()
+		static void CLOOP_CARG clooplistDispatcher(IListUsers* self, IStatus* status, IUser* user) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -12624,7 +13636,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopnameDispatcher(ILogonInfo* self) throw()
+		static const char* CLOOP_CARG cloopnameDispatcher(ILogonInfo* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12637,7 +13649,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG clooproleDispatcher(ILogonInfo* self) throw()
+		static const char* CLOOP_CARG clooproleDispatcher(ILogonInfo* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12650,7 +13662,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopnetworkProtocolDispatcher(ILogonInfo* self) throw()
+		static const char* CLOOP_CARG cloopnetworkProtocolDispatcher(ILogonInfo* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12663,7 +13675,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopremoteAddressDispatcher(ILogonInfo* self) throw()
+		static const char* CLOOP_CARG cloopremoteAddressDispatcher(ILogonInfo* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12676,7 +13688,7 @@ namespace Firebird
 			}
 		}
 
-		static const unsigned char* CLOOP_CARG cloopauthBlockDispatcher(ILogonInfo* self, unsigned* length) throw()
+		static const unsigned char* CLOOP_CARG cloopauthBlockDispatcher(ILogonInfo* self, unsigned* length) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12689,7 +13701,7 @@ namespace Firebird
 			}
 		}
 
-		static IAttachment* CLOOP_CARG cloopattachmentDispatcher(ILogonInfo* self, IStatus* status) throw()
+		static IAttachment* CLOOP_CARG cloopattachmentDispatcher(ILogonInfo* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -12704,7 +13716,7 @@ namespace Firebird
 			}
 		}
 
-		static ITransaction* CLOOP_CARG clooptransactionDispatcher(ILogonInfo* self, IStatus* status) throw()
+		static ITransaction* CLOOP_CARG clooptransactionDispatcher(ILogonInfo* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -12769,7 +13781,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopstartDispatcher(IManagement* self, IStatus* status, ILogonInfo* logonInfo) throw()
+		static void CLOOP_CARG cloopstartDispatcher(IManagement* self, IStatus* status, ILogonInfo* logonInfo) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -12783,7 +13795,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopexecuteDispatcher(IManagement* self, IStatus* status, IUser* user, IListUsers* callback) throw()
+		static int CLOOP_CARG cloopexecuteDispatcher(IManagement* self, IStatus* status, IUser* user, IListUsers* callback) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -12798,7 +13810,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopcommitDispatcher(IManagement* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopcommitDispatcher(IManagement* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -12812,7 +13824,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG clooprollbackDispatcher(IManagement* self, IStatus* status) throw()
+		static void CLOOP_CARG clooprollbackDispatcher(IManagement* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -12826,7 +13838,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12838,7 +13850,7 @@ namespace Firebird
 			}
 		}
 
-		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12851,7 +13863,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12863,7 +13875,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12922,7 +13934,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetTypeDispatcher(IAuthBlock* self) throw()
+		static const char* CLOOP_CARG cloopgetTypeDispatcher(IAuthBlock* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12935,7 +13947,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetNameDispatcher(IAuthBlock* self) throw()
+		static const char* CLOOP_CARG cloopgetNameDispatcher(IAuthBlock* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12948,7 +13960,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetPluginDispatcher(IAuthBlock* self) throw()
+		static const char* CLOOP_CARG cloopgetPluginDispatcher(IAuthBlock* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12961,7 +13973,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetSecurityDbDispatcher(IAuthBlock* self) throw()
+		static const char* CLOOP_CARG cloopgetSecurityDbDispatcher(IAuthBlock* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12974,7 +13986,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetOriginalPluginDispatcher(IAuthBlock* self) throw()
+		static const char* CLOOP_CARG cloopgetOriginalPluginDispatcher(IAuthBlock* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -12987,7 +13999,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloopnextDispatcher(IAuthBlock* self, IStatus* status) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopnextDispatcher(IAuthBlock* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13002,7 +14014,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloopfirstDispatcher(IAuthBlock* self, IStatus* status) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopfirstDispatcher(IAuthBlock* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13069,7 +14081,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetKnownTypesDispatcher(IWireCryptPlugin* self, IStatus* status) throw()
+		static const char* CLOOP_CARG cloopgetKnownTypesDispatcher(IWireCryptPlugin* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13084,7 +14096,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetKeyDispatcher(IWireCryptPlugin* self, IStatus* status, ICryptKey* key) throw()
+		static void CLOOP_CARG cloopsetKeyDispatcher(IWireCryptPlugin* self, IStatus* status, ICryptKey* key) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13098,7 +14110,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopencryptDispatcher(IWireCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw()
+		static void CLOOP_CARG cloopencryptDispatcher(IWireCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13112,7 +14124,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdecryptDispatcher(IWireCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw()
+		static void CLOOP_CARG cloopdecryptDispatcher(IWireCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13126,7 +14138,7 @@ namespace Firebird
 			}
 		}
 
-		static const unsigned char* CLOOP_CARG cloopgetSpecificDataDispatcher(IWireCryptPlugin* self, IStatus* status, const char* keyType, unsigned* length) throw()
+		static const unsigned char* CLOOP_CARG cloopgetSpecificDataDispatcher(IWireCryptPlugin* self, IStatus* status, const char* keyType, unsigned* length) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13141,7 +14153,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetSpecificDataDispatcher(IWireCryptPlugin* self, IStatus* status, const char* keyType, unsigned length, const unsigned char* data) throw()
+		static void CLOOP_CARG cloopsetSpecificDataDispatcher(IWireCryptPlugin* self, IStatus* status, const char* keyType, unsigned length, const unsigned char* data) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13155,7 +14167,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13167,7 +14179,7 @@ namespace Firebird
 			}
 		}
 
-		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13180,7 +14192,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13192,7 +14204,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13247,7 +14259,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static unsigned CLOOP_CARG cloopcallbackDispatcher(ICryptKeyCallback* self, unsigned dataLength, const void* data, unsigned bufferLength, void* buffer) throw()
+		static unsigned CLOOP_CARG cloopcallbackDispatcher(ICryptKeyCallback* self, unsigned dataLength, const void* data, unsigned bufferLength, void* buffer) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13304,7 +14316,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static int CLOOP_CARG cloopkeyCallbackDispatcher(IKeyHolderPlugin* self, IStatus* status, ICryptKeyCallback* callback) throw()
+		static int CLOOP_CARG cloopkeyCallbackDispatcher(IKeyHolderPlugin* self, IStatus* status, ICryptKeyCallback* callback) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13319,7 +14331,7 @@ namespace Firebird
 			}
 		}
 
-		static ICryptKeyCallback* CLOOP_CARG cloopkeyHandleDispatcher(IKeyHolderPlugin* self, IStatus* status, const char* keyName) throw()
+		static ICryptKeyCallback* CLOOP_CARG cloopkeyHandleDispatcher(IKeyHolderPlugin* self, IStatus* status, const char* keyName) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13334,7 +14346,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloopuseOnlyOwnKeysDispatcher(IKeyHolderPlugin* self, IStatus* status) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopuseOnlyOwnKeysDispatcher(IKeyHolderPlugin* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13349,7 +14361,7 @@ namespace Firebird
 			}
 		}
 
-		static ICryptKeyCallback* CLOOP_CARG cloopchainHandleDispatcher(IKeyHolderPlugin* self, IStatus* status) throw()
+		static ICryptKeyCallback* CLOOP_CARG cloopchainHandleDispatcher(IKeyHolderPlugin* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13364,7 +14376,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13376,7 +14388,7 @@ namespace Firebird
 			}
 		}
 
-		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13389,7 +14401,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13401,7 +14413,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13456,7 +14468,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetDatabaseFullPathDispatcher(IDbCryptInfo* self, IStatus* status) throw()
+		static const char* CLOOP_CARG cloopgetDatabaseFullPathDispatcher(IDbCryptInfo* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13471,7 +14483,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13483,7 +14495,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13540,7 +14552,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopsetKeyDispatcher(IDbCryptPlugin* self, IStatus* status, unsigned length, IKeyHolderPlugin** sources, const char* keyName) throw()
+		static void CLOOP_CARG cloopsetKeyDispatcher(IDbCryptPlugin* self, IStatus* status, unsigned length, IKeyHolderPlugin** sources, const char* keyName) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13554,7 +14566,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopencryptDispatcher(IDbCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw()
+		static void CLOOP_CARG cloopencryptDispatcher(IDbCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13568,7 +14580,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdecryptDispatcher(IDbCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw()
+		static void CLOOP_CARG cloopdecryptDispatcher(IDbCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13582,7 +14594,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetInfoDispatcher(IDbCryptPlugin* self, IStatus* status, IDbCryptInfo* info) throw()
+		static void CLOOP_CARG cloopsetInfoDispatcher(IDbCryptPlugin* self, IStatus* status, IDbCryptInfo* info) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13596,7 +14608,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13608,7 +14620,7 @@ namespace Firebird
 			}
 		}
 
-		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13621,7 +14633,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13633,7 +14645,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13695,7 +14707,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static IMaster* CLOOP_CARG cloopgetMasterDispatcher(IExternalContext* self) throw()
+		static IMaster* CLOOP_CARG cloopgetMasterDispatcher(IExternalContext* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13708,7 +14720,7 @@ namespace Firebird
 			}
 		}
 
-		static IExternalEngine* CLOOP_CARG cloopgetEngineDispatcher(IExternalContext* self, IStatus* status) throw()
+		static IExternalEngine* CLOOP_CARG cloopgetEngineDispatcher(IExternalContext* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13723,7 +14735,7 @@ namespace Firebird
 			}
 		}
 
-		static IAttachment* CLOOP_CARG cloopgetAttachmentDispatcher(IExternalContext* self, IStatus* status) throw()
+		static IAttachment* CLOOP_CARG cloopgetAttachmentDispatcher(IExternalContext* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13738,7 +14750,7 @@ namespace Firebird
 			}
 		}
 
-		static ITransaction* CLOOP_CARG cloopgetTransactionDispatcher(IExternalContext* self, IStatus* status) throw()
+		static ITransaction* CLOOP_CARG cloopgetTransactionDispatcher(IExternalContext* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13753,7 +14765,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetUserNameDispatcher(IExternalContext* self) throw()
+		static const char* CLOOP_CARG cloopgetUserNameDispatcher(IExternalContext* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13766,7 +14778,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetDatabaseNameDispatcher(IExternalContext* self) throw()
+		static const char* CLOOP_CARG cloopgetDatabaseNameDispatcher(IExternalContext* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13779,7 +14791,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetClientCharSetDispatcher(IExternalContext* self) throw()
+		static const char* CLOOP_CARG cloopgetClientCharSetDispatcher(IExternalContext* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13792,7 +14804,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopobtainInfoCodeDispatcher(IExternalContext* self) throw()
+		static int CLOOP_CARG cloopobtainInfoCodeDispatcher(IExternalContext* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13805,7 +14817,7 @@ namespace Firebird
 			}
 		}
 
-		static void* CLOOP_CARG cloopgetInfoDispatcher(IExternalContext* self, int code) throw()
+		static void* CLOOP_CARG cloopgetInfoDispatcher(IExternalContext* self, int code) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13818,7 +14830,7 @@ namespace Firebird
 			}
 		}
 
-		static void* CLOOP_CARG cloopsetInfoDispatcher(IExternalContext* self, int code, void* value) throw()
+		static void* CLOOP_CARG cloopsetInfoDispatcher(IExternalContext* self, int code, void* value) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13878,7 +14890,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloopfetchDispatcher(IExternalResultSet* self, IStatus* status) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopfetchDispatcher(IExternalResultSet* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13893,7 +14905,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -13944,7 +14956,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopgetCharSetDispatcher(IExternalFunction* self, IStatus* status, IExternalContext* context, char* name, unsigned nameSize) throw()
+		static void CLOOP_CARG cloopgetCharSetDispatcher(IExternalFunction* self, IStatus* status, IExternalContext* context, char* name, unsigned nameSize) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13958,7 +14970,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopexecuteDispatcher(IExternalFunction* self, IStatus* status, IExternalContext* context, void* inMsg, void* outMsg) throw()
+		static void CLOOP_CARG cloopexecuteDispatcher(IExternalFunction* self, IStatus* status, IExternalContext* context, void* inMsg, void* outMsg) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -13972,7 +14984,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -14024,7 +15036,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopgetCharSetDispatcher(IExternalProcedure* self, IStatus* status, IExternalContext* context, char* name, unsigned nameSize) throw()
+		static void CLOOP_CARG cloopgetCharSetDispatcher(IExternalProcedure* self, IStatus* status, IExternalContext* context, char* name, unsigned nameSize) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14038,7 +15050,7 @@ namespace Firebird
 			}
 		}
 
-		static IExternalResultSet* CLOOP_CARG cloopopenDispatcher(IExternalProcedure* self, IStatus* status, IExternalContext* context, void* inMsg, void* outMsg) throw()
+		static IExternalResultSet* CLOOP_CARG cloopopenDispatcher(IExternalProcedure* self, IStatus* status, IExternalContext* context, void* inMsg, void* outMsg) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14053,7 +15065,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -14105,7 +15117,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopgetCharSetDispatcher(IExternalTrigger* self, IStatus* status, IExternalContext* context, char* name, unsigned nameSize) throw()
+		static void CLOOP_CARG cloopgetCharSetDispatcher(IExternalTrigger* self, IStatus* status, IExternalContext* context, char* name, unsigned nameSize) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14119,7 +15131,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopexecuteDispatcher(IExternalTrigger* self, IStatus* status, IExternalContext* context, unsigned action, void* oldMsg, void* newMsg) throw()
+		static void CLOOP_CARG cloopexecuteDispatcher(IExternalTrigger* self, IStatus* status, IExternalContext* context, unsigned action, void* oldMsg, void* newMsg) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14133,7 +15145,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -14191,7 +15203,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetPackageDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
+		static const char* CLOOP_CARG cloopgetPackageDispatcher(const IRoutineMetadata* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14206,7 +15218,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetNameDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
+		static const char* CLOOP_CARG cloopgetNameDispatcher(const IRoutineMetadata* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14221,7 +15233,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetEntryPointDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
+		static const char* CLOOP_CARG cloopgetEntryPointDispatcher(const IRoutineMetadata* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14236,7 +15248,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetBodyDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
+		static const char* CLOOP_CARG cloopgetBodyDispatcher(const IRoutineMetadata* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14251,7 +15263,7 @@ namespace Firebird
 			}
 		}
 
-		static IMessageMetadata* CLOOP_CARG cloopgetInputMetadataDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
+		static IMessageMetadata* CLOOP_CARG cloopgetInputMetadataDispatcher(const IRoutineMetadata* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14266,7 +15278,7 @@ namespace Firebird
 			}
 		}
 
-		static IMessageMetadata* CLOOP_CARG cloopgetOutputMetadataDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
+		static IMessageMetadata* CLOOP_CARG cloopgetOutputMetadataDispatcher(const IRoutineMetadata* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14281,7 +15293,7 @@ namespace Firebird
 			}
 		}
 
-		static IMessageMetadata* CLOOP_CARG cloopgetTriggerMetadataDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
+		static IMessageMetadata* CLOOP_CARG cloopgetTriggerMetadataDispatcher(const IRoutineMetadata* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14296,7 +15308,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetTriggerTableDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
+		static const char* CLOOP_CARG cloopgetTriggerTableDispatcher(const IRoutineMetadata* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14311,7 +15323,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetTriggerTypeDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
+		static unsigned CLOOP_CARG cloopgetTriggerTypeDispatcher(const IRoutineMetadata* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14380,7 +15392,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopopenDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context, char* charSet, unsigned charSetSize) throw()
+		static void CLOOP_CARG cloopopenDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context, char* charSet, unsigned charSetSize) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14394,7 +15406,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopopenAttachmentDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context) throw()
+		static void CLOOP_CARG cloopopenAttachmentDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14408,7 +15420,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopcloseAttachmentDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context) throw()
+		static void CLOOP_CARG cloopcloseAttachmentDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14422,7 +15434,7 @@ namespace Firebird
 			}
 		}
 
-		static IExternalFunction* CLOOP_CARG cloopmakeFunctionDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) throw()
+		static IExternalFunction* CLOOP_CARG cloopmakeFunctionDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14437,7 +15449,7 @@ namespace Firebird
 			}
 		}
 
-		static IExternalProcedure* CLOOP_CARG cloopmakeProcedureDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) throw()
+		static IExternalProcedure* CLOOP_CARG cloopmakeProcedureDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14452,7 +15464,7 @@ namespace Firebird
 			}
 		}
 
-		static IExternalTrigger* CLOOP_CARG cloopmakeTriggerDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder) throw()
+		static IExternalTrigger* CLOOP_CARG cloopmakeTriggerDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14467,7 +15479,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -14479,7 +15491,7 @@ namespace Firebird
 			}
 		}
 
-		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -14492,7 +15504,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -14504,7 +15516,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -14561,7 +15573,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloophandlerDispatcher(ITimer* self) throw()
+		static void CLOOP_CARG cloophandlerDispatcher(ITimer* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -14573,7 +15585,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -14585,7 +15597,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -14636,7 +15648,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopstartDispatcher(ITimerControl* self, IStatus* status, ITimer* timer, ISC_UINT64 microSeconds) throw()
+		static void CLOOP_CARG cloopstartDispatcher(ITimerControl* self, IStatus* status, ITimer* timer, ISC_UINT64 microSeconds) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14650,7 +15662,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopstopDispatcher(ITimerControl* self, IStatus* status, ITimer* timer) throw()
+		static void CLOOP_CARG cloopstopDispatcher(ITimerControl* self, IStatus* status, ITimer* timer) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14702,7 +15714,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopcallbackDispatcher(IVersionCallback* self, IStatus* status, const char* text) throw()
+		static void CLOOP_CARG cloopcallbackDispatcher(IVersionCallback* self, IStatus* status, const char* text) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14774,7 +15786,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopgetFbVersionDispatcher(IUtil* self, IStatus* status, IAttachment* att, IVersionCallback* callback) throw()
+		static void CLOOP_CARG cloopgetFbVersionDispatcher(IUtil* self, IStatus* status, IAttachment* att, IVersionCallback* callback) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14788,7 +15800,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG clooploadBlobDispatcher(IUtil* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) throw()
+		static void CLOOP_CARG clooploadBlobDispatcher(IUtil* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14802,7 +15814,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdumpBlobDispatcher(IUtil* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) throw()
+		static void CLOOP_CARG cloopdumpBlobDispatcher(IUtil* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14816,7 +15828,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopgetPerfCountersDispatcher(IUtil* self, IStatus* status, IAttachment* att, const char* countersSet, ISC_INT64* counters) throw()
+		static void CLOOP_CARG cloopgetPerfCountersDispatcher(IUtil* self, IStatus* status, IAttachment* att, const char* countersSet, ISC_INT64* counters) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14830,7 +15842,7 @@ namespace Firebird
 			}
 		}
 
-		static IAttachment* CLOOP_CARG cloopexecuteCreateDatabaseDispatcher(IUtil* self, IStatus* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb) throw()
+		static IAttachment* CLOOP_CARG cloopexecuteCreateDatabaseDispatcher(IUtil* self, IStatus* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14845,7 +15857,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdecodeDateDispatcher(IUtil* self, ISC_DATE date, unsigned* year, unsigned* month, unsigned* day) throw()
+		static void CLOOP_CARG cloopdecodeDateDispatcher(IUtil* self, ISC_DATE date, unsigned* year, unsigned* month, unsigned* day) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -14857,7 +15869,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdecodeTimeDispatcher(IUtil* self, ISC_TIME time, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions) throw()
+		static void CLOOP_CARG cloopdecodeTimeDispatcher(IUtil* self, ISC_TIME time, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -14869,7 +15881,7 @@ namespace Firebird
 			}
 		}
 
-		static ISC_DATE CLOOP_CARG cloopencodeDateDispatcher(IUtil* self, unsigned year, unsigned month, unsigned day) throw()
+		static ISC_DATE CLOOP_CARG cloopencodeDateDispatcher(IUtil* self, unsigned year, unsigned month, unsigned day) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -14882,7 +15894,7 @@ namespace Firebird
 			}
 		}
 
-		static ISC_TIME CLOOP_CARG cloopencodeTimeDispatcher(IUtil* self, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions) throw()
+		static ISC_TIME CLOOP_CARG cloopencodeTimeDispatcher(IUtil* self, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -14895,7 +15907,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopformatStatusDispatcher(IUtil* self, char* buffer, unsigned bufferSize, IStatus* status) throw()
+		static unsigned CLOOP_CARG cloopformatStatusDispatcher(IUtil* self, char* buffer, unsigned bufferSize, IStatus* status) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -14908,7 +15920,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetClientVersionDispatcher(IUtil* self) throw()
+		static unsigned CLOOP_CARG cloopgetClientVersionDispatcher(IUtil* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -14921,7 +15933,7 @@ namespace Firebird
 			}
 		}
 
-		static IXpbBuilder* CLOOP_CARG cloopgetXpbBuilderDispatcher(IUtil* self, IStatus* status, unsigned kind, const unsigned char* buf, unsigned len) throw()
+		static IXpbBuilder* CLOOP_CARG cloopgetXpbBuilderDispatcher(IUtil* self, IStatus* status, unsigned kind, const unsigned char* buf, unsigned len) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14936,7 +15948,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopsetOffsetsDispatcher(IUtil* self, IStatus* status, IMessageMetadata* metadata, IOffsetsCallback* callback) throw()
+		static unsigned CLOOP_CARG cloopsetOffsetsDispatcher(IUtil* self, IStatus* status, IMessageMetadata* metadata, IOffsetsCallback* callback) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14951,7 +15963,7 @@ namespace Firebird
 			}
 		}
 
-		static IDecFloat16* CLOOP_CARG cloopgetDecFloat16Dispatcher(IUtil* self, IStatus* status) throw()
+		static IDecFloat16* CLOOP_CARG cloopgetDecFloat16Dispatcher(IUtil* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14966,7 +15978,7 @@ namespace Firebird
 			}
 		}
 
-		static IDecFloat34* CLOOP_CARG cloopgetDecFloat34Dispatcher(IUtil* self, IStatus* status) throw()
+		static IDecFloat34* CLOOP_CARG cloopgetDecFloat34Dispatcher(IUtil* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14981,7 +15993,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdecodeTimeTzDispatcher(IUtil* self, IStatus* status, const ISC_TIME_TZ* timeTz, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) throw()
+		static void CLOOP_CARG cloopdecodeTimeTzDispatcher(IUtil* self, IStatus* status, const ISC_TIME_TZ* timeTz, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -14995,7 +16007,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdecodeTimeStampTzDispatcher(IUtil* self, IStatus* status, const ISC_TIMESTAMP_TZ* timeStampTz, unsigned* year, unsigned* month, unsigned* day, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) throw()
+		static void CLOOP_CARG cloopdecodeTimeStampTzDispatcher(IUtil* self, IStatus* status, const ISC_TIMESTAMP_TZ* timeStampTz, unsigned* year, unsigned* month, unsigned* day, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15009,7 +16021,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopencodeTimeTzDispatcher(IUtil* self, IStatus* status, ISC_TIME_TZ* timeTz, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone) throw()
+		static void CLOOP_CARG cloopencodeTimeTzDispatcher(IUtil* self, IStatus* status, ISC_TIME_TZ* timeTz, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15023,7 +16035,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopencodeTimeStampTzDispatcher(IUtil* self, IStatus* status, ISC_TIMESTAMP_TZ* timeStampTz, unsigned year, unsigned month, unsigned day, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone) throw()
+		static void CLOOP_CARG cloopencodeTimeStampTzDispatcher(IUtil* self, IStatus* status, ISC_TIMESTAMP_TZ* timeStampTz, unsigned year, unsigned month, unsigned day, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15037,7 +16049,7 @@ namespace Firebird
 			}
 		}
 
-		static IInt128* CLOOP_CARG cloopgetInt128Dispatcher(IUtil* self, IStatus* status) throw()
+		static IInt128* CLOOP_CARG cloopgetInt128Dispatcher(IUtil* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15052,7 +16064,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdecodeTimeTzExDispatcher(IUtil* self, IStatus* status, const ISC_TIME_TZ_EX* timeTz, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) throw()
+		static void CLOOP_CARG cloopdecodeTimeTzExDispatcher(IUtil* self, IStatus* status, const ISC_TIME_TZ_EX* timeTz, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15066,7 +16078,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdecodeTimeStampTzExDispatcher(IUtil* self, IStatus* status, const ISC_TIMESTAMP_TZ_EX* timeStampTz, unsigned* year, unsigned* month, unsigned* day, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) throw()
+		static void CLOOP_CARG cloopdecodeTimeStampTzExDispatcher(IUtil* self, IStatus* status, const ISC_TIMESTAMP_TZ_EX* timeStampTz, unsigned* year, unsigned* month, unsigned* day, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15138,7 +16150,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopsetOffsetDispatcher(IOffsetsCallback* self, IStatus* status, unsigned index, unsigned offset, unsigned nullOffset) throw()
+		static void CLOOP_CARG cloopsetOffsetDispatcher(IOffsetsCallback* self, IStatus* status, unsigned index, unsigned offset, unsigned nullOffset) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15209,7 +16221,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopclearDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopclearDispatcher(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15223,7 +16235,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopremoveCurrentDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopremoveCurrentDispatcher(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15237,7 +16249,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopinsertIntDispatcher(IXpbBuilder* self, IStatus* status, unsigned char tag, int value) throw()
+		static void CLOOP_CARG cloopinsertIntDispatcher(IXpbBuilder* self, IStatus* status, unsigned char tag, int value) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15251,7 +16263,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopinsertBigIntDispatcher(IXpbBuilder* self, IStatus* status, unsigned char tag, ISC_INT64 value) throw()
+		static void CLOOP_CARG cloopinsertBigIntDispatcher(IXpbBuilder* self, IStatus* status, unsigned char tag, ISC_INT64 value) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15265,7 +16277,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopinsertBytesDispatcher(IXpbBuilder* self, IStatus* status, unsigned char tag, const void* bytes, unsigned length) throw()
+		static void CLOOP_CARG cloopinsertBytesDispatcher(IXpbBuilder* self, IStatus* status, unsigned char tag, const void* bytes, unsigned length) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15279,7 +16291,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopinsertStringDispatcher(IXpbBuilder* self, IStatus* status, unsigned char tag, const char* str) throw()
+		static void CLOOP_CARG cloopinsertStringDispatcher(IXpbBuilder* self, IStatus* status, unsigned char tag, const char* str) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15293,7 +16305,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopinsertTagDispatcher(IXpbBuilder* self, IStatus* status, unsigned char tag) throw()
+		static void CLOOP_CARG cloopinsertTagDispatcher(IXpbBuilder* self, IStatus* status, unsigned char tag) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15307,7 +16319,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloopisEofDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopisEofDispatcher(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15322,7 +16334,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopmoveNextDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopmoveNextDispatcher(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15336,7 +16348,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG clooprewindDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		static void CLOOP_CARG clooprewindDispatcher(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15350,7 +16362,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloopfindFirstDispatcher(IXpbBuilder* self, IStatus* status, unsigned char tag) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopfindFirstDispatcher(IXpbBuilder* self, IStatus* status, unsigned char tag) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15365,7 +16377,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloopfindNextDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopfindNextDispatcher(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15380,7 +16392,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned char CLOOP_CARG cloopgetTagDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		static unsigned char CLOOP_CARG cloopgetTagDispatcher(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15395,7 +16407,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetLengthDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		static unsigned CLOOP_CARG cloopgetLengthDispatcher(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15410,7 +16422,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopgetIntDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		static int CLOOP_CARG cloopgetIntDispatcher(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15425,7 +16437,7 @@ namespace Firebird
 			}
 		}
 
-		static ISC_INT64 CLOOP_CARG cloopgetBigIntDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetBigIntDispatcher(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15440,7 +16452,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetStringDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		static const char* CLOOP_CARG cloopgetStringDispatcher(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15455,7 +16467,7 @@ namespace Firebird
 			}
 		}
 
-		static const unsigned char* CLOOP_CARG cloopgetBytesDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		static const unsigned char* CLOOP_CARG cloopgetBytesDispatcher(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15470,7 +16482,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetBufferLengthDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		static unsigned CLOOP_CARG cloopgetBufferLengthDispatcher(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15485,7 +16497,7 @@ namespace Firebird
 			}
 		}
 
-		static const unsigned char* CLOOP_CARG cloopgetBufferDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		static const unsigned char* CLOOP_CARG cloopgetBufferDispatcher(IXpbBuilder* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -15500,7 +16512,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15576,7 +16588,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static unsigned CLOOP_CARG cloopgetKindDispatcher(ITraceConnection* self) throw()
+		static unsigned CLOOP_CARG cloopgetKindDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15589,7 +16601,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopgetProcessIDDispatcher(ITraceConnection* self) throw()
+		static int CLOOP_CARG cloopgetProcessIDDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15602,7 +16614,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetUserNameDispatcher(ITraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetUserNameDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15615,7 +16627,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRoleNameDispatcher(ITraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRoleNameDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15628,7 +16640,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetCharSetDispatcher(ITraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetCharSetDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15641,7 +16653,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRemoteProtocolDispatcher(ITraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRemoteProtocolDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15654,7 +16666,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRemoteAddressDispatcher(ITraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRemoteAddressDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15667,7 +16679,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopgetRemoteProcessIDDispatcher(ITraceConnection* self) throw()
+		static int CLOOP_CARG cloopgetRemoteProcessIDDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15680,7 +16692,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRemoteProcessNameDispatcher(ITraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRemoteProcessNameDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15748,7 +16760,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static ISC_INT64 CLOOP_CARG cloopgetConnectionIDDispatcher(ITraceDatabaseConnection* self) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetConnectionIDDispatcher(ITraceDatabaseConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15761,7 +16773,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetDatabaseNameDispatcher(ITraceDatabaseConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetDatabaseNameDispatcher(ITraceDatabaseConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15774,7 +16786,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetKindDispatcher(ITraceConnection* self) throw()
+		static unsigned CLOOP_CARG cloopgetKindDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15787,7 +16799,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopgetProcessIDDispatcher(ITraceConnection* self) throw()
+		static int CLOOP_CARG cloopgetProcessIDDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15800,7 +16812,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetUserNameDispatcher(ITraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetUserNameDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15813,7 +16825,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRoleNameDispatcher(ITraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRoleNameDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15826,7 +16838,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetCharSetDispatcher(ITraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetCharSetDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15839,7 +16851,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRemoteProtocolDispatcher(ITraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRemoteProtocolDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15852,7 +16864,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRemoteAddressDispatcher(ITraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRemoteAddressDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15865,7 +16877,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopgetRemoteProcessIDDispatcher(ITraceConnection* self) throw()
+		static int CLOOP_CARG cloopgetRemoteProcessIDDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15878,7 +16890,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRemoteProcessNameDispatcher(ITraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRemoteProcessNameDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15935,7 +16947,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static ISC_INT64 CLOOP_CARG cloopgetTransactionIDDispatcher(ITraceTransaction* self) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetTransactionIDDispatcher(ITraceTransaction* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15948,7 +16960,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloopgetReadOnlyDispatcher(ITraceTransaction* self) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopgetReadOnlyDispatcher(ITraceTransaction* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15961,7 +16973,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopgetWaitDispatcher(ITraceTransaction* self) throw()
+		static int CLOOP_CARG cloopgetWaitDispatcher(ITraceTransaction* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15974,7 +16986,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetIsolationDispatcher(ITraceTransaction* self) throw()
+		static unsigned CLOOP_CARG cloopgetIsolationDispatcher(ITraceTransaction* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -15987,7 +16999,7 @@ namespace Firebird
 			}
 		}
 
-		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceTransaction* self) throw()
+		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceTransaction* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16000,7 +17012,7 @@ namespace Firebird
 			}
 		}
 
-		static ISC_INT64 CLOOP_CARG cloopgetInitialIDDispatcher(ITraceTransaction* self) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetInitialIDDispatcher(ITraceTransaction* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16013,7 +17025,7 @@ namespace Firebird
 			}
 		}
 
-		static ISC_INT64 CLOOP_CARG cloopgetPreviousIDDispatcher(ITraceTransaction* self) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetPreviousIDDispatcher(ITraceTransaction* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16071,7 +17083,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static unsigned CLOOP_CARG cloopgetCountDispatcher(ITraceParams* self) throw()
+		static unsigned CLOOP_CARG cloopgetCountDispatcher(ITraceParams* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16084,7 +17096,7 @@ namespace Firebird
 			}
 		}
 
-		static const dsc* CLOOP_CARG cloopgetParamDispatcher(ITraceParams* self, unsigned idx) throw()
+		static const dsc* CLOOP_CARG cloopgetParamDispatcher(ITraceParams* self, unsigned idx) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16097,7 +17109,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetTextUTF8Dispatcher(ITraceParams* self, IStatus* status, unsigned idx) throw()
+		static const char* CLOOP_CARG cloopgetTextUTF8Dispatcher(ITraceParams* self, IStatus* status, unsigned idx) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -16152,7 +17164,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static ISC_INT64 CLOOP_CARG cloopgetStmtIDDispatcher(ITraceStatement* self) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetStmtIDDispatcher(ITraceStatement* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16165,7 +17177,7 @@ namespace Firebird
 			}
 		}
 
-		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceStatement* self) throw()
+		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceStatement* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16222,7 +17234,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetTextDispatcher(ITraceSQLStatement* self) throw()
+		static const char* CLOOP_CARG cloopgetTextDispatcher(ITraceSQLStatement* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16235,7 +17247,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetPlanDispatcher(ITraceSQLStatement* self) throw()
+		static const char* CLOOP_CARG cloopgetPlanDispatcher(ITraceSQLStatement* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16248,7 +17260,7 @@ namespace Firebird
 			}
 		}
 
-		static ITraceParams* CLOOP_CARG cloopgetInputsDispatcher(ITraceSQLStatement* self) throw()
+		static ITraceParams* CLOOP_CARG cloopgetInputsDispatcher(ITraceSQLStatement* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16261,7 +17273,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetTextUTF8Dispatcher(ITraceSQLStatement* self) throw()
+		static const char* CLOOP_CARG cloopgetTextUTF8Dispatcher(ITraceSQLStatement* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16274,7 +17286,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetExplainedPlanDispatcher(ITraceSQLStatement* self) throw()
+		static const char* CLOOP_CARG cloopgetExplainedPlanDispatcher(ITraceSQLStatement* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16287,7 +17299,7 @@ namespace Firebird
 			}
 		}
 
-		static ISC_INT64 CLOOP_CARG cloopgetStmtIDDispatcher(ITraceStatement* self) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetStmtIDDispatcher(ITraceStatement* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16300,7 +17312,7 @@ namespace Firebird
 			}
 		}
 
-		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceStatement* self) throw()
+		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceStatement* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16358,7 +17370,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static const unsigned char* CLOOP_CARG cloopgetDataDispatcher(ITraceBLRStatement* self) throw()
+		static const unsigned char* CLOOP_CARG cloopgetDataDispatcher(ITraceBLRStatement* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16371,7 +17383,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetDataLengthDispatcher(ITraceBLRStatement* self) throw()
+		static unsigned CLOOP_CARG cloopgetDataLengthDispatcher(ITraceBLRStatement* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16384,7 +17396,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetTextDispatcher(ITraceBLRStatement* self) throw()
+		static const char* CLOOP_CARG cloopgetTextDispatcher(ITraceBLRStatement* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16397,7 +17409,7 @@ namespace Firebird
 			}
 		}
 
-		static ISC_INT64 CLOOP_CARG cloopgetStmtIDDispatcher(ITraceStatement* self) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetStmtIDDispatcher(ITraceStatement* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16410,7 +17422,7 @@ namespace Firebird
 			}
 		}
 
-		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceStatement* self) throw()
+		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceStatement* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16464,7 +17476,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static const unsigned char* CLOOP_CARG cloopgetDataDispatcher(ITraceDYNRequest* self) throw()
+		static const unsigned char* CLOOP_CARG cloopgetDataDispatcher(ITraceDYNRequest* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16477,7 +17489,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetDataLengthDispatcher(ITraceDYNRequest* self) throw()
+		static unsigned CLOOP_CARG cloopgetDataLengthDispatcher(ITraceDYNRequest* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16490,7 +17502,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetTextDispatcher(ITraceDYNRequest* self) throw()
+		static const char* CLOOP_CARG cloopgetTextDispatcher(ITraceDYNRequest* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16544,7 +17556,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetNameSpaceDispatcher(ITraceContextVariable* self) throw()
+		static const char* CLOOP_CARG cloopgetNameSpaceDispatcher(ITraceContextVariable* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16557,7 +17569,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetVarNameDispatcher(ITraceContextVariable* self) throw()
+		static const char* CLOOP_CARG cloopgetVarNameDispatcher(ITraceContextVariable* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16570,7 +17582,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetVarValueDispatcher(ITraceContextVariable* self) throw()
+		static const char* CLOOP_CARG cloopgetVarValueDispatcher(ITraceContextVariable* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16624,7 +17636,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetProcNameDispatcher(ITraceProcedure* self) throw()
+		static const char* CLOOP_CARG cloopgetProcNameDispatcher(ITraceProcedure* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16637,7 +17649,7 @@ namespace Firebird
 			}
 		}
 
-		static ITraceParams* CLOOP_CARG cloopgetInputsDispatcher(ITraceProcedure* self) throw()
+		static ITraceParams* CLOOP_CARG cloopgetInputsDispatcher(ITraceProcedure* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16650,7 +17662,7 @@ namespace Firebird
 			}
 		}
 
-		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceProcedure* self) throw()
+		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceProcedure* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16705,7 +17717,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetFuncNameDispatcher(ITraceFunction* self) throw()
+		static const char* CLOOP_CARG cloopgetFuncNameDispatcher(ITraceFunction* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16718,7 +17730,7 @@ namespace Firebird
 			}
 		}
 
-		static ITraceParams* CLOOP_CARG cloopgetInputsDispatcher(ITraceFunction* self) throw()
+		static ITraceParams* CLOOP_CARG cloopgetInputsDispatcher(ITraceFunction* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16731,7 +17743,7 @@ namespace Firebird
 			}
 		}
 
-		static ITraceParams* CLOOP_CARG cloopgetResultDispatcher(ITraceFunction* self) throw()
+		static ITraceParams* CLOOP_CARG cloopgetResultDispatcher(ITraceFunction* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16744,7 +17756,7 @@ namespace Firebird
 			}
 		}
 
-		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceFunction* self) throw()
+		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceFunction* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16801,7 +17813,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetTriggerNameDispatcher(ITraceTrigger* self) throw()
+		static const char* CLOOP_CARG cloopgetTriggerNameDispatcher(ITraceTrigger* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16814,7 +17826,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRelationNameDispatcher(ITraceTrigger* self) throw()
+		static const char* CLOOP_CARG cloopgetRelationNameDispatcher(ITraceTrigger* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16827,7 +17839,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopgetActionDispatcher(ITraceTrigger* self) throw()
+		static int CLOOP_CARG cloopgetActionDispatcher(ITraceTrigger* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16840,7 +17852,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopgetWhichDispatcher(ITraceTrigger* self) throw()
+		static int CLOOP_CARG cloopgetWhichDispatcher(ITraceTrigger* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16853,7 +17865,7 @@ namespace Firebird
 			}
 		}
 
-		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceTrigger* self) throw()
+		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceTrigger* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16918,7 +17930,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void* CLOOP_CARG cloopgetServiceIDDispatcher(ITraceServiceConnection* self) throw()
+		static void* CLOOP_CARG cloopgetServiceIDDispatcher(ITraceServiceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16931,7 +17943,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetServiceMgrDispatcher(ITraceServiceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetServiceMgrDispatcher(ITraceServiceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16944,7 +17956,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetServiceNameDispatcher(ITraceServiceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetServiceNameDispatcher(ITraceServiceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16957,7 +17969,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetKindDispatcher(ITraceConnection* self) throw()
+		static unsigned CLOOP_CARG cloopgetKindDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16970,7 +17982,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopgetProcessIDDispatcher(ITraceConnection* self) throw()
+		static int CLOOP_CARG cloopgetProcessIDDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16983,7 +17995,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetUserNameDispatcher(ITraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetUserNameDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -16996,7 +18008,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRoleNameDispatcher(ITraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRoleNameDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17009,7 +18021,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetCharSetDispatcher(ITraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetCharSetDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17022,7 +18034,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRemoteProtocolDispatcher(ITraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRemoteProtocolDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17035,7 +18047,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRemoteAddressDispatcher(ITraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRemoteAddressDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17048,7 +18060,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopgetRemoteProcessIDDispatcher(ITraceConnection* self) throw()
+		static int CLOOP_CARG cloopgetRemoteProcessIDDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17061,7 +18073,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRemoteProcessNameDispatcher(ITraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRemoteProcessNameDispatcher(ITraceConnection* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17116,7 +18128,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloophasErrorDispatcher(ITraceStatusVector* self) throw()
+		static FB_BOOLEAN CLOOP_CARG cloophasErrorDispatcher(ITraceStatusVector* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17129,7 +18141,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloophasWarningDispatcher(ITraceStatusVector* self) throw()
+		static FB_BOOLEAN CLOOP_CARG cloophasWarningDispatcher(ITraceStatusVector* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17142,7 +18154,7 @@ namespace Firebird
 			}
 		}
 
-		static IStatus* CLOOP_CARG cloopgetStatusDispatcher(ITraceStatusVector* self) throw()
+		static IStatus* CLOOP_CARG cloopgetStatusDispatcher(ITraceStatusVector* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17155,7 +18167,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetTextDispatcher(ITraceStatusVector* self) throw()
+		static const char* CLOOP_CARG cloopgetTextDispatcher(ITraceStatusVector* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17212,7 +18224,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static ISC_INT64 CLOOP_CARG cloopgetOITDispatcher(ITraceSweepInfo* self) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetOITDispatcher(ITraceSweepInfo* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17225,7 +18237,7 @@ namespace Firebird
 			}
 		}
 
-		static ISC_INT64 CLOOP_CARG cloopgetOSTDispatcher(ITraceSweepInfo* self) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetOSTDispatcher(ITraceSweepInfo* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17238,7 +18250,7 @@ namespace Firebird
 			}
 		}
 
-		static ISC_INT64 CLOOP_CARG cloopgetOATDispatcher(ITraceSweepInfo* self) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetOATDispatcher(ITraceSweepInfo* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17251,7 +18263,7 @@ namespace Firebird
 			}
 		}
 
-		static ISC_INT64 CLOOP_CARG cloopgetNextDispatcher(ITraceSweepInfo* self) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetNextDispatcher(ITraceSweepInfo* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17264,7 +18276,7 @@ namespace Firebird
 			}
 		}
 
-		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceSweepInfo* self) throw()
+		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceSweepInfo* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17321,7 +18333,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static unsigned CLOOP_CARG cloopwriteDispatcher(ITraceLogWriter* self, const void* buf, unsigned size) throw()
+		static unsigned CLOOP_CARG cloopwriteDispatcher(ITraceLogWriter* self, const void* buf, unsigned size) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17334,7 +18346,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopwrite_sDispatcher(ITraceLogWriter* self, IStatus* status, const void* buf, unsigned size) throw()
+		static unsigned CLOOP_CARG cloopwrite_sDispatcher(ITraceLogWriter* self, IStatus* status, const void* buf, unsigned size) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -17349,7 +18361,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17361,7 +18373,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17418,7 +18430,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetConfigTextDispatcher(ITraceInitInfo* self) throw()
+		static const char* CLOOP_CARG cloopgetConfigTextDispatcher(ITraceInitInfo* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17431,7 +18443,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopgetTraceSessionIDDispatcher(ITraceInitInfo* self) throw()
+		static int CLOOP_CARG cloopgetTraceSessionIDDispatcher(ITraceInitInfo* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17444,7 +18456,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetTraceSessionNameDispatcher(ITraceInitInfo* self) throw()
+		static const char* CLOOP_CARG cloopgetTraceSessionNameDispatcher(ITraceInitInfo* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17457,7 +18469,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetFirebirdRootDirectoryDispatcher(ITraceInitInfo* self) throw()
+		static const char* CLOOP_CARG cloopgetFirebirdRootDirectoryDispatcher(ITraceInitInfo* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17470,7 +18482,7 @@ namespace Firebird
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetDatabaseNameDispatcher(ITraceInitInfo* self) throw()
+		static const char* CLOOP_CARG cloopgetDatabaseNameDispatcher(ITraceInitInfo* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17483,7 +18495,7 @@ namespace Firebird
 			}
 		}
 
-		static ITraceDatabaseConnection* CLOOP_CARG cloopgetConnectionDispatcher(ITraceInitInfo* self) throw()
+		static ITraceDatabaseConnection* CLOOP_CARG cloopgetConnectionDispatcher(ITraceInitInfo* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17496,7 +18508,7 @@ namespace Firebird
 			}
 		}
 
-		static ITraceLogWriter* CLOOP_CARG cloopgetLogWriterDispatcher(ITraceInitInfo* self) throw()
+		static ITraceLogWriter* CLOOP_CARG cloopgetLogWriterDispatcher(ITraceInitInfo* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17568,13 +18580,14 @@ namespace Firebird
 					this->trace_event_error = &Name::clooptrace_event_errorDispatcher;
 					this->trace_event_sweep = &Name::clooptrace_event_sweepDispatcher;
 					this->trace_func_execute = &Name::clooptrace_func_executeDispatcher;
+					this->trace_dsql_restart = &Name::clooptrace_dsql_restartDispatcher;
 				}
 			} vTable;
 
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG clooptrace_get_errorDispatcher(ITracePlugin* self) throw()
+		static const char* CLOOP_CARG clooptrace_get_errorDispatcher(ITracePlugin* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17587,7 +18600,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_attachDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, FB_BOOLEAN create_db, unsigned att_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_attachDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, FB_BOOLEAN create_db, unsigned att_result) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17600,7 +18613,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_detachDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, FB_BOOLEAN drop_db) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_detachDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, FB_BOOLEAN drop_db) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17613,7 +18626,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_transaction_startDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, unsigned tpb_length, const unsigned char* tpb, unsigned tra_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_transaction_startDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, unsigned tpb_length, const unsigned char* tpb, unsigned tra_result) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17626,7 +18639,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_transaction_endDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, FB_BOOLEAN commit, FB_BOOLEAN retain_context, unsigned tra_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_transaction_endDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, FB_BOOLEAN commit, FB_BOOLEAN retain_context, unsigned tra_result) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17639,7 +18652,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_proc_executeDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceProcedure* procedure, FB_BOOLEAN started, unsigned proc_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_proc_executeDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceProcedure* procedure, FB_BOOLEAN started, unsigned proc_result) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17652,7 +18665,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_trigger_executeDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceTrigger* trigger, FB_BOOLEAN started, unsigned trig_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_trigger_executeDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceTrigger* trigger, FB_BOOLEAN started, unsigned trig_result) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17665,7 +18678,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_set_contextDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceContextVariable* variable) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_set_contextDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceContextVariable* variable) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17678,7 +18691,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_dsql_prepareDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, ISC_INT64 time_millis, unsigned req_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_dsql_prepareDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, ISC_INT64 time_millis, unsigned req_result) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17691,7 +18704,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_dsql_freeDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceSQLStatement* statement, unsigned option) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_dsql_freeDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceSQLStatement* statement, unsigned option) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17704,7 +18717,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_dsql_executeDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, FB_BOOLEAN started, unsigned req_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_dsql_executeDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, FB_BOOLEAN started, unsigned req_result) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17717,7 +18730,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_blr_compileDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceBLRStatement* statement, ISC_INT64 time_millis, unsigned req_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_blr_compileDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceBLRStatement* statement, ISC_INT64 time_millis, unsigned req_result) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17730,7 +18743,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_blr_executeDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceBLRStatement* statement, unsigned req_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_blr_executeDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceBLRStatement* statement, unsigned req_result) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17743,7 +18756,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_dyn_executeDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceDYNRequest* request, ISC_INT64 time_millis, unsigned req_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_dyn_executeDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceDYNRequest* request, ISC_INT64 time_millis, unsigned req_result) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17756,7 +18769,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_service_attachDispatcher(ITracePlugin* self, ITraceServiceConnection* service, unsigned att_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_service_attachDispatcher(ITracePlugin* self, ITraceServiceConnection* service, unsigned att_result) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17769,7 +18782,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_service_startDispatcher(ITracePlugin* self, ITraceServiceConnection* service, unsigned switches_length, const char* switches, unsigned start_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_service_startDispatcher(ITracePlugin* self, ITraceServiceConnection* service, unsigned switches_length, const char* switches, unsigned start_result) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17782,7 +18795,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_service_queryDispatcher(ITracePlugin* self, ITraceServiceConnection* service, unsigned send_item_length, const unsigned char* send_items, unsigned recv_item_length, const unsigned char* recv_items, unsigned query_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_service_queryDispatcher(ITracePlugin* self, ITraceServiceConnection* service, unsigned send_item_length, const unsigned char* send_items, unsigned recv_item_length, const unsigned char* recv_items, unsigned query_result) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17795,7 +18808,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_service_detachDispatcher(ITracePlugin* self, ITraceServiceConnection* service, unsigned detach_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_service_detachDispatcher(ITracePlugin* self, ITraceServiceConnection* service, unsigned detach_result) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17808,7 +18821,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_event_errorDispatcher(ITracePlugin* self, ITraceConnection* connection, ITraceStatusVector* status, const char* function) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_event_errorDispatcher(ITracePlugin* self, ITraceConnection* connection, ITraceStatusVector* status, const char* function) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17821,7 +18834,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_event_sweepDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceSweepInfo* sweep, unsigned sweep_state) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_event_sweepDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceSweepInfo* sweep, unsigned sweep_state) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17834,7 +18847,7 @@ namespace Firebird
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_func_executeDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceFunction* function, FB_BOOLEAN started, unsigned func_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_func_executeDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceFunction* function, FB_BOOLEAN started, unsigned func_result) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17847,7 +18860,20 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_dsql_restartDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, unsigned number) CLOOP_NOEXCEPT
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::trace_dsql_restart(connection, transaction, statement, number);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<FB_BOOLEAN>(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17859,7 +18885,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17907,6 +18933,7 @@ namespace Firebird
 		virtual FB_BOOLEAN trace_event_error(ITraceConnection* connection, ITraceStatusVector* status, const char* function) = 0;
 		virtual FB_BOOLEAN trace_event_sweep(ITraceDatabaseConnection* connection, ITraceSweepInfo* sweep, unsigned sweep_state) = 0;
 		virtual FB_BOOLEAN trace_func_execute(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceFunction* function, FB_BOOLEAN started, unsigned func_result) = 0;
+		virtual FB_BOOLEAN trace_dsql_restart(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, unsigned number) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
@@ -17934,7 +18961,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static ISC_UINT64 CLOOP_CARG clooptrace_needsDispatcher(ITraceFactory* self) throw()
+		static ISC_UINT64 CLOOP_CARG clooptrace_needsDispatcher(ITraceFactory* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17947,7 +18974,7 @@ namespace Firebird
 			}
 		}
 
-		static ITracePlugin* CLOOP_CARG clooptrace_createDispatcher(ITraceFactory* self, IStatus* status, ITraceInitInfo* init_info) throw()
+		static ITracePlugin* CLOOP_CARG clooptrace_createDispatcher(ITraceFactory* self, IStatus* status, ITraceInitInfo* init_info) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -17962,7 +18989,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17974,7 +19001,7 @@ namespace Firebird
 			}
 		}
 
-		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17987,7 +19014,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -17999,7 +19026,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -18052,7 +19079,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopsetupDispatcher(IUdrFunctionFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) throw()
+		static void CLOOP_CARG cloopsetupDispatcher(IUdrFunctionFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -18066,7 +19093,7 @@ namespace Firebird
 			}
 		}
 
-		static IExternalFunction* CLOOP_CARG cloopnewItemDispatcher(IUdrFunctionFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata) throw()
+		static IExternalFunction* CLOOP_CARG cloopnewItemDispatcher(IUdrFunctionFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -18081,7 +19108,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -18133,7 +19160,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopsetupDispatcher(IUdrProcedureFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) throw()
+		static void CLOOP_CARG cloopsetupDispatcher(IUdrProcedureFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -18147,7 +19174,7 @@ namespace Firebird
 			}
 		}
 
-		static IExternalProcedure* CLOOP_CARG cloopnewItemDispatcher(IUdrProcedureFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata) throw()
+		static IExternalProcedure* CLOOP_CARG cloopnewItemDispatcher(IUdrProcedureFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -18162,7 +19189,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -18214,7 +19241,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopsetupDispatcher(IUdrTriggerFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder) throw()
+		static void CLOOP_CARG cloopsetupDispatcher(IUdrTriggerFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -18228,7 +19255,7 @@ namespace Firebird
 			}
 		}
 
-		static IExternalTrigger* CLOOP_CARG cloopnewItemDispatcher(IUdrTriggerFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata) throw()
+		static IExternalTrigger* CLOOP_CARG cloopnewItemDispatcher(IUdrTriggerFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -18243,7 +19270,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -18296,7 +19323,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static IMaster* CLOOP_CARG cloopgetMasterDispatcher(IUdrPlugin* self) throw()
+		static IMaster* CLOOP_CARG cloopgetMasterDispatcher(IUdrPlugin* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -18309,7 +19336,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopregisterFunctionDispatcher(IUdrPlugin* self, IStatus* status, const char* name, IUdrFunctionFactory* factory) throw()
+		static void CLOOP_CARG cloopregisterFunctionDispatcher(IUdrPlugin* self, IStatus* status, const char* name, IUdrFunctionFactory* factory) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -18323,7 +19350,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopregisterProcedureDispatcher(IUdrPlugin* self, IStatus* status, const char* name, IUdrProcedureFactory* factory) throw()
+		static void CLOOP_CARG cloopregisterProcedureDispatcher(IUdrPlugin* self, IStatus* status, const char* name, IUdrProcedureFactory* factory) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -18337,7 +19364,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopregisterTriggerDispatcher(IUdrPlugin* self, IStatus* status, const char* name, IUdrTriggerFactory* factory) throw()
+		static void CLOOP_CARG cloopregisterTriggerDispatcher(IUdrPlugin* self, IStatus* status, const char* name, IUdrTriggerFactory* factory) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -18394,7 +19421,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG clooptoBcdDispatcher(IDecFloat16* self, const FB_DEC16* from, int* sign, unsigned char* bcd, int* exp) throw()
+		static void CLOOP_CARG clooptoBcdDispatcher(IDecFloat16* self, const FB_DEC16* from, int* sign, unsigned char* bcd, int* exp) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -18406,7 +19433,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG clooptoStringDispatcher(IDecFloat16* self, IStatus* status, const FB_DEC16* from, unsigned bufferLength, char* buffer) throw()
+		static void CLOOP_CARG clooptoStringDispatcher(IDecFloat16* self, IStatus* status, const FB_DEC16* from, unsigned bufferLength, char* buffer) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -18420,7 +19447,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopfromBcdDispatcher(IDecFloat16* self, int sign, const unsigned char* bcd, int exp, FB_DEC16* to) throw()
+		static void CLOOP_CARG cloopfromBcdDispatcher(IDecFloat16* self, int sign, const unsigned char* bcd, int exp, FB_DEC16* to) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -18432,7 +19459,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopfromStringDispatcher(IDecFloat16* self, IStatus* status, const char* from, FB_DEC16* to) throw()
+		static void CLOOP_CARG cloopfromStringDispatcher(IDecFloat16* self, IStatus* status, const char* from, FB_DEC16* to) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -18489,7 +19516,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG clooptoBcdDispatcher(IDecFloat34* self, const FB_DEC34* from, int* sign, unsigned char* bcd, int* exp) throw()
+		static void CLOOP_CARG clooptoBcdDispatcher(IDecFloat34* self, const FB_DEC34* from, int* sign, unsigned char* bcd, int* exp) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -18501,7 +19528,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG clooptoStringDispatcher(IDecFloat34* self, IStatus* status, const FB_DEC34* from, unsigned bufferLength, char* buffer) throw()
+		static void CLOOP_CARG clooptoStringDispatcher(IDecFloat34* self, IStatus* status, const FB_DEC34* from, unsigned bufferLength, char* buffer) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -18515,7 +19542,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopfromBcdDispatcher(IDecFloat34* self, int sign, const unsigned char* bcd, int exp, FB_DEC34* to) throw()
+		static void CLOOP_CARG cloopfromBcdDispatcher(IDecFloat34* self, int sign, const unsigned char* bcd, int exp, FB_DEC34* to) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -18527,7 +19554,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopfromStringDispatcher(IDecFloat34* self, IStatus* status, const char* from, FB_DEC34* to) throw()
+		static void CLOOP_CARG cloopfromStringDispatcher(IDecFloat34* self, IStatus* status, const char* from, FB_DEC34* to) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -18582,7 +19609,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG clooptoStringDispatcher(IInt128* self, IStatus* status, const FB_I128* from, int scale, unsigned bufferLength, char* buffer) throw()
+		static void CLOOP_CARG clooptoStringDispatcher(IInt128* self, IStatus* status, const FB_I128* from, int scale, unsigned bufferLength, char* buffer) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -18596,7 +19623,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopfromStringDispatcher(IInt128* self, IStatus* status, int scale, const char* from, FB_I128* to) throw()
+		static void CLOOP_CARG cloopfromStringDispatcher(IInt128* self, IStatus* status, int scale, const char* from, FB_I128* to) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -18654,7 +19681,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetNameDispatcher(IReplicatedField* self) throw()
+		static const char* CLOOP_CARG cloopgetNameDispatcher(IReplicatedField* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -18667,7 +19694,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetTypeDispatcher(IReplicatedField* self) throw()
+		static unsigned CLOOP_CARG cloopgetTypeDispatcher(IReplicatedField* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -18680,7 +19707,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopgetSubTypeDispatcher(IReplicatedField* self) throw()
+		static int CLOOP_CARG cloopgetSubTypeDispatcher(IReplicatedField* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -18693,7 +19720,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopgetScaleDispatcher(IReplicatedField* self) throw()
+		static int CLOOP_CARG cloopgetScaleDispatcher(IReplicatedField* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -18706,7 +19733,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetLengthDispatcher(IReplicatedField* self) throw()
+		static unsigned CLOOP_CARG cloopgetLengthDispatcher(IReplicatedField* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -18719,7 +19746,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetCharSetDispatcher(IReplicatedField* self) throw()
+		static unsigned CLOOP_CARG cloopgetCharSetDispatcher(IReplicatedField* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -18732,7 +19759,7 @@ namespace Firebird
 			}
 		}
 
-		static const void* CLOOP_CARG cloopgetDataDispatcher(IReplicatedField* self) throw()
+		static const void* CLOOP_CARG cloopgetDataDispatcher(IReplicatedField* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -18791,7 +19818,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static unsigned CLOOP_CARG cloopgetCountDispatcher(IReplicatedRecord* self) throw()
+		static unsigned CLOOP_CARG cloopgetCountDispatcher(IReplicatedRecord* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -18804,7 +19831,7 @@ namespace Firebird
 			}
 		}
 
-		static IReplicatedField* CLOOP_CARG cloopgetFieldDispatcher(IReplicatedRecord* self, unsigned index) throw()
+		static IReplicatedField* CLOOP_CARG cloopgetFieldDispatcher(IReplicatedRecord* self, unsigned index) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -18817,7 +19844,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetRawLengthDispatcher(IReplicatedRecord* self) throw()
+		static unsigned CLOOP_CARG cloopgetRawLengthDispatcher(IReplicatedRecord* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -18830,7 +19857,7 @@ namespace Firebird
 			}
 		}
 
-		static const unsigned char* CLOOP_CARG cloopgetRawDataDispatcher(IReplicatedRecord* self) throw()
+		static const unsigned char* CLOOP_CARG cloopgetRawDataDispatcher(IReplicatedRecord* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -18894,7 +19921,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopprepareDispatcher(IReplicatedTransaction* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopprepareDispatcher(IReplicatedTransaction* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -18908,7 +19935,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopcommitDispatcher(IReplicatedTransaction* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopcommitDispatcher(IReplicatedTransaction* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -18922,7 +19949,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG clooprollbackDispatcher(IReplicatedTransaction* self, IStatus* status) throw()
+		static void CLOOP_CARG clooprollbackDispatcher(IReplicatedTransaction* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -18936,7 +19963,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopstartSavepointDispatcher(IReplicatedTransaction* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopstartSavepointDispatcher(IReplicatedTransaction* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -18950,7 +19977,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopreleaseSavepointDispatcher(IReplicatedTransaction* self, IStatus* status) throw()
+		static void CLOOP_CARG cloopreleaseSavepointDispatcher(IReplicatedTransaction* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -18964,7 +19991,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG clooprollbackSavepointDispatcher(IReplicatedTransaction* self, IStatus* status) throw()
+		static void CLOOP_CARG clooprollbackSavepointDispatcher(IReplicatedTransaction* self, IStatus* status) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -18978,7 +20005,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopinsertRecordDispatcher(IReplicatedTransaction* self, IStatus* status, const char* name, IReplicatedRecord* record) throw()
+		static void CLOOP_CARG cloopinsertRecordDispatcher(IReplicatedTransaction* self, IStatus* status, const char* name, IReplicatedRecord* record) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -18992,7 +20019,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopupdateRecordDispatcher(IReplicatedTransaction* self, IStatus* status, const char* name, IReplicatedRecord* orgRecord, IReplicatedRecord* newRecord) throw()
+		static void CLOOP_CARG cloopupdateRecordDispatcher(IReplicatedTransaction* self, IStatus* status, const char* name, IReplicatedRecord* orgRecord, IReplicatedRecord* newRecord) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -19006,7 +20033,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdeleteRecordDispatcher(IReplicatedTransaction* self, IStatus* status, const char* name, IReplicatedRecord* record) throw()
+		static void CLOOP_CARG cloopdeleteRecordDispatcher(IReplicatedTransaction* self, IStatus* status, const char* name, IReplicatedRecord* record) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -19020,7 +20047,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopexecuteSqlDispatcher(IReplicatedTransaction* self, IStatus* status, const char* sql) throw()
+		static void CLOOP_CARG cloopexecuteSqlDispatcher(IReplicatedTransaction* self, IStatus* status, const char* sql) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -19034,7 +20061,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopexecuteSqlIntlDispatcher(IReplicatedTransaction* self, IStatus* status, unsigned charset, const char* sql) throw()
+		static void CLOOP_CARG cloopexecuteSqlIntlDispatcher(IReplicatedTransaction* self, IStatus* status, unsigned charset, const char* sql) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -19048,7 +20075,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -19114,7 +20141,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloopinitDispatcher(IReplicatedSession* self, IStatus* status, IAttachment* attachment) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopinitDispatcher(IReplicatedSession* self, IStatus* status, IAttachment* attachment) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -19129,7 +20156,7 @@ namespace Firebird
 			}
 		}
 
-		static IReplicatedTransaction* CLOOP_CARG cloopstartTransactionDispatcher(IReplicatedSession* self, IStatus* status, ITransaction* transaction, ISC_INT64 number) throw()
+		static IReplicatedTransaction* CLOOP_CARG cloopstartTransactionDispatcher(IReplicatedSession* self, IStatus* status, ITransaction* transaction, ISC_INT64 number) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -19144,7 +20171,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopcleanupTransactionDispatcher(IReplicatedSession* self, IStatus* status, ISC_INT64 number) throw()
+		static void CLOOP_CARG cloopcleanupTransactionDispatcher(IReplicatedSession* self, IStatus* status, ISC_INT64 number) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -19158,7 +20185,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetSequenceDispatcher(IReplicatedSession* self, IStatus* status, const char* name, ISC_INT64 value) throw()
+		static void CLOOP_CARG cloopsetSequenceDispatcher(IReplicatedSession* self, IStatus* status, const char* name, ISC_INT64 value) CLOOP_NOEXCEPT
 		{
 			StatusType status2(status);
 
@@ -19172,7 +20199,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -19184,7 +20211,7 @@ namespace Firebird
 			}
 		}
 
-		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -19197,7 +20224,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -19209,7 +20236,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
 		{
 			try
 			{
@@ -19240,6 +20267,450 @@ namespace Firebird
 		virtual IReplicatedTransaction* startTransaction(StatusType* status, ITransaction* transaction, ISC_INT64 number) = 0;
 		virtual void cleanupTransaction(StatusType* status, ISC_INT64 number) = 0;
 		virtual void setSequence(StatusType* status, const char* name, ISC_INT64 value) = 0;
+	};
+
+	template <typename Name, typename StatusType, typename Base>
+	class IProfilerPluginBaseImpl : public Base
+	{
+	public:
+		typedef IProfilerPlugin Declaration;
+
+		IProfilerPluginBaseImpl(DoNotInherit = DoNotInherit())
+		{
+			static struct VTableImpl : Base::VTable
+			{
+				VTableImpl()
+				{
+					this->version = Base::VERSION;
+					this->addRef = &Name::cloopaddRefDispatcher;
+					this->release = &Name::cloopreleaseDispatcher;
+					this->setOwner = &Name::cloopsetOwnerDispatcher;
+					this->getOwner = &Name::cloopgetOwnerDispatcher;
+					this->init = &Name::cloopinitDispatcher;
+					this->startSession = &Name::cloopstartSessionDispatcher;
+					this->flush = &Name::cloopflushDispatcher;
+				}
+			} vTable;
+
+			this->cloopVTable = &vTable;
+		}
+
+		static void CLOOP_CARG cloopinitDispatcher(IProfilerPlugin* self, IStatus* status, IAttachment* attachment) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::init(&status2, attachment);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static IProfilerSession* CLOOP_CARG cloopstartSessionDispatcher(IProfilerPlugin* self, IStatus* status, const char* description, const char* options, ISC_TIMESTAMP_TZ timestamp) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::startSession(&status2, description, options, timestamp);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<IProfilerSession*>(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopflushDispatcher(IProfilerPlugin* self, IStatus* status) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::flush(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) CLOOP_NOEXCEPT
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::setOwner(r);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) CLOOP_NOEXCEPT
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getOwner();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<IReferenceCounted*>(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::addRef();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) CLOOP_NOEXCEPT
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::release();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<int>(0);
+			}
+		}
+	};
+
+	template <typename Name, typename StatusType, typename Base = IPluginBaseImpl<Name, StatusType, Inherit<IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IProfilerPlugin> > > > > > >
+	class IProfilerPluginImpl : public IProfilerPluginBaseImpl<Name, StatusType, Base>
+	{
+	protected:
+		IProfilerPluginImpl(DoNotInherit = DoNotInherit())
+		{
+		}
+
+	public:
+		virtual ~IProfilerPluginImpl()
+		{
+		}
+
+		virtual void init(StatusType* status, IAttachment* attachment) = 0;
+		virtual IProfilerSession* startSession(StatusType* status, const char* description, const char* options, ISC_TIMESTAMP_TZ timestamp) = 0;
+		virtual void flush(StatusType* status) = 0;
+	};
+
+	template <typename Name, typename StatusType, typename Base>
+	class IProfilerSessionBaseImpl : public Base
+	{
+	public:
+		typedef IProfilerSession Declaration;
+
+		IProfilerSessionBaseImpl(DoNotInherit = DoNotInherit())
+		{
+			static struct VTableImpl : Base::VTable
+			{
+				VTableImpl()
+				{
+					this->version = Base::VERSION;
+					this->dispose = &Name::cloopdisposeDispatcher;
+					this->getId = &Name::cloopgetIdDispatcher;
+					this->getFlags = &Name::cloopgetFlagsDispatcher;
+					this->cancel = &Name::cloopcancelDispatcher;
+					this->finish = &Name::cloopfinishDispatcher;
+					this->defineStatement = &Name::cloopdefineStatementDispatcher;
+					this->defineRecordSource = &Name::cloopdefineRecordSourceDispatcher;
+					this->onRequestStart = &Name::clooponRequestStartDispatcher;
+					this->onRequestFinish = &Name::clooponRequestFinishDispatcher;
+					this->beforePsqlLineColumn = &Name::cloopbeforePsqlLineColumnDispatcher;
+					this->afterPsqlLineColumn = &Name::cloopafterPsqlLineColumnDispatcher;
+					this->beforeRecordSourceOpen = &Name::cloopbeforeRecordSourceOpenDispatcher;
+					this->afterRecordSourceOpen = &Name::cloopafterRecordSourceOpenDispatcher;
+					this->beforeRecordSourceGetRecord = &Name::cloopbeforeRecordSourceGetRecordDispatcher;
+					this->afterRecordSourceGetRecord = &Name::cloopafterRecordSourceGetRecordDispatcher;
+				}
+			} vTable;
+
+			this->cloopVTable = &vTable;
+		}
+
+		static ISC_INT64 CLOOP_CARG cloopgetIdDispatcher(IProfilerSession* self) CLOOP_NOEXCEPT
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getId();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<ISC_INT64>(0);
+			}
+		}
+
+		static unsigned CLOOP_CARG cloopgetFlagsDispatcher(IProfilerSession* self) CLOOP_NOEXCEPT
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getFlags();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<unsigned>(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopcancelDispatcher(IProfilerSession* self, IStatus* status) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::cancel(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopfinishDispatcher(IProfilerSession* self, IStatus* status, ISC_TIMESTAMP_TZ timestamp) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::finish(&status2, timestamp);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopdefineStatementDispatcher(IProfilerSession* self, IStatus* status, ISC_INT64 statementId, ISC_INT64 parentStatementId, const char* type, const char* packageName, const char* routineName, const char* sqlText) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::defineStatement(&status2, statementId, parentStatementId, type, packageName, routineName, sqlText);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopdefineRecordSourceDispatcher(IProfilerSession* self, ISC_INT64 statementId, unsigned cursorId, unsigned recSourceId, const char* accessPath, unsigned parentRecSourceId) CLOOP_NOEXCEPT
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::defineRecordSource(statementId, cursorId, recSourceId, accessPath, parentRecSourceId);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+
+		static void CLOOP_CARG clooponRequestStartDispatcher(IProfilerSession* self, IStatus* status, ISC_INT64 requestId, ISC_INT64 statementId, ISC_INT64 callerRequestId, ISC_TIMESTAMP_TZ timestamp) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::onRequestStart(&status2, requestId, statementId, callerRequestId, timestamp);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG clooponRequestFinishDispatcher(IProfilerSession* self, IStatus* status, ISC_INT64 requestId, ISC_TIMESTAMP_TZ timestamp, IProfilerStats* stats) CLOOP_NOEXCEPT
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::onRequestFinish(&status2, requestId, timestamp, stats);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopbeforePsqlLineColumnDispatcher(IProfilerSession* self, ISC_INT64 requestId, unsigned line, unsigned column) CLOOP_NOEXCEPT
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::beforePsqlLineColumn(requestId, line, column);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopafterPsqlLineColumnDispatcher(IProfilerSession* self, ISC_INT64 requestId, unsigned line, unsigned column, IProfilerStats* stats) CLOOP_NOEXCEPT
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::afterPsqlLineColumn(requestId, line, column, stats);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopbeforeRecordSourceOpenDispatcher(IProfilerSession* self, ISC_INT64 requestId, unsigned cursorId, unsigned recSourceId) CLOOP_NOEXCEPT
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::beforeRecordSourceOpen(requestId, cursorId, recSourceId);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopafterRecordSourceOpenDispatcher(IProfilerSession* self, ISC_INT64 requestId, unsigned cursorId, unsigned recSourceId, IProfilerStats* stats) CLOOP_NOEXCEPT
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::afterRecordSourceOpen(requestId, cursorId, recSourceId, stats);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopbeforeRecordSourceGetRecordDispatcher(IProfilerSession* self, ISC_INT64 requestId, unsigned cursorId, unsigned recSourceId) CLOOP_NOEXCEPT
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::beforeRecordSourceGetRecord(requestId, cursorId, recSourceId);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopafterRecordSourceGetRecordDispatcher(IProfilerSession* self, ISC_INT64 requestId, unsigned cursorId, unsigned recSourceId, IProfilerStats* stats) CLOOP_NOEXCEPT
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::afterRecordSourceGetRecord(requestId, cursorId, recSourceId, stats);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) CLOOP_NOEXCEPT
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::dispose();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+	};
+
+	template <typename Name, typename StatusType, typename Base = IDisposableImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IProfilerSession> > > > >
+	class IProfilerSessionImpl : public IProfilerSessionBaseImpl<Name, StatusType, Base>
+	{
+	protected:
+		IProfilerSessionImpl(DoNotInherit = DoNotInherit())
+		{
+		}
+
+	public:
+		virtual ~IProfilerSessionImpl()
+		{
+		}
+
+		virtual ISC_INT64 getId() = 0;
+		virtual unsigned getFlags() = 0;
+		virtual void cancel(StatusType* status) = 0;
+		virtual void finish(StatusType* status, ISC_TIMESTAMP_TZ timestamp) = 0;
+		virtual void defineStatement(StatusType* status, ISC_INT64 statementId, ISC_INT64 parentStatementId, const char* type, const char* packageName, const char* routineName, const char* sqlText) = 0;
+		virtual void defineRecordSource(ISC_INT64 statementId, unsigned cursorId, unsigned recSourceId, const char* accessPath, unsigned parentRecSourceId) = 0;
+		virtual void onRequestStart(StatusType* status, ISC_INT64 requestId, ISC_INT64 statementId, ISC_INT64 callerRequestId, ISC_TIMESTAMP_TZ timestamp) = 0;
+		virtual void onRequestFinish(StatusType* status, ISC_INT64 requestId, ISC_TIMESTAMP_TZ timestamp, IProfilerStats* stats) = 0;
+		virtual void beforePsqlLineColumn(ISC_INT64 requestId, unsigned line, unsigned column) = 0;
+		virtual void afterPsqlLineColumn(ISC_INT64 requestId, unsigned line, unsigned column, IProfilerStats* stats) = 0;
+		virtual void beforeRecordSourceOpen(ISC_INT64 requestId, unsigned cursorId, unsigned recSourceId) = 0;
+		virtual void afterRecordSourceOpen(ISC_INT64 requestId, unsigned cursorId, unsigned recSourceId, IProfilerStats* stats) = 0;
+		virtual void beforeRecordSourceGetRecord(ISC_INT64 requestId, unsigned cursorId, unsigned recSourceId) = 0;
+		virtual void afterRecordSourceGetRecord(ISC_INT64 requestId, unsigned cursorId, unsigned recSourceId, IProfilerStats* stats) = 0;
+	};
+
+	template <typename Name, typename StatusType, typename Base>
+	class IProfilerStatsBaseImpl : public Base
+	{
+	public:
+		typedef IProfilerStats Declaration;
+
+		IProfilerStatsBaseImpl(DoNotInherit = DoNotInherit())
+		{
+			static struct VTableImpl : Base::VTable
+			{
+				VTableImpl()
+				{
+					this->version = Base::VERSION;
+					this->getElapsedTime = &Name::cloopgetElapsedTimeDispatcher;
+				}
+			} vTable;
+
+			this->cloopVTable = &vTable;
+		}
+
+		static ISC_UINT64 CLOOP_CARG cloopgetElapsedTimeDispatcher(IProfilerStats* self) CLOOP_NOEXCEPT
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getElapsedTime();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<ISC_UINT64>(0);
+			}
+		}
+	};
+
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IProfilerStats> > >
+	class IProfilerStatsImpl : public IProfilerStatsBaseImpl<Name, StatusType, Base>
+	{
+	protected:
+		IProfilerStatsImpl(DoNotInherit = DoNotInherit())
+		{
+		}
+
+	public:
+		virtual ~IProfilerStatsImpl()
+		{
+		}
+
+		virtual ISC_UINT64 getElapsedTime() = 0;
 	};
 };
 

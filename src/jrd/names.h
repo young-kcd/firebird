@@ -44,6 +44,8 @@ NAME("RDB$COLLATION_NAME", nam_collate_name)
 NAME("RDB$COMPLEX_NAME", nam_cpx_name)
 NAME("RDB$COMPUTED_BLR", nam_computed)
 NAME("RDB$COMPUTED_SOURCE", nam_c_source)
+NAME("RDB$CONDITION_BLR", nam_cond_blr)
+NAME("RDB$CONDITION_SOURCE", nam_cond_source)
 NAME("RDB$CONSTRAINT_NAME", nam_con_name)
 NAME("RDB$CONSTRAINT_TYPE", nam_con_type)
 NAME("RDB$CONST_NAME_UQ", nam_con_uq)
@@ -453,6 +455,17 @@ NAME("RDB$CONFIG_IS_SET", nam_cfg_is_set)
 NAME("RDB$CONFIG_SOURCE", nam_cfg_source)
 
 NAME("MON$SESSION_TIMEZONE", nam_mon_session_tz)
+
+NAME("RDB$KEYWORDS", nam_keywords)
+NAME("RDB$KEYWORD_NAME", nam_keyword_name)
+NAME("RDB$KEYWORD_RESERVED", nam_keyword_reserved)
+
+NAME("MON$COMPILED_STATEMENTS", nam_mon_compiled_statements)
+NAME("MON$COMPILED_STATEMENT_ID", nam_mon_cmp_stmt_id)
+
+NAME("RDB$SHORT_DESCRIPTION", nam_short_description)
+NAME("RDB$SECONDS_INTERVAL", nam_seconds_interval)
+NAME("RDB$PROFILE_SESSION_ID", nam_prof_ses_id)
 
 NAME("RDB$BLOB_UTIL_HANDLE", nam_butil_handle)
 NAME("RDB$BLOB", nam_blob)

@@ -1,7 +1,7 @@
 #!/bin/sh
 ../source/runConfigureICU Linux --prefix=$PWD/prebuilt \
     CFLAGS="-Os" \
-    CXXFLAGS="--std=c++11" \
+    CXXFLAGS="--std=c++17" \
     --enable-static \
     --enable-shared=no \
     --enable-extras=no \

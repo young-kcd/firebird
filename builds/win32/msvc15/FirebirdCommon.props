@@ -10,7 +10,7 @@
     <ClCompile>
       <AdditionalOptions>/EHsc- %(AdditionalOptions)</AdditionalOptions>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>../../../src/include;../../../src/include/gen;../../../extern/libtomcrypt/src/headers;../../../extern/libtommath;../../../extern/icu/include;../../../extern/zlib;../../../extern/re2;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../src/include;../../../src/include/gen;../../../extern/libtomcrypt/src/headers;../../../extern/libtommath;../../../extern/icu/include;../../../extern/zlib;../../../extern/re2;../../../extern/boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>
       </ExceptionHandling>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
@@ -18,11 +18,12 @@
       <AssemblerListingLocation>..\..\..\temp\$(Platform)\$(Configuration)\$(ProjectName)/</AssemblerListingLocation>
       <ObjectFileName>..\..\..\temp\$(Platform)\$(Configuration)\$(ProjectName)/</ObjectFileName>
       <ProgramDataBaseFileName>..\..\..\temp\$(Platform)\$(Configuration)\$(ProjectName)/</ProgramDataBaseFileName>
-      <BrowseInformation>true</BrowseInformation>
+      <BrowseInformation>false</BrowseInformation>
       <BrowseInformationFile>..\..\..\temp\$(Platform)\$(Configuration)\$(ProjectName)\</BrowseInformationFile>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <CompileAs>Default</CompileAs>
       <UseFullPaths>false</UseFullPaths>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -33,6 +34,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
       <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary>
+      <AdditionalDependencies>psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Bscmake>
       <OutputFile>$(IntDir)$(TargetName).bsc</OutputFile>

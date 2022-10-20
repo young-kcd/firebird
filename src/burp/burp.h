@@ -252,8 +252,9 @@ enum att_type {
 	att_SQL_dialect,		// SQL dialect that it speaks
 	att_db_read_only,		// Is the database ReadOnly?
 	att_database_linger,	// Disconnection timeout
-	att_database_sql_security,// default sql security value
+	att_database_sql_security_deprecated,	// can be removed later
 	att_replica_mode,		// replica mode
+	att_database_sql_security,	// default sql security value
 
 	// Relation attributes
 
@@ -275,6 +276,7 @@ enum att_type {
 	att_relation_flags,
 	att_relation_ext_file_name, // name of file for external tables
 	att_relation_type,
+	att_relation_sql_security_deprecated,	// can be removed later
 	att_relation_sql_security,
 
 	// Field attributes (used for both global and local fields)
@@ -349,6 +351,8 @@ enum att_type {
 	att_index_description2,
 	att_index_expression_source,
 	att_index_expression_blr,
+	att_index_condition_source,
+	att_index_condition_blr,
 
 	// Data record
 
@@ -409,6 +413,7 @@ enum att_type {
 	att_trig_engine_name,
 	att_trig_entrypoint,
 	att_trig_type2,
+	att_trig_sql_security_deprecated,	// can be removed later
 	att_trig_sql_security,
 
 	// Function attributes
@@ -433,6 +438,7 @@ enum att_type {
 	att_function_owner_name,
 	att_function_legacy_flag,
 	att_function_deterministic_flag,
+	att_function_sql_security_deprecated,	// can be removed later
 	att_function_sql_security,
 
 	// Function argument attributes
@@ -529,6 +535,7 @@ enum att_type {
 	att_procedure_entrypoint,
 	att_procedure_package_name,
 	att_procedure_private_flag,
+	att_procedure_sql_security_deprecated,	// can be removed later
 	att_procedure_sql_security,
 
 	// Stored procedure parameter attributes
@@ -630,6 +637,7 @@ enum att_type {
 	att_package_security_class,
 	att_package_owner_name,
 	att_package_description,
+	att_package_sql_security_deprecated,	// can be removed later
 	att_package_sql_security,
 
 	// Database creators
@@ -739,6 +747,7 @@ struct burp_rel
 	SSHORT		rel_name_length;
 	GDS_NAME	rel_name;
 	GDS_NAME	rel_owner;		// relation owner, if not us
+	ULONG		rel_max_pp;		// max pointer page sequence number
 };
 
 enum burp_rel_flags_vals {
@@ -947,8 +956,12 @@ public:
 	explicit BurpGlobals(Firebird::UtilSvc* us)
 		: ThreadData(ThreadData::tddGBL),
 		  GblPool(us->isService()),
+		  gbl_sw_par_workers(1),
 		  defaultCollations(getPool()),
+		  gbl_dpb_data(*getDefaultMemoryPool()),
 		  uSvc(us),
+		  master(true),
+		  taskItem(NULL),
 		  verboseInterval(10000),
 		  flag_on_line(true),
 		  firstMap(true),
@@ -995,6 +1008,7 @@ public:
 	bool		gbl_sw_mode;
 	bool		gbl_sw_mode_val;
 	bool		gbl_sw_overwrite;
+	bool		gbl_sw_direct_io;
 	bool		gbl_sw_zip;
 	const SCHAR*	gbl_sw_keyholder;
 	const SCHAR*	gbl_sw_crypt;
@@ -1008,6 +1022,7 @@ public:
 	SLONG		gbl_sw_page_buffers;
 	burp_fil*	gbl_sw_files;
 	burp_fil*	gbl_sw_backup_files;
+	int			gbl_sw_par_workers;
 	gfld*		gbl_global_fields;
 	unsigned	gbl_network_protocol;
 	burp_act*	action;
@@ -1062,6 +1077,7 @@ public:
 	FB_UINT64	mvol_cumul_count;
 	UCHAR*		mvol_io_ptr;
 	int			mvol_io_cnt;
+	UCHAR*		mvol_io_memory;		// as allocated, not aligned pointer
 	UCHAR*		mvol_io_buffer;
 	UCHAR*		mvol_io_volume;
 	UCHAR*		mvol_io_header;
@@ -1078,6 +1094,7 @@ public:
 	Firebird::IAttachment*	db_handle;
 	Firebird::ITransaction*	tr_handle;
 	Firebird::ITransaction*	global_trans;
+	TraNumber	tr_snapshot;
 	DESC		file_desc;
 	int			exit_code;
 	UCHAR*		head_of_mem_list;
@@ -1141,6 +1158,7 @@ public:
 	Firebird::IRequest*	handles_put_index_req_handle7;
 	Firebird::IRequest*	handles_put_relation_req_handle1;
 	Firebird::IRequest*	handles_put_relation_req_handle2;
+	Firebird::IRequest*	handles_put_relation_req_handle3;
 	Firebird::IRequest*	handles_store_blr_gen_id_req_handle1;
 	Firebird::IRequest*	handles_write_function_args_req_handle1;
 	Firebird::IRequest*	handles_write_function_args_req_handle2;
@@ -1149,6 +1167,7 @@ public:
 
 	bool			hdr_forced_writes;
 	TEXT			database_security_class[GDS_NAME_LEN]; // To save database security class for deferred update
+	unsigned		batchInlineBlobLimit;
 
 	static inline BurpGlobals* getSpecific()
 	{
@@ -1174,7 +1193,10 @@ public:
 
 	Firebird::Array<Firebird::Pair<Firebird::NonPooled<Firebird::MetaString, Firebird::MetaString> > >
 		defaultCollations;
+	Firebird::Array<UCHAR> gbl_dpb_data;
 	Firebird::UtilSvc* uSvc;
+	bool master;			// set for master thread only
+	void* taskItem;			// current task item, if any
 	ULONG verboseInterval;	// How many records should be backed up or restored before we show this message
 	bool flag_on_line;		// indicates whether we will bring the database on-line
 	bool firstMap;			// this is the first time we entered get_mapping()

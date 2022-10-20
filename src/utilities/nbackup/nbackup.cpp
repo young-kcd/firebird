@@ -189,8 +189,6 @@ namespace
 		usage(uSvc, isc_nbackup_allowed_switches);
 	}
 
-	const int MSG_LEN = 1024;
-
 	// HPUX has non-posix-conformant method to return error codes from posix_fadvise().
 	// Instead of error code, directly returned by function (like specified by posix),
 	// -1 is returned in case of error and errno is set. Luckily, we can easily detect it runtime.
@@ -273,14 +271,18 @@ struct inc_header
 class NBackup
 {
 public:
+	enum CLEAN_HISTORY_KIND { NONE, DAYS, ROWS };
+
 	NBackup(UtilSvc* _uSvc, const PathName& _database, const string& _username, const string& _role,
-			const string& _password, bool _run_db_triggers, bool _direct_io, const string& _deco)
+			const string& _password, bool _run_db_triggers, bool _direct_io, const string& _deco,
+			CLEAN_HISTORY_KIND cleanHistKind, int keepHistValue)
 	  : uSvc(_uSvc), newdb(0), trans(0), database(_database),
 		username(_username), role(_role), password(_password),
 		run_db_triggers(_run_db_triggers), direct_io(_direct_io),
 		dbase(INVALID_HANDLE_VALUE), backup(INVALID_HANDLE_VALUE),
-		decompress(_deco), childId(0), db_size_pages(0),
-		m_odsNumber(0), m_silent(false), m_printed(false)
+		decompress(_deco), m_cleanHistKind(cleanHistKind), m_keepHistValue(keepHistValue),
+		childId(0), db_size_pages(0),
+		m_odsNumber(0), m_silent(false), m_printed(false), m_flash_map(false)
 	{
 		// Recognition of local prefix allows to work with
 		// database using TCP/IP loopback while reading file locally.
@@ -336,6 +338,8 @@ private:
 	FILE_HANDLE dbase;
 	FILE_HANDLE backup;
 	string decompress;
+	const CLEAN_HISTORY_KIND m_cleanHistKind;
+	const int m_keepHistValue;
 #ifdef WIN_NT
 	HANDLE childId;
 	HANDLE childStdErr;
@@ -346,6 +350,7 @@ private:
 	USHORT m_odsNumber;
 	bool m_silent;		// are we already handling an exception?
 	bool m_printed;		// pr_error() was called to print status vector
+	bool m_flash_map;	// clear mapping cache on attach
 
 	// IO functions
 	FB_SIZE_T read_file(FILE_HANDLE &file, void *buffer, FB_SIZE_T bufsize);
@@ -362,6 +367,7 @@ private:
 	void attach_database();
 	void detach_database();
 	string to_system(const PathName& from);
+	void cleanHistory();
 
 	// Create/open database and backup
 	void open_database_write(bool exclusive = false);
@@ -577,11 +583,16 @@ void NBackup::create_database()
 
 void NBackup::close_database()
 {
+	if (dbase == INVALID_HANDLE_VALUE)
+		return;
+
 #ifdef WIN_NT
 	CloseHandle(dbase);
 #else
 	close(dbase);
 #endif
+
+	dbase = INVALID_HANDLE_VALUE;
 }
 
 string NBackup::to_system(const PathName& from)
@@ -794,6 +805,10 @@ void NBackup::close_backup()
 {
 	if (bakname == "stdout")
 		return;
+
+	if (backup == INVALID_HANDLE_VALUE)
+		return;
+
 #ifdef WIN_NT
 	CloseHandle(backup);
 	if (childId != 0)
@@ -818,6 +833,7 @@ void NBackup::close_backup()
 		childId = 0;
 	}
 #endif
+	backup = INVALID_HANDLE_VALUE;
 }
 
 void NBackup::fixup_database(bool repl_seq, bool set_readonly)
@@ -923,7 +939,7 @@ void NBackup::print_child_stderr()
 	DWORD bytesRead;
 	while (true)
 	{
-		// Check if pipe have data to read. This is necessary to avoid hung if 
+		// Check if pipe have data to read. This is necessary to avoid hung if
 		// pipe is empty. Ignore read error as ReadFile set bytesRead to zero
 		// in this case and it is enough for our usage.
 		const BOOL ret = PeekNamedPipe(childStdErr, NULL, 1, NULL, &bytesRead, NULL);
@@ -947,7 +963,7 @@ void NBackup::print_child_stderr()
 				if (*pEndL == '\n')
 					pEndL++;
 			}
-			else 
+			else
 			{
 				pEndL = strchr(p, '\n');
 				if (pEndL)
@@ -1009,6 +1025,9 @@ void NBackup::attach_database()
 	if (!run_db_triggers)
 		dpb.insertByte(isc_dpb_no_db_triggers, 1);
 
+	if (m_flash_map)
+		dpb.insertByte(isc_dpb_clear_map, 1);
+
 	if (m_silent)
 	{
 		ISC_STATUS_ARRAY temp;
@@ -1052,6 +1071,31 @@ void NBackup::internal_lock_database()
 		pr_error(status, "begin backup");
 	if (isc_commit_transaction(status, &trans))
 		pr_error(status, "begin backup: commit");
+}
+
+void NBackup::cleanHistory()
+{
+	if (m_cleanHistKind == NONE)
+		return;
+
+	string sql;
+	if (m_cleanHistKind == DAYS)
+	{
+		sql.printf(
+			"DELETE FROM RDB$BACKUP_HISTORY WHERE RDB$TIMESTAMP < DATEADD(1 - %i DAY TO CURRENT_DATE)",
+			m_keepHistValue);
+	}
+	else
+	{
+		sql.printf(
+			"DELETE FROM RDB$BACKUP_HISTORY WHERE RDB$TIMESTAMP <= "
+			  "(SELECT RDB$TIMESTAMP FROM RDB$BACKUP_HISTORY ORDER BY RDB$TIMESTAMP DESC "
+			  "OFFSET %i ROWS FETCH FIRST 1 ROW ONLY)",
+			m_keepHistValue);
+	}
+
+	if (isc_dsql_execute_immediate(status, &newdb, &trans, 0, sql.c_str(), SQL_DIALECT_CURRENT, NULL))
+		pr_error(status, "execute history delete");
 }
 
 void NBackup::get_database_size()
@@ -1241,7 +1285,7 @@ void NBackup::backup_database(int level, Guid& guid, const PathName& fname)
 			default:
 				pr_error(status, "fetch history query");
 			}
-			isc_dsql_free_statement(status, &stmt, DSQL_close);
+			isc_dsql_free_statement(status, &stmt, DSQL_drop);
 			if (isc_commit_transaction(status, &trans))
 				pr_error(status, "commit history query");
 		}
@@ -1558,6 +1602,9 @@ void NBackup::backup_database(int level, Guid& guid, const PathName& fname)
 		in_sqlda->sqlvar[3].sqlind = &null_flag;
 		if (isc_dsql_execute(status, &trans, &stmt, 1, in_sqlda))
 			pr_error(status, "execute history insert");
+
+		cleanHistory();
+
 		isc_dsql_free_statement(status, &stmt, DSQL_drop);
 		if (isc_commit_transaction(status, &trans))
 			pr_error(status, "commit history insert");
@@ -1672,6 +1719,14 @@ void NBackup::restore_database(const BackupFiles& files, bool repl_seq, bool inc
 				{
 					close_database();
 					fixup_database(repl_seq, inc_rest);
+
+					m_silent = true;
+					m_flash_map = true;
+					run_db_triggers = false;
+
+					attach_database();
+					detach_database();
+
 					return;
 				}
 				if (!inc_rest || curLevel)
@@ -1861,6 +1916,9 @@ void nbackup(UtilSvc* uSvc)
 	Guid guid;
 	bool print_size = false, version = false, inc_rest = false, repl_seq = false;
 	string onOff;
+	bool cleanHistory = false;
+	NBackup::CLEAN_HISTORY_KIND cleanHistKind = NBackup::CLEAN_HISTORY_KIND::NONE;
+	int keepHistValue = 0;
 
 	const Switches switches(nbackup_action_in_sw_table, FB_NELEM(nbackup_action_in_sw_table),
 							false, true);
@@ -2044,6 +2102,37 @@ void nbackup(UtilSvc* uSvc)
 			repl_seq = true;
 			break;
 
+		case IN_SW_NBK_CLEAN_HISTORY:
+			cleanHistory = true;
+			break;
+
+		case IN_SW_NBK_KEEP:
+			if (cleanHistKind != NBackup::CLEAN_HISTORY_KIND::NONE)
+				usage(uSvc, isc_nbackup_second_keep_switch);
+
+			if (++itr >= argc)
+				missingParameterForSwitch(uSvc, argv[itr - 1]);
+
+			keepHistValue = atoi(argv[itr]);
+			if (keepHistValue < 1)
+				usage(uSvc, isc_nbackup_wrong_param, argv[itr - 1]);
+
+			if (++itr >= argc)
+				missingParameterForSwitch(uSvc, argv[itr - 1]);
+
+			{ // scope
+				string keepUnit = argv[itr];
+				keepUnit.upper();
+
+				if (string("DAYS").find(keepUnit) == 0)
+					cleanHistKind = NBackup::CLEAN_HISTORY_KIND::DAYS;
+				else if (string("ROWS").find(keepUnit) == 0)
+					cleanHistKind = NBackup::CLEAN_HISTORY_KIND::ROWS;
+				else
+					usage(uSvc, isc_nbackup_wrong_param, argv[itr - 2]);
+			}
+			break;
+
 		default:
 			usage(uSvc, isc_nbackup_unknown_switch, argv[itr]);
 			break;
@@ -2074,7 +2163,22 @@ void nbackup(UtilSvc* uSvc)
 		usage(uSvc, isc_nbackup_seq_misuse);
 	}
 
-	NBackup nbk(uSvc, database, username, role, password, run_db_triggers, direct_io, decompress);
+	if (cleanHistory)
+	{
+		// CLEAN_HISTORY could be used with BACKUP only
+		if (op != nbBackup)
+			usage(uSvc, isc_nbackup_clean_hist_misuse);
+
+		if (cleanHistKind == NBackup::CLEAN_HISTORY_KIND::NONE)
+			usage(uSvc, isc_nbackup_keep_hist_missed);
+	}
+	else if (cleanHistKind != NBackup::CLEAN_HISTORY_KIND::NONE)
+	{
+		usage(uSvc, isc_nbackup_clean_hist_missed);
+	}
+
+	NBackup nbk(uSvc, database, username, role, password, run_db_triggers, direct_io,
+				decompress, cleanHistKind, keepHistValue);
 	try
 	{
 		switch (op)

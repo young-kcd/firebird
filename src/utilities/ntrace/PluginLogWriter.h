@@ -48,8 +48,14 @@
 #include <sys/stat.h>
 
 
-class PluginLogWriter FB_FINAL :
-	public Firebird::RefCntIface<Firebird::ITraceLogWriterImpl<PluginLogWriter, Firebird::CheckStatusWrapper> >
+// Empty header. We need it to get shared mutex using SharedMemory
+struct PluginLogWriterHeader : public Firebird::MemoryHeader
+{
+};
+
+class PluginLogWriter final :
+	public Firebird::RefCntIface<Firebird::ITraceLogWriterImpl<PluginLogWriter, Firebird::CheckStatusWrapper> >,
+	public Firebird::IpcObject
 {
 public:
 	PluginLogWriter(const char* fileName, size_t maxSize);
@@ -60,6 +66,8 @@ public:
 	virtual FB_SIZE_T write_s(Firebird::CheckStatusWrapper* status, const void* buf, unsigned size);
 
 private:
+	const USHORT PLUGIN_LOG_VERSION = 1;
+
 	SINT64 seekToEnd();
 	void reopen();
 	void checkErrno(const char* operation);
@@ -73,34 +81,41 @@ private:
 	// same file simultaneously, therefore we used our fastMutex for this
 	// purposes. On Posix's platforms we honour O_APPEND flag which works
 	// better as in this case syncronization is performed by OS kernel itself.
-#ifdef WIN_NT
-	static void checkMutex(const TEXT*, int);
+	// Mutex on Posix is needed to rotate log file.
+
+	void mutexBug(int osErrorCode, const char* text) override;
+	bool initialize(Firebird::SharedMemoryBase*, bool) override;
+
+	USHORT getType() const override { return Firebird::SharedMemoryBase::SRAM_TRACE_AUDIT_MTX; };
+	USHORT getVersion() const override { return PLUGIN_LOG_VERSION; };
+	const char* getName() const override { return "AuditLogMutex"; };
+
 	void lock();
 	void unlock();
-
-	struct Firebird::mtx m_mutex;
 
 	class Guard
 	{
 	public:
-		explicit Guard(PluginLogWriter* log) : m_log(*log)
+		explicit Guard(PluginLogWriter* log) : m_log(log)
 		{
-			m_log.lock();
+			if (m_log)
+				m_log->lock();
 		}
 
 		~Guard()
 		{
-			m_log.unlock();
+			if (m_log)
+				m_log->unlock();
 		}
 
 	private:
-		PluginLogWriter& m_log;
+		PluginLogWriter* m_log;
 	};
-#endif
 
 	Firebird::PathName m_fileName;
 	int		 m_fileHandle;
 	size_t	 m_maxSize;
+	Firebird::AutoPtr<Firebird::SharedMemory<PluginLogWriterHeader> > m_sharedMemory;
 
 	typedef Firebird::TimerImpl IdleTimer;
 	Firebird::RefPtr<IdleTimer> m_idleTimer;

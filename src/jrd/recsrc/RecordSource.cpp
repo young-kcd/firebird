@@ -25,7 +25,7 @@
 #include "../jrd/btr.h"
 #include "../jrd/intl.h"
 #include "../jrd/req.h"
-#include "../jrd/rse.h"
+#include "../jrd/ProfilerManager.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dpm_proto.h"
 #include "../jrd/err_proto.h"
@@ -40,30 +40,82 @@
 using namespace Firebird;
 using namespace Jrd;
 
+// Disabled so far, should be uncommented for debugging/testing
+//#define PRINT_OPT_INFO	// print optimizer info (cardinality, cost) in plans
+
 
 // Record source class
 // -------------------
 
-string RecordSource::printName(thread_db* tdbb, const string& name, bool quote)
+RecordSource::RecordSource(CompilerScratch* csb)
+	: m_cursorProfileId(csb->csb_currentCursorProfileId),
+	  m_recSourceProfileId(csb->csb_nextRecSourceProfileId++)
 {
-	const UCHAR* namePtr = (const UCHAR*) name.c_str();
-	ULONG nameLength = (ULONG) name.length();
+}
 
-	MoveBuffer nameBuffer;
+void RecordSource::open(thread_db* tdbb) const
+{
+	const auto attachment = tdbb->getAttachment();
+	const auto request = tdbb->getRequest();
 
-	const CHARSET_ID charset = tdbb->getCharSet();
-	if (charset != CS_METADATA && charset != CS_NONE)
+	const auto profilerManager = attachment->isProfilerActive() && !request->hasInternalStatement() ?
+		attachment->getProfilerManager(tdbb) :
+		nullptr;
+
+	const SINT64 lastPerfCounter = profilerManager ?
+		fb_utils::query_performance_counter() :
+		0;
+
+	if (profilerManager)
 	{
-		const ULONG bufferLength = INTL_convert_bytes(tdbb, charset, NULL, 0,
-													  CS_METADATA, namePtr, nameLength, ERR_post);
-		nameBuffer.getBuffer(bufferLength);
-		nameLength = INTL_convert_bytes(tdbb, charset, nameBuffer.begin(), bufferLength,
-										CS_METADATA, namePtr, nameLength, ERR_post);
-
-		namePtr = nameBuffer.begin();
+		profilerManager->prepareRecSource(tdbb, request, this);
+		profilerManager->beforeRecordSourceOpen(request, this);
 	}
 
-	const string result(namePtr, nameLength);
+	internalOpen(tdbb);
+
+	if (profilerManager)
+	{
+		const SINT64 currentPerfCounter = fb_utils::query_performance_counter();
+		ProfilerManager::Stats stats(currentPerfCounter - lastPerfCounter);
+		profilerManager->afterRecordSourceOpen(request, this, stats);
+	}
+}
+
+bool RecordSource::getRecord(thread_db* tdbb) const
+{
+	const auto attachment = tdbb->getAttachment();
+	const auto request = tdbb->getRequest();
+
+	const auto profilerManager = attachment->isProfilerActive() && !request->hasInternalStatement() ?
+		attachment->getProfilerManager(tdbb) :
+		nullptr;
+
+	const SINT64 lastPerfCounter = profilerManager ?
+		fb_utils::query_performance_counter() :
+		0;
+
+	if (profilerManager)
+	{
+		profilerManager->prepareRecSource(tdbb, request, this);
+		profilerManager->beforeRecordSourceGetRecord(request, this);
+	}
+
+	const auto ret = internalGetRecord(tdbb);
+
+	if (profilerManager)
+	{
+		const SINT64 currentPerfCounter = fb_utils::query_performance_counter();
+		ProfilerManager::Stats stats(currentPerfCounter - lastPerfCounter);
+		profilerManager->afterRecordSourceGetRecord(request, this, stats);
+	}
+
+	return ret;
+}
+
+string RecordSource::printName(thread_db* tdbb, const string& name, bool quote)
+{
+	const string result(name.c_str(), name.length());
 	return quote ? "\"" + result + "\"" : result;
 }
 
@@ -119,7 +171,6 @@ void RecordSource::printInversion(thread_db* tdbb, const InversionNode* inversio
 	case InversionNode::TYPE_INDEX:
 		{
 			const IndexRetrieval* const retrieval = inversion->retrieval;
-			const jrd_rel* const relation = retrieval->irb_relation;
 
 			MetaName indexName;
 			if (retrieval->irb_name && retrieval->irb_name->hasData())
@@ -191,6 +242,16 @@ void RecordSource::printInversion(thread_db* tdbb, const InversionNode* inversio
 	}
 }
 
+void RecordSource::printOptInfo(string& plan) const
+{
+#ifdef PRINT_OPT_INFO
+	string info;
+	// Add 0.5 to convert double->int truncation into rounding
+	info.printf(" [rows: %" UQUADFORMAT "]", (FB_UINT64) (m_cardinality + 0.5));
+	plan += info;
+#endif
+}
+
 RecordSource::~RecordSource()
 {
 }
@@ -200,14 +261,16 @@ RecordSource::~RecordSource()
 // ------------------
 
 RecordStream::RecordStream(CompilerScratch* csb, StreamType stream, const Format* format)
-	: m_stream(stream), m_format(format ? format : csb->csb_rpt[stream].csb_format)
+	: RecordSource(csb),
+	  m_stream(stream),
+	  m_format(format ? format : csb->csb_rpt[stream].csb_format)
 {
 	fb_assert(m_format);
 }
 
 bool RecordStream::refetchRecord(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	jrd_tra* const transaction = request->req_transaction;
 
 	record_param* const rpb = &request->req_rpb[m_stream];
@@ -226,7 +289,7 @@ bool RecordStream::refetchRecord(thread_db* tdbb) const
 
 bool RecordStream::lockRecord(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	jrd_tra* const transaction = request->req_transaction;
 
 	record_param* const rpb = &request->req_rpb[m_stream];
@@ -250,7 +313,7 @@ void RecordStream::findUsedStreams(StreamList& streams, bool /*expandAll*/) cons
 		streams.add(m_stream);
 }
 
-void RecordStream::invalidateRecords(jrd_req* request) const
+void RecordStream::invalidateRecords(Request* request) const
 {
 	record_param* const rpb = &request->req_rpb[m_stream];
 	rpb->rpb_number.setValid(false);
@@ -258,7 +321,7 @@ void RecordStream::invalidateRecords(jrd_req* request) const
 
 void RecordStream::nullRecords(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	Request* const request = tdbb->getRequest();
 	record_param* const rpb = &request->req_rpb[m_stream];
 
 	rpb->rpb_number.setValid(false);
