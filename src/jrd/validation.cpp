@@ -851,8 +851,9 @@ const Validation::MSG_ENTRY Validation::vdr_msg_table[VAL_MAX_ERROR] =
 	{true, isc_info_dpage_errors,	"Data page %" ULONGFORMAT" {sequence %" ULONGFORMAT"} marked as secondary but contains primary record versions"}
 };
 
-Validation::Validation(thread_db* tdbb, UtilSvc* uSvc) :
-	vdr_used_bdbs(*tdbb->getDefaultPool())
+Validation::Validation(thread_db* tdbb, UtilSvc* uSvc)
+	: vdr_cond_idx(*tdbb->getDefaultPool()),
+	  vdr_used_bdbs(*tdbb->getDefaultPool())
 {
 	vdr_tdbb = tdbb;
 	vdr_max_page = 0;
