@@ -573,7 +573,7 @@ void Retrieval::analyzeNavigation(const InversionCandidateList& inversions)
 					for (const auto otherMatch : otherCandidate->matches)
 					{
 						if (candidate->matches.exist(otherMatch) &&
-							betterInversion(otherCandidate, candidate))
+							betterInversion(otherCandidate, candidate, true))
 						{
 							usableIndex = false;
 							break;
@@ -604,7 +604,7 @@ void Retrieval::analyzeNavigation(const InversionCandidateList& inversions)
 		}
 
 		if (!bestCandidate ||
-			betterInversion(candidate, bestCandidate))
+			betterInversion(candidate, bestCandidate, false))
 		{
 			bestCandidate = candidate;
 		}
@@ -621,7 +621,8 @@ void Retrieval::analyzeNavigation(const InversionCandidateList& inversions)
 }
 
 bool Retrieval::betterInversion(const InversionCandidate* inv1,
-								const InversionCandidate* inv2) const
+								const InversionCandidate* inv2,
+								bool ignoreUnmatched) const
 {
 	// Return true if inversion1 is *better* than inversion2.
 	// It's mostly about the retrieval cost, but other aspects are also taken into account.
@@ -679,7 +680,7 @@ bool Retrieval::betterInversion(const InversionCandidate* inv1,
 					// Note the inverted condition: the more matched segments the better.
 					diff = (inv2->matchedSegments - inv1->matchedSegments);
 
-					if (diff == 0)
+					if (diff == 0 && !ignoreUnmatched)
 					{
 						// For the same number of matched segments
 						// compare ones that aren't full matched
@@ -1362,7 +1363,7 @@ InversionCandidate* Retrieval::makeInversion(InversionCandidateList& inversions)
 						break;
 					}
 
-					if (betterInversion(currentInv, bestCandidate))
+					if (betterInversion(currentInv, bestCandidate, false))
 						bestCandidate = currentInv;
 				}
 			}
