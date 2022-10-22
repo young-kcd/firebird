@@ -1210,20 +1210,16 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
 
 	if (!transaction->tra_outer)
 	{
-		auto blobUtilAccessor = transaction->tra_blob_util_map.accessor();
-		for (bool found = blobUtilAccessor.getFirst(); found;)
+		for (auto& item : transaction->tra_blob_util_map)
 		{
-			auto handle = blobUtilAccessor.current()->first;
-			auto blb = blobUtilAccessor.current()->second;
+			auto blb = item.second;
 
 			// Let temporary blobs be cancelled in the block below.
 			if (!(blb->blb_flags & BLB_temporary))
 				blb->BLB_close(tdbb);
-
-			found = blobUtilAccessor.getNext();
-
-			transaction->tra_blob_util_map.remove(handle);
 		}
+
+		transaction->tra_blob_util_map.clear();
 
 		if (transaction->tra_blobs->getFirst())
 		{
