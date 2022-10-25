@@ -494,7 +494,7 @@ River* InnerJoin::formRiver()
 	fb_assert(bestStreams.getCount() == bestCount);
 
 	const auto orgSortPtr = sortPtr;
-	const bool orgSortNode = sortPtr ? *sortPtr : nullptr;
+	const auto orgSortNode = sortPtr ? *sortPtr : nullptr;
 
 	if (bestCount != innerStreams.getCount())
 		sortPtr = nullptr;

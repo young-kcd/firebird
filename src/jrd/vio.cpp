@@ -189,7 +189,6 @@ public:
 	SweepTask(thread_db* tdbb, MemoryPool* pool, TraceSweepEvent* traceSweep) : Task(),
 		m_pool(pool),
 		m_dbb(NULL),
-		m_trace(traceSweep),
 		m_items(*m_pool),
 		m_stop(false),
 		m_nextRelID(0),
@@ -377,7 +376,6 @@ private:
 
 	MemoryPool* m_pool;
 	Database* m_dbb;
-	TraceSweepEvent* m_trace;
 	Mutex m_mutex;
 	HalfStaticArray<Item*, 8> m_items;
 	StatusHolder m_status;
