@@ -58,7 +58,7 @@
 * [#7194](https://github.com/FirebirdSQL/firebird/issues/7194): Make it possible to avoid fbclient dependency in pascal programs using firebird.pas  
   Contributor(s): Alexander Peshkov
 
-* [#7186](https://github.com/FirebirdSQL/firebird/issues/7186): Nbackup `RDB$BACKUP_HISTORY` cleanup  
+* [#7186](https://github.com/FirebirdSQL/firebird/issues/7186): _Nbackup_ `RDB$BACKUP_HISTORY` cleanup  
   Contributor(s): Vlad Khorsun
 
 * [#7169](https://github.com/FirebirdSQL/firebird/issues/7169): Improve _ICU_ version mismatch diagnostics  
@@ -105,9 +105,6 @@
 
 * [#6992](https://github.com/FirebirdSQL/firebird/issues/6992): Transform `OUTER` joins into `INNER` ones if the `WHERE` condition violates the outer join rules  
   Contributor(s): Dmitry Yemanov
-
-* [#6991](https://github.com/FirebirdSQL/firebird/pull/6991): Introduce the external memory pool  
-  Contributor(s): Adriano dos Santos Fernandes
 
 * [#6959](https://github.com/FirebirdSQL/firebird/issues/6959): `IBatch::getInfo()` implementation  
   Contributor(s): Alexander Peshkov
@@ -195,17 +192,29 @@
 * [#7262](https://github.com/FirebirdSQL/firebird/issues/7262): Repeated _op_batch_create_ leaks the batch  
   Contributor(s): Alexander Peshkov
 
+* [#7045](https://github.com/FirebirdSQL/firebird/issues/7045): International characters in table or alias names causes queries of `MON$STATEMENTS` to fail  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [#6968](https://github.com/FirebirdSQL/firebird/issues/6968): On Windows, engine may hung when works with corrupted database and read after the end of file  
+  Contributor(s): Vlad Khorsun
+
 * [#6854](https://github.com/FirebirdSQL/firebird/issues/6854): Crash occurs when use `SIMILAR TO`  
   Contributor(s): Adriano dos Santos Fernandes
 
 * [#6845](https://github.com/FirebirdSQL/firebird/issues/6845): Result type of `AVG` over `BIGINT` column results in type `INT128`  
   Contributor(s): Alexander Peshkov
 
+* [#6838](https://github.com/FirebirdSQL/firebird/issues/6838): Deleting multiple rows from a view with triggers may cause triggers to fire just once  
+  Contributor(s): Dmitry Yemanov
+
 * [#6836](https://github.com/FirebirdSQL/firebird/issues/6836): `fb_shutdown()` does not wait for self completion in other thread  
   Contributor(s): Alexander Peshkov
 
 * [#6832](https://github.com/FirebirdSQL/firebird/issues/6832): Segfault using "commit retaining" with GTT  
   Contributor(s): Alexander Peshkov
+
+* [#6825](https://github.com/FirebirdSQL/firebird/pull/6825): Correct error message for `DROP VIEW`  
+  Contributor(s): Ilya Eremin
 
 * [#6817](https://github.com/FirebirdSQL/firebird/issues/6817): _-fetch_password passwordfile_ does not work with gfix  
   Contributor(s): Alexander Peshkov
@@ -248,3 +257,11 @@
 
 * [#3218](https://github.com/FirebirdSQL/firebird/issues/3218): Optimizer fails applying stream-local predicates before merging [CORE2832]  
   Contributor(s): Dmitry Yemanov
+
+## Cleanup
+
+* [#7082](https://github.com/FirebirdSQL/firebird/issues/7082): Remove the WNET protocol  
+  Contributor(s): Dmitry Yemanov
+
+* [#6840](https://github.com/FirebirdSQL/firebird/issues/6840): Remove QLI  
+  Contributor(s): Adriano dos Santos Fernandes
