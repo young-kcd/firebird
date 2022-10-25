@@ -473,7 +473,7 @@ void ConfigStorage::compact()
 	// collect used slots, sort them by offset
 	for (TraceCSHeader::Slot* slot = header->slots; slot < header->slots + header->slots_cnt; slot++)
 	{
-		if (!slot->used && slot->ses_pid != pid &&
+		if (slot->used && slot->ses_pid != pid &&
 			!ISC_check_process_existence(slot->ses_pid))
 		{
 			header->cnt_uses--; // Process that created trace session disappeared, count it out
