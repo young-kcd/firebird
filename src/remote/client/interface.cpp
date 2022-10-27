@@ -65,6 +65,7 @@
 #include "../common/StatementMetadata.h"
 #include "../common/IntlParametersBlock.h"
 #include "../common/status.h"
+#include "../common/db_alias.h"
 
 #include "../auth/SecurityDatabase/LegacyClient.h"
 #include "../auth/SecureRemotePassword/client/SrpClient.h"
@@ -1189,9 +1190,10 @@ IAttachment* RProvider::attach(CheckStatusWrapper* status, const char* filename,
 			flags |= ANALYZE_LOOPBACK;
 
 		PathName expanded_name(filename);
-		PathName node_name;
+		resolveAlias(filename, expanded_name, nullptr);
 
 		ClntAuthBlock cBlock(&expanded_name, &newDpb, &dpbParam);
+		PathName node_name;
 		rem_port* port = analyze(cBlock, expanded_name, flags, newDpb, dpbParam, node_name, NULL, cryptCallback);
 
 		if (!port)
@@ -1868,9 +1870,10 @@ Firebird::IAttachment* RProvider::create(CheckStatusWrapper* status, const char*
 			flags |= ANALYZE_LOOPBACK;
 
 		PathName expanded_name(filename);
-		PathName node_name;
+		resolveAlias(filename, expanded_name, nullptr);
 
 		ClntAuthBlock cBlock(&expanded_name, &newDpb, &dpbParam);
+		PathName node_name;
 		rem_port* port = analyze(cBlock, expanded_name, flags, newDpb, dpbParam, node_name, NULL, cryptCallback);
 
 		if (!port)
