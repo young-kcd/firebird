@@ -1027,19 +1027,12 @@ RecordSource* Optimizer::compile(BoolExprNodeStack* parentStack)
 	if (invariantBoolean)
 		rsb = FB_NEW_POOL(getPool()) PreFilteredStream(csb, rsb, invariantBoolean);
 
-    // Handle first and/or skip.  The skip MUST (if present)
-    // appear in the rsb list AFTER the first.  Since the gen_first and gen_skip
-    // functions add their nodes at the beginning of the rsb list we MUST call
-    // gen_skip before gen_first.
+	// Handle SKIP, WITH LOCK and FIRST.
+	// The SKIP must (if present) appear in the rsb list deeper than FIRST.
+	// WITH LOCK must appear between them to work correct with SKIP LOCKED.
 
-    if (rse->rse_skip)
+	if (rse->rse_skip)
 		rsb = FB_NEW_POOL(getPool()) SkipRowsStream(csb, rsb, rse->rse_skip);
-
-	if (rse->rse_first)
-		rsb = FB_NEW_POOL(getPool()) FirstRowsStream(csb, rsb, rse->rse_first);
-
-	if (rse->flags & RseNode::FLAG_SINGULAR)
-		rsb = FB_NEW_POOL(getPool()) SingularStream(csb, rsb);
 
 	if (rse->flags & RseNode::FLAG_WRITELOCK)
 	{
@@ -1055,8 +1048,14 @@ RecordSource* Optimizer::compile(BoolExprNodeStack* parentStack)
 				SCL_update, obj_relations, tail->csb_relation->rel_name);
 		}
 
-		rsb = FB_NEW_POOL(getPool()) LockedStream(csb, rsb);
+		rsb = FB_NEW_POOL(getPool()) LockedStream(csb, rsb, (rse->flags & RseNode::FLAG_SKIP_LOCKED));
 	}
+
+	if (rse->rse_first)
+		rsb = FB_NEW_POOL(getPool()) FirstRowsStream(csb, rsb, rse->rse_first);
+
+	if (rse->flags & RseNode::FLAG_SINGULAR)
+		rsb = FB_NEW_POOL(getPool()) SingularStream(csb, rsb);
 
 	if (rse->flags & RseNode::FLAG_SCROLLABLE)
 		rsb = FB_NEW_POOL(getPool()) BufferedStream(csb, rsb);
