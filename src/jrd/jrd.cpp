@@ -7770,7 +7770,7 @@ static void setEngineReleaseDelay(Database* dbb)
 	if (!dbb->dbb_plugin_config)
 		return;
 
-	unsigned maxLinger = 0;
+	time_t maxLinger = 0;
 
 	{ // scope
 		MutexLockGuard listGuardForLinger(databases_mutex, FB_FUNCTION);
