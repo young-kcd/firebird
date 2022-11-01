@@ -698,9 +698,12 @@ void Statement::release(thread_db* tdbb)
 
 	for (Request** instance = requests.begin(); instance != requests.end(); ++instance)
 	{
-		EXE_release(tdbb, *instance);
-		MemoryPool::deletePool((*instance)->req_pool);
-		*instance = nullptr;
+		if (*instance)
+		{
+			EXE_release(tdbb, *instance);
+			MemoryPool::deletePool((*instance)->req_pool);
+			*instance = nullptr;
+		}
 	}
 
 	const auto attachment = tdbb->getAttachment();
