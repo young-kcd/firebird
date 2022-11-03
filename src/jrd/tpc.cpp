@@ -372,7 +372,7 @@ TipCache::StatusBlockData::StatusBlockData(thread_db* tdbb, TipCache* tipCache, 
 	  memory(NULL),
 	  existenceLock(tdbb, sizeof(TpcBlockNumber), LCK_tpc_block, this, tpc_block_blocking_ast),
 	  cache(tipCache),
-	  flAstAccept(false)
+	  acceptAst(false)
 {
 	Database* dbb = tdbb->getDatabase();
 
@@ -393,7 +393,7 @@ TipCache::StatusBlockData::StatusBlockData(thread_db* tdbb, TipCache* tipCache, 
 		cache->memBlockInitializer.checkHeader(header);
 
 		LCK_convert(tdbb, &existenceLock, LCK_SR, LCK_WAIT);	// never fails
-		flAstAccept = true;
+		acceptAst = true;
 	}
 	catch (const Exception& ex)
 	{
@@ -430,7 +430,7 @@ void TipCache::StatusBlockData::clear(thread_db* tdbb)
 	if (memory)
 	{
 		// wait for all initializing processes (PR)
-		flAstAccept = false;
+		acceptAst = false;
 
 		TraNumber oldest =
 			cache->m_tpcHeader->getHeader()->oldest_transaction.load(std::memory_order_relaxed);
@@ -709,7 +709,7 @@ int TipCache::tpc_block_blocking_ast(void* arg)
 	AsyncContextHolder tdbb(dbb, FB_FUNCTION);
 
 	// Should we try to process AST?
-	if (!data->flAstAccept)
+	if (!data->acceptAst)
 		return 0;
 
 	TipCache* cache = data->cache;
