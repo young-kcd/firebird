@@ -6362,6 +6362,7 @@ YAttachment* Dispatcher::attachOrCreateDatabase(CheckStatusWrapper* status, bool
 			case isc_lock_dir_access:
 			case isc_no_priv:
 			case isc_wrong_ods:
+			case isc_lockmanerr:
 				currentStatus = &tempCheckStatusWrapper;
 				// fall down...
 			case isc_unavailable:
