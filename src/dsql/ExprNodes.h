@@ -667,8 +667,6 @@ public:
 		fb_assert(false);
 	}
 
-	virtual void collectStreams(SortedStreamList& streamList) const;
-
 	virtual bool computable(CompilerScratch* csb, StreamType stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
 
