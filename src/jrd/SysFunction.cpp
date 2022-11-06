@@ -2377,7 +2377,10 @@ dsc* evlBlobAppend(thread_db* tdbb, const SysFunction* function, const NestValue
 	const bool arg0_null = (request->req_flags & req_null) || (argDsc == NULL);
 
 	if (!arg0_null && argDsc->isBlob())
+	{
 		blob_id = *reinterpret_cast<bid*>(argDsc->dsc_address);
+		blobDsc = *argDsc;
+	}
 
 	// Try to get blob type from declared var\param
 	if (!argDsc && (nodeIs<VariableNode>(args[0]) ||
@@ -2403,6 +2406,9 @@ dsc* evlBlobAppend(thread_db* tdbb, const SysFunction* function, const NestValue
 				copyBlob = false;
 			}
 		}
+
+		if (copyBlob)
+			blobDsc.clear();
 	}
 
 	for (FB_SIZE_T i = 0; i < args.getCount(); i++)
