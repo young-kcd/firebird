@@ -229,7 +229,7 @@ jobs:
         env:
           PLATFORM: ${{ matrix.platform }}
         run: |
-          echo arch_suffix=%PLATFORM% >> %GITHUB_OUTPUT%
+          echo arch_suffix=%PLATFORM%>> %GITHUB_OUTPUT%
           mkdir builds\install_images
           cd builds\docker\windows
           call build.bat
@@ -267,7 +267,7 @@ jobs:
           github.ref_name == 'master'
         shell: cmd
         run: |
-          echo snapshot_name=${{ github.ref_name }} >> %GITHUB_OUTPUT%
+          echo snapshot_name=${{ github.ref_name }}>> %GITHUB_OUTPUT%
 
       - name: Snapshot - delete old assets
         uses: asfernandes/delete-release-assets@v2
