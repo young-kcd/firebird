@@ -2151,11 +2151,13 @@ blb* blb::copy_blob(thread_db* tdbb, const bid* source, bid* destination,
 	}
 
 	HalfStaticArray<UCHAR, 2048> buffer;
-	UCHAR* buff = buffer.getBuffer(input->blb_max_segment);
+	UCHAR* buff = buffer.getBuffer(input->isSegmented() ?
+		input->blb_max_segment :
+		MIN(input->blb_length, 32768));
 
 	while (true)
 	{
-		const USHORT length = input->BLB_get_segment(tdbb, buff, input->blb_max_segment);
+		const USHORT length = input->BLB_get_segment(tdbb, buff, buffer.getCapacity());
 		if (input->blb_flags & BLB_eof) {
 			break;
 		}
