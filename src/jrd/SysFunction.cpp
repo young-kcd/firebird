@@ -2377,7 +2377,10 @@ dsc* evlBlobAppend(thread_db* tdbb, const SysFunction* function, const NestValue
 	const bool arg0_null = (request->req_flags & req_null) || (argDsc == NULL);
 
 	if (!arg0_null && argDsc->isBlob())
+	{
 		blob_id = *reinterpret_cast<bid*>(argDsc->dsc_address);
+		makeBlobAppendBlob(&blobDsc, argDsc, &blob_id);
+	}
 
 	// Try to get blob type from declared var\param
 	if (!argDsc && (nodeIs<VariableNode>(args[0]) ||
@@ -2439,13 +2442,14 @@ dsc* evlBlobAppend(thread_db* tdbb, const SysFunction* function, const NestValue
 
 			blob = blb::create2(tdbb, transaction, &blob_id, bpb.getCount(), bpb.begin());
 			blob->blb_flags |= BLB_stream | BLB_close_on_read;
+			blob->blb_charset = blobDsc.getCharSet();
 		}
 
 		if (!argDsc->isBlob())
 		{
 			MoveBuffer temp;
 			UCHAR* addr = NULL;
-			SLONG len = MOV_make_string2(tdbb, argDsc, blobDsc.getTextType(), &addr, temp);
+			SLONG len = MOV_make_string2(tdbb, argDsc, blob->blb_charset, &addr, temp);
 
 			if (addr)
 				blob->BLB_put_data(tdbb, addr, len);
