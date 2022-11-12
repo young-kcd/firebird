@@ -111,8 +111,8 @@ private:
 		USHORT clientDialect, bool isInternalRequest);
 
 	void buildVerifyKey(thread_db* tdbb, Firebird::string& key, bool isInternalRequest);
-
 	void shrink();
+	void ensureLockIsCreated(thread_db* tdbb);
 
 #ifdef DSQL_STATEMENT_CACHE_DEBUG
 	void dump();

@@ -141,11 +141,10 @@ void DsqlStatementCache::putStatement(thread_db* tdbb, const string& text, USHOR
 	activeStatementList.pushBack(std::move(newStatement));
 	map.put(key, --activeStatementList.end());
 
-	if (!lock)
-	{
-		lock = FB_NEW_RPT(getPool(), 0) Lock(tdbb, 0, LCK_dsql_statement_cache, this, blockingAst);
+	ensureLockIsCreated(tdbb);
+
+	if (lock->lck_logical == LCK_none)
 		LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
-	}
 
 #ifdef DSQL_STATEMENT_CACHE_DEBUG
 	dump();
@@ -190,24 +189,20 @@ void DsqlStatementCache::purge(thread_db* tdbb)
 
 	cacheSize = 0;
 
-	if (lock)
-	{
+	if (lock && lock->lck_logical != LCK_none)
 		LCK_release(tdbb, lock);
-		lock.reset();
-	}
 }
 
 void DsqlStatementCache::purgeAllAttachments(thread_db* tdbb)
 {
-	if (lock)
-		LCK_convert(tdbb, lock, LCK_EX, LCK_WAIT);
-	else
-	{
-		lock = FB_NEW_RPT(getPool(), 0) Lock(tdbb, 0, LCK_dsql_statement_cache, this, blockingAst);
-		LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
-	}
-
 	purge(tdbb);
+
+	fb_assert(!lock || lock->lck_logical == LCK_none);
+
+	ensureLockIsCreated(tdbb);
+
+	LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);	// notify others
+	LCK_release(tdbb, lock);
 }
 
 void DsqlStatementCache::buildStatementKey(thread_db* tdbb, RefStrPtr& key, const string& text, USHORT clientDialect,
@@ -264,6 +259,12 @@ void DsqlStatementCache::shrink()
 #ifdef DSQL_STATEMENT_CACHE_DEBUG
 	dump();
 #endif
+}
+
+void DsqlStatementCache::ensureLockIsCreated(thread_db* tdbb)
+{
+	if (!lock)
+		lock = FB_NEW_RPT(getPool(), 0) Lock(tdbb, 0, LCK_dsql_statement_cache, this, blockingAst);
 }
 
 #ifdef DSQL_STATEMENT_CACHE_DEBUG
