@@ -746,8 +746,6 @@ void INI_format(thread_db* tdbb, const string& charset)
 
 	AutoRequest handle, reqAddSC;
 
-	NonRelationSecurity nonRelSec(ownerName, reqAddSC, false);
-
 	{ // scope for system relations
 
 		RelationSecurity relSec(ownerName, reqAddSC);
@@ -794,6 +792,8 @@ void INI_format(thread_db* tdbb, const string& charset)
 			store_relation(tdbb, relId, relName, fieldId, relType, handle, relSec);
 		}
 	}
+
+	NonRelationSecurity nonRelSec(ownerName, reqAddSC, false);
 
 	// Store global FIELDS
 
@@ -1296,7 +1296,6 @@ void INI_upgrade(thread_db* tdbb)
 	const auto ownerName = dbb->dbb_owner;
 
 	AutoRequest handle, reqAddSC;
-	NonRelationSecurity nonRelSec(ownerName, reqAddSC, false);
 
 	// Create new system relations and new relation fields
 
@@ -1352,6 +1351,8 @@ void INI_upgrade(thread_db* tdbb)
 			}
 		}
 	}
+
+	NonRelationSecurity nonRelSec(ownerName, reqAddSC, false);
 
 	// Create global fields added after the original minor ODS
 

@@ -307,7 +307,7 @@ static const struct ini_idx_t indices[] =
 		SEGMENT(f_pubtab_pub_name, idx_string)		// publication name
 	}},
 	// define index RDB$INDEX_57 for RDB$BACKUP_HISTORY RDB$TIMESTAMP;
-	INDEX(57, rel_backup_history, idx_descending, 1)
+	INDEX(57, rel_backup_history, idx_descending, 1, ODS_13_1)
 		SEGMENT(f_backup_time, idx_timestamp_tz)		// backup timestamp
 	}},
 };
