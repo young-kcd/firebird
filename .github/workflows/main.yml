@@ -15,7 +15,7 @@ jobs:
 
       - name: Prepare
         run: |
-          sudo apt-get install libtool-bin libtomcrypt1 libtomcrypt-dev libtommath1 libtommath-dev libicu-dev zlib1g-dev
+          sudo apt-get install libtool-bin libtomcrypt1 libtomcrypt-dev libtommath1 libtommath-dev libicu-dev zlib1g-dev cmake
 
       - name: Build
         run: |
@@ -135,7 +135,7 @@ jobs:
           fetch-depth: 10
 
       - name: Prepare
-        run: apk update && apk --no-cache --update add build-base libtool git autoconf automake zlib-dev icu-dev ncurses-dev libedit-dev linux-headers tar
+        run: apk update && apk --no-cache --update add build-base libtool git autoconf automake cmake zlib-dev icu-dev ncurses-dev libedit-dev linux-headers tar
 
       - name: Build
         run: |
@@ -323,7 +323,7 @@ jobs:
 
       - name: Prepare - Install tools
         run: |
-          brew install automake libtool ninja
+          brew install automake cmake libtool ninja
 
       - name: Cache - libc++ install
         id: cache-libcxx-install-macos

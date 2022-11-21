@@ -38,6 +38,8 @@ ifneq ($(SYSTEM_BOOST_FLG),Y)
   WFLAGS += -I$(ROOT)/extern/boost
 endif
 
+WFLAGS += -I$(LIBCDS_INC) -D$(LIBCDS_DEF)
+
 ifeq ($(TOMMATH_BUILD_FLG),Y)
   WFLAGS += -I$(TOMMATH_INC)
 endif
