@@ -1097,7 +1097,7 @@ static bool		bad_port_context(IStatus*, IReferenceCounted*, const ISC_STATUS);
 static ISC_STATUS	cancel_events(rem_port*, P_EVENT*, PACKET*);
 static void		addClumplets(ClumpletWriter*, const ParametersSet&, const rem_port*);
 
-static void		cancel_operation(rem_port*, USHORT);
+static bool		cancel_operation(rem_port*, USHORT);
 
 static bool		check_request(Rrq*, USHORT, USHORT);
 static USHORT	check_statement_type(Rsr*);
@@ -1491,7 +1491,12 @@ static bool link_request(rem_port* port, server_req_t* request)
 	if (queue)
 	{
 		if (operation == op_exit || operation == op_disconnect)
-			cancel_operation(port, fb_cancel_raise);
+		{
+			// stop running requests if any
+			if ((!cancel_operation(port, fb_cancel_raise)) && (Firebird::MasterInterfacePtr()->serverMode(-1) == 0))
+				fb_shutdown(1000, fb_shutrsn_no_connection);
+		}
+
 		return true;
 	}
 
@@ -1714,10 +1719,6 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				}
 			}
 		}
-
-		// stop running requests if any
-		if (!(main_port->port_server_flags & SRVR_multi_client))
-			fb_shutdown(1000, fb_shutrsn_no_connection);
 
 		Worker::shutdown();
 
@@ -2581,7 +2582,7 @@ static ISC_STATUS cancel_events( rem_port* port, P_EVENT * stuff, PACKET* send)
 }
 
 
-static void cancel_operation(rem_port* port, USHORT kind)
+static bool cancel_operation(rem_port* port, USHORT kind)
 {
 /**************************************
  *
@@ -2591,12 +2592,13 @@ static void cancel_operation(rem_port* port, USHORT kind)
  *
  * Functional description
  *	Flag a running operation for cancel.
- *	Service operations are not currently
- *	able to be canceled.
+ *	Service operations are not currently able to be canceled.
+ *
+ *	Returns true if active port is not canceled.
  *
  **************************************/
 	if ((port->port_flags & (PORT_async | PORT_disconnect)) || !(port->port_context))
-		return;
+		return true;
 
 	ServAttachment iface;
 	{
@@ -2604,7 +2606,7 @@ static void cancel_operation(rem_port* port, USHORT kind)
 
 		Rdb* rdb;
 		if ((port->port_flags & PORT_disconnect) || !(rdb = port->port_context))
-			return;
+			return true;
 
 		iface = rdb->rdb_iface;
 	}
@@ -2614,7 +2616,11 @@ static void cancel_operation(rem_port* port, USHORT kind)
 		LocalStatus ls;
 		CheckStatusWrapper status_vector(&ls);
 		iface->cancelOperation(&status_vector, kind);
+
+		return true;
 	}
+
+	return false;
 }
 
 
