@@ -9649,7 +9649,7 @@ ParameterNode* ParameterNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	// in nod_argument. If it doesn't, it may be an input parameter cloned
 	// in RseBoolNode::convertNeqAllToNotAny - see CORE-3094.
 
-	if (copier.message && copier.message->messageNumber == message->messageNumber)
+	if (copier.message && copier.message->messageNumber == messageNumber)
 		node->message = copier.message;
 	else
 		node->message = message;
