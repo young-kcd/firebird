@@ -69,14 +69,14 @@ DATABASE DB = FILENAME "ODS.RDB";
 
 namespace
 {
-	template <size_t N> void PAD(const char* string, TEXT (&field)[N])
+	template <size_t N> void PAD(const char* string, char (&field)[N])
 	{
-		jrd_vtof(string, (char*) field, sizeof(field));
+		jrd_vtof(string, field, sizeof(field));
 	}
 
-	template <size_t N> void PAD(const MetaName& name, TEXT (&field)[N])
+	template <size_t N> void PAD(const MetaName& name, char (&field)[N])
 	{
-		jrd_vtof(name.c_str(), (char*) field, sizeof(field));
+		jrd_vtof(name.c_str(), field, sizeof(field));
 	}
 
 	// This is the table used in defining triggers; note that
