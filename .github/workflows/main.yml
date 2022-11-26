@@ -81,7 +81,7 @@ jobs:
           echo "snapshot_name=v4.0" >> $GITHUB_OUTPUT
 
       - name: Snapshot - delete old assets
-        uses: asfernandes/delete-release-assets@update-libraries-and-node
+        uses: mknejp/delete-release-assets@v1
         if: steps.snapshot_prepare.outputs.snapshot_name
         with:
           repository: FirebirdSQL/snapshots
@@ -330,7 +330,7 @@ jobs:
           echo "snapshot_name=v4.0" >> $GITHUB_OUTPUT
 
       - name: Snapshot - delete old assets
-        uses: asfernandes/delete-release-assets@update-libraries-and-node
+        uses: mknejp/delete-release-assets@v1
         if: steps.snapshot_prepare.outputs.snapshot_name
         with:
           repository: FirebirdSQL/snapshots
