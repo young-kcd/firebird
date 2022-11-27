@@ -62,6 +62,7 @@
 #include "../common/classes/fb_tls.h"
 #include "../common/status.h"
 #include "../common/classes/InternalMessageBuffer.h"
+#include "../yvalve/array_proto.h"
 #include "../yvalve/blob_proto.h"
 #include "../yvalve/utl_proto.h"
 #include "../yvalve/why_proto.h"
@@ -1583,6 +1584,50 @@ Firebird::ITransaction* handleToITransaction(CheckStatusWrapper* status, isc_tr_
 
 
 //-------------------------------------
+
+
+ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS* userStatus, FB_API_HANDLE* dbHandle, FB_API_HANDLE* traHandle,
+	const SCHAR* relationName, const SCHAR* fieldName, ISC_ARRAY_DESC* desc)
+{
+	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
+
+	try
+	{
+		RefPtr<YAttachment> attachment(translateHandle(attachments, dbHandle));
+		RefPtr<YTransaction> transaction(translateHandle(transactions, traHandle));
+
+		iscArrayLookupBoundsImpl(attachment, transaction, relationName, fieldName, desc);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(&statusWrapper);
+	}
+
+	return status[1];
+}
+
+
+ISC_STATUS API_ROUTINE isc_array_lookup_desc(ISC_STATUS* userStatus, FB_API_HANDLE* dbHandle, FB_API_HANDLE* traHandle,
+	const SCHAR* relationName, const SCHAR* fieldName, ISC_ARRAY_DESC* desc)
+{
+	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
+
+	try
+	{
+		RefPtr<YAttachment> attachment(translateHandle(attachments, dbHandle));
+		RefPtr<YTransaction> transaction(translateHandle(transactions, traHandle));
+
+		iscArrayLookupDescImpl(attachment, transaction, relationName, fieldName, desc);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(&statusWrapper);
+	}
+
+	return status[1];
+}
 
 
 // Attach a database through the first subsystem that recognizes it.
