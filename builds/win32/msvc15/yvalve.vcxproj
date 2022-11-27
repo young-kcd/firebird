@@ -20,7 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\gen\yvalve\array.cpp" />
-    <ClCompile Include="..\..\..\gen\yvalve\blob.cpp" />
     <ClCompile Include="..\..\..\src\auth\SecureRemotePassword\client\SrpClient.cpp" />
     <ClCompile Include="..\..\..\src\auth\SecurityDatabase\LegacyClient.cpp" />
     <ClCompile Include="..\..\..\src\jrd\os\win32\ibinitdll.cpp" />
@@ -28,6 +27,7 @@
     <ClCompile Include="..\..\..\src\remote\client\BlrFromMessage.cpp" />
     <ClCompile Include="..\..\..\src\remote\client\interface.cpp" />
     <ClCompile Include="..\..\..\src\yvalve\alt.cpp" />
+    <ClCompile Include="..\..\..\src\yvalve\blob.cpp" />
     <ClCompile Include="..\..\..\src\yvalve\config\os\win32\config_root.cpp" />
     <ClCompile Include="..\..\..\src\yvalve\DistributedTransaction.cpp" />
     <ClCompile Include="..\..\..\src\yvalve\gds.cpp" />
@@ -82,7 +82,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\src\yvalve\array.epp" />
-    <None Include="..\..\..\src\yvalve\blob.epp" />
     <None Include="..\defs\firebird.def" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
