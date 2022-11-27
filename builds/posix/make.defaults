@@ -403,8 +403,6 @@ COMMON_LIB	= $(OBJ)/common.a
 COMMON_TEST = $(FB_TESTS_DIR)/common_test$(EXEC_EXT)
 
 # From utilities
-CREATE_DB	= $(RBIN)/create_db$(EXEC_EXT)
-GDS_DROP	= $(BIN)/gds_drop$(EXEC_EXT)
 FBSVCMGR	= $(BIN)/fbsvcmgr$(EXEC_EXT)
 FBTRACEMGR	= $(BIN)/fbtracemgr$(EXEC_EXT)
 GSTAT		= $(BIN)/gstat$(EXEC_EXT)
@@ -413,12 +411,7 @@ LOCKPRINT	= $(BIN)/fb_lock_print$(EXEC_EXT)
 GSEC		= $(BIN)/gsec$(EXEC_EXT)
 GFIX		= $(BIN)/gfix$(EXEC_EXT)
 RUN_GFIX	= $(RBIN)/gfix$(EXEC_EXT)
-GDS_REBUILD	= $(BIN)/gds_rebuild$(EXEC_EXT)
-GDS_INSTALL	= $(BIN)/gds_install$(EXEC_EXT)
-GDS_INSTALL	= $(BIN)/gds_install_service$(EXEC_EXT)
 FBGUARD		= $(BIN)/fbguard$(EXEC_EXT)
-IBGUARD		= $(BIN)/ibguard$(EXEC_EXT)
-FBMGR_BIN	= $(BIN)/fbmgr.bin$(EXEC_EXT)
 INSTREG		= $(BIN)/instreg$(EXEC_EXT)
 INSTSVC		= $(BIN)/instsvc$(EXEC_EXT)
 
