@@ -29,7 +29,8 @@
  *                         corruptions.
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
- *
+ * 
+ * 2022.11.30 young - Removed force write functionality for read-only
  */
 
 #include "firebird.h"
@@ -1276,10 +1277,12 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		dbb->dbb_sweep_interval = options.dpb_sweep_interval;
 	}
 
+	/*
 	if (options.dpb_set_force_write) {
 		validateAccess(attachment);
 		PAG_set_force_write(dbb, options.dpb_force_write);
 	}
+	*/
 
 	if (options.dpb_set_no_reserve) {
 		validateAccess(attachment);

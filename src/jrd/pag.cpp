@@ -36,6 +36,7 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2022.11.30 young - Disable read-only header validation
  */
 
 /*
@@ -1136,19 +1137,20 @@ void PAG_header(bool info)
 	}
 
 /* If hdr_read_only is not set... */
-	if (!(header->hdr_flags & hdr_read_only)
-		&& (dbb->dbb_flags & DBB_being_opened_read_only)) 
-	{
+//	if (!(header->hdr_flags & hdr_read_only)
+//		&& (dbb->dbb_flags & DBB_being_opened_read_only)) 
+//	{
 		/* Looks like the Header page says, it is NOT ReadOnly!! But the database
 		 * file system permission gives only ReadOnly access. Punt out with
 		 * isc_no_priv error (no privileges)
 		 */
-		ERR_post(isc_no_priv,
+/*		ERR_post(isc_no_priv,
 				 isc_arg_string, "read-write",
 				 isc_arg_string, "database",
 				 isc_arg_string, ERR_string(attachment->att_filename),
 				 isc_arg_end);
 	}
+*/
 
 	if (header->hdr_flags & hdr_force_write) {
 		dbb->dbb_flags |= DBB_force_write;

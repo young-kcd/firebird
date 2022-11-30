@@ -31,6 +31,8 @@
  * 20-Nov-2001 Ann Harrison: Make page count work on db with forced write
  * 
  * 21-Nov-2001 Ann Harrison: Allow read sharing so gstat works 
+ *
+ * 2022.11.30 young - Force to set read-only flag for all access
  */
 
 #include "firebird.h"
@@ -501,9 +503,11 @@ jrd_file* PIO_open(Database* dbb,
 	if (!ISC_is_WinNT())
 		share_delete = false;
 
+	dbb->dbb_flags |= DBB_read_only;
+
 	HANDLE desc = CreateFile(ptr,
-					  GENERIC_READ | GENERIC_WRITE,
-					  g_dwShareFlags | (share_delete ? FILE_SHARE_DELETE : 0),
+					  GENERIC_READ,
+                      FILE_SHARE_READ | FILE_SHARE_WRITE | (share_delete ? FILE_SHARE_DELETE : 0),
 					  NULL,
 					  OPEN_EXISTING,
 					  FILE_ATTRIBUTE_NORMAL |
@@ -517,11 +521,10 @@ jrd_file* PIO_open(Database* dbb,
 		 */
 		desc = CreateFile(ptr,
 						  GENERIC_READ,
-						  FILE_SHARE_READ,
+                          FILE_SHARE_READ | FILE_SHARE_WRITE,
 						  NULL,
 						  OPEN_EXISTING,
-						  FILE_ATTRIBUTE_NORMAL |
-						  g_dwExtraFlags, 0);
+                          FILE_ATTRIBUTE_NORMAL, 0);
 
 		if (desc == INVALID_HANDLE_VALUE) {
 			ERR_post(isc_io_error,
@@ -532,16 +535,17 @@ jrd_file* PIO_open(Database* dbb,
 					 ERR_cstring(file_name),
 					 isc_arg_gds,
 					 isc_io_open_err, isc_arg_win32, GetLastError(), 0);
-		}
-		else {
-			/* If this is the primary file, set Database flag to indicate that it is
-			 * being opened ReadOnly. This flag will be used later to compare with
-			 * the Header Page flag setting to make sure that the database is set
-			 * ReadOnly.
-			 */
-			if (!dbb->dbb_file)
+		}		
+	}
+	
+	if (desc != INVALID_HANDLE_VALUE) {
+		/* If this is the primary file, set Database flag to indicate that it is
+		 * being opened ReadOnly. This flag will be used later to compare with
+		 * the Header Page flag setting to make sure that the database is set
+		 * ReadOnly.
+		 */
+		if (!dbb->dbb_file)
 				dbb->dbb_flags |= DBB_being_opened_read_only;
-		}
 	}
 
 	jrd_file *file;
