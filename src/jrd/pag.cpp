@@ -37,6 +37,7 @@
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
  * 2022.11.30 young - Disable read-only header validation
+ * 2022.12.01 young - Ignore hdr_force_write flag
  */
 
 /*
@@ -1150,7 +1151,7 @@ void PAG_header(bool info)
 				 isc_arg_string, ERR_string(attachment->att_filename),
 				 isc_arg_end);
 	}
-*/
+
 
 	if (header->hdr_flags & hdr_force_write) {
 		dbb->dbb_flags |= DBB_force_write;
@@ -1159,7 +1160,7 @@ void PAG_header(bool info)
 				PIO_force_write(file, true);
 		}
 	}
-
+*/
 	if (header->hdr_flags & hdr_no_reserve)
 		dbb->dbb_flags |= DBB_no_reserve;
 

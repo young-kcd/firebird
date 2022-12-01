@@ -33,6 +33,7 @@
  * 21-Nov-2001 Ann Harrison: Allow read sharing so gstat works 
  *
  * 2022.11.30 young - Force to set read-only flag for all access
+ * 2022.12.01 young - Diable DBB_force_write flag
  */
 
 #include "firebird.h"
@@ -504,6 +505,7 @@ jrd_file* PIO_open(Database* dbb,
 		share_delete = false;
 
 	dbb->dbb_flags |= DBB_read_only;
+	dbb->dbb_flags &= ~DBB_force_write;
 
 	HANDLE desc = CreateFile(ptr,
 					  GENERIC_READ,
